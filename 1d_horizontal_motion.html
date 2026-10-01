@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>1D Kinematics (constant acceleration) Simulation</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f4f7fb;
+      color: #1f2937;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 8px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.2rem;
+      text-align: center;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      padding: 8px;
+      margin-bottom: 8px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 2fr 0.9fr 0.9fr 0.9fr 1.4fr;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .control-group.compact-input input {
+      max-width: 110px;
+    }
+
+    .control-group.button-group {
+      justify-content: flex-end;
+    }
+
+    label {
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    input, select, button {
+      font-size: 0.95rem;
+      padding: 6px 8px;
+      border-radius: 7px;
+      border: 1px solid #cbd5e1;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 6px;
+      flex-wrap: nowrap;
+    }
+
+    button {
+      cursor: pointer;
+      background: #2563eb;
+      color: white;
+      border: none;
+      min-width: 0;
+      flex: 1;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    button.secondary {
+      background: #475569;
+    }
+
+    button.secondary:hover {
+      background: #334155;
+    }
+
+    button.danger {
+      background: #dc2626;
+    }
+
+    button.danger:hover {
+      background: #b91c1c;
+    }
+
+    .readout {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .readout-card {
+      background: #eef4ff;
+      border-radius: 8px;
+      padding: 6px 8px;
+      text-align: center;
+    }
+
+    .readout-card .title {
+      font-size: 0.78rem;
+      color: #475569;
+      margin-bottom: 2px;
+    }
+
+    .readout-card .value {
+      font-size: 1rem;
+      font-weight: bold;
+    }
+
+    .animation-wrap {
+      margin-top: 8px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      border-radius: 10px;
+      background: white;
+    }
+
+    #motionCanvas, .graph-canvas { touch-action: none; }
+
+    /* a grid column may shrink below its longest preset name, so the page never scrolls sideways on a phone */
+    .control-group { min-width: 0; }
+    .control-group select { width: 100%; max-width: 100%; }
+
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 4px 0; }
+
+    #motionCanvas {
+      height: 180px;
+      border: 1px solid #dbeafe;
+      background: linear-gradient(to bottom, #f8fbff 0%, #eef6ff 100%);
+    }
+
+    .graphs {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .graph-box {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 6px;
+    }
+
+    .graph-title {
+      font-weight: 700;
+      margin: 0 0 4px;
+      font-size: 0.88rem;
+    }
+
+    .graph-canvas {
+      height: 145px;
+    }
+
+    .note {
+      margin-top: 4px;
+      font-size: 0.8rem;
+      color: #475569;
+    }
+
+    @media (min-width: 900px) {
+      .graphs {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 700px) {
+      .controls,
+      .readout {
+        grid-template-columns: repeat(2, minmax(140px, 1fr));
+      }
+
+      h1 {
+        font-size: 1.05rem;
+      }
+
+      #motionCanvas {
+        height: 150px;
+      }
+
+      .graph-canvas {
+        height: 130px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .controls,
+      .readout {
+        grid-template-columns: 1fr;
+      }
+
+      button {
+        flex: 1 1 auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>1D Kinematics (constant acceleration) Simulation</h1>
+
+    <div class="panel">
+      <div class="controls">
+        <div class="control-group">
+          <label for="preset">Preset</label>
+          <select id="preset">
+            <option value="custom">Custom (type values or drag the cart)</option>
+            <option value="right_constant_v" selected>Moving right, constant <i>v</i></option>
+            <option value="left_constant_v">Moving left, constant <i>v</i></option>
+            <option value="speed_up_right_from_rest">Moving right speeding up from rest with constant <i>a</i></option>
+            <option value="slow_down_right">Moving right slowing down with constant <i>a</i>, <i>x</i><sub>0</sub> = 0</option>
+            <option value="speed_up_left_from_rest">Moving left speeding up from rest with constant <i>a</i></option>
+            <option value="slow_down_left">Moving left slowing down with constant <i>a</i>, <i>x</i><sub>0</sub> = 0</option>
+          </select>
+        </div>
+
+        <div class="control-group compact-input">
+          <label for="x0">Initial position <i>x</i><sub>0</sub> (m)</label>
+          <input id="x0" type="number" value="0" step="0.1" />
+        </div>
+
+        <div class="control-group compact-input">
+          <label for="v0">Initial velocity <i>v</i><sub>0</sub> (m/s)</label>
+          <input id="v0" type="number" value="2" step="0.1" />
+        </div>
+
+        <div class="control-group compact-input">
+          <label for="a">Acceleration <i>a</i> (m/s²)</label>
+          <input id="a" type="number" value="0" step="0.1" />
+        </div>
+      
+        <div class="control-group button-group">
+          <label>Controls</label>
+          <div class="buttons">
+            <button id="startBtn">Start</button>
+            <button id="pauseBtn" class="secondary">Pause</button>
+            <button id="resetBtn" class="danger">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="readout">
+        <div class="readout-card">
+          <div class="title">Time <i>t</i></div>
+          <div class="value" id="timeValue">0.00 s</div>
+        </div>
+        <div class="readout-card">
+          <div class="title">Position <i>x</i></div>
+          <div class="value" id="xValue">0.00 m</div>
+        </div>
+        <div class="readout-card">
+          <div class="title">Velocity <i>v</i></div>
+          <div class="value" id="vValue">2.00 m/s</div>
+        </div>
+        <div class="readout-card">
+          <div class="title">Acceleration <i>a</i></div>
+          <div class="value" id="aValue">0.00 m/s²</div>
+        </div>
+      </div>
+
+      <div class="animation-wrap">
+        <div class="hint">Drag the cart to set its starting position, and drag the green arrow to set its starting velocity. Drag across any graph to replay the motion at that moment.</div>
+        <canvas id="motionCanvas"></canvas>
+        <div class="note">
+          The track's scale grows to fit the motion. Faint carts show where it was at each whole second. The simulation runs from 0 to 10 s.
+        </div>
+      </div>
+    </div>
+
+    <div class="graphs">
+      <div class="graph-box">
+        <div class="graph-title">Position–Time Graph, <i>x</i>–<i>t</i></div>
+        <canvas id="xGraph" class="graph-canvas"></canvas>
+      </div>
+
+      <div class="graph-box">
+        <div class="graph-title">Velocity–Time Graph, <i>v</i>–<i>t</i></div>
+        <canvas id="vGraph" class="graph-canvas"></canvas>
+      </div>
+
+      <div class="graph-box">
+        <div class="graph-title">Acceleration–Time Graph, <i>a</i>–<i>t</i></div>
+        <canvas id="aGraph" class="graph-canvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SIM_DURATION = 10;
+    const DT = 0.02;
+    const PLAYBACK_SPEED = 1.5;
+
+    const presetEl = document.getElementById('preset');
+    const x0El = document.getElementById('x0');
+    const v0El = document.getElementById('v0');
+    const aEl = document.getElementById('a');
+
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    const timeValue = document.getElementById('timeValue');
+    const xValue = document.getElementById('xValue');
+    const vValue = document.getElementById('vValue');
+    const aValue = document.getElementById('aValue');
+
+    const motionCanvas = document.getElementById('motionCanvas');
+    const xGraphCanvas = document.getElementById('xGraph');
+    const vGraphCanvas = document.getElementById('vGraph');
+    const aGraphCanvas = document.getElementById('aGraph');
+
+    let sim = {
+      running: false,
+      lastFrameTime: null,
+      accumulator: 0,
+      t: 0,
+      x0: 0,
+      v0: 2,
+      a: 0,
+      preset: 'right_constant_v',
+      points: []
+    };
+
+    function resizeCanvasToDisplaySize(canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+      const width = Math.round(rect.width * ratio);
+      const height = Math.round(rect.height * ratio);
+
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+    }
+
+    function resizeAllCanvases() {
+      resizeCanvasToDisplaySize(motionCanvas);
+      resizeCanvasToDisplaySize(xGraphCanvas);
+      resizeCanvasToDisplaySize(vGraphCanvas);
+      resizeCanvasToDisplaySize(aGraphCanvas);
+      redrawAll();
+    }
+
+        const PRESETS = {
+      right_constant_v: {
+        x0: 0,
+        v0: 2,
+        a: 0
+      },
+      left_constant_v: {
+        x0: 8,
+        v0: -2,
+        a: 0
+      },
+      speed_up_right_from_rest: {
+        x0: 0,
+        v0: 0,
+        a: 1
+      },
+      slow_down_right: {
+        x0: 0,
+        v0: 4,
+        a: -0.8
+      },
+      speed_up_left_from_rest: {
+        x0: 8,
+        v0: 0,
+        a: -1
+      },
+      slow_down_left: {
+        x0: 0,
+        v0: -4,
+        a: 0.8
+      }
+    };
+
+    function applyPreset() {
+      const preset = PRESETS[presetEl.value];
+      if (!preset) return;
+
+      x0El.value = preset.x0;
+      v0El.value = preset.v0;
+      aEl.value = preset.a;
+
+
+      updateReadoutFromState();
+    }
+
+    function resetSimulation() {
+      sim.running = false;
+      sim.lastFrameTime = null;
+      sim.accumulator = 0;
+      sim.t = 0;
+      sim.preset = presetEl.value;
+      sim.x0 = parseFloat(x0El.value) || 0;
+      sim.v0 = parseFloat(v0El.value) || 0;
+      sim.a = parseFloat(aEl.value) || 0;
+      sim.points = [sampleState(0)];
+      updateReadoutFromState();
+      redrawAll();
+    }
+
+    function sampleState(t) {
+      const a = sim.a;
+      const x = sim.x0 + sim.v0 * t + 0.5 * a * t * t;
+      const v = sim.v0 + a * t;
+      return { t, x, v, a };
+    }
+
+    function updatePhysicsStep() {
+      sim.t += DT;
+      if (sim.t > SIM_DURATION) sim.t = SIM_DURATION;
+      sim.points.push(sampleState(sim.t));
+      if (sim.t >= SIM_DURATION) {
+        sim.running = false;
+      }
+    }
+
+    function updateReadoutFromState() {
+      const current = sampleState(sim.t);
+      timeValue.textContent = `${current.t.toFixed(2)} s`;
+      xValue.textContent = `${current.x.toFixed(2)} m`;
+      vValue.textContent = `${current.v.toFixed(2)} m/s`;
+      aValue.textContent = `${current.a.toFixed(2)} m/s²`;
+    }
+
+    function animationLoop(timestamp) {
+      if (!sim.running) return;
+
+      if (sim.lastFrameTime == null) {
+        sim.lastFrameTime = timestamp;
+      }
+
+      let frameSeconds = (timestamp - sim.lastFrameTime) / 1000;
+      sim.lastFrameTime = timestamp;
+
+      frameSeconds = Math.min(frameSeconds, 0.05);
+      sim.accumulator += frameSeconds * PLAYBACK_SPEED;
+
+      while (sim.accumulator >= DT && sim.running) {
+        updatePhysicsStep();
+        sim.accumulator -= DT;
+      }
+
+      updateReadoutFromState();
+      redrawAll();
+
+      if (sim.running) {
+        requestAnimationFrame(animationLoop);
+      }
+    }
+
+    function drawMotionScene() {
+      const ctx = motionCanvas.getContext('2d');
+      const w = motionCanvas.width;
+      const h = motionCanvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const marginLeft = 50;
+      const marginRight = 30;
+      const trackY = h * 0.68;
+      const trackStart = marginLeft;
+      const trackEnd = w - marginRight;
+      const trackWidth = trackEnd - trackStart;
+
+      let xs = sim.points.map(p => p.x);
+      let minX = Math.min(0, ...xs);
+      let maxX = Math.max(10, ...xs);
+
+      if (Math.abs(maxX - minX) < 1e-6) {
+        maxX = minX + 10;
+      }
+
+      const pad = 0.1 * (maxX - minX);
+      minX -= pad;
+      maxX += pad;
+
+      const xTickInfo = getNiceStepAndTicks(minX, maxX);
+
+      function xToPx(x) {
+        return trackStart + ((x - xTickInfo.min) / (xTickInfo.max - xTickInfo.min)) * trackWidth;
+      }
+
+      ctx.fillStyle = '#f8fbff';
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(trackStart, trackY);
+      ctx.lineTo(trackEnd, trackY);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 1.2;
+      ctx.fillStyle = '#334155';
+      ctx.font = `${Math.max(12, h * 0.06)}px Arial`;
+
+      // Draw ticks with nice step size
+      xTickInfo.ticks.forEach(tickVal => {
+        if (tickVal >= xTickInfo.min && tickVal <= xTickInfo.max) {
+          const px = xToPx(tickVal);
+          ctx.beginPath();
+          ctx.moveTo(px, trackY - 10);
+          ctx.lineTo(px, trackY + 10);
+          ctx.stroke();
+
+          ctx.textAlign = 'center';
+          ctx.fillText(tickVal.toFixed(1), px, trackY + 42);
+        }
+      });
+
+      ctx.textAlign = 'left';
+      ctx.fillText('Position (m)', 12, 24);
+
+      // Draw cart trail (positions at each second)
+      const drawnTimes = new Set();
+      const labelStacks = new Map();
+
+      sim.points.forEach(point => {
+        const roundedTime = Math.round(point.t);
+
+        if (
+          Math.abs(point.t - roundedTime) < 0.01 &&
+          point.t >= 0 &&
+          !drawnTimes.has(roundedTime)
+        ) {
+          drawnTimes.add(roundedTime);
+
+          const trailX = xToPx(point.x);
+          const trailY = trackY - 24;
+          const cartW = 56;
+          const cartH = 26;
+
+          ctx.fillStyle = 'rgba(37, 99, 235, 0.15)';
+          roundRect(ctx, trailX - cartW / 2, trailY - cartH / 2, cartW, cartH, 8);
+          ctx.fill();
+
+          ctx.fillStyle = 'rgba(30, 64, 175, 0.15)';
+          ctx.beginPath();
+          ctx.arc(trailX - 16, trailY + 16, 7, 0, Math.PI * 2);
+          ctx.arc(trailX + 16, trailY + 16, 7, 0, Math.PI * 2);
+          ctx.fill();
+
+          const stackKey = Math.round(trailX / 12);
+          const stackIndex = labelStacks.get(stackKey) || 0;
+          labelStacks.set(stackKey, stackIndex + 1);
+
+          ctx.fillStyle = 'rgba(52, 73, 94, 0.4)';
+          ctx.font = `${Math.max(11, h * 0.05)}px Arial`;
+          ctx.textAlign = 'center';
+          ctx.fillText(`${roundedTime} s`, trailX, trailY - 40 - stackIndex * 18);
+        }
+      });
+
+      const current = sampleState(sim.t);
+      const cartX = xToPx(current.x);
+      const cartY = trackY - 24;
+      const cartW = 56;
+      const cartH = 26;
+
+      ctx.fillStyle = '#2563eb';
+      roundRect(ctx, cartX - cartW / 2, cartY - cartH / 2, cartW, cartH, 8);
+      ctx.fill();
+
+      ctx.fillStyle = '#1e40af';
+      ctx.beginPath();
+      ctx.arc(cartX - 16, cartY + 16, 7, 0, Math.PI * 2);
+      ctx.arc(cartX + 16, cartY + 16, 7, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#0f172a';
+      ctx.textAlign = 'center';
+      ctx.fillText('Cart', cartX, cartY - 18);
+
+      // velocity arrow (green) from the cart, drawn to scale; its tip is a drag handle before the run starts
+      const k = motionCanvas.width / (motionCanvas.getBoundingClientRect().width || 1);
+      const pxPerMs = 16 * k;
+      const vy = trackY + 20 * k; // between the track and its scale, clear of the time markers above
+      const vTip = cartX + current.v * pxPerMs;
+      if (Math.abs(current.v) > 0.01) {
+        ctx.strokeStyle = '#16a34a'; ctx.fillStyle = '#16a34a'; ctx.lineWidth = 3 * k;
+        ctx.beginPath(); ctx.moveTo(cartX, vy); ctx.lineTo(vTip, vy); ctx.stroke();
+        const dir = Math.sign(current.v);
+        ctx.beginPath(); ctx.moveTo(vTip + dir * 2 * k, vy); ctx.lineTo(vTip - dir * 10 * k, vy - 6 * k); ctx.lineTo(vTip - dir * 10 * k, vy + 6 * k); ctx.closePath(); ctx.fill();
+      }
+      if (sim.t === 0 && !sim.running) {
+        ctx.fillStyle = '#16a34a'; ctx.beginPath(); ctx.arc(vTip, vy, 7 * k, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = 'white'; ctx.lineWidth = 2 * k; ctx.stroke();
+      }
+      ctx.fillStyle = '#15803d'; ctx.font = `bold ${12 * k}px Arial`; ctx.textAlign = current.v >= 0 ? 'left' : 'right';
+      ctx.fillText(`v = ${current.v.toFixed(1)} m/s`, vTip + (current.v >= 0 ? 12 : -12) * k, vy + 4 * k);
+      sceneMap = { xToPx, k, cartX, cartY, vTip, vy, pxPerMs, trackStart, trackEnd, min: xTickInfo.min, max: xTickInfo.max };
+    }
+    let sceneMap = null;
+
+    function roundRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    function getNiceStepAndTicks(min, max) {
+      // Generate nice tick marks with step sizes of 1, 2, 5, 0.1, 0.2, 0.5, 0.02, 0.05, etc.
+      const range = Math.abs(max - min);
+      if (range < 1e-9) {
+        return { step: 1, min: min - 1, max: max + 1, ticks: [min - 1, min, max, max + 1] };
+      }
+
+      const magnitude = Math.pow(10, Math.floor(Math.log10(range)));
+      const normalized = range / magnitude;
+
+      let step;
+      if (normalized <= 1.5) step = 0.2;
+      else if (normalized <= 3) step = 0.5;
+      else if (normalized <= 7) step = 1;
+      else step = 2;
+
+      step *= magnitude;
+
+      const tickMin = Math.floor(min / step) * step;
+      const tickMax = Math.ceil(max / step) * step;
+      const ticks = [];
+      for (let tick = tickMin; tick <= tickMax + step * 0.1; tick += step) {
+        ticks.push(Math.round(tick * 1e10) / 1e10); // Remove floating-point errors
+      }
+
+      return { step, min: tickMin, max: tickMax, ticks };
+    }
+
+    function getGraphRange(key) {
+      const vals = sim.points.map(p => p[key]);
+      let min = Math.min(...vals);
+      let max = Math.max(...vals);
+
+      // Always include 0 in the range
+      min = Math.min(min, 0);
+      max = Math.max(max, 0);
+
+      if (Math.abs(max - min) < 1e-9) {
+        min -= 1;
+        max += 1;
+      }
+
+      const pad = 0.12 * (max - min);
+      return { min: min - pad, max: max + pad };
+    }
+
+    function drawMixedStyleLabel(ctx, text, x, y, fontSize, rotation = 0) {
+      const variable = text.charAt(0);
+      const rest = text.slice(1);
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rotation);
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+
+      ctx.font = `italic ${fontSize}px Arial`;
+      const variableWidth = ctx.measureText(variable).width;
+
+      ctx.font = `${fontSize}px Arial`;
+      const restWidth = ctx.measureText(rest).width;
+
+      const startX = -(variableWidth + restWidth) / 2;
+
+      ctx.font = `italic ${fontSize}px Arial`;
+      ctx.fillText(variable, startX, 0);
+
+      ctx.font = `${fontSize}px Arial`;
+      ctx.fillText(rest, startX + variableWidth, 0);
+
+      ctx.restore();
+    }
+
+    function drawGraph(canvas, key, color, yLabel) {
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const margin = { left: 70, right: 16, top: 18, bottom: 50 };
+      const plotW = w - margin.left - margin.right;
+      const plotH = h - margin.top - margin.bottom;
+
+      const range = getGraphRange(key);
+      const yTickInfo = getNiceStepAndTicks(range.min, range.max);
+
+      function tx(t) {
+        return margin.left + (t / SIM_DURATION) * plotW;
+      }
+
+      function ty(v) {
+        return margin.top + ((yTickInfo.max - v) / (yTickInfo.max - yTickInfo.min || 1)) * plotH;
+      }
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 1;
+
+      // Horizontal grid lines for y-axis
+      yTickInfo.ticks.forEach(tickVal => {
+        if (tickVal >= yTickInfo.min && tickVal <= yTickInfo.max) {
+          const y = ty(tickVal);
+          ctx.beginPath();
+          ctx.moveTo(margin.left, y);
+          ctx.lineTo(w - margin.right, y);
+          ctx.stroke();
+        }
+      });
+
+      // Vertical grid lines for x-axis (time)
+      for (let i = 0; i <= 10; i++) {
+        const x = margin.left + (i / 10) * plotW;
+        ctx.beginPath();
+        ctx.moveTo(x, margin.top);
+        ctx.lineTo(x, h - margin.bottom);
+        ctx.stroke();
+      }
+
+      // Find where the horizontal axis should be: at y = 0 if visible
+      let timeAxisY;
+      if (yTickInfo.min <= 0 && yTickInfo.max >= 0) {
+        timeAxisY = ty(0);
+      } else if (yTickInfo.max < 0) {
+        timeAxisY = margin.top; // all values negative
+      } else {
+        timeAxisY = h - margin.bottom; // all values positive
+      }
+
+      // Axes
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 1.5;
+
+      // Vertical axis at t = 0
+      ctx.beginPath();
+      ctx.moveTo(margin.left, margin.top);
+      ctx.lineTo(margin.left, h - margin.bottom);
+      ctx.stroke();
+
+      // Horizontal time axis at value = 0
+      ctx.beginPath();
+      ctx.moveTo(margin.left, timeAxisY);
+      ctx.lineTo(w - margin.right, timeAxisY);
+      ctx.stroke();
+
+      ctx.fillStyle = '#334155';
+      ctx.font = `${Math.max(11, h * 0.075)}px Arial`;
+
+      // Time labels (x-axis)
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      for (let i = 0; i <= 10; i++) {
+        const t = i;
+        const x = tx(t);
+        if (i === 0) { ctx.textAlign = 'left'; ctx.fillText('0', x + 4, timeAxisY + 6); ctx.textAlign = 'center'; }
+        else ctx.fillText(`${t}`, x, timeAxisY + 6);
+      }
+
+      // Y-axis labels
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      yTickInfo.ticks.forEach(tickVal => {
+        if (tickVal >= yTickInfo.min && tickVal <= yTickInfo.max) {
+          const y = ty(tickVal);
+          ctx.fillText(tickVal.toFixed(1), margin.left - 6, y);
+        }
+      });
+
+      const axisFontSize = Math.max(11, h * 0.075);
+
+      drawMixedStyleLabel(
+        ctx,
+        't (s)',
+        margin.left + plotW / 2,
+        h - 8,
+        axisFontSize
+      );
+
+      drawMixedStyleLabel(
+        ctx,
+        yLabel,
+        14,
+        margin.top + plotH / 2,
+        axisFontSize,
+        -Math.PI / 2
+      );
+
+      if (sim.points.length > 0) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        sim.points.forEach((p, i) => {
+          const x = tx(p.t);
+          const y = ty(p[key]);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        const last = sim.points[sim.points.length - 1];
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(tx(last.t), ty(last[key]), 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    function redrawAll() {
+      drawMotionScene();
+      drawGraph(xGraphCanvas, 'x', '#2563eb', 'x (m)');
+      drawGraph(vGraphCanvas, 'v', '#16a34a', 'v (m/s)');
+      drawGraph(aGraphCanvas, 'a', '#dc2626', 'a (m/s²)');
+    }
+
+    function startSimulation() {
+      if (sim.t >= SIM_DURATION) return;
+      sim.preset = presetEl.value;
+      sim.x0 = parseFloat(x0El.value) || 0;
+      sim.v0 = parseFloat(v0El.value) || 0;
+      sim.a = parseFloat(aEl.value) || 0;
+
+      if (sim.points.length === 0) {
+        sim.points.push(sampleState(sim.t));
+      }
+
+      sim.running = true;
+      sim.lastFrameTime = null;
+      requestAnimationFrame(animationLoop);
+    }
+
+    function toDevice(canvas, e) { const r = canvas.getBoundingClientRect(); const k = canvas.width / r.width; return { x: (e.clientX - r.left) * k, y: (e.clientY - r.top) * k }; }
+    let dragMode = null;
+    motionCanvas.addEventListener('pointerdown', e => {
+      if (!sceneMap || sim.running) return;
+      const p = toDevice(motionCanvas, e), m = sceneMap;
+      if (sim.t === 0 && Math.hypot(p.x - m.vTip, p.y - m.vy) < 18 * m.k) dragMode = 'v';
+      else if (Math.abs(p.x - m.cartX) < 34 * m.k && Math.abs(p.y - m.cartY) < 30 * m.k) dragMode = 'x';
+      else return;
+      if (sim.t !== 0) resetSimulation();
+      motionCanvas.setPointerCapture(e.pointerId); e.preventDefault();
+    });
+    motionCanvas.addEventListener('pointermove', e => {
+      const p = toDevice(motionCanvas, e), m = sceneMap;
+      if (!dragMode) {
+        if (m && !sim.running) motionCanvas.style.cursor = (sim.t === 0 && Math.hypot(p.x - m.vTip, p.y - m.vy) < 18 * m.k) || (Math.abs(p.x - m.cartX) < 34 * m.k && Math.abs(p.y - m.cartY) < 30 * m.k) ? 'grab' : 'default';
+        return;
+      }
+      if (dragMode === 'x') {
+        const x = m.min + (p.x - m.trackStart) / (m.trackEnd - m.trackStart) * (m.max - m.min);
+        x0El.value = (Math.round(x * 10) / 10).toFixed(1);
+      } else {
+        v0El.value = (Math.round((p.x - m.cartX) / m.pxPerMs * 10) / 10).toFixed(1);
+      }
+      presetEl.value = 'custom';
+      resetSimulation();
+    });
+    const endDrag = () => { dragMode = null; };
+    motionCanvas.addEventListener('pointerup', endDrag);
+    motionCanvas.addEventListener('pointercancel', endDrag);
+
+    // scrub: drag along a graph to jump the whole simulation to that moment
+    [xGraphCanvas, vGraphCanvas, aGraphCanvas].forEach(c => {
+      let scrubbing = false;
+      const scrub = e => {
+        const p = toDevice(c, e), left = 70, right = 16;
+        const t = Math.max(0, Math.min(SIM_DURATION, (p.x - left) / (c.width - left - right) * SIM_DURATION));
+        sim.running = false; sim.lastFrameTime = null;
+        sim.x0 = parseFloat(x0El.value) || 0; sim.v0 = parseFloat(v0El.value) || 0; sim.a = parseFloat(aEl.value) || 0;
+        sim.points = [];
+        for (let tt = 0; tt < t; tt += DT) sim.points.push(sampleState(tt));
+        sim.t = t; sim.points.push(sampleState(t));
+        updateReadoutFromState(); redrawAll();
+      };
+      c.addEventListener('pointerdown', e => { scrubbing = true; c.setPointerCapture(e.pointerId); scrub(e); e.preventDefault(); });
+      c.addEventListener('pointermove', e => { c.style.cursor = 'ew-resize'; if (scrubbing) scrub(e); });
+      c.addEventListener('pointerup', () => { scrubbing = false; });
+      c.addEventListener('pointercancel', () => { scrubbing = false; });
+    });
+
+    [x0El, v0El, aEl].forEach(inp => inp.addEventListener('input', () => { presetEl.value = 'custom'; resetSimulation(); }));
+
+    presetEl.addEventListener('change', () => {
+      applyPreset();
+      resetSimulation();
+    });
+
+    startBtn.addEventListener('click', startSimulation);
+
+    pauseBtn.addEventListener('click', () => {
+      sim.running = false;
+      sim.lastFrameTime = null;
+    });
+
+    resetBtn.addEventListener('click', () => {
+      resetSimulation();
+    });
+
+    window.addEventListener('resize', resizeAllCanvases);
+
+    applyPreset();
+    resetSimulation();
+    resizeAllCanvases();
+  </script>
+</body>
+</html>

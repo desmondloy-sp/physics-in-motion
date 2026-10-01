@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Electrical Power, Energy and the Cost of Electricity</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
+    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
+    .controls { display: grid; grid-template-columns: 1.8fr 1fr 1fr 1fr; gap: 10px; align-items: end; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    label { font-size: 0.8rem; font-weight: 600; }
+    .val { font-weight: normal; color: #334155; }
+    select, input[type=number] { font-size: 0.9rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
+    input[type=range] { width: 100%; }
+    button { font-size: 0.88rem; padding: 7px 12px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; }
+    button.go { background: #2563eb; }
+    .readout { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
+    .readout-card .value { font-size: 1rem; font-weight: bold; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+    .app { border: 2px solid #e2e8f0; border-radius: 10px; padding: 8px; cursor: pointer; background: #f8fafc; transition: background 0.2s, border-color 0.2s; }
+    .app.on { border-color: #f59e0b; background: #fffbeb; }
+    .app .top { display: flex; align-items: center; gap: 8px; }
+    .app .icon { width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center; font-size: 20px; background: #e2e8f0; }
+    .app.on .icon { background: #fde68a; }
+    .app .name { font-weight: bold; font-size: 0.9rem; }
+    .app .rating { font-size: 0.75rem; color: #64748b; }
+    .app .now { margin-left: auto; font-weight: bold; font-size: 0.85rem; }
+    .app .hours { margin-top: 6px; font-size: 0.75rem; color: #334155; }
+    .app .hours input { margin-top: 2px; }
+    .app .cost { font-size: 0.78rem; color: #92400e; margin-top: 2px; }
+    canvas { display: block; width: 100%; border-radius: 10px; }
+    #meterCanvas { height: 150px; border: 1px solid #e5e7eb; background: #fbfdff; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 6px; }
+    .note { margin-top: 6px; font-size: 0.8rem; color: #475569; }
+    @media (max-width: 900px) {
+      .controls { grid-template-columns: 1fr 1fr; }
+      .controls .control-group:first-child { grid-column: 1 / -1; }
+      .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Electrical Power, Energy and the Cost of Electricity</h1>
+
+    <div class="panel">
+      <div class="controls">
+        <div class="control-group">
+          <label for="preset">Start from</label>
+          <select id="preset">
+            <option value="ex13" selected>Example 13: a 2.0 kW kettle, 5 min three times a day</option>
+            <option value="ex12">Example 12: a 1500 W 240 V kettle (try 120 V)</option>
+            <option value="home">A typical flat</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="control-group"><label for="volt">Supply voltage <span class="val" id="voltVal"></span></label><input id="volt" type="range" min="100" max="260" step="10" value="240" /></div>
+        <div class="control-group"><label for="days">Number of days <span class="val" id="daysVal"></span></label><input id="days" type="range" min="1" max="31" step="1" value="30" /></div>
+        <div class="control-group"><label for="tariff">Price per kWh ($)</label><input id="tariff" type="number" min="0" step="0.01" value="0.27" /></div>
+      </div>
+      <div class="readout">
+        <div class="readout-card"><div class="title">Power being used now</div><div class="value" id="pNow">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Current from the mains, <i>I</i> = <i>P</i>/<i>V</i></div><div class="value" id="iNow">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Energy per day</div><div class="value" id="eDay">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Energy for the period, <i>E</i> = <i>Pt</i></div><div class="value" id="eAll">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Cost for the period</div><div class="value" id="cost">&mdash;</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="hint">Tap an appliance to switch it on or off, and set how long it is used each day.</div>
+      <div class="grid" id="grid"></div>
+    </div>
+
+    <div class="panel">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+        <button id="runBtn" class="go">Run the period on the meter</button>
+        <span style="font-size:0.8rem;color:#475569" id="runNote"></span>
+      </div>
+      <canvas id="meterCanvas"></canvas>
+      <div class="note">
+        Power is the rate of using energy: <i>P</i> = <i>E</i>/<i>t</i> = <i>VI</i> = <i>I</i><sup>2</sup><i>R</i> = <i>V</i><sup>2</sup>/<i>R</i>. An appliance's <b>rating</b> (e.g. 1500 W 240 V) is the power it uses at its rated voltage; its heating element keeps the same resistance (<i>R</i> = <i>V</i><sup>2</sup>/<i>P</i> = 38.4 &Omega; for that kettle), so on a lower supply voltage it uses less power &mdash; at 120 V only a quarter, 375 W. Electricity in Singapore is paid for by the kilowatt-hour: 1 kWh is the energy a 1 kW appliance uses in 1 hour, = 3.6 &times; 10<sup>6</sup> J. Energy in kWh = power in kW &times; time in hours.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const el = id => document.getElementById(id);
+    // Each appliance is treated as a fixed resistance set by its rating: R = Vr^2 / Pr
+    const APPS = [
+      { id: 'kettle2', name: 'Kettle', icon: '☕', P: 2000, V: 240, hours: 0.25 },
+      { id: 'kettle15', name: 'Kettle (Ex 12)', icon: '🫖', P: 1500, V: 240, hours: 0.25 },
+      { id: 'aircon', name: 'Air-conditioner', icon: '❄️', P: 1200, V: 240, hours: 8 },
+      { id: 'fridge', name: 'Refrigerator', icon: '🧊', P: 150, V: 240, hours: 24 },
+      { id: 'tv', name: 'Television', icon: '📺', P: 100, V: 240, hours: 4 },
+      { id: 'lamp', name: 'Fluorescent lamp', icon: '💡', P: 40, V: 240, hours: 6 },
+      { id: 'iron', name: 'Clothes iron', icon: '👕', P: 1000, V: 240, hours: 0.5 },
+      { id: 'fan', name: 'Table fan', icon: '🌀', P: 60, V: 240, hours: 8 }
+    ];
+    const state = {}; APPS.forEach(a => state[a.id] = { on: false, hours: a.hours });
+    const PRESETS = {
+      ex13: { on: { kettle2: 0.25 }, V: 240, days: 30 },
+      ex12: { on: { kettle15: 1 }, V: 240, days: 1 },
+      home: { on: { kettle2: 0.25, aircon: 8, fridge: 24, tv: 4, lamp: 6, fan: 8 }, V: 240, days: 30 }
+    };
+    const run = { t: 0, running: false, energy: 0 };
+
+    const Vs = () => +el('volt').value;
+    const power = a => { const R = a.V * a.V / a.P; return Vs() * Vs() / R; }; // actual power at this supply voltage
+    const money = x => `$${x.toFixed(2)}`;
+    const kwh = x => `${x < 10 ? x.toFixed(3) : x.toFixed(2)} kWh`;
+
+    function build() {
+      el('grid').innerHTML = APPS.map(a => `
+        <div class="app" id="card-${a.id}" role="button" tabindex="0">
+          <div class="top"><div class="icon">${a.icon}</div><div><div class="name">${a.name}</div><div class="rating">rated ${a.P} W ${a.V} V</div></div><div class="now" id="now-${a.id}"></div></div>
+          <div class="hours"><span id="hl-${a.id}"></span><input type="range" min="0" max="24" step="0.25" id="h-${a.id}" /></div>
+          <div class="cost" id="c-${a.id}"></div>
+        </div>`).join('');
+      APPS.forEach(a => {
+        const card = el('card-' + a.id), h = el('h-' + a.id);
+        card.addEventListener('click', e => { if (e.target === h) return; state[a.id].on = !state[a.id].on; el('preset').value = 'custom'; resetRun(); });
+        h.addEventListener('input', () => { state[a.id].hours = +h.value; el('preset').value = 'custom'; resetRun(); });
+        h.addEventListener('click', e => e.stopPropagation());
+      });
+    }
+    function applyPreset() {
+      const p = PRESETS[el('preset').value]; if (!p) return;
+      APPS.forEach(a => { state[a.id].on = a.id in p.on; state[a.id].hours = a.id in p.on ? p.on[a.id] : a.hours; });
+      el('volt').value = p.V; el('days').value = p.days; resetRun();
+    }
+    function totals() {
+      let P = 0, Eday = 0;
+      APPS.forEach(a => { if (!state[a.id].on) return; const p = power(a); P += p; Eday += p / 1000 * state[a.id].hours; });
+      const days = +el('days').value, tariff = +el('tariff').value || 0;
+      return { P, Eday, Eall: Eday * days, cost: Eday * days * tariff, days, tariff };
+    }
+    function resetRun() { run.t = 0; run.running = false; run.energy = 0; }
+
+    function updateUI() {
+      const t = totals();
+      el('voltVal').textContent = `(${Vs()} V)`; el('daysVal').textContent = `(${t.days} days)`;
+      el('pNow').textContent = t.P >= 1000 ? `${(t.P / 1000).toFixed(3)} kW` : `${t.P.toFixed(0)} W`;
+      el('iNow').textContent = `${(t.P / Vs()).toFixed(2)} A`;
+      el('eDay').textContent = kwh(t.Eday); el('eAll').textContent = kwh(t.Eall); el('cost').textContent = money(t.cost);
+      APPS.forEach(a => {
+        const s = state[a.id], p = power(a);
+        el('card-' + a.id).classList.toggle('on', s.on);
+        el('now-' + a.id).textContent = s.on ? `${p.toFixed(0)} W` : 'off';
+        const h = el('h-' + a.id); if (+h.value !== s.hours) h.value = s.hours;
+        const mins = s.hours * 60;
+        el('hl-' + a.id).textContent = `Used ${s.hours >= 1 ? s.hours + ' h' : mins.toFixed(0) + ' min'} per day`;
+        const e = p / 1000 * s.hours * t.days;
+        el('c-' + a.id).textContent = s.on ? `${(p / 1000).toFixed(3)} kW × ${s.hours} h × ${t.days} days = ${e.toFixed(3)} kWh → ${money(e * t.tariff)}` : '';
+      });
+      el('runBtn').textContent = run.running ? 'Pause' : run.t > 0 && run.t < t.days ? 'Resume' : 'Run the period on the meter';
+      el('runNote').textContent = `One day passes every second. At $${t.tariff.toFixed(2)} per kWh.`;
+    }
+
+    function setup(c) {
+      const r = c.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+      const cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
+      if (c.width !== cw || c.height !== ch) { c.width = cw; c.height = ch; }
+      const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { ctx, w: r.width, h: r.height };
+    }
+    function drawMeter() {
+      const { ctx, w, h } = setup(el('meterCanvas'));
+      ctx.clearRect(0, 0, w, h);
+      const t = totals();
+      // electricity meter display
+      const mx = 16, my = 16, mw = Math.min(300, w * 0.42), mh = 70;
+      ctx.fillStyle = '#1f2937'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(mx, my, mw, mh, 10) : ctx.rect(mx, my, mw, mh); ctx.fill();
+      ctx.fillStyle = '#94a3b8'; ctx.font = '11px Arial'; ctx.textAlign = 'left'; ctx.fillText('ELECTRICITY METER (kWh)', mx + 12, my + 16);
+      const digits = run.energy.toFixed(2).padStart(8, '0');
+      ctx.font = 'bold 26px monospace'; ctx.fillStyle = '#4ade80'; ctx.fillText(digits, mx + 12, my + 52);
+      // spinning disc speed tracks the power being used
+      const cx = mx + mw - 30, cy = my + mh / 2, ang = (run.energy * 40) % (Math.PI * 2);
+      ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, 16, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(ang) * 14, cy + Math.sin(ang) * 14); ctx.stroke();
+      // day timeline and cost so far
+      const tx = mx + mw + 24, tw = w - tx - 16;
+      if (tw > 120) {
+        ctx.fillStyle = '#334155'; ctx.font = 'bold 13px Arial'; ctx.fillText(`Day ${Math.min(t.days, run.t).toFixed(1)} of ${t.days}`, tx, my + 14);
+        ctx.fillStyle = '#e5e7eb'; ctx.fillRect(tx, my + 24, tw, 20);
+        ctx.fillStyle = '#f59e0b'; ctx.fillRect(tx, my + 24, tw * Math.min(1, run.t / t.days), 20);
+        ctx.fillStyle = '#0f172a'; ctx.font = 'bold 16px Arial'; ctx.fillText(`${money(run.energy * t.tariff)} so far`, tx, my + 70);
+        ctx.font = '12px Arial'; ctx.fillStyle = '#475569'; ctx.fillText(`of ${money(t.cost)} for the whole period`, tx, my + 88);
+      } else {
+        ctx.fillStyle = '#0f172a'; ctx.font = 'bold 14px Arial'; ctx.fillText(`Day ${Math.min(t.days, run.t).toFixed(1)} — ${money(run.energy * t.tariff)}`, mx, my + mh + 26);
+      }
+      ctx.fillStyle = '#64748b'; ctx.font = '12px Arial';
+      ctx.fillText(`${kwh(t.Eday)} per day × ${t.days} days = ${kwh(t.Eall)};  ${kwh(t.Eall)} × $${t.tariff.toFixed(2)} = ${money(t.cost)}`, mx, h - 12);
+    }
+
+    el('runBtn').addEventListener('click', () => {
+      const t = totals();
+      if (run.t >= t.days) resetRun();
+      run.running = !run.running;
+    });
+    el('preset').addEventListener('change', applyPreset);
+    ['volt', 'days', 'tariff'].forEach(id => el(id).addEventListener('input', () => { if (id !== 'volt') el('preset').value = el('preset').value; resetRun(); }));
+
+    build(); applyPreset();
+    let last = null;
+    function frame(ts) {
+      if (last === null) last = ts;
+      const dt = Math.max(0, Math.min(0.05, (ts - last) / 1000)); last = ts;
+      const t = totals();
+      if (run.running) {
+        const dd = Math.min(dt, t.days - run.t); // one day per second
+        run.t += dd; run.energy += t.Eday * dd;
+        if (run.t >= t.days - 1e-9) { run.t = t.days; run.energy = t.Eall; run.running = false; }
+      }
+      updateUI(); drawMeter();
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

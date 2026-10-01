@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Magnetic Poles, Field Lines and Induced Magnetism</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
+    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
+    .controls { display: grid; grid-template-columns: 1.6fr auto auto auto auto auto; gap: 8px; align-items: end; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; }
+    label { font-size: 0.8rem; font-weight: 600; }
+    select, button { font-size: 0.88rem; padding: 7px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
+    button { cursor: pointer; background: #475569; color: white; border: none; white-space: nowrap; }
+    button:hover { background: #334155; }
+    .toggle { display: flex; align-items: center; gap: 5px; font-size: 0.82rem; font-weight: 600; white-space: nowrap; padding-bottom: 6px; }
+    .readout { display: grid; grid-template-columns: repeat(3, minmax(140px, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
+    .readout-card .value { font-size: 0.98rem; font-weight: bold; }
+    canvas { display: block; width: 100%; border-radius: 10px; touch-action: none; }
+    #sceneCanvas { height: 460px; border: 1px solid #dbeafe; background: #fbfcfe; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
+    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    @media (max-width: 900px) {
+      .controls { grid-template-columns: 1fr 1fr 1fr; }
+      .controls .control-group:first-child { grid-column: 1 / -1; }
+      .readout { grid-template-columns: 1fr; }
+      #sceneCanvas { height: 420px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Magnetic Poles, Field Lines and Induced Magnetism</h1>
+
+    <div class="panel">
+      <div class="controls">
+        <div class="control-group">
+          <label for="mode">Start from</label>
+          <select id="mode">
+            <option value="single" selected>One bar magnet</option>
+            <option value="repel">Two magnets: like poles facing</option>
+            <option value="attract">Two magnets: unlike poles facing</option>
+            <option value="iron">Magnet and a soft-iron bar</option>
+            <option value="steel">Magnet and a steel bar</option>
+          </select>
+        </div>
+        <button id="rotateBtn">Rotate 45&deg;</button>
+        <button id="flipBtn">Flip N/S</button>
+        <label class="toggle"><input type="checkbox" id="showLines" checked /> Field lines</label>
+        <label class="toggle"><input type="checkbox" id="showCompass" /> Compasses</label>
+        <label class="toggle"><input type="checkbox" id="showFilings" /> Iron filings</label>
+      </div>
+      <div class="readout">
+        <div class="readout-card"><div class="title">Force between the objects</div><div class="value" id="forceValue">&mdash;</div></div>
+        <div class="readout-card"><div class="title" id="ironTitle">Induced magnetism</div><div class="value" id="ironValue">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Plotting compass</div><div class="value" id="compassValue">Drag it around</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="hint">Drag the middle of a magnet to move it; drag near either end to turn it. Tap a magnet to select it for the Rotate and Flip buttons. Drag the plotting compass anywhere.</div>
+      <canvas id="sceneCanvas"></canvas>
+      <div class="note" id="sceneNote"></div>
+    </div>
+  </div>
+
+  <script>
+    const el = id => document.getElementById(id);
+    const canvas = el('sceneCanvas');
+    const modeEl = el('mode');
+
+    const BAR_L = 140, BAR_W = 34, POLE_IN = 0.4; // poles sit 40% of the length from the centre, near the ends
+    const CHI = { iron: 1.1e4, steel: 0.55e4 };  // how easily each material is magnetised (model units)
+    const M_MAX = { iron: 0.85, steel: 0.8 };
+
+    // Each object: { kind: 'magnet'|'iron'|'steel', x, y (px), ang (rad, direction from S to N), m (pole strength) }
+    let objects = [];
+    let selected = 0;
+    const compass = { x: 0, y: 0 };
+    let W = 0, H = 0;
+    let filings = [];
+
+    function setMode(mode) {
+      const cx = W / 2, cy = H * 0.5;
+      const gap = Math.min(150, W * 0.18);
+      if (mode === 'single') objects = [{ kind: 'magnet', x: cx, y: cy, ang: 0, m: 1 }];
+      else if (mode === 'repel') objects = [
+        { kind: 'magnet', x: cx - BAR_L / 2 - gap / 2, y: cy, ang: 0, m: 1 },       // S | N  -> N faces right
+        { kind: 'magnet', x: cx + BAR_L / 2 + gap / 2, y: cy, ang: Math.PI, m: 1 }  // N | S  -> N faces left
+      ];
+      else if (mode === 'attract') objects = [
+        { kind: 'magnet', x: cx - BAR_L / 2 - gap / 2, y: cy, ang: 0, m: 1 },
+        { kind: 'magnet', x: cx + BAR_L / 2 + gap / 2, y: cy, ang: 0, m: 1 }
+      ];
+      else objects = [
+        // as in the notes: the magnet's S-pole is brought near the bar
+        { kind: 'magnet', x: cx - BAR_L / 2 - gap / 2 - 60, y: cy, ang: Math.PI, m: 1 },
+        { kind: mode === 'iron' ? 'iron' : 'steel', x: cx + BAR_L / 2 + gap / 2, y: cy, ang: 0, m: 0 }
+      ];
+      selected = 0;
+      compass.x = Math.min(W - 40, cx + (mode === 'single' ? 0 : 0)); compass.y = H * 0.18;
+      if (mode === 'single') { compass.x = cx + BAR_L * 0.9; compass.y = cy - 70; }
+      el('sceneNote').innerHTML = NOTES[mode];
+    }
+
+    const NOTES = {
+      single: 'Field lines leave the <b>N-pole</b>, curve round through the space outside, and enter the <b>S-pole</b>; inside the magnet they carry on from S back to N, so every line is a closed loop. Lines never cross, and they are crowded together near the poles, where the field is strongest. Switch on <b>Compasses</b> or <b>Iron filings</b> to see the same pattern the way you would in the lab.',
+      repel: 'Like poles facing. The lines from the two N-poles do not join up: they are squeezed and bent away from each other, leaving a <b>neutral point</b> in the middle where the fields cancel (a compass there does not point anywhere in particular). Like poles repel. Drag one magnet round to face the other way and watch the lines join up.',
+      attract: 'Unlike poles facing. Lines leave the N-pole and run straight across the gap into the facing S-pole &mdash; unlike poles attract. Pull the magnets apart and see how the lines across the gap thin out as the attraction weakens.',
+      iron: 'Bring the magnet near the soft-iron bar without touching it. The iron becomes an <b>induced magnet</b>: the end nearer the magnet gets the <i>opposite</i> pole, so the bar is attracted. Soft iron is easy to magnetise but loses its magnetism easily &mdash; drag the magnet away and the induced poles disappear.',
+      steel: 'Steel is a <b>hard</b> magnetic material: it is harder to magnetise than iron (the magnet has to come closer), but it does not lose its magnetism easily. Bring the magnet close, then drag it away &mdash; the steel stays magnetised. Use <b>Flip N/S</b> on the magnet and bring it close again to re-magnetise the steel the other way.'
+    };
+
+    // ---------- geometry ----------
+    const axis = o => ({ x: Math.cos(o.ang), y: Math.sin(o.ang) });
+    function poles(o) {
+      const u = axis(o), d = BAR_L * POLE_IN;
+      if (o.m === 0) return [];
+      return [ { x: o.x + u.x * d, y: o.y + u.y * d, s: o.m, obj: o }, { x: o.x - u.x * d, y: o.y - u.y * d, s: -o.m, obj: o } ];
+    }
+    function corners(o, pad = 0) {
+      const u = axis(o), v = { x: -u.y, y: u.x };
+      const a = BAR_L / 2 + pad, b = BAR_W / 2 + pad;
+      return [[a, b], [-a, b], [-a, -b], [a, -b]].map(([p, q]) => ({ x: o.x + u.x * p + v.x * q, y: o.y + u.y * p + v.y * q }));
+    }
+    function toLocal(o, x, y) { const u = axis(o); const dx = x - o.x, dy = y - o.y; return { a: dx * u.x + dy * u.y, b: -dx * u.y + dy * u.x }; }
+    function insideBar(o, x, y, pad = 0) { const l = toLocal(o, x, y); return Math.abs(l.a) <= BAR_L / 2 + pad && Math.abs(l.b) <= BAR_W / 2 + pad; }
+    function overlap(o1, o2) {
+      const c1 = corners(o1, 2), c2 = corners(o2, 2);
+      const axes = [axis(o1), { x: -axis(o1).y, y: axis(o1).x }, axis(o2), { x: -axis(o2).y, y: axis(o2).x }];
+      for (const ax of axes) {
+        const p1 = c1.map(p => p.x * ax.x + p.y * ax.y), p2 = c2.map(p => p.x * ax.x + p.y * ax.y);
+        if (Math.max(...p1) < Math.min(...p2) || Math.max(...p2) < Math.min(...p1)) return false;
+      }
+      return true;
+    }
+
+    // ---------- physics (pole model) ----------
+    function allPoles() { return objects.flatMap(poles); }
+    // Strength of the field, used for how strongly a bar is magnetised (poles fall off as 1/r^2).
+    function field3(x, y, polesList) {
+      let bx = 0, by = 0;
+      for (const p of polesList) {
+        const dx = x - p.x, dy = y - p.y, d2 = dx * dx + dy * dy + 4; const d = Math.sqrt(d2);
+        bx += p.s * dx / (d2 * d); by += p.s * dy / (d2 * d);
+      }
+      return { bx, by };
+    }
+    // The field PATTERN drawn on the page. A textbook field diagram is a flat (2D) picture, so the lines,
+    // compasses and filings use the flat-picture field (1/r). Then the spacing of the drawn lines honestly
+    // shows the field strength: slicing a 3D field would squeeze lines together where they really spread out.
+    function fieldAt(x, y, polesList) {
+      let bx = 0, by = 0;
+      for (const p of polesList) {
+        const dx = x - p.x, dy = y - p.y, d2 = dx * dx + dy * dy + 4;
+        bx += p.s * dx / d2; by += p.s * dy / d2;
+      }
+      return { bx, by };
+    }
+
+    function updateInduced() {
+      for (const o of objects) {
+        if (o.kind === 'magnet') continue;
+        const src = objects.filter(q => q !== o && q.kind === 'magnet').flatMap(poles);
+        const f = field3(o.x, o.y, src);
+        const u = axis(o);
+        const target = Math.max(-M_MAX[o.kind], Math.min(M_MAX[o.kind], CHI[o.kind] * (f.bx * u.x + f.by * u.y)));
+        if (o.kind === 'iron') o.m = Math.abs(target) < 0.04 ? 0 : target;
+        else if (Math.abs(target) > 0.18 && (Math.abs(target) > Math.abs(o.m) || Math.sign(target) !== Math.sign(o.m))) {
+          // steel: once magnetised it keeps it; a strong enough field the other way re-magnetises it
+          if (Math.sign(target) === Math.sign(o.m) || o.m === 0 || Math.abs(target) > 0.5) o.m = target;
+        }
+      }
+    }
+
+    function forceOn(o) {
+      let fx = 0, fy = 0;
+      const mine = poles(o), others = objects.filter(q => q !== o).flatMap(poles);
+      for (const p of mine) for (const q of others) {
+        const dx = p.x - q.x, dy = p.y - q.y, d2 = dx * dx + dy * dy + 4, d = Math.sqrt(d2);
+        fx += p.s * q.s * dx / (d2 * d); fy += p.s * q.s * dy / (d2 * d);
+      }
+      return { fx, fy };
+    }
+
+    // ---------- field lines ----------
+    let lineCache = null, lineKey = '';
+    function traceLines() {
+      const key = objects.map(o => [o.x, o.y, o.ang, o.m].map(v => v.toFixed(3)).join(',')).join(';') + `|${W}x${H}`;
+      if (key === lineKey) return lineCache;
+      const ps = allPoles();
+      const lines = [];
+      const strong = ps.filter(p => Math.abs(p.s) >= 0.12);
+      for (const start of strong) {
+        // Lines start evenly round every pole, in number proportional to the pole's strength.
+        // From an N pole trace along the field; from an S pole trace against it and keep only the lines
+        // that come from far away (a line that reaches an N pole was already drawn from that N pole).
+        const dir = start.s > 0 ? 1 : -1;
+        const n = Math.round(28 * Math.abs(start.s));
+        for (let k = 0; k < n; k++) {
+          const a0 = (k + 0.5) / n * Math.PI * 2;
+          let x = start.x + Math.cos(a0) * 5, y = start.y + Math.sin(a0) * 5;
+          const pts = [{ x, y }];
+          let endPole = null;
+          for (let st = 0; st < 5000; st++) {
+            const near = strong.reduce((m, p) => Math.min(m, Math.hypot(x - p.x, y - p.y)), Infinity);
+            const stepLen = near < 24 ? 1.5 : (near < 120 ? 3 : 6);
+            let f = fieldAt(x, y, ps), m = Math.hypot(f.bx, f.by); if (m === 0) break;
+            const hx = x + dir * 0.5 * stepLen * f.bx / m, hy = y + dir * 0.5 * stepLen * f.by / m;
+            f = fieldAt(hx, hy, ps); m = Math.hypot(f.bx, f.by); if (m === 0) break;
+            x += dir * stepLen * f.bx / m; y += dir * stepLen * f.by / m;
+            pts.push({ x, y });
+            const hit = strong.find(p => p !== start && Math.sign(p.s) === -dir && Math.hypot(x - p.x, y - p.y) < 4);
+            if (hit) { endPole = hit; break; }
+            if (x < -700 || y < -700 || x > W + 700 || y > H + 700) break;
+          }
+          if (dir < 0 && endPole) continue;
+          // the part of a line inside a bar is hidden under the bar; skip lines that never come out
+          const visible = pts.filter(p => p.x > -2 && p.y > -2 && p.x < W + 2 && p.y < H + 2 && !objects.some(q => insideBar(q, p.x, p.y, 1)));
+          if (visible.length < 4) continue;
+          lines.push({ pts, forward: dir > 0 });
+        }
+      }
+      lineKey = key; lineCache = lines;
+      return lines;
+    }
+
+    // ---------- drawing ----------
+    function setup() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const cw = Math.round(rect.width * dpr), ch = Math.round(rect.height * dpr);
+      if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
+      const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const first = W === 0;
+      if (!first && (W !== rect.width || H !== rect.height)) {
+        const sx = rect.width / W, sy = rect.height / H;
+        objects.forEach(o => { o.x *= sx; o.y *= sy; }); compass.x *= sx; compass.y *= sy;
+      }
+      W = rect.width; H = rect.height;
+      if (first) { setMode(modeEl.value); makeFilings(); }
+      return ctx;
+    }
+
+    function makeFilings() {
+      let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      filings = [];
+      for (let i = 0; i < 1400; i++) filings.push({ fx: rnd(), fy: rnd() });
+    }
+
+    function headAt(ctx, x, y, ang, color, size = 6) {
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.moveTo(x + Math.cos(ang) * size, y + Math.sin(ang) * size);
+      ctx.lineTo(x + Math.cos(ang + 2.5) * size, y + Math.sin(ang + 2.5) * size);
+      ctx.lineTo(x + Math.cos(ang - 2.5) * size, y + Math.sin(ang - 2.5) * size);
+      ctx.closePath(); ctx.fill();
+    }
+    function arrow(ctx, x1, y1, x2, y2, color, lw = 3, head = 10) {
+      ctx.strokeStyle = color; ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      headAt(ctx, x2, y2, Math.atan2(y2 - y1, x2 - x1), color, head);
+    }
+
+    function drawNeedle(ctx, x, y, bx, by, len, ringR) {
+      const m = Math.hypot(bx, by);
+      if (ringR) {
+        ctx.fillStyle = 'rgba(255,255,255,0.95)'; ctx.strokeStyle = '#334155'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(x, y, ringR, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      }
+      const a = m > 0 ? Math.atan2(by, bx) : -Math.PI / 2;
+      const ux = Math.cos(a), uy = Math.sin(a), vx = -uy, vy = ux, wdt = len * 0.22;
+      ctx.fillStyle = '#dc2626';
+      ctx.beginPath(); ctx.moveTo(x + ux * len, y + uy * len); ctx.lineTo(x + vx * wdt, y + vy * wdt); ctx.lineTo(x - vx * wdt, y - vy * wdt); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#475569';
+      ctx.beginPath(); ctx.moveTo(x - ux * len, y - uy * len); ctx.lineTo(x + vx * wdt, y + vy * wdt); ctx.lineTo(x - vx * wdt, y - vy * wdt); ctx.closePath(); ctx.fill();
+    }
+
+    function drawBar(ctx, o, isSel) {
+      const u = axis(o);
+      ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.ang);
+      const a = BAR_L / 2, b = BAR_W / 2;
+      if (o.kind === 'magnet' || Math.abs(o.m) >= 0.12) {
+        const strength = o.kind === 'magnet' ? 1 : Math.min(1, Math.abs(o.m) / 0.6);
+        const nCol = `rgba(220,38,38,${0.35 + 0.65 * strength})`, sCol = `rgba(37,99,235,${0.35 + 0.65 * strength})`;
+        const nRight = o.m > 0; // in local coords +x is the axis direction; the N pole is on +x when m > 0
+        ctx.fillStyle = o.kind === 'magnet' ? '#e5e7eb' : (o.kind === 'iron' ? '#9ca3af' : '#6b7280');
+        ctx.fillRect(-a, -b, 2 * a, 2 * b);
+        ctx.fillStyle = nRight ? nCol : sCol; ctx.fillRect(0, -b, a, 2 * b);
+        ctx.fillStyle = nRight ? sCol : nCol; ctx.fillRect(-a, -b, a, 2 * b);
+      } else {
+        ctx.fillStyle = o.kind === 'iron' ? '#9ca3af' : '#6b7280'; ctx.fillRect(-a, -b, 2 * a, 2 * b);
+      }
+      ctx.strokeStyle = isSel ? '#f59e0b' : '#1f2937'; ctx.lineWidth = isSel ? 3 : 1.5;
+      ctx.strokeRect(-a, -b, 2 * a, 2 * b);
+      // turn-grips at both ends
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      [-1, 1].forEach(sd => { for (let k = 0; k < 3; k++) ctx.fillRect(sd * (a - 8 - k * 5) - 1, -b + 6, 2, 2 * b - 12); });
+      ctx.restore();
+
+      // letters stay upright
+      ctx.font = 'bold 16px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'white';
+      if (o.kind === 'magnet' || Math.abs(o.m) >= 0.12) {
+        const nSide = o.m > 0 ? 1 : -1;
+        ctx.fillText('N', o.x + u.x * nSide * BAR_L * 0.25 * 1.2, o.y + u.y * nSide * BAR_L * 0.25 * 1.2);
+        ctx.fillText('S', o.x - u.x * nSide * BAR_L * 0.25 * 1.2, o.y - u.y * nSide * BAR_L * 0.25 * 1.2);
+      }
+      ctx.textBaseline = 'alphabetic';
+      // name tag under the bar (upright)
+      const tag = o.kind === 'magnet' ? 'bar magnet' : o.kind === 'iron' ? 'soft iron' : 'steel';
+      ctx.font = '12px Arial'; ctx.fillStyle = '#334155';
+      const ext = Math.abs(u.x) * BAR_W / 2 + Math.abs(u.y) * BAR_L / 2;
+      const ty = o.y + ext + 16 < H - 4 ? o.y + ext + 16 : o.y - ext - 8;
+      const tagW = ctx.measureText(tag).width;
+      ctx.fillStyle = 'rgba(251,252,254,0.9)'; ctx.fillRect(o.x - tagW / 2 - 3, ty - 11, tagW + 6, 15);
+      ctx.fillStyle = '#334155'; ctx.fillText(tag, o.x, ty);
+    }
+
+    function draw() {
+      const ctx = setup();
+      updateInduced();
+      ctx.clearRect(0, 0, W, H);
+      const ps = allPoles();
+
+      if (el('showFilings').checked) {
+        ctx.lineWidth = 1.3;
+        for (const f of filings) {
+          const x = f.fx * W, y = f.fy * H;
+          if (objects.some(o => insideBar(o, x, y, 3))) continue;
+          const b = fieldAt(x, y, ps), m = Math.hypot(b.bx, b.by);
+          if (m === 0) continue;
+          const alpha = Math.max(0.08, Math.min(0.85, 0.55 + 0.35 * Math.log10(m * 120)));
+          ctx.strokeStyle = `rgba(51,65,85,${alpha})`;
+          const ux = b.bx / m * 4, uy = b.by / m * 4;
+          ctx.beginPath(); ctx.moveTo(x - ux, y - uy); ctx.lineTo(x + ux, y + uy); ctx.stroke();
+        }
+      }
+
+      if (el('showLines').checked) {
+        const lines = traceLines();
+        for (const L of lines) {
+          ctx.strokeStyle = 'rgba(71,85,105,0.8)'; ctx.lineWidth = 1.4;
+          ctx.beginPath(); ctx.moveTo(L.pts[0].x, L.pts[0].y);
+          for (let i = 1; i < L.pts.length; i++) ctx.lineTo(L.pts[i].x, L.pts[i].y);
+          ctx.stroke();
+          // arrowhead N -> S, on a visible part of the line
+          const vis = [];
+          for (let i = 0; i < L.pts.length - 1; i++) {
+            const p = L.pts[i];
+            if (p.x > 8 && p.y > 8 && p.x < W - 8 && p.y < H - 8 && !objects.some(q => insideBar(q, p.x, p.y, 6))) vis.push(i);
+          }
+          let best = null;
+          if (vis.length) { const i = vis[Math.floor(vis.length * 0.5)]; best = [L.pts[i], L.pts[i + 1]]; }
+          if (best) headAt(ctx, best[0].x, best[0].y, Math.atan2(best[1].y - best[0].y, best[1].x - best[0].x) + (L.forward ? 0 : Math.PI), '#334155', 6);
+        }
+      }
+
+      if (el('showCompass').checked) {
+        const gap = 48;
+        for (let gy = gap / 2; gy < H; gy += gap) for (let gx = gap / 2; gx < W; gx += gap) {
+          if (objects.some(o => insideBar(o, gx, gy, 12))) continue;
+          const b = fieldAt(gx, gy, ps);
+          drawNeedle(ctx, gx, gy, b.bx, b.by, 11, 13);
+        }
+      }
+
+      objects.forEach((o, i) => drawBar(ctx, o, i === selected && objects.length > 1));
+
+      // force arrows (only when there are two objects)
+      if (objects.length > 1) {
+        objects.forEach((o, i) => {
+          const f = forceOn(o), m = Math.hypot(f.fx, f.fy);
+          if (m < 2e-6) return;
+          const other = objects[1 - i];
+          const toward = (f.fx * (other.x - o.x) + f.fy * (other.y - o.y)) > 0;
+          const len = Math.min(80, 16 + Math.sqrt(m) * 2600, 0.4 * Math.hypot(other.x - o.x, other.y - o.y));
+          const ux = f.fx / m, uy = f.fy / m;
+          const sx = o.x, sy = o.y - (Math.abs(axis(o).x) * BAR_W / 2 + Math.abs(axis(o).y) * BAR_L / 2) - 16;
+          arrow(ctx, sx, sy, sx + ux * len, sy + uy * len, toward ? '#16a34a' : '#d97706', 4, 11);
+        });
+      }
+
+      // plotting compass
+      const b = fieldAt(compass.x, compass.y, ps);
+      drawNeedle(ctx, compass.x, compass.y, b.bx, b.by, 19, 24);
+      ctx.fillStyle = '#334155'; ctx.font = '11px Arial'; ctx.textAlign = 'center';
+      const cy2 = compass.y + 38 < H - 2 ? compass.y + 38 : compass.y - 30;
+      ctx.fillStyle = 'rgba(251,252,254,0.9)'; ctx.fillRect(compass.x - 44, cy2 - 10, 88, 14);
+      ctx.fillStyle = '#334155'; ctx.fillText('plotting compass', compass.x, cy2);
+    }
+
+    function updateReadout() {
+      const fv = el('forceValue'), iv = el('ironValue');
+      if (objects.length < 2) fv.textContent = 'Only one object';
+      else {
+        const o = objects[1], f = forceOn(o), m = Math.hypot(f.fx, f.fy);
+        const toward = (f.fx * (objects[0].x - o.x) + f.fy * (objects[0].y - o.y)) > 0;
+        fv.textContent = m < 2e-6 ? 'Too far apart to notice' : (toward ? 'Attraction (green arrows)' : 'Repulsion (amber arrows)');
+      }
+      const bar = objects.find(o => o.kind !== 'magnet');
+      if (!bar) { el('ironTitle').textContent = 'Induced magnetism'; iv.textContent = 'Choose a soft-iron or steel bar'; }
+      else {
+        el('ironTitle').textContent = bar.kind === 'iron' ? 'Soft-iron bar' : 'Steel bar';
+        if (Math.abs(bar.m) < 0.12) iv.textContent = 'Not magnetised';
+        else {
+          const mag = objects.find(o => o.kind === 'magnet');
+          const u = axis(bar), nEnd = bar.m > 0 ? 1 : -1;
+          const nx = bar.x + u.x * nEnd * BAR_L / 2, ny = bar.y + u.y * nEnd * BAR_L / 2;
+          const sx = bar.x - u.x * nEnd * BAR_L / 2, sy = bar.y - u.y * nEnd * BAR_L / 2;
+          const nearIsN = Math.hypot(nx - mag.x, ny - mag.y) < Math.hypot(sx - mag.x, sy - mag.y);
+          iv.textContent = `Magnetised: near end ${nearIsN ? 'N' : 'S'}, far end ${nearIsN ? 'S' : 'N'}`;
+        }
+      }
+      const b = fieldAt(compass.x, compass.y, allPoles());
+      const deg = (Math.atan2(-b.by, b.bx) * 180 / Math.PI + 360) % 360;
+      el('compassValue').textContent = Math.hypot(b.bx, b.by) < 1e-7 ? 'No clear direction (neutral point)' : `N end points at ${deg.toFixed(0)}° (0° = right)`;
+    }
+
+    // ---------- interaction ----------
+    let drag = null;
+    function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    function pick(p) {
+      if (Math.hypot(p.x - compass.x, p.y - compass.y) < 28) return { kind: 'compass' };
+      for (let i = objects.length - 1; i >= 0; i--) {
+        const o = objects[i];
+        if (insideBar(o, p.x, p.y, 8)) {
+          const l = toLocal(o, p.x, p.y);
+          return { kind: Math.abs(l.a) > BAR_L * 0.3 ? 'turn' : 'move', i };
+        }
+      }
+      return null;
+    }
+    canvas.addEventListener('pointerdown', e => {
+      const p = pos(e), hit = pick(p); if (!hit) return;
+      if (hit.kind !== 'compass') selected = hit.i;
+      const o = hit.kind === 'compass' ? compass : objects[hit.i];
+      drag = { ...hit, dx: o.x - p.x, dy: o.y - p.y, grabAng: hit.kind === 'turn' ? Math.atan2(p.y - o.y, p.x - o.x) - o.ang : 0 };
+      canvas.setPointerCapture(e.pointerId); e.preventDefault();
+    });
+    canvas.addEventListener('pointermove', e => {
+      const p = pos(e);
+      if (!drag) { const h = pick(p); canvas.style.cursor = !h ? 'default' : h.kind === 'turn' ? 'alias' : 'grab'; return; }
+      canvas.style.cursor = 'grabbing';
+      if (drag.kind === 'compass') {
+        compass.x = Math.max(24, Math.min(W - 24, p.x + drag.dx)); compass.y = Math.max(24, Math.min(H - 24, p.y + drag.dy));
+        return;
+      }
+      const o = objects[drag.i];
+      const prev = { x: o.x, y: o.y, ang: o.ang };
+      if (drag.kind === 'move') {
+        o.x = Math.max(20, Math.min(W - 20, p.x + drag.dx)); o.y = Math.max(20, Math.min(H - 20, p.y + drag.dy));
+      } else {
+        o.ang = Math.atan2(p.y - o.y, p.x - o.x) - drag.grabAng;
+      }
+      // bars cannot pass through each other
+      if (objects.some(q => q !== o && overlap(o, q))) Object.assign(o, prev);
+    });
+    const end = () => { drag = null; };
+    canvas.addEventListener('pointerup', end);
+    canvas.addEventListener('pointercancel', end);
+
+    el('rotateBtn').addEventListener('click', () => {
+      const o = objects[selected]; if (!o) return;
+      const prev = o.ang; o.ang += Math.PI / 4;
+      if (objects.some(q => q !== o && overlap(o, q))) o.ang = prev;
+    });
+    el('flipBtn').addEventListener('click', () => {
+      const o = objects[selected]; if (!o) return;
+      const prev = o.ang; o.ang += Math.PI; // turning a bar round swaps which way its poles face
+      if (objects.some(q => q !== o && overlap(o, q))) o.ang = prev;
+    });
+    modeEl.addEventListener('change', () => setMode(modeEl.value));
+
+    function frame() { draw(); updateReadout(); requestAnimationFrame(frame); }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

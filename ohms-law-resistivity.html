@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ohm's Law and the Resistivity of a Wire</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
+    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
+    .controls { display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: 10px; align-items: end; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    label { font-size: 0.8rem; font-weight: 600; }
+    .val { font-weight: normal; color: #334155; }
+    select { font-size: 0.9rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
+    input[type=range] { width: 100%; }
+    .buttons { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; align-items: center; }
+    button { font-size: 0.88rem; padding: 7px 12px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; }
+    button.go { background: #2563eb; }
+    .readout { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
+    .readout-card .value { font-size: 1rem; font-weight: bold; }
+    .readout-card.warn { background: #fef2f2; }
+    .layout { display: grid; grid-template-columns: 1fr; gap: 8px; }
+    @media (min-width: 900px) { .layout { grid-template-columns: 1.4fr 1fr; } }
+    canvas { display: block; width: 100%; border-radius: 10px; touch-action: none; }
+    #rigCanvas { height: 330px; border: 1px solid #dbeafe; background: #f8fbff; }
+    #graphCanvas { height: 330px; border: 1px solid #e5e7eb; background: #fff; }
+    .tabs { display: flex; gap: 4px; margin-bottom: 4px; }
+    .tabs button { background: #e2e8f0; color: #1f2937; }
+    .tabs button.on { background: #2563eb; color: white; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
+    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    @media (max-width: 900px) {
+      .controls { grid-template-columns: 1fr 1fr; }
+      .controls .control-group:first-child { grid-column: 1 / -1; }
+      .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Ohm's Law and the Resistivity of a Wire</h1>
+
+    <div class="panel">
+      <div class="controls">
+        <div class="control-group">
+          <label for="material">Wire material (resistivity &rho; at 20 &deg;C, from the notes)</label>
+          <select id="material">
+            <option value="1.6e-8">Silver (1.6 &times; 10&#8315;&#8312; &Omega; m)</option>
+            <option value="1.7e-8">Copper (1.7 &times; 10&#8315;&#8312; &Omega; m)</option>
+            <option value="2.4e-8">Gold (2.4 &times; 10&#8315;&#8312; &Omega; m)</option>
+            <option value="2.8e-8">Aluminium (2.8 &times; 10&#8315;&#8312; &Omega; m)</option>
+            <option value="5.5e-8">Tungsten (5.5 &times; 10&#8315;&#8312; &Omega; m)</option>
+            <option value="1.0e-6" selected>Nichrome (100 &times; 10&#8315;&#8312; &Omega; m)</option>
+            <option value="mystery">Mystery wire: find &rho; yourself</option>
+          </select>
+        </div>
+        <div class="control-group"><label for="diam">Wire diameter <span class="val" id="diamVal"></span></label><input id="diam" type="range" min="0.2" max="1.2" step="0.02" value="0.5" /></div>
+        <div class="control-group"><label for="volt">Supply voltage <i>V</i> <span class="val" id="voltVal"></span></label><input id="volt" type="range" min="0" max="6" step="0.1" value="3" /></div>
+      </div>
+      <div class="buttons">
+        <button id="recBtn" class="go">Record this reading</button>
+        <button id="clearBtn">Clear the graphs</button>
+        <span style="font-size:0.8rem;color:#475569" id="recNote">Take readings at several voltages (for the V&ndash;I graph) or several lengths (for the R&ndash;L graph).</span>
+      </div>
+      <div class="readout">
+        <div class="readout-card"><div class="title">Length in the circuit, <i>L</i></div><div class="value" id="lenV">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Cross-sectional area <i>A</i> = &pi;<i>d</i><sup>2</sup>/4</div><div class="value" id="areaV">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Resistance <i>R</i> = &rho;<i>L</i>/<i>A</i></div><div class="value" id="resV">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Voltmeter reading</div><div class="value" id="vV">&mdash;</div></div>
+        <div class="readout-card" id="iCard"><div class="title">Ammeter reading <i>I</i> = <i>V</i>/<i>R</i></div><div class="value" id="iV">&mdash;</div></div>
+      </div>
+    </div>
+
+    <div class="layout">
+      <div class="panel">
+        <div class="hint">Drag the crocodile clip along the wire to change the length <i>L</i> in the circuit.</div>
+        <canvas id="rigCanvas"></canvas>
+        <div class="note">The ammeter is in <b>series</b> with the wire; the voltmeter is connected <b>in parallel</b> across the length of wire being tested. <i>R</i> = &rho;<i>L</i>/<i>A</i>: a longer wire has more resistance, a thicker wire (bigger <i>A</i>) has less, and a material with higher resistivity has more. Low-resistivity metals (silver, copper) make good connecting wires; high-resistivity nichrome and tungsten are used in heating elements and filaments.</div>
+      </div>
+      <div class="panel">
+        <div class="tabs"><button id="tabVI" class="on">V&ndash;I graph</button><button id="tabRL">R&ndash;L graph</button></div>
+        <canvas id="graphCanvas"></canvas>
+        <div class="note" id="graphNote"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const el = id => document.getElementById(id);
+    const MYSTERY_RHO = 1.18e-6; // same as the notes' Example 6 wire (3.6 ohm, 0.64 mm, 98.5 cm)
+    const st = { L: 0.6, vi: [], rl: [], tab: 'VI' };
+    const rho = () => el('material').value === 'mystery' ? MYSTERY_RHO : parseFloat(el('material').value);
+    const area = () => Math.PI * Math.pow(+el('diam').value * 1e-3, 2) / 4;
+    const R = () => rho() * st.L / area();
+    const V = () => +el('volt').value;
+    const I = () => V() / R();
+
+    function sup(n) { return String(n).replace(/-/g, '⁻').replace(/\d/g, d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]); }
+    function sci(x, dp = 2) { if (x === 0) return '0'; const e = Math.floor(Math.log10(Math.abs(x))); return `${(x / 10 ** e).toFixed(dp)} × 10${sup(e)}`; }
+    function fmtR(r) { return r >= 100 ? `${r.toFixed(0)} Ω` : r >= 1 ? `${r.toFixed(2)} Ω` : `${r.toFixed(3)} Ω`; }
+    function fmtI(i) { return i >= 10 ? `${i.toFixed(1)} A` : i >= 0.01 ? `${i.toFixed(3)} A` : `${(i * 1000).toFixed(2)} mA`; }
+
+    function setup(c) {
+      const r = c.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+      const cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
+      if (c.width !== cw || c.height !== ch) { c.width = cw; c.height = ch; }
+      const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { ctx, w: r.width, h: r.height };
+    }
+    function meter(ctx, x, y, letter, color, reading) {
+      ctx.fillStyle = 'white'; ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(x, y, 17, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = color; ctx.font = 'bold 15px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(letter, x, y + 1);
+      ctx.textBaseline = 'alphabetic';
+      if (reading) {
+        ctx.font = 'bold 12px Arial'; const tw = ctx.measureText(reading).width;
+        ctx.fillStyle = '#0f172a'; ctx.fillRect(x - tw / 2 - 5, y - 44, tw + 10, 19);
+        ctx.fillStyle = '#4ade80'; ctx.fillText(reading, x, y - 30);
+      }
+    }
+
+    let rig = null;
+    function drawRig() {
+      const { ctx, w, h } = setup(el('rigCanvas'));
+      ctx.clearRect(0, 0, w, h);
+      const x0 = 50, x1 = w - 50, wireY = h * 0.66, ppm = (x1 - x0); // wire is 1.00 m long on a metre rule
+      rig = { x0, x1, wireY, ppm };
+      // metre rule
+      ctx.fillStyle = '#fde68a'; ctx.fillRect(x0 - 10, wireY + 12, x1 - x0 + 20, 30);
+      ctx.strokeStyle = '#92400e'; ctx.fillStyle = '#78350f'; ctx.font = '10px Arial'; ctx.textAlign = 'center';
+      for (let cm = 0; cm <= 100; cm++) {
+        const x = x0 + cm / 100 * ppm, big = cm % 10 === 0;
+        ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, wireY + 12); ctx.lineTo(x, wireY + 12 + (big ? 12 : cm % 5 === 0 ? 8 : 4)); ctx.stroke();
+        if (big) ctx.fillText(String(cm), x, wireY + 38);
+      }
+      ctx.fillText('cm', x1 + 22, wireY + 38);
+      // the resistance wire (whole metre), thicker for bigger diameter
+      const thick = 1.5 + (+el('diam').value) * 4;
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = thick; ctx.beginPath(); ctx.moveTo(x0, wireY); ctx.lineTo(x1, wireY); ctx.stroke();
+      const xc = x0 + st.L * ppm;
+      ctx.strokeStyle = '#b45309'; ctx.lineWidth = thick + 1; ctx.beginPath(); ctx.moveTo(x0, wireY); ctx.lineTo(xc, wireY); ctx.stroke(); // part carrying current
+      // terminal at the left end
+      ctx.fillStyle = '#1f2937'; ctx.fillRect(x0 - 8, wireY - 8, 10, 16);
+      // circuit: cell and ammeter above, lead from cell to crocodile clip
+      const topY = h * 0.16, cellX = x0 + ppm * 0.28, ammX = x0 + ppm * 0.62;
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(x0 - 3, wireY - 8); ctx.lineTo(x0 - 3, topY); ctx.lineTo(cellX - 8, topY); ctx.moveTo(cellX + 8, topY); ctx.lineTo(ammX - 17, topY); ctx.moveTo(ammX + 17, topY);
+      ctx.lineTo(Math.max(ammX + 30, xc + 40), topY); ctx.lineTo(Math.max(ammX + 30, xc + 40), topY + 30); ctx.stroke();
+      // flexible lead down to the clip
+      ctx.beginPath(); ctx.moveTo(Math.max(ammX + 30, xc + 40), topY + 30); ctx.quadraticCurveTo(xc + 30, wireY - 70, xc, wireY - 22); ctx.stroke();
+      // cell symbol (long line +, short line -)
+      ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cellX - 8, topY - 16); ctx.lineTo(cellX - 8, topY + 16); ctx.stroke();
+      ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(cellX + 8, topY - 8); ctx.lineTo(cellX + 8, topY + 8); ctx.stroke();
+      ctx.fillStyle = '#334155'; ctx.font = 'bold 12px Arial'; ctx.fillText('+', cellX - 16, topY - 18); ctx.fillText('−', cellX + 16, topY - 12);
+      ctx.fillText(`${V().toFixed(1)} V supply`, cellX, topY + 32);
+      meter(ctx, ammX, topY, 'A', '#0891b2', fmtI(I()));
+      // voltmeter in parallel across the tested length
+      const vY = wireY - 70, vX = (x0 + xc) / 2;
+      ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 2; ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(x0 + 6, wireY - 3); ctx.lineTo(x0 + 6, vY); ctx.lineTo(vX - 17, vY); ctx.moveTo(vX + 17, vY); ctx.lineTo(xc - 12, vY); ctx.lineTo(xc - 12, wireY - 3); ctx.stroke();
+      meter(ctx, vX, vY, 'V', '#7c3aed', `${V().toFixed(2)} V`);
+      // crocodile clip (the drag handle)
+      ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.moveTo(xc, wireY - 4); ctx.lineTo(xc - 10, wireY - 26); ctx.lineTo(xc + 10, wireY - 26); ctx.closePath(); ctx.fill();
+      ctx.fillRect(xc - 5, wireY - 34, 10, 10);
+      rig.clip = { x: xc, y: wireY - 20 };
+      // L dimension
+      ctx.strokeStyle = '#b45309'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x0, wireY + 58); ctx.lineTo(xc, wireY + 58); ctx.moveTo(x0, wireY + 52); ctx.lineTo(x0, wireY + 64); ctx.moveTo(xc, wireY + 52); ctx.lineTo(xc, wireY + 64); ctx.stroke();
+      ctx.fillStyle = '#b45309'; ctx.font = 'bold 12px Arial'; ctx.fillText(`L = ${st.L.toFixed(2)} m`, (x0 + xc) / 2, wireY + 75);
+      if (I() > 10) { ctx.fillStyle = '#b91c1c'; ctx.font = 'bold 13px Arial'; ctx.fillText('Huge current: a low-resistivity wire like this is almost a short circuit — it would get very hot.', w / 2, h - 8); }
+    }
+
+    function fit(points, xs, ys) {
+      // best straight line through the origin: gradient = sum(xy)/sum(xx)
+      let sxy = 0, sxx = 0; points.forEach(p => { sxy += p[xs] * p[ys]; sxx += p[xs] * p[xs]; });
+      return sxx > 0 ? sxy / sxx : null;
+    }
+
+    function drawGraph() {
+      const { ctx, w, h } = setup(el('graphCanvas'));
+      ctx.clearRect(0, 0, w, h);
+      const isVI = st.tab === 'VI';
+      const pts = isVI ? st.vi : st.rl;
+      const xs = isVI ? 'I' : 'L', ys = isVI ? 'V' : 'R';
+      const L = 58, Rm = 16, T = 16, B = 42, pw = w - L - Rm, ph = h - T - B;
+      const nice = v => { const e = Math.pow(10, Math.floor(Math.log10(v))); const m = v / e; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * e; };
+      const xMax = nice(Math.max(isVI ? I() : 1, ...pts.map(p => p[xs]), 1e-6) * 1.1);
+      const yMax = nice(Math.max(isVI ? 6 : R(), ...pts.map(p => p[ys]), 1e-6) * 1.1);
+      const X = v => L + v / xMax * pw, Y = v => T + ph - v / yMax * ph;
+      ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1; ctx.fillStyle = '#475569'; ctx.font = '11px Arial';
+      for (let k = 0; k <= 5; k++) {
+        const xv = xMax * k / 5, yv = yMax * k / 5;
+        ctx.beginPath(); ctx.moveTo(X(xv), T); ctx.lineTo(X(xv), T + ph); ctx.moveTo(L, Y(yv)); ctx.lineTo(L + pw, Y(yv)); ctx.stroke();
+        ctx.textAlign = 'center'; ctx.fillText(+xv.toPrecision(3), X(xv), T + ph + 15);
+        ctx.textAlign = 'right'; ctx.fillText(+yv.toPrecision(3), L - 6, Y(yv) + 4);
+      }
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(L, T + ph); ctx.lineTo(L + pw, T + ph); ctx.stroke();
+      ctx.fillStyle = '#0f172a'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
+      ctx.fillText(isVI ? 'current I (A)' : 'length L (m)', L + pw / 2, h - 6);
+      ctx.save(); ctx.translate(14, T + ph / 2); ctx.rotate(-Math.PI / 2); ctx.fillText(isVI ? 'voltage V (V)' : 'resistance R (Ω)', 0, 0); ctx.restore();
+      const g = fit(pts, xs, ys);
+      if (g !== null && pts.length >= 2) {
+        ctx.strokeStyle = 'rgba(37,99,235,0.6)'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+        const xe = Math.min(xMax, yMax / g);
+        ctx.beginPath(); ctx.moveTo(X(0), Y(0)); ctx.lineTo(X(xe), Y(g * xe)); ctx.stroke(); ctx.setLineDash([]);
+      }
+      ctx.fillStyle = '#dc2626';
+      pts.forEach(p => { ctx.beginPath(); ctx.arc(X(p[xs]), Y(p[ys]), 5, 0, Math.PI * 2); ctx.fill(); });
+      // the present (unrecorded) reading as a hollow circle
+      const cx = isVI ? I() : st.L, cy = isVI ? V() : R();
+      if (cx <= xMax && cy <= yMax) { ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X(cx), Y(cy), 6, 0, Math.PI * 2); ctx.stroke(); }
+      let note;
+      if (isVI) note = pts.length >= 2 ? `Gradient of the V–I line = R = ${fmtR(g)}. A straight line through the origin means the wire is an <b>ohmic conductor</b> (V ∝ I).` : 'Record readings at different voltages (keep the clip still). An ohmic conductor gives a straight line through the origin, and the gradient is its resistance.';
+      else note = pts.length >= 2 ? `Gradient of the R–L line = ρ/A = ${g.toPrecision(3)} Ω/m, so <b>ρ = gradient × A = ${sci(g * area())} Ω m</b>. R ∝ L: doubling the length doubles the resistance.` : 'Record readings at different lengths (move the clip). The gradient of R against L is ρ/A, so ρ = gradient × A.';
+      el('graphNote').innerHTML = note;
+    }
+
+    function updateReadout() {
+      el('diamVal').textContent = `(${(+el('diam').value).toFixed(2)} mm)`; el('voltVal').textContent = `(${V().toFixed(1)} V)`;
+      el('lenV').textContent = `${st.L.toFixed(2)} m`;
+      el('areaV').textContent = `${sci(area())} m²`;
+      el('resV').textContent = el('material').value === 'mystery' ? `${fmtR(R())} (measured)` : fmtR(R());
+      el('vV').textContent = `${V().toFixed(2)} V`;
+      el('iV').textContent = fmtI(I());
+      el('iCard').classList.toggle('warn', I() > 10);
+    }
+
+    // drag the clip
+    let drag = false;
+    const rc = el('rigCanvas');
+    function pos(e) { const r = rc.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    const nearClip = q => rig && Math.abs(q.x - rig.clip.x) < 22 && Math.abs(q.y - rig.clip.y) < 30;
+    const nearWire = q => rig && q.x >= rig.x0 && q.x <= rig.x1 && Math.abs(q.y - rig.wireY) < 16;
+    rc.addEventListener('pointerdown', e => { const q = pos(e); if (!nearClip(q) && !nearWire(q)) return; drag = true; rc.setPointerCapture(e.pointerId); e.preventDefault(); moveClip(q); });
+    rc.addEventListener('pointermove', e => { const q = pos(e); if (!drag) { rc.style.cursor = nearClip(q) || nearWire(q) ? 'ew-resize' : 'default'; return; } moveClip(q); });
+    function moveClip(q) { st.L = Math.round(Math.max(0.1, Math.min(1, (q.x - rig.x0) / rig.ppm)) * 100) / 100; }
+    const end = () => { drag = false; };
+    rc.addEventListener('pointerup', end); rc.addEventListener('pointercancel', end);
+
+    el('recBtn').addEventListener('click', () => {
+      // a V-I set must all be at one length: a new length starts a new set, and says so
+      if (st.vi.length && Math.abs(st.vi[0].L - st.L) > 1e-9) { st.vi = []; el('recNote').textContent = `New length (${st.L.toFixed(2)} m): the V–I graph started a new set of readings. The R–L graph keeps them all.`; }
+      else el('recNote').textContent = `Recorded: L = ${st.L.toFixed(2)} m, V = ${V().toFixed(1)} V, I = ${fmtI(I())}.`;
+      st.vi.push({ I: I(), V: V(), L: st.L });
+      st.rl.push({ L: st.L, R: R() });
+    });
+    el('clearBtn').addEventListener('click', () => { st.vi = []; st.rl = []; });
+    ['material', 'diam'].forEach(id => el(id).addEventListener('input', () => { st.vi = []; st.rl = []; }));
+    el('tabVI').addEventListener('click', () => { st.tab = 'VI'; el('tabVI').classList.add('on'); el('tabRL').classList.remove('on'); });
+    el('tabRL').addEventListener('click', () => { st.tab = 'RL'; el('tabRL').classList.add('on'); el('tabVI').classList.remove('on'); });
+
+    function frame() { drawRig(); drawGraph(); updateReadout(); requestAnimationFrame(frame); }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

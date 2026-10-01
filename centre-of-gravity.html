@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Centre of Gravity, Stability and Equilibrium</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
+    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
+    .controls { display: grid; grid-template-columns: repeat(5, 1fr) auto; gap: 10px; align-items: end; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; }
+    label { font-size: 0.8rem; font-weight: 600; }
+    input { font-size: 0.9rem; padding: 4px 0; width: 100%; }
+    .val { font-size: 0.8rem; color: #334155; font-weight: normal; }
+    button { font-size: 0.9rem; padding: 7px 10px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; }
+    button:hover { background: #334155; }
+    .readout { display: grid; grid-template-columns: repeat(4, minmax(130px, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
+    .readout-card .value { font-size: 1rem; font-weight: bold; }
+    .readout-card.balanced { background: #ecfdf5; }
+    .readout-card.tipping { background: #fef2f2; }
+    .layout { display: grid; grid-template-columns: 1fr; gap: 8px; }
+    @media (min-width: 900px) { .layout { grid-template-columns: 2fr 1fr; } }
+    canvas { display: block; width: 100%; border-radius: 10px; touch-action: none; }
+    #sceneCanvas { height: 340px; border: 1px solid #dbeafe; background: #f8fbff; cursor: grab; }
+    #equilCanvas { height: 340px; border: 1px solid #e5e7eb; background: #fbfdff; cursor: grab; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
+    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    @media (max-width: 900px) {
+      .controls { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+      .readout { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Centre of Gravity, Stability and Types of Equilibrium</h1>
+
+    <div class="panel">
+      <div class="controls">
+        <div class="control-group">
+          <label for="baseWidth">Base width <i>B</i> <span class="val" id="baseWidthVal"></span></label>
+          <input id="baseWidth" type="range" min="0.4" max="2.0" step="0.05" value="1.0" />
+        </div>
+        <div class="control-group">
+          <label for="boxHeight">Box height <i>H</i> <span class="val" id="boxHeightVal"></span></label>
+          <input id="boxHeight" type="range" min="0.4" max="2.4" step="0.05" value="1.4" />
+        </div>
+        <div class="control-group">
+          <label for="boxMass">Box mass <span class="val" id="boxMassVal"></span></label>
+          <input id="boxMass" type="range" min="2" max="60" step="1" value="20" />
+        </div>
+        <div class="control-group">
+          <label for="loadMass">Load mass <span class="val" id="loadMassVal"></span></label>
+          <input id="loadMass" type="range" min="0" max="60" step="1" value="15" />
+        </div>
+        <div class="control-group">
+          <label for="loadOffset">Load position <span class="val" id="loadOffsetVal"></span></label>
+          <input id="loadOffset" type="range" min="-1" max="1" step="0.01" value="0.3" />
+        </div>
+        <div class="control-group">
+          <button id="resetBtn">Stand it upright</button>
+        </div>
+      </div>
+
+      <div class="readout">
+        <div class="readout-card">
+          <div class="title">Combined CG (from base centre)</div>
+          <div class="value" id="cgValue">&mdash;</div>
+        </div>
+        <div class="readout-card">
+          <div class="title">Tilt angle now</div>
+          <div class="value" id="tiltValue">0&deg;</div>
+        </div>
+        <div class="readout-card">
+          <div class="title">Topples if tilted past</div>
+          <div class="value" id="critValue">&mdash;</div>
+        </div>
+        <div class="readout-card" id="stateCard">
+          <div class="title">If you let go now&hellip;</div>
+          <div class="value" id="stateValue">&mdash;</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="layout">
+      <div class="panel">
+        <div class="hint">Drag the blue box sideways to tilt it, then let go. Drag the red load to slide it along the top.</div>
+        <canvas id="sceneCanvas"></canvas>
+        <div class="note">
+          The dashed purple line drops straight down (a "plumb line") from the combined centre of gravity. While it passes <b>inside</b> the pivot edge, the weight's moment turns the box back &mdash; it falls back onto its base. Once the CG passes <b>beyond</b> the pivot edge, the weight's moment turns it the other way and it topples. A <b>lower CG</b> or a <b>broader base</b> makes the toppling angle bigger, so the object is more stable (a coach's luggage bay, a racing car's wide track, a floor fan's heavy base). Try it: stack a heavy load on top and watch the toppling angle shrink.
+        </div>
+      </div>
+      <div class="panel">
+        <div class="hint">Drag each ball a little way along its surface and let go.</div>
+        <canvas id="equilCanvas"></canvas>
+        <div class="note">Stable: the ball returns to where it was. Unstable: it keeps moving away. Neutral: it stays wherever you leave it. (The notes use a cone the same way: on its base, on its apex, on its side.)</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const G = 10; // m s^-2, as used throughout the lecture notes
+    const LOAD_W = 0.24, LOAD_H = 0.2; // the load is a small crate strapped to the top of the box
+
+    const el = id => document.getElementById(id);
+    const baseWidthEl = el('baseWidth'), boxHeightEl = el('boxHeight');
+    const boxMassEl = el('boxMass'), loadMassEl = el('loadMass'), loadOffsetEl = el('loadOffset');
+    const sceneCanvas = el('sceneCanvas'), equilCanvas = el('equilCanvas');
+
+    // theta > 0: tilted clockwise, pivoting on the RIGHT bottom edge. theta < 0: on the LEFT edge.
+    const sim = { theta: 0, omega: 0, dragging: null, landedMsg: '' };
+
+    function setupCanvas(canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const W = Math.round(rect.width * dpr), H = Math.round(rect.height * dpr);
+      if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { ctx, w: rect.width, h: rect.height };
+    }
+
+    function params() {
+      const B = parseFloat(baseWidthEl.value);
+      const H = parseFloat(boxHeightEl.value);
+      const mBox = parseFloat(boxMassEl.value);
+      const mLoad = parseFloat(loadMassEl.value);
+      // The load slider runs -1..1 of the free travel, so the crate can never hang off the box.
+      const travel = Math.max(0, B / 2 - LOAD_W / 2);
+      const xo = parseFloat(loadOffsetEl.value) * travel;
+      const M = mBox + mLoad;
+      const xc = (mLoad * xo) / M;
+      const yc = (mBox * H / 2 + mLoad * (H + LOAD_H / 2)) / M;
+      return { B, H, mBox, mLoad, xo, travel, M, xc, yc };
+    }
+
+    // Critical angle for tipping to the right (side = +1) or left (side = -1).
+    function criticalAngle(p, side) {
+      const dx = p.B / 2 - side * p.xc; // horizontal distance from CG to that pivot edge, untilted
+      return Math.atan2(dx, p.yc);
+    }
+
+    // Horizontal offset of the CG beyond the pivot edge (positive = beyond it, i.e. toppling moment).
+    function beyondPivot(p, theta) {
+      const side = theta >= 0 ? 1 : -1;
+      const a = Math.abs(theta);
+      const dx = side * p.xc - p.B / 2; // <= 0 : CG is inside the edge when upright
+      return dx * Math.cos(a) + p.yc * Math.sin(a);
+    }
+
+    function momentOfInertiaAboutEdge(p, side) {
+      const ex = side * p.B / 2;
+      const Ibox = p.mBox * (p.B * p.B + p.H * p.H) / 12 + p.mBox * (ex * ex + (p.H / 2) ** 2);
+      const lx = p.xo - ex, ly = p.H + LOAD_H / 2;
+      const Iload = p.mLoad * (LOAD_W ** 2 + LOAD_H ** 2) / 12 + p.mLoad * (lx * lx + ly * ly);
+      return Ibox + Iload;
+    }
+
+    function step(dt) {
+      if (sim.dragging) return;
+      const p = params();
+      if (sim.theta === 0 && sim.omega === 0) return;
+      const side = sim.theta >= 0 ? 1 : -1;
+      const I = momentOfInertiaAboutEdge(p, side);
+      const sub = 8;
+      for (let i = 0; i < sub; i++) {
+        const h = dt / sub;
+        const torque = p.M * G * beyondPivot(p, sim.theta); // turns it further over when positive
+        const alpha = side * torque / I;
+        sim.omega += alpha * h;
+        const prev = sim.theta;
+        sim.theta += sim.omega * h;
+        if (Math.sign(prev) !== Math.sign(sim.theta) && prev !== 0) {
+          // Came back down onto its base: the floor stops it.
+          sim.theta = 0; sim.omega = 0; sim.landedMsg = 'Fell back onto its base';
+          return;
+        }
+        if (Math.abs(sim.theta) >= Math.PI / 2) {
+          sim.theta = side * Math.PI / 2; sim.omega = 0; sim.landedMsg = 'Toppled onto its side';
+          return;
+        }
+      }
+    }
+
+    // ---------- scene geometry ----------
+    let geo = null;
+    function computeGeometry(w, h, p) {
+      const floorY = h - 46;
+      const needW = p.B + 2 * (p.H + LOAD_H) + 0.4;
+      const needH = Math.max(p.H + LOAD_H, p.B) + 0.35;
+      const s = Math.min((w - 30) / needW, (floorY - 20) / needH);
+      return { floorY, s, cx: w / 2 };
+    }
+
+    // Box-frame point (x right, y up, origin at base centre) -> canvas point, for tilt theta.
+    function toCanvas(p, g, theta, x, y) {
+      const side = theta >= 0 ? 1 : -1;
+      const ex = side * p.B / 2; // pivot edge
+      const a = -theta; // clockwise tilt in an up-is-positive frame
+      const rx = x - ex, ry = y;
+      const wx = ex + rx * Math.cos(a) - ry * Math.sin(a);
+      const wy = rx * Math.sin(a) + ry * Math.cos(a);
+      return { x: g.cx + wx * g.s, y: g.floorY - wy * g.s };
+    }
+
+    function polygon(ctx, pts) {
+      ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+      ctx.closePath();
+    }
+
+    function arrow(ctx, x1, y1, x2, y2, color, lw = 3, head = 10) {
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      const a = Math.atan2(y2 - y1, x2 - x1);
+      ctx.beginPath(); ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - head * Math.cos(a - 0.45), y2 - head * Math.sin(a - 0.45));
+      ctx.lineTo(x2 - head * Math.cos(a + 0.45), y2 - head * Math.sin(a + 0.45));
+      ctx.closePath(); ctx.fill();
+    }
+
+    function drawScene() {
+      const { ctx, w, h } = setupCanvas(sceneCanvas);
+      const p = params();
+      const g = computeGeometry(w, h, p);
+      geo = { g, p };
+      ctx.clearRect(0, 0, w, h);
+
+      // floor
+      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, g.floorY, w, h - g.floorY);
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(0, g.floorY); ctx.lineTo(w, g.floorY); ctx.stroke();
+
+      const t = sim.theta;
+      const box = [toCanvas(p, g, t, -p.B / 2, 0), toCanvas(p, g, t, p.B / 2, 0), toCanvas(p, g, t, p.B / 2, p.H), toCanvas(p, g, t, -p.B / 2, p.H)];
+      ctx.fillStyle = '#2563eb'; polygon(ctx, box); ctx.fill();
+      ctx.strokeStyle = '#1e3a8a'; ctx.lineWidth = 1.5; ctx.stroke();
+
+      if (p.mLoad > 0) {
+        const lx0 = p.xo - LOAD_W / 2, lx1 = p.xo + LOAD_W / 2, ly0 = p.H, ly1 = p.H + LOAD_H;
+        const crate = [toCanvas(p, g, t, lx0, ly0), toCanvas(p, g, t, lx1, ly0), toCanvas(p, g, t, lx1, ly1), toCanvas(p, g, t, lx0, ly1)];
+        ctx.fillStyle = '#dc2626'; polygon(ctx, crate); ctx.fill();
+        ctx.strokeStyle = '#7f1d1d'; ctx.stroke();
+        // straps
+        ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 2;
+        const s1 = toCanvas(p, g, t, lx0 + LOAD_W * 0.3, ly0), s2 = toCanvas(p, g, t, lx0 + LOAD_W * 0.3, ly1);
+        const s3 = toCanvas(p, g, t, lx0 + LOAD_W * 0.7, ly0), s4 = toCanvas(p, g, t, lx0 + LOAD_W * 0.7, ly1);
+        ctx.beginPath(); ctx.moveTo(s1.x, s1.y); ctx.lineTo(s2.x, s2.y); ctx.moveTo(s3.x, s3.y); ctx.lineTo(s4.x, s4.y); ctx.stroke();
+        ctx.fillStyle = '#7f1d1d'; ctx.font = '12px Arial'; ctx.textAlign = 'center';
+        // label sits above the crate on screen, whichever way the box is turned
+        const cTop = Math.min(...crate.map(q => q.y)), cMid = crate.reduce((a, q) => a + q.x, 0) / 4;
+        ctx.fillText(`${p.mLoad} kg load`, cMid, cTop - 7);
+      }
+
+      // Combined CG and a truly vertical plumb line (world vertical, not box vertical).
+      const cg = toCanvas(p, g, t, p.xc, p.yc);
+      const tilted = Math.abs(t) > 1e-4;
+      const side = t >= 0 ? 1 : -1;
+      const pivot = toCanvas(p, g, t, side * p.B / 2, 0);
+      const beyond = beyondPivot(p, tilted ? t : 1e-6 * side);
+      const baseL = toCanvas(p, g, 0, -p.B / 2, 0).x, baseR = toCanvas(p, g, 0, p.B / 2, 0).x;
+      const inside = tilted ? beyond < 0 : (cg.x >= baseL && cg.x <= baseR);
+      const lineColor = inside ? '#16a34a' : '#dc2626';
+
+      ctx.setLineDash([6, 5]); ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(cg.x, cg.y); ctx.lineTo(cg.x, g.floorY + 16); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#7c3aed'; ctx.beginPath(); ctx.arc(cg.x, cg.y, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'white'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = '#5b21b6'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'left';
+      ctx.fillText('CG', cg.x + 9, cg.y - 6);
+
+      // Weight arrow from the CG
+      const wLen = Math.min(70, 18 + p.M * 0.7);
+      arrow(ctx, cg.x, cg.y, cg.x, cg.y + wLen, '#7c3aed', 3, 9);
+      ctx.fillStyle = '#5b21b6'; ctx.font = '12px Arial';
+      const wText = `W = ${(p.M * G).toFixed(0)} N`, wy = cg.y + wLen * 0.6;
+      const wtw = ctx.measureText(wText).width;
+      ctx.fillStyle = 'rgba(248,251,255,0.9)'; ctx.fillRect(cg.x + 10, wy - 11, wtw + 6, 15);
+      ctx.fillStyle = '#5b21b6'; ctx.fillText(wText, cg.x + 13, wy);
+
+      if (tilted && Math.abs(t) < Math.PI / 2 - 1e-3) {
+        // pivot edge marker
+        ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(pivot.x, pivot.y, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.font = '12px Arial'; ctx.textAlign = 'center'; ctx.fillStyle = '#0f172a';
+        ctx.fillText('pivot edge', pivot.x, g.floorY + 30);
+        // where the plumb line lands vs the pivot
+        ctx.strokeStyle = lineColor; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(cg.x, g.floorY + 6); ctx.lineTo(pivot.x, g.floorY + 6); ctx.stroke();
+      } else if (!tilted) {
+        ctx.strokeStyle = '#16a34a'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(baseL, g.floorY + 7); ctx.lineTo(baseR, g.floorY + 7); ctx.stroke();
+        ctx.fillStyle = '#166534'; ctx.font = '12px Arial'; ctx.textAlign = 'center';
+        ctx.fillText('base of support', (baseL + baseR) / 2, g.floorY + 30);
+      }
+
+      // hover/drag affordance
+      if (sim.dragging === 'box') {
+        ctx.fillStyle = 'rgba(15,23,42,0.75)'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center';
+        ctx.fillText(beyond < 0 ? 'Let go: it will fall back' : 'Let go: it will topple', w / 2, 20);
+      }
+    }
+
+    // ---------- equilibrium panel: three balls ----------
+    const SURF_HALF = 60; // half-width of each surface, px
+    const balls = [0, 1, 2].map(i => ({ kind: i, x: 0, v: 0, off: false, fx: 0, fy: 0, fvy: 0, timer: 0 }));
+    let eqGeo = null;
+    let eqDrag = null;
+
+    function surfHeight(kind, x) { // height above the slot's reference line, px (up positive)
+      const k = 0.012;
+      if (kind === 0) return k * x * x;      // bowl
+      if (kind === 1) return -k * x * x;     // hill
+      return 0;                              // flat
+    }
+    function surfSlope(kind, x) {
+      const k = 0.012;
+      if (kind === 0) return 2 * k * x;
+      if (kind === 1) return -2 * k * x;
+      return 0;
+    }
+
+    function ballCentre(kind, x, g) {
+      const sc = g.sc || 1, r = 12 * sc;
+      const slope = surfSlope(kind, x);
+      const n = Math.hypot(1, slope);
+      const sx = g.slotX[kind] + x * sc, sy = g.refY[kind] - surfHeight(kind, x) * sc;
+      // outward (upward) normal in canvas coords: (-slope, -1)/n with y flipped
+      return { x: sx - (slope / n) * r, y: sy - (1 / n) * r, r };
+    }
+
+    function stepBalls(dt) {
+      const gpx = 900; // px s^-2, visual gravity
+      for (const b of balls) {
+        if (eqDrag === b) continue;
+        if (b.off) {
+          b.fvy += gpx * dt; b.fx += b.v * dt; b.fy += b.fvy * dt;
+          b.timer += dt;
+          if (b.timer > 1.6) { b.off = false; b.x = 0; b.v = 0; b.timer = 0; }
+          continue;
+        }
+        const sub = 6;
+        for (let i = 0; i < sub; i++) {
+          const h = dt / sub;
+          const sl = surfSlope(b.kind, b.x);
+          const a = -gpx * sl / (1 + sl * sl) - 2.2 * b.v; // rolling along the surface with a little friction
+          b.v += a * h; b.x += b.v * h;
+        }
+        if (Math.abs(b.v) < 2 && Math.abs(b.x) < 0.5 && b.kind === 0) { b.v = 0; }
+        if (b.kind === 2 && Math.abs(b.v) < 1) b.v = 0;
+        if (Math.abs(b.x) > SURF_HALF) {
+          if (b.kind === 1) { // rolled off the hill
+            const c = ballCentre(b.kind, Math.sign(b.x) * SURF_HALF, eqGeo);
+            b.off = true; b.fx = c.x; b.fy = c.y; b.fvy = 0; b.timer = 0;
+          } else { b.x = Math.sign(b.x) * SURF_HALF; b.v = -0.3 * b.v; }
+        }
+      }
+    }
+
+    function drawEquil() {
+      const { ctx, w, h } = setupCanvas(equilCanvas);
+      ctx.clearRect(0, 0, w, h);
+      const cols = w < 330 ? 1 : 3;
+      const slotX = [], refY = [], labelY = [];
+      for (let i = 0; i < 3; i++) {
+        if (cols === 3) { slotX.push(w / 6 + i * w / 3); refY.push(h * 0.55); labelY.push(h * 0.85); }
+        else { slotX.push(w / 2); refY.push(h * (0.22 + i * 0.3)); labelY.push(h * (0.3 + i * 0.3)); }
+      }
+      const sc = cols === 3 ? Math.min(1, (w / 6 - 6) / SURF_HALF) : 1;
+      eqGeo = { slotX, refY, sc };
+      const labels = ['Stable', 'Unstable', 'Neutral'];
+
+      for (let i = 0; i < 3; i++) {
+        ctx.strokeStyle = '#64748b'; ctx.lineWidth = 3;
+        ctx.beginPath();
+        for (let x = -SURF_HALF; x <= SURF_HALF; x += 2) {
+          const px = slotX[i] + x * sc, py = refY[i] - surfHeight(i, x) * sc;
+          if (x === -SURF_HALF) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+        // faint marker at the starting position
+        const home = ballCentre(i, 0, eqGeo);
+        ctx.strokeStyle = 'rgba(37,99,235,0.3)'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(home.x, home.y, 12 * sc, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+
+        const b = balls[i];
+        const c = b.off ? { x: b.fx, y: b.fy, r: 12 } : ballCentre(i, b.x, eqGeo);
+        if (c.y < h + 20) {
+          ctx.fillStyle = eqDrag === b ? '#1d4ed8' : '#2563eb';
+          ctx.beginPath(); ctx.arc(c.x, c.y, 12 * sc, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.fillStyle = '#334155'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center';
+        ctx.fillText(labels[i], slotX[i], cols === 3 ? labelY[i] : refY[i] + 40);
+      }
+    }
+
+    // ---------- readouts ----------
+    function fmtDeg(r) { return `${(r * 180 / Math.PI).toFixed(1)}°`; }
+    function updateReadout() {
+      const p = params();
+      el('baseWidthVal').textContent = `(${p.B.toFixed(2)} m)`;
+      el('boxHeightVal').textContent = `(${p.H.toFixed(2)} m)`;
+      el('boxMassVal').textContent = `(${p.mBox} kg)`;
+      el('loadMassVal').textContent = `(${p.mLoad} kg)`;
+      el('loadOffsetVal').textContent = `(${p.xo >= 0 ? '+' : ''}${p.xo.toFixed(2)} m)`;
+      el('cgValue').textContent = `x = ${p.xc.toFixed(2)} m, height ${p.yc.toFixed(2)} m`;
+      el('tiltValue').textContent = `${Math.abs(sim.theta * 180 / Math.PI).toFixed(1)}° ${sim.theta > 1e-4 ? 'right' : sim.theta < -1e-4 ? 'left' : ''}`;
+      el('critValue').textContent = `${fmtDeg(criticalAngle(p, -1))} left / ${fmtDeg(criticalAngle(p, 1))} right`;
+      const card = el('stateCard'), val = el('stateValue');
+      let msg, ok;
+      if (Math.abs(sim.theta) >= Math.PI / 2 - 1e-3) { msg = 'Lying on its side'; ok = false; }
+      else if (Math.abs(sim.theta) < 1e-4) { msg = sim.landedMsg || 'Stays upright (stable)'; ok = true; }
+      else { ok = beyondPivot(p, sim.theta) < 0; msg = ok ? 'Falls back (stable)' : 'Topples over!'; }
+      val.textContent = msg;
+      card.classList.toggle('balanced', ok);
+      card.classList.toggle('tipping', !ok);
+    }
+
+    // ---------- interaction ----------
+    function pointerPos(canvas, e) {
+      const r = canvas.getBoundingClientRect();
+      return { x: e.clientX - r.left, y: e.clientY - r.top };
+    }
+    function insidePoly(pt, poly) {
+      let inside = false;
+      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+        const xi = poly[i].x, yi = poly[i].y, xj = poly[j].x, yj = poly[j].y;
+        if (((yi > pt.y) !== (yj > pt.y)) && (pt.x < (xj - xi) * (pt.y - yi) / (yj - yi) + xi)) inside = !inside;
+      }
+      return inside;
+    }
+
+    let dragStart = null;
+    sceneCanvas.addEventListener('pointerdown', e => {
+      if (!geo) return;
+      const pt = pointerPos(sceneCanvas, e);
+      const { g, p } = geo, t = sim.theta;
+      const crate = [toCanvas(p, g, t, p.xo - LOAD_W / 2 - 0.05, p.H), toCanvas(p, g, t, p.xo + LOAD_W / 2 + 0.05, p.H), toCanvas(p, g, t, p.xo + LOAD_W / 2 + 0.05, p.H + LOAD_H + 0.05), toCanvas(p, g, t, p.xo - LOAD_W / 2 - 0.05, p.H + LOAD_H + 0.05)];
+      const box = [toCanvas(p, g, t, -p.B / 2, 0), toCanvas(p, g, t, p.B / 2, 0), toCanvas(p, g, t, p.B / 2, p.H), toCanvas(p, g, t, -p.B / 2, p.H)];
+      if (p.mLoad > 0 && insidePoly(pt, crate)) {
+        sim.dragging = 'load';
+      } else if (insidePoly(pt, box)) {
+        sim.dragging = 'box';
+        dragStart = { x: pt.x, theta: sim.theta };
+        sim.omega = 0; sim.landedMsg = '';
+      } else return;
+      sceneCanvas.setPointerCapture(e.pointerId);
+      sceneCanvas.style.cursor = 'grabbing';
+      e.preventDefault();
+    });
+    sceneCanvas.addEventListener('pointermove', e => {
+      if (!sim.dragging || !geo) return;
+      const pt = pointerPos(sceneCanvas, e);
+      const { g, p } = geo;
+      if (sim.dragging === 'box') {
+        const dx = (pt.x - dragStart.x) / (g.s * Math.max(p.H, 0.6));
+        sim.theta = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, dragStart.theta + dx));
+      } else if (sim.dragging === 'load' && Math.abs(sim.theta) < 1e-4) {
+        const x = (pt.x - g.cx) / g.s;
+        const frac = p.travel > 0 ? Math.max(-1, Math.min(1, x / p.travel)) : 0;
+        loadOffsetEl.value = frac.toFixed(2);
+      }
+    });
+    function endDrag() {
+      if (!sim.dragging) return;
+      sim.dragging = null;
+      sceneCanvas.style.cursor = 'grab';
+    }
+    sceneCanvas.addEventListener('pointerup', endDrag);
+    sceneCanvas.addEventListener('pointercancel', endDrag);
+
+    equilCanvas.addEventListener('pointerdown', e => {
+      if (!eqGeo) return;
+      const pt = pointerPos(equilCanvas, e);
+      for (const b of balls) {
+        if (b.off) continue;
+        const c = ballCentre(b.kind, b.x, eqGeo);
+        if (Math.hypot(pt.x - c.x, pt.y - c.y) < 24) {
+          eqDrag = b; b.v = 0;
+          equilCanvas.setPointerCapture(e.pointerId);
+          equilCanvas.style.cursor = 'grabbing';
+          e.preventDefault();
+          return;
+        }
+      }
+    });
+    equilCanvas.addEventListener('pointermove', e => {
+      if (!eqDrag) return;
+      const pt = pointerPos(equilCanvas, e);
+      eqDrag.x = Math.max(-SURF_HALF + 6, Math.min(SURF_HALF - 6, (pt.x - eqGeo.slotX[eqDrag.kind]) / (eqGeo.sc || 1)));
+    });
+    function endEq() { if (eqDrag) { eqDrag.v = 0; eqDrag = null; equilCanvas.style.cursor = 'grab'; } }
+    equilCanvas.addEventListener('pointerup', endEq);
+    equilCanvas.addEventListener('pointercancel', endEq);
+
+    [baseWidthEl, boxHeightEl, boxMassEl, loadMassEl, loadOffsetEl].forEach(x => x.addEventListener('input', () => {
+      // Changing the object while it is tilted: let the new object respond from the same angle.
+      if (Math.abs(sim.theta) > 1e-4 && Math.abs(sim.theta) < Math.PI / 2) sim.omega = sim.omega || 1e-6 * Math.sign(sim.theta);
+      if (Math.abs(sim.theta) < 1e-4) sim.landedMsg = '';
+    }));
+    el('resetBtn').addEventListener('click', () => { sim.theta = 0; sim.omega = 0; sim.landedMsg = ''; });
+
+    let last = null;
+    function frame(ts) {
+      if (last === null) last = ts;
+      const dt = Math.max(0, Math.min(0.05, (ts - last) / 1000));
+      last = ts;
+      // a released box starts from rest at the angle it was left at
+      if (!sim.dragging && Math.abs(sim.theta) > 1e-4 && Math.abs(sim.theta) < Math.PI / 2 && sim.omega === 0) sim.omega = 1e-6 * Math.sign(sim.theta);
+      step(dt);
+      stepBalls(dt);
+      drawScene();
+      drawEquil();
+      updateReadout();
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

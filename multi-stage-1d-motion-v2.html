@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multi-Stage 1D Kinematics Simulation</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f4f7fb;
+      color: #1f2937;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 8px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.2rem;
+      text-align: center;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      padding: 8px;
+      margin-bottom: 8px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1.4fr 1.4fr 1.4fr 1.4fr 1.4fr;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .control-group.compact-input input {
+      max-width: 110px;
+    }
+
+    .control-group.button-group {
+      justify-content: flex-end;
+    }
+
+    label {
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    input, select, button {
+      font-size: 0.95rem;
+      padding: 6px 8px;
+      border-radius: 7px;
+      border: 1px solid #cbd5e1;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 6px;
+      flex-wrap: nowrap;
+    }
+
+    button {
+      cursor: pointer;
+      background: #2563eb;
+      color: white;
+      border: none;
+      min-width: 0;
+      flex: 1;
+      display: inline-flex;      /* new */
+      align-items: center;       /* new: vertical centre */
+      justify-content: center;   /* new: horizontal centre */
+      line-height: 1;            /* new: avoid strange baseline spacing */
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    button.secondary {
+      background: #475569;
+    }
+
+    button.secondary:hover {
+      background: #334155;
+    }
+
+    button.danger {
+      background: #dc2626;
+    }
+
+    button.danger:hover {
+      background: #b91c1c;
+    }
+
+    .how-to {
+      display: flex;
+      flex-direction: column;   /* single column */
+      gap: 2px;                 /* small vertical spacing between lines */
+      font-size: 0.8rem;
+      margin-bottom: 6px;       /* space below How to use (before the line) */
+    }
+
+    .how-to-item {
+      color: #475569;
+    }
+
+    .how-to-divider {
+      border: none;
+      border-top: 1px solid #e5e7eb;
+      margin: 4px 0 6px 0;  /* small space above and below the line */
+    }
+
+    .stage-count-group {
+      display: inline-flex;
+      gap: 6px;
+    }
+
+    .stage-count-btn {
+      min-width: 44px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      background: #e5e7eb;
+      color: #111827;
+      cursor: pointer;
+    }
+
+    .stage-count-btn.active {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #1d4ed8;
+    }
+
+    .stage-count-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .stage-count-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      white-space: nowrap;   /* prevents wrapping into multiple lines */
+      width: 120px;   /* same as .initial-label */
+      text-align: left;
+    }
+
+    .readout {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .readout-card {
+      background: #eef4ff;
+      border-radius: 8px;
+      padding: 6px 8px;
+      text-align: center;
+    }
+
+    .readout-card .title {
+      font-size: 0.78rem;
+      color: #475569;
+      margin-bottom: 2px;
+    }
+
+    .readout-card .value {
+      font-size: 1rem;
+      font-weight: bold;
+    }
+
+    .animation-wrap {
+      margin-top: 8px;
+      position: relative;
+    }
+    
+    .motion-controls-overlay {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      z-index: 10;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      border-radius: 10px;
+      background: white;
+    }
+
+    #motionCanvas {
+      height: 180px;
+      border: 1px solid #dbeafe;
+      background: linear-gradient(to bottom, #f8fbff 0%, #eef6ff 100%);
+    }
+
+    .graphs {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .graph-box {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 6px;
+    }
+
+    .graph-title {
+      font-weight: 700;
+      margin: 0 0 4px;
+      font-size: 0.88rem;
+    }
+
+    .graph-canvas {
+      height: 145px;
+    }
+
+    .note {
+      margin-top: 4px;
+      font-size: 0.8rem;
+      color: #475569;
+    }
+
+    /* 2-column layout: left = controls+motion, right = graphs */
+    .layout-two-column {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .left-column {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .stage-panel {
+      margin-top: 8px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .stage-box {
+      background: #f9fafb;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      padding: 6px;
+      font-size: 0.82rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .motion-type-group {
+      display: inline-flex;
+      gap: 4px;
+    }
+
+    .motion-type-btn {
+      font-size: 0.78rem;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      background: #e5e7eb;
+      color: #111827;
+      cursor: pointer;
+    }
+
+    .motion-type-btn.active {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #1d4ed8;
+    }
+
+    .stage-title {
+      font-weight: 700;
+      margin-bottom: 4px;      /* a bit more space to accommodate buttons */
+      display: flex;
+      flex-direction: column;  /* label on top, buttons below */
+      gap: 4px;
+    }
+
+    .stage-box label {
+      font-weight: 500;
+    }
+
+    .stage-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      column-gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .stage-box input,
+    .stage-box select {
+      font-size: 0.85rem;
+      padding: 4px 6px;
+      max-width: 90px;
+    }
+
+    .initial-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap; /* allows wrapping nicely on small screens */
+      margin-bottom: 6px; 
+    }
+
+    .initial-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      white-space: nowrap;
+      width: 120px;         /* tune this value */
+      text-align: left;
+    }
+
+    .initial-field-label {
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+
+    .initial-row input {
+      max-width: 60px;      /* you already wanted them narrower */
+      padding: 2px 4px;     /* smaller padding -> smaller height */
+      font-size: 0.8rem;    /* optional: slightly smaller text */
+    }
+
+    .global-stage-settings {
+      margin-top: 6px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 4px;
+      font-size: 0.82rem;
+    }
+
+    .global-stage-settings select {
+      width: auto;
+    }
+
+    @media (max-width: 900px) {
+      .layout-two-column {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .controls,
+      .readout {
+        grid-template-columns: repeat(2, minmax(140px, 1fr));
+      }
+
+      h1 {
+        font-size: 1.05rem;
+      }
+
+      #motionCanvas {
+        height: 150px;
+      }
+
+      .graph-canvas {
+        height: 130px;
+      }
+
+      .stage-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .controls,
+      .readout {
+        grid-template-columns: 1fr;
+      }
+
+      button {
+        flex: 1 1 auto;
+      }
+    }
+    #motionCanvas, .graph-canvas { touch-action: none; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 4px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Multi-Stage 1D Kinematics Simulation</h1>
+
+    <div class="layout-two-column">
+      <!-- LEFT COLUMN: panel + motion canvas -->
+      <div class="left-column">
+        <div class="panel">
+          <div style="font-size: 0.82rem; font-weight: 600; margin-bottom: 2px;">
+            How to use
+          </div>
+          <div class="how-to">
+            <div class="how-to-item">
+              <strong>1.</strong> Choose 2 or 3 stages, and set initial position and velocity.
+            </div>
+            <div class="how-to-item">
+              <strong>2.</strong> For each stage, pick constant <i>v</i> or constant <i>a</i>, set duration and acceleration.
+            </div>
+            <div class="how-to-item">
+              <strong>3.</strong> Click Start to see the continuous motion and graphs; Pause or Reset as needed.
+            </div>
+          </div>
+
+          <hr class="how-to-divider" />
+
+          <div class="controls">
+            <div class="control-group">
+              <div class="stage-count-row">
+                <span class="stage-count-label">Number of stages</span>
+                <div class="stage-count-group" id="numStages">
+                  <button type="button" class="stage-count-btn active" data-stages="2">2</button>
+                  <button type="button" class="stage-count-btn" data-stages="3">3</button>
+                </div>
+              </div>
+            </div>        
+          </div>
+
+          <div class="control-group compact-input">
+            <div class="initial-row">
+              <span class="initial-label">Initial Conditions</span>
+              <span class="initial-field-label">Initial position,&nbsp;<i>x</i><sub>0</sub> (m)</span>
+              <input id="x0_stage1" type="number" value="0" step="0.1" style="max-width: 80px;" />
+              <span class="initial-field-label">Initial velocity,&nbsp;<i>v</i><sub>0</sub> (m/s)</span>
+              <input id="v0_stage1" type="number" value="2" step="0.1" style="max-width: 80px;" />
+            </div>
+          </div>
+
+          <div class="global-stage-settings">
+            <div><b>Stage configurations:</b></div>
+          </div>
+
+          <div class="stage-panel">
+            <div id="stage1" class="stage-box">
+              <div class="stage-title">
+                <div>Stage 1</div>
+                <span class="motion-type-group" data-stage="1">
+                  <button type="button" class="motion-type-btn active" data-motion="v">Constant&nbsp;<i>v</i></button>
+                  <button type="button" class="motion-type-btn" data-motion="a">Constant&nbsp;<i>a</i></button>
+                </span>
+              </div>
+
+              <label class="stage-row">
+                <span>Duration Δ<i>t</i><sub>1</sub> (s)</span>
+                <input type="number" class="stageDuration" data-stage="1" value="3" step="0.1" min="0.1"/>
+              </label>
+
+              <label class="stage-row">
+                <span><i>a</i><sub>1</sub> (m/s²)</span>
+                <input type="number" class="stageA" data-stage="1" value="0" step="0.1"/>
+              </label>
+            </div>
+
+            <div id="stage2" class="stage-box">
+              <div class="stage-title">
+                <div>Stage 2</div>
+                <span class="motion-type-group" data-stage="2">
+                  <button type="button" class="motion-type-btn active" data-motion="v">Constant&nbsp;<i>v</i></button>
+                  <button type="button" class="motion-type-btn" data-motion="a">Constant&nbsp;<i>a</i></button>
+                </span>
+              </div>
+
+              <label class="stage-row">
+                <span>Duration Δ<i>t</i><sub>2</sub> (s)</span>
+                <input type="number" class="stageDuration" data-stage="2" value="3" step="0.1" min="0.1"/>
+              </label>
+
+              <label class="stage-row">
+                <span><i>a</i><sub>2</sub> (m/s²)</span>
+                <input type="number" class="stageA" data-stage="2" value="0" step="0.1"/>
+              </label>
+            </div>
+
+            <div id="stage3" class="stage-box">
+              <div class="stage-title">
+                <div>Stage 3</div>
+                <span class="motion-type-group" data-stage="3">
+                  <button type="button" class="motion-type-btn active" data-motion="v">Constant&nbsp;<i>v</i></button>
+                  <button type="button" class="motion-type-btn" data-motion="a">Constant&nbsp;<i>a</i></button>
+                </span>
+              </div>
+
+              <label class="stage-row">
+                <span>Duration Δ<i>t</i><sub>3</sub> (s)</span>
+                <input type="number" class="stageDuration" data-stage="3" value="4" step="0.1" min="0.1" />
+              </label>
+              <label class="stage-row">
+                <span><i>a</i><sub>3</sub> (m/s²)</span>
+                <input type="number" class="stageA" data-stage="3" value="0" step="0.1" />
+              </label>
+            </div>
+          </div>
+
+          <div class="readout">
+            <div class="readout-card">
+              <div class="title">Time <i>t</i></div>
+              <div class="value" id="timeValue">0.00 s</div>
+            </div>
+            <div class="readout-card">
+              <div class="title">Position <i>x</i></div>
+              <div class="value" id="xValue">0.00 m</div>
+            </div>
+            <div class="readout-card">
+              <div class="title">Velocity <i>v</i></div>
+              <div class="value" id="vValue">2.00 m/s</div>
+            </div>
+            <div class="readout-card">
+              <div class="title">Acceleration <i>a</i></div>
+              <div class="value" id="aValue">0.00 m/s²</div>
+            </div>
+          </div>
+
+          <div class="animation-wrap">
+            <div class="motion-controls-overlay">
+              <div class="buttons" style="max-width: 260px;">
+                <button id="startBtn">Start</button>
+                <button id="pauseBtn" class="secondary">Pause</button>
+                <button id="resetBtn" class="danger">Reset</button>
+              </div>
+            </div>
+            <canvas id="motionCanvas"></canvas>
+            <div class="hint">Drag the cart to set where it starts; drag the green arrow to set its starting velocity. Drag across any graph to replay a moment.</div>
+            <div class="note">
+              The track's scale grows to fit the motion. All the stages run one after another as one continuous motion: each stage starts with the position and velocity the previous one ended with.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: original graph panel, stacked vertically -->
+      <div>
+        <div class="panel">
+          <div class="graphs">
+            <div class="graph-box">
+              <div class="graph-title">Position–Time Graph, <i>x</i>–<i>t</i></div>
+              <canvas id="xGraph" class="graph-canvas"></canvas>
+            </div>
+
+            <div class="graph-box">
+              <div class="graph-title">Velocity–Time Graph, <i>v</i>–<i>t</i></div>
+              <canvas id="vGraph" class="graph-canvas"></canvas>
+            </div>
+
+            <div class="graph-box">
+              <div class="graph-title">Acceleration–Time Graph, <i>a</i>–<i>t</i></div>
+              <canvas id="aGraph" class="graph-canvas"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DT = 0.02;
+    const PLAYBACK_SPEED = 1.5;
+
+    const x0Stage1El = document.getElementById('x0_stage1');
+    const v0Stage1El = document.getElementById('v0_stage1');
+    const aStage1El = document.getElementById('a_stage1');
+
+    const numStagesGroup = document.getElementById('numStages');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    const timeValue = document.getElementById('timeValue');
+    const xValue = document.getElementById('xValue');
+    const vValue = document.getElementById('vValue');
+    const aValue = document.getElementById('aValue');
+
+    const motionCanvas = document.getElementById('motionCanvas');
+    const xGraphCanvas = document.getElementById('xGraph');
+    const vGraphCanvas = document.getElementById('vGraph');
+    const aGraphCanvas = document.getElementById('aGraph');
+
+    let sim = {
+      running: false,
+      lastFrameTime: null,
+      accumulator: 0,
+      t: 0,
+      points: [],
+      stages: [],
+      totalDuration: 0
+    };
+
+    function resizeCanvasToDisplaySize(canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+      const width = Math.round(rect.width * ratio);
+      const height = Math.round(rect.height * ratio);
+
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+    }
+
+    function resizeAllCanvases() {
+      resizeCanvasToDisplaySize(motionCanvas);
+      resizeCanvasToDisplaySize(xGraphCanvas);
+      resizeCanvasToDisplaySize(vGraphCanvas);
+      resizeCanvasToDisplaySize(aGraphCanvas);
+      redrawAll();
+    }
+
+    function getSelectedStageCount() {
+      const activeBtn = numStagesGroup.querySelector('.stage-count-btn.active');
+      return activeBtn ? parseInt(activeBtn.getAttribute('data-stages'), 10) : 2;
+    }
+
+    function buildStagesFromUI() {
+      const numStages = getSelectedStageCount();
+
+      const m1 = document
+        .querySelector('.motion-type-group[data-stage="1"] .motion-type-btn.active')
+        .getAttribute('data-motion');
+      const d1 = Math.max(parseFloat(document.querySelector('.stageDuration[data-stage="1"]').value) || 0, DT);
+      const a1 = m1 === 'v' ? 0 : parseFloat(document.querySelector('.stageA[data-stage="1"]').value) || 0;
+
+      const m2 = document
+        .querySelector('.motion-type-group[data-stage="2"] .motion-type-btn.active')
+        .getAttribute('data-motion');
+      const d2 = Math.max(parseFloat(document.querySelector('.stageDuration[data-stage="2"]').value) || 0, DT);
+      const a2 = m2 === 'v' ? 0 : parseFloat(document.querySelector('.stageA[data-stage="2"]').value) || 0;
+
+      const m3 = document
+        .querySelector('.motion-type-group[data-stage="3"] .motion-type-btn.active')
+        .getAttribute('data-motion');
+      const d3 = Math.max(parseFloat(document.querySelector('.stageDuration[data-stage="3"]').value) || 0, DT);
+      const a3 = m3 === 'v' ? 0 : parseFloat(document.querySelector('.stageA[data-stage="3"]').value) || 0;
+
+      // Stage 1 initial x0, v0 from UI
+      let x0 = parseFloat(x0Stage1El.value) || 0;
+      let v0 = parseFloat(v0Stage1El.value) || 0;
+
+      const stages = [];
+      let tStart = 0;
+
+      function pushStage(motionType, duration, aVal) {
+        stages.push({
+          tStart,
+          tEnd: tStart + duration,
+          motionType,
+          x0,
+          v0,
+          a: motionType === 'v' ? 0 : aVal
+        });
+
+        // compute end of this stage to feed the next
+        const dtStage = duration;
+        if (motionType === 'v') {
+          const xEnd = x0 + v0 * dtStage;
+          const vEnd = v0;
+          x0 = xEnd;
+          v0 = vEnd;
+        } else {
+          const xEnd = x0 + v0 * dtStage + 0.5 * aVal * dtStage * dtStage;
+          const vEnd = v0 + aVal * dtStage;
+          x0 = xEnd;
+          v0 = vEnd;
+        }
+        tStart += duration;
+      }
+
+      // Stage 1
+      pushStage(m1, d1, a1);
+
+      // Stage 2 (continuous)
+      if (numStages >= 2) {
+        pushStage(m2, d2, a2);
+      }
+
+      // Stage 3 (continuous)
+      if (numStages >= 3) {
+        pushStage(m3, d3, a3);
+      }
+
+      sim.stages = stages;
+      sim.totalDuration = stages.length ? stages[stages.length - 1].tEnd : 0;
+    }
+
+    function getStageAtTime(t) {
+      if (!sim.stages.length) return null;
+      for (const s of sim.stages) {
+        if (t >= s.tStart && t <= s.tEnd + 1e-9) return s;
+      }
+      return sim.stages[sim.stages.length - 1];
+    }
+
+    function sampleState(t) {
+      if (!sim.stages.length) {
+        buildStagesFromUI();
+      }
+      if (!sim.stages.length) {
+        return { t, x: 0, v: 0, a: 0 };
+      }
+      const s = getStageAtTime(t);
+      let localT = t - s.tStart;
+      if (localT < 0) localT = 0;
+      if (localT > s.tEnd - s.tStart) localT = s.tEnd - s.tStart;
+
+      let x, v, a;
+      if (s.motionType === 'v') {
+        x = s.x0 + s.v0 * localT;
+        v = s.v0;
+        a = 0;
+      } else {
+        x = s.x0 + s.v0 * localT + 0.5 * s.a * localT * localT;
+        v = s.v0 + s.a * localT;
+        a = s.a;
+      }
+      return { t, x, v, a };
+    }
+
+    function updatePhysicsStep() {
+      sim.t += DT;
+      if (sim.t > sim.totalDuration) {
+        sim.t = sim.totalDuration;
+      }
+      const state = sampleState(sim.t);
+      sim.points.push(state);
+
+      if (sim.t >= sim.totalDuration) {
+        sim.running = false;
+      }
+    }
+
+    function updateReadoutFromState() {
+      const current = sampleState(sim.t);
+      timeValue.textContent = current.t.toFixed(2) + ' s';
+      xValue.textContent = current.x.toFixed(2) + ' m';
+      vValue.textContent = current.v.toFixed(2) + ' m/s';
+      aValue.textContent = current.a.toFixed(2) + ' m/s²';
+    }
+
+    function animationLoop(timestamp) {
+      if (!sim.running) return;
+
+      if (sim.lastFrameTime == null) {
+        sim.lastFrameTime = timestamp;
+      }
+
+      let frameSeconds = (timestamp - sim.lastFrameTime) / 1000;
+      sim.lastFrameTime = timestamp;
+
+      frameSeconds = Math.min(frameSeconds, 0.05);
+      sim.accumulator += frameSeconds * PLAYBACK_SPEED;
+
+      while (sim.accumulator >= DT && sim.running) {
+        updatePhysicsStep();
+        sim.accumulator -= DT;
+      }
+
+      updateReadoutFromState();
+      redrawAll();
+
+      if (sim.running) {
+        requestAnimationFrame(animationLoop);
+      }
+    }
+
+    // --- Drawing code (copied from original sim, unchanged in style) [file:1]
+    function drawMotionScene() {
+      const ctx = motionCanvas.getContext('2d');
+      const w = motionCanvas.width;
+      const h = motionCanvas.height;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const marginLeft = 50;
+      const marginRight = 30;
+      const trackY = h * 0.68;
+      const trackStart = marginLeft;
+      const trackEnd = w - marginRight;
+      const trackWidth = trackEnd - trackStart;
+
+      const xs = sim.points.map(p => p.x);
+      let minX = Math.min(0, ...xs);
+      let maxX = Math.max(10, ...xs);
+      if (Math.abs(maxX - minX) < 1e-6) {
+        maxX = minX + 10;
+      }
+
+      const pad = 0.1 * (maxX - minX);
+      minX -= pad;
+      maxX += pad;
+
+      const xTickInfo = getNiceStepAndTicks(minX, maxX);
+
+      function xToPx(x) {
+        return trackStart + (x - xTickInfo.min) / (xTickInfo.max - xTickInfo.min) * trackWidth;
+      }
+
+      ctx.fillStyle = '#f8fbff';
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(trackStart, trackY);
+      ctx.lineTo(trackEnd, trackY);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 1.2;
+      ctx.fillStyle = '#334155';
+      ctx.font = Math.max(12, h * 0.06) + 'px Arial';
+
+      xTickInfo.ticks.forEach(tickVal => {
+        if (tickVal <= xTickInfo.min || tickVal >= xTickInfo.max) return;
+        const px = xToPx(tickVal);
+        ctx.beginPath();
+        ctx.moveTo(px, trackY - 10);
+        ctx.lineTo(px, trackY + 10);
+        ctx.stroke();
+        ctx.textAlign = 'center';
+        ctx.fillText(tickVal.toFixed(1), px, trackY + 42);
+      });
+
+      ctx.textAlign = 'left';
+      ctx.fillText('Position (m)', 12, 24);
+
+      const drawnTimes = new Set();
+      const labelStacks = new Map();
+
+      sim.points.forEach(point => {
+        const roundedTime = Math.round(point.t);
+        if ((Math.abs(point.t - roundedTime) < 0.01 || point.t === 0) && !drawnTimes.has(roundedTime)) {
+          drawnTimes.add(roundedTime);
+
+          const trailX = xToPx(point.x);
+          const trailY = trackY - 24;
+          const cartW = 56;
+          const cartH = 26;
+
+          ctx.fillStyle = 'rgba(37, 99, 235, 0.15)';
+          roundRect(ctx, trailX - cartW / 2, trailY - cartH / 2, cartW, cartH, 8);
+          ctx.fill();
+
+          ctx.fillStyle = 'rgba(30, 64, 175, 0.15)';
+          ctx.beginPath();
+          ctx.arc(trailX - 16, trailY + 16, 7, 0, Math.PI * 2);
+          ctx.arc(trailX + 16, trailY + 16, 7, 0, Math.PI * 2);
+          ctx.fill();
+
+          const stackKey = Math.round(trailX / 12);
+          const stackIndex = labelStacks.get(stackKey) || 0;
+          labelStacks.set(stackKey, stackIndex + 1);
+
+          ctx.fillStyle = 'rgba(52, 73, 94, 0.4)';
+          ctx.font = Math.max(11, h * 0.05) + 'px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(roundedTime + ' s', trailX, trailY - 40 - stackIndex * 18);
+        }
+      });
+
+      const current = sampleState(sim.t);
+      const cartX = xToPx(current.x);
+      const cartY = trackY - 24;
+      const cartW = 56;
+      const cartH = 26;
+
+      ctx.fillStyle = '#2563eb';
+      roundRect(ctx, cartX - cartW / 2, cartY - cartH / 2, cartW, cartH, 8);
+      ctx.fill();
+
+      ctx.fillStyle = '#1e40af';
+      ctx.beginPath();
+      ctx.arc(cartX - 16, cartY + 16, 7, 0, Math.PI * 2);
+      ctx.arc(cartX + 16, cartY + 16, 7, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#0f172a';
+      ctx.textAlign = 'center';
+      ctx.fillText('Cart', cartX, cartY - 18);
+
+      const k = motionCanvas.width / (motionCanvas.getBoundingClientRect().width || 1);
+      const pxPerMs = 16 * k, vy = trackY + 20 * k, vTip = cartX + current.v * pxPerMs;
+      if (Math.abs(current.v) > 0.01) {
+        const dir = Math.sign(current.v);
+        ctx.strokeStyle = '#16a34a'; ctx.fillStyle = '#16a34a'; ctx.lineWidth = 3 * k;
+        ctx.beginPath(); ctx.moveTo(cartX, vy); ctx.lineTo(vTip, vy); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(vTip + dir * 2 * k, vy); ctx.lineTo(vTip - dir * 10 * k, vy - 6 * k); ctx.lineTo(vTip - dir * 10 * k, vy + 6 * k); ctx.closePath(); ctx.fill();
+      }
+      if (sim.t === 0 && !sim.running) {
+        ctx.fillStyle = '#16a34a'; ctx.beginPath(); ctx.arc(vTip, vy, 7 * k, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = 'white'; ctx.lineWidth = 2 * k; ctx.stroke();
+      }
+      ctx.fillStyle = '#15803d'; ctx.font = `bold ${12 * k}px Arial`; ctx.textAlign = current.v >= 0 ? 'left' : 'right';
+      ctx.fillText(`v = ${current.v.toFixed(1)} m/s`, vTip + (current.v >= 0 ? 12 : -12) * k, vy + 4 * k);
+      sceneMap = { k, cartX, cartY, vTip, vy, pxPerMs, trackStart, trackEnd, min: xTickInfo.min, max: xTickInfo.max };
+    }
+    let sceneMap = null;
+
+    function roundRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    function getNiceStepAndTicks(min, max) {
+      const range = Math.abs(max - min);
+      if (range < 1e-9) {
+        return {
+          step: 1,
+          min: min - 1,
+          max: max + 1,
+          ticks: [min - 1, min, max, max + 1]
+        };
+      }
+
+      const magnitude = Math.pow(10, Math.floor(Math.log10(range)));
+      const normalized = range / magnitude;
+
+      let step;
+      if (normalized < 1.5) step = 0.2;
+      else if (normalized < 3) step = 0.5;
+      else if (normalized < 7) step = 1;
+      else step = 2;
+
+      step *= magnitude;
+
+      const tickMin = Math.floor(min / step) * step;
+      const tickMax = Math.ceil(max / step) * step;
+
+      const ticks = [];
+      for (let tick = tickMin; tick <= tickMax + 1e-9; tick += step) {
+        ticks.push(Math.round(tick * 1e10) / 1e10);
+      }
+
+      return {
+        step,
+        min: tickMin,
+        max: tickMax,
+        ticks
+      };
+    }
+
+    function getGraphRange(key) {
+      const vals = sim.points.map(p => p[key]);
+      let min = Math.min(...vals, 0);
+      let max = Math.max(...vals, 0);
+      min = Math.min(min, 0);
+      max = Math.max(max, 0);
+      if (Math.abs(max - min) < 1e-9) {
+        min -= 1;
+        max += 1;
+      }
+      const pad = 0.12 * (max - min);
+      return { min: min - pad, max: max + pad };
+    }
+
+    function drawMixedStyleLabel(ctx, text, x, y, fontSize, rotation = 0) {
+      const variable = text.charAt(0);
+      const rest = text.slice(1);
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rotation);
+
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+
+      ctx.font = 'italic ' + fontSize + 'px Arial';
+      const variableWidth = ctx.measureText(variable).width;
+
+      ctx.font = fontSize + 'px Arial';
+      const restWidth = ctx.measureText(rest).width;
+
+      const startX = -(variableWidth + restWidth) / 2;
+
+      ctx.font = 'italic ' + fontSize + 'px Arial';
+      ctx.fillText(variable, startX, 0);
+
+      ctx.font = fontSize + 'px Arial';
+      ctx.fillText(rest, startX + variableWidth, 0);
+
+      ctx.restore();
+    }
+
+    function drawGraph(canvas, key, color, yLabel) {
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const margin = { left: 70, right: 16, top: 18, bottom: 50 };
+      const plotW = w - margin.left - margin.right;
+      const plotH = h - margin.top - margin.bottom;
+
+      const range = getGraphRange(key);
+      const yTickInfo = getNiceStepAndTicks(range.min, range.max);
+
+      const tMax = Math.max(sim.totalDuration, 1);
+      const tTickInfo = getNiceStepAndTicks(0, tMax);
+
+      function tx(t) {
+        return margin.left + (t / tMax) * plotW;
+      }
+
+      function ty(v) {
+        return margin.top + ((yTickInfo.max - v) / (yTickInfo.max - yTickInfo.min || 1)) * plotH;
+      }
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 1;
+
+      // Horizontal grid lines for y-axis
+      yTickInfo.ticks.forEach(tickVal => {
+        if (tickVal < yTickInfo.min || tickVal > yTickInfo.max) return;
+        const y = ty(tickVal);
+        ctx.beginPath();
+        ctx.moveTo(margin.left, y);
+        ctx.lineTo(w - margin.right, y);
+        ctx.stroke();
+      });
+
+      // Vertical grid lines for time axis using tTickInfo
+      tTickInfo.ticks.forEach(tickVal => {
+        if (tickVal < 0 || tickVal > tMax) return;
+        const x = tx(tickVal);
+        ctx.beginPath();
+        ctx.moveTo(x, margin.top);
+        ctx.lineTo(x, h - margin.bottom);
+        ctx.stroke();
+      });
+
+      // Find where the horizontal axis should be: at y = 0 if visible
+      let timeAxisY;
+      if (yTickInfo.min <= 0 && yTickInfo.max >= 0) {
+        timeAxisY = ty(0);
+      } else if (yTickInfo.max < 0) {
+        timeAxisY = margin.top;            // all values negative
+      } else {
+        timeAxisY = h - margin.bottom;     // all values positive
+      }
+
+      // Axes
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 1.5;
+
+      // Vertical axis at t = 0
+      ctx.beginPath();
+      ctx.moveTo(margin.left, margin.top);
+      ctx.lineTo(margin.left, h - margin.bottom);
+      ctx.stroke();
+
+      // Horizontal time axis at value = 0 (or top/bottom if 0 out of range)
+      ctx.beginPath();
+      ctx.moveTo(margin.left, timeAxisY);
+      ctx.lineTo(w - margin.right, timeAxisY);
+      ctx.stroke();
+
+      ctx.fillStyle = '#334155';
+      ctx.font = `${Math.max(11, h * 0.075)}px Arial`;
+
+      // Time labels (x-axis) aligned with tTickInfo ticks
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      tTickInfo.ticks.forEach(tickVal => {
+        if (tickVal < 0 || tickVal > tMax) return;
+        const x = tx(tickVal);
+        if (tickVal === 0) { ctx.textAlign = 'left'; ctx.fillText('0', x + 4, timeAxisY + 6); ctx.textAlign = 'center'; }
+        else ctx.fillText(tickVal.toFixed(0), x, timeAxisY + 6);
+      });
+
+      // Y-axis labels
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      yTickInfo.ticks.forEach(tickVal => {
+        if (tickVal < yTickInfo.min || tickVal > yTickInfo.max) return;
+        const y = ty(tickVal);
+        ctx.fillText(tickVal.toFixed(1), margin.left - 6, y);
+      });
+
+      const axisFontSize = Math.max(11, h * 0.075);
+
+      drawMixedStyleLabel(
+        ctx,
+        't (s)',
+        margin.left + plotW / 2,
+        h - 8,
+        axisFontSize
+      );
+
+      drawMixedStyleLabel(
+        ctx,
+        yLabel,
+        14,
+        margin.top + plotH / 2,
+        axisFontSize,
+        -Math.PI / 2
+      );
+
+      if (sim.points.length > 0) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        sim.points.forEach((p, i) => {
+          const x = tx(p.t);
+          const y = ty(p[key]);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        const last = sim.points[sim.points.length - 1];
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(tx(last.t), ty(last[key]), 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    function redrawAll() {
+      drawMotionScene();
+      drawGraph(xGraphCanvas, 'x', '#2563eb', 'x (m)');
+      drawGraph(vGraphCanvas, 'v', '#16a34a', 'v (m/s)');
+      drawGraph(aGraphCanvas, 'a', '#dc2626', 'a (m/s²)');
+    }
+
+    function resetSimulation() {
+      sim.running = false;
+      sim.lastFrameTime = null;
+      sim.accumulator = 0;
+      sim.t = 0;
+      sim.points = [];
+      buildStagesFromUI();
+      sim.points.push(sampleState(0));
+      updateReadoutFromState();
+      redrawAll();
+    }
+
+    function startSimulation() {
+      if (sim.running) return;
+      buildStagesFromUI();
+      if (!sim.stages.length) return;
+
+      if (sim.points.length === 0 || sim.t >= sim.totalDuration) {
+        sim.t = 0;
+        sim.points = [sampleState(0)];
+      }
+
+      sim.running = true;
+      sim.lastFrameTime = null;
+      requestAnimationFrame(animationLoop);
+    }
+
+    function updateStageAccelerationInput(stageIndex) {
+      const group = document.querySelector('.motion-type-group[data-stage="' + stageIndex + '"]');
+      if (!group) return;
+
+      const activeBtn = group.querySelector('.motion-type-btn.active');
+      if (!activeBtn) return;
+
+      const motion = activeBtn.getAttribute('data-motion'); // 'v' or 'a'
+      const aInput = document.querySelector('.stageA[data-stage="' + stageIndex + '"]');
+      if (!aInput) return;
+
+      if (motion === 'v') {
+        aInput.value = 0;
+        aInput.disabled = true;
+      } else {
+        aInput.disabled = false;
+      }
+    }
+
+    function toDevice(canvas, e) { const r = canvas.getBoundingClientRect(); const k = canvas.width / r.width; return { x: (e.clientX - r.left) * k, y: (e.clientY - r.top) * k }; }
+    let dragMode = null;
+    motionCanvas.addEventListener('pointerdown', e => {
+      if (!sceneMap || sim.running) return;
+      const p = toDevice(motionCanvas, e), m = sceneMap;
+      if (sim.t === 0 && Math.hypot(p.x - m.vTip, p.y - m.vy) < 18 * m.k) dragMode = 'v';
+      else if (Math.abs(p.x - m.cartX) < 34 * m.k && Math.abs(p.y - m.cartY) < 30 * m.k) dragMode = 'x';
+      else return;
+      if (sim.t !== 0) resetSimulation();
+      motionCanvas.setPointerCapture(e.pointerId); e.preventDefault();
+    });
+    motionCanvas.addEventListener('pointermove', e => {
+      const p = toDevice(motionCanvas, e), m = sceneMap;
+      if (!dragMode) {
+        if (m && !sim.running) motionCanvas.style.cursor = (sim.t === 0 && Math.hypot(p.x - m.vTip, p.y - m.vy) < 18 * m.k) || (Math.abs(p.x - m.cartX) < 34 * m.k && Math.abs(p.y - m.cartY) < 30 * m.k) ? 'grab' : 'default';
+        return;
+      }
+      if (dragMode === 'x') x0Stage1El.value = (Math.round((m.min + (p.x - m.trackStart) / (m.trackEnd - m.trackStart) * (m.max - m.min)) * 10) / 10).toFixed(1);
+      else v0Stage1El.value = (Math.round((p.x - m.cartX) / m.pxPerMs * 10) / 10).toFixed(1);
+      resetSimulation();
+    });
+    const endDrag = () => { dragMode = null; };
+    motionCanvas.addEventListener('pointerup', endDrag);
+    motionCanvas.addEventListener('pointercancel', endDrag);
+
+    [xGraphCanvas, vGraphCanvas, aGraphCanvas].forEach(c => {
+      let scrubbing = false;
+      const scrub = e => {
+        const p = toDevice(c, e), left = 70, right = 16;
+        buildStagesFromUI();
+        const tMax = Math.max(sim.totalDuration, 1);
+        const t = Math.max(0, Math.min(sim.totalDuration, (p.x - left) / (c.width - left - right) * tMax));
+        sim.running = false; sim.lastFrameTime = null;
+        sim.points = [];
+        for (let tt = 0; tt < t; tt += DT) sim.points.push(sampleState(tt));
+        sim.t = t; sim.points.push(sampleState(t));
+        updateReadoutFromState(); redrawAll();
+      };
+      c.addEventListener('pointerdown', e => { scrubbing = true; c.setPointerCapture(e.pointerId); scrub(e); e.preventDefault(); });
+      c.addEventListener('pointermove', e => { c.style.cursor = 'ew-resize'; if (scrubbing) scrub(e); });
+      c.addEventListener('pointerup', () => { scrubbing = false; });
+      c.addEventListener('pointercancel', () => { scrubbing = false; });
+    });
+
+    // editing any stage value restarts from t = 0 so the graphs always match the settings shown
+    document.addEventListener('input', e => { if (e.target.matches('input') && !sim.running) resetSimulation(); });
+
+    startBtn.addEventListener('click', startSimulation);
+    pauseBtn.addEventListener('click', () => {
+      sim.running = false;
+      sim.lastFrameTime = null;
+    });
+    resetBtn.addEventListener('click', resetSimulation);
+
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.stage-count-btn');
+      if (!btn) return;
+
+      numStagesGroup.querySelectorAll('.stage-count-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const num = getSelectedStageCount();
+      document.getElementById('stage2').style.display = num >= 2 ? 'block' : 'none';
+      document.getElementById('stage3').style.display = num >= 3 ? 'block' : 'none';
+      resetSimulation();
+    });
+
+    window.addEventListener('resize', resizeAllCanvases);
+
+    window.addEventListener('load', () => {
+      const num = getSelectedStageCount();
+      document.getElementById('stage2').style.display = num >= 2 ? 'block' : 'none';
+      document.getElementById('stage3').style.display = num >= 3 ? 'block' : 'none';
+      resizeAllCanvases();
+      resetSimulation();
+      updateStageAccelerationInput(1);
+      updateStageAccelerationInput(2);
+      updateStageAccelerationInput(3);
+    });
+
+    // motion type button toggles
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.motion-type-btn');
+      if (!btn) return;
+
+      const group = btn.closest('.motion-type-group');
+      if (!group) return;
+
+      group.querySelectorAll('.motion-type-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const stageIndex = group.getAttribute('data-stage');
+      updateStageAccelerationInput(stageIndex);
+      resetSimulation();
+    });
+  </script>
+</body>
+</html>

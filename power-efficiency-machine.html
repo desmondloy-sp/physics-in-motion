@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Power and Efficiency of a Lifting Machine</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
+    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
+    .controls { display: grid; grid-template-columns: 1.8fr repeat(4, 1fr); gap: 10px; align-items: end; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    label { font-size: 0.8rem; font-weight: 600; }
+    .val { font-weight: normal; color: #334155; }
+    select { font-size: 0.9rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
+    input[type=range] { width: 100%; }
+    .buttons { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    button { font-size: 0.88rem; padding: 7px 12px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; }
+    button.go { background: #2563eb; }
+    .readout { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
+    .readout-card .value { font-size: 1rem; font-weight: bold; }
+    .layout { display: grid; grid-template-columns: 1fr; gap: 8px; }
+    @media (min-width: 900px) { .layout { grid-template-columns: 1fr 1.3fr; } }
+    canvas { display: block; width: 100%; border-radius: 10px; touch-action: none; }
+    #sceneCanvas { height: 380px; border: 1px solid #dbeafe; background: #f8fbff; }
+    #energyCanvas { height: 380px; border: 1px solid #e5e7eb; background: #fbfdff; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
+    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    @media (max-width: 900px) {
+      .controls { grid-template-columns: 1fr 1fr; }
+      .controls .control-group:first-child { grid-column: 1 / -1; }
+      .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Power and Efficiency of a Lifting Machine</h1>
+
+    <div class="panel">
+      <div class="controls">
+        <div class="control-group">
+          <label for="preset">Start from</label>
+          <select id="preset">
+            <option value="ex5" selected>Example 5: 50 kg up 2.0 m in 1 minute, 50% efficient</option>
+            <option value="c2">Tutorial C2: 32 kg up 12 m per minute, 120 W input</option>
+            <option value="c3">Tutorial C3: 500 N load up 3 m in 2 s, 60% efficient</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="control-group"><label for="mass">Load mass <span class="val" id="massVal"></span></label><input id="mass" type="range" min="1" max="100" step="1" /></div>
+        <div class="control-group"><label for="height">Height <i>h</i> <span class="val" id="heightVal"></span></label><input id="height" type="range" min="0.5" max="15" step="0.5" /></div>
+        <div class="control-group"><label for="time">Time <i>t</i> <span class="val" id="timeVal"></span></label><input id="time" type="range" min="1" max="120" step="1" /></div>
+        <div class="control-group"><label for="eff">Efficiency <span class="val" id="effVal"></span></label><input id="eff" type="range" min="5" max="100" step="any" /></div>
+      </div>
+      <div class="buttons">
+        <button id="liftBtn" class="go">Run the motor</button>
+        <button id="resetBtn">Lower the load</button>
+        <span style="font-size:0.8rem;color:#475569;align-self:center" id="speedNote"></span>
+      </div>
+      <div class="readout">
+        <div class="readout-card"><div class="title">Work done = GPE gained = <i>mgh</i></div><div class="value" id="gpe">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Useful power output = <i>mgh</i>/<i>t</i></div><div class="value" id="pout">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Power input = output &divide; efficiency</div><div class="value" id="pin">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Power wasted (heat, sound)</div><div class="value" id="pwaste">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Lifting power right now = <i>mgv</i></div><div class="value" id="plive">&mdash;</div></div>
+      </div>
+    </div>
+
+    <div class="layout">
+      <div class="panel">
+        <div class="hint">Run the motor &mdash; or grab the load and lift it yourself. Lift faster and see your power go up.</div>
+        <canvas id="sceneCanvas"></canvas>
+      </div>
+      <div class="panel">
+        <canvas id="energyCanvas"></canvas>
+        <div class="note">Efficiency = useful energy output &divide; total energy input &times; 100% (= useful power output &divide; power input &times; 100%). The motor must take in more energy than the load gains; the difference is wasted, mostly as heat and sound. Power is the rate of doing work, <i>P</i> = <i>W</i>/<i>t</i>: the same lift done in less time needs more power. <i>g</i> = 10 m s<sup>-2</sup>.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const G = 10;
+    const el = id => document.getElementById(id);
+    const PRESETS = {
+      ex5: { m: 50, h: 2, t: 60, eff: 50 },
+      c2: { m: 32, h: 12, t: 60, eff: 3840 / 60 / 120 * 100 }, // 64 W out of 120 W in = 53.3%
+      c3: { m: 50, h: 3, t: 2, eff: 60 }                       // 500 N load = 50 kg with g = 10
+    };
+    const P = () => ({ m: +el('mass').value, h: +el('height').value, t: +el('time').value, eff: +el('eff').value / 100 });
+    const st = { y: 0, mode: 'idle', clock: 0, Ein: 0, Eout: 0, vLive: 0, lastY: 0, dragging: false, dragT: 0 };
+
+    function applyPreset() {
+      const p = PRESETS[el('preset').value]; if (!p) return;
+      el('mass').value = p.m; el('height').value = p.h; el('time').value = p.t; el('eff').value = p.eff;
+      lower();
+    }
+    function lower() { st.y = 0; st.mode = 'idle'; st.clock = 0; st.Ein = 0; st.Eout = 0; st.vLive = 0; }
+    const playRate = () => Math.max(1, P().t / 6); // show any lift in about 6 real seconds
+
+    function step(dt) {
+      const p = P();
+      const yPrev = st.y;
+      if (st.mode === 'motor') {
+        st.clock += dt * playRate();
+        st.y = Math.min(p.h, p.h * st.clock / p.t);
+        if (st.y >= p.h) st.mode = 'done';
+      }
+      // energy bookkeeping for motor and hand alike: GPE gained, and input = GPE / efficiency
+      if (st.dragging && performance.now() - st.dragT > 120) st.vLive *= 0.8; // holding still: no power
+      const dy = st.y - yPrev;
+      if (!st.dragging) {
+        if (dy > 0) { st.Eout += p.m * G * dy; st.Ein += p.m * G * dy / p.eff; }
+        st.vLive = st.mode === 'motor' ? p.h / p.t : 0;
+      }
+    }
+
+    function setup(c) {
+      const r = c.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+      const cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
+      if (c.width !== cw || c.height !== ch) { c.width = cw; c.height = ch; }
+      const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { ctx, w: r.width, h: r.height };
+    }
+    function tag(ctx, t, x, y, color, align = 'center') {
+      ctx.font = 'bold 12px Arial'; ctx.textAlign = align; ctx.textBaseline = 'middle';
+      const tw = ctx.measureText(t).width, x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
+      ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(x0 - 3, y - 8, tw + 6, 16);
+      ctx.fillStyle = color; ctx.fillText(t, x, y); ctx.textBaseline = 'alphabetic';
+    }
+
+    let geo = null;
+    function drawScene() {
+      const { ctx, w, h } = setup(el('sceneCanvas'));
+      ctx.clearRect(0, 0, w, h);
+      const p = P();
+      const floorY = h - 34, topY = 70;
+      const boxH = 26 + Math.sqrt(p.m) * 3.2, boxW = boxH * 1.25;
+      const pxPerM = (floorY - topY - boxH - 16) / p.h;
+      const cx = w * 0.45;
+      // floor and target height
+      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, floorY, w, h - floorY);
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, floorY); ctx.lineTo(w, floorY); ctx.stroke();
+      const targetY = floorY - p.h * pxPerM;
+      ctx.setLineDash([6, 5]); ctx.strokeStyle = '#16a34a'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(cx - 90, targetY); ctx.lineTo(cx + 110, targetY); ctx.stroke(); ctx.setLineDash([]);
+      tag(ctx, `target: ${p.h} m up`, cx + 112, targetY, '#15803d', 'left');
+      // height ruler
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1; ctx.fillStyle = '#64748b'; ctx.font = '10px Arial'; ctx.textAlign = 'right';
+      const stepM = p.h > 8 ? 2 : p.h > 3 ? 1 : 0.5;
+      for (let m = 0; m <= p.h + 1e-9; m += stepM) { const y = floorY - m * pxPerM; ctx.beginPath(); ctx.moveTo(26, y); ctx.lineTo(34, y); ctx.stroke(); ctx.fillText(`${m} m`, 24, y + 3); }
+      // motor and drum on a beam
+      ctx.fillStyle = '#334155'; ctx.fillRect(cx - 80, topY - 50, 160, 10);
+      ctx.fillStyle = '#1f2937'; ctx.fillRect(cx - 70, topY - 40, 52, 34);
+      ctx.fillStyle = 'white'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center'; ctx.fillText('motor', cx - 44, topY - 19);
+      const spin = (st.y / 0.12) % (Math.PI * 2);
+      ctx.fillStyle = '#64748b'; ctx.beginPath(); ctx.arc(cx, topY - 22, 16, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, topY - 22); ctx.lineTo(cx + Math.cos(spin) * 14, topY - 22 + Math.sin(spin) * 14); ctx.stroke();
+      // load
+      const loadTop = floorY - boxH - st.y * pxPerM;
+      ctx.strokeStyle = '#475569'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx + 16, topY - 22); ctx.lineTo(cx + 16, loadTop); ctx.stroke();
+      ctx.fillStyle = st.dragging ? '#1d4ed8' : '#2563eb';
+      ctx.beginPath(); ctx.roundRect ? ctx.roundRect(cx + 16 - boxW / 2, loadTop, boxW, boxH, 5) : ctx.rect(cx + 16 - boxW / 2, loadTop, boxW, boxH); ctx.fill();
+      ctx.fillStyle = 'white'; ctx.font = 'bold 12px Arial'; ctx.fillText(`${p.m} kg`, cx + 16, loadTop + boxH / 2 + 4);
+      geo = { cx: cx + 16, loadTop, boxW, boxH, floorY, pxPerM };
+      tag(ctx, `height ${st.y.toFixed(2)} m`, cx + 16 + boxW / 2 + 10, loadTop + boxH / 2, '#334155', 'left');
+      const shownT = st.mode === 'idle' ? 0 : Math.min(p.t, st.clock);
+      tag(ctx, st.dragging ? 'lifting by hand' : `time ${shownT.toFixed(1)} s of ${p.t} s${playRate() > 1 ? ` (shown ×${playRate().toFixed(0)} speed)` : ''}`, w / 2, 14, '#334155');
+    }
+
+    function drawEnergy() {
+      const { ctx, w, h } = setup(el('energyCanvas'));
+      ctx.clearRect(0, 0, w, h);
+      const p = P();
+      const EoutFull = p.m * G * p.h, EinFull = EoutFull / p.eff;
+      ctx.fillStyle = '#0f172a'; ctx.font = 'bold 14px Arial'; ctx.textAlign = 'left'; ctx.fillText('Energy flow for the whole lift', 14, 24);
+      // Sankey-style: one input bar splitting into useful and wasted
+      const x0 = 20, x1 = w - 30, barH = 110, y0 = 50;
+      const usefulH = barH * p.eff;
+      ctx.fillStyle = '#f59e0b'; ctx.fillRect(x0, y0, (x1 - x0) * 0.32, barH);
+      ctx.fillStyle = '#16a34a';
+      ctx.beginPath(); ctx.moveTo(x0 + (x1 - x0) * 0.32, y0); ctx.bezierCurveTo(x0 + (x1 - x0) * 0.55, y0, x0 + (x1 - x0) * 0.55, y0 - 6, x1, y0 - 6); ctx.lineTo(x1, y0 - 6 + usefulH); ctx.bezierCurveTo(x0 + (x1 - x0) * 0.55, y0 - 6 + usefulH, x0 + (x1 - x0) * 0.55, y0 + usefulH, x0 + (x1 - x0) * 0.32, y0 + usefulH); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#dc2626';
+      // wasted band turns down: its upper edge is the OUTSIDE of the bend, so it ends at the right-hand side
+      { const xs = x0 + (x1 - x0) * 0.32, xe = x0 + (x1 - x0) * 0.62, ww = barH - usefulH, ye = y0 + barH + 60;
+        ctx.beginPath(); ctx.moveTo(xs, y0 + usefulH);
+        ctx.bezierCurveTo(xe + ww, y0 + usefulH, xe + ww, y0 + usefulH, xe + ww, ye);
+        ctx.lineTo(xe, ye);
+        ctx.bezierCurveTo(xe, y0 + barH, xe, y0 + barH, xs, y0 + barH);
+        ctx.closePath(); ctx.fill(); }
+      tag(ctx, `input ${EinFull.toFixed(0)} J (100%)`, x0 + (x1 - x0) * 0.16, y0 + barH / 2, '#92400e');
+      tag(ctx, `useful: GPE ${EoutFull.toFixed(0)} J (${(p.eff * 100).toFixed(1)}%)`, x1 - 6, y0 - 6 + usefulH / 2, '#166534', 'right');
+      tag(ctx, `wasted ${(EinFull - EoutFull).toFixed(0)} J (${(100 - p.eff * 100).toFixed(1)}%) as heat & sound`, x0 + (x1 - x0) * 0.62, y0 + barH + 74, '#991b1b', 'left');
+      // live meters for this lift
+      const my = h - 110, mw = x1 - x0 - 110;
+      const meter = (label, val, full, color, y) => {
+        ctx.fillStyle = '#334155'; ctx.font = '12px Arial'; ctx.textAlign = 'left'; ctx.fillText(label, x0, y + 13);
+        ctx.fillStyle = '#e5e7eb'; ctx.fillRect(x0 + 110, y, mw, 18);
+        ctx.fillStyle = color; ctx.fillRect(x0 + 110, y, mw * Math.min(1, val / Math.max(full, 1e-9)), 18);
+        ctx.fillStyle = '#0f172a'; ctx.textAlign = 'right'; ctx.fillText(`${val.toFixed(0)} J`, x0 + 110 + mw - 4, y + 13);
+      };
+      ctx.fillStyle = '#0f172a'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'left'; ctx.fillText('So far in this lift', x0, my - 10);
+      meter('energy taken in', st.Ein, EinFull, '#f59e0b', my);
+      meter('GPE gained', st.Eout, EinFull, '#16a34a', my + 26);
+      meter('wasted', st.Ein - st.Eout, EinFull, '#dc2626', my + 52);
+    }
+
+    function updateReadout() {
+      const p = P();
+      const out = p.m * G * p.h / p.t, inp = out / p.eff;
+      el('massVal').textContent = `(${p.m} kg, W = ${p.m * G} N)`; el('heightVal').textContent = `(${p.h} m)`;
+      el('timeVal').textContent = `(${p.t} s)`; el('effVal').textContent = `(${(p.eff * 100).toFixed(1)}%)`;
+      el('gpe').textContent = `${(p.m * G * p.h).toFixed(0)} J`;
+      el('pout').textContent = `${out.toFixed(2)} W`; el('pin').textContent = `${inp.toFixed(2)} W`; el('pwaste').textContent = `${(inp - out).toFixed(2)} W`;
+      el('plive').textContent = `${(p.m * G * st.vLive).toFixed(1)} W`;
+      el('speedNote').textContent = playRate() > 1 ? `The animation runs ${playRate().toFixed(0)}× faster than real time.` : '';
+    }
+
+    // lift by hand
+    let dragOff = 0;
+    const sc = el('sceneCanvas');
+    function pos(e) { const r = sc.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    const onLoad = q => geo && q.x > geo.cx - geo.boxW / 2 - 10 && q.x < geo.cx + geo.boxW / 2 + 10 && q.y > geo.loadTop - 10 && q.y < geo.loadTop + geo.boxH + 10;
+    sc.addEventListener('pointerdown', e => {
+      const q = pos(e); if (!onLoad(q)) return;
+      if (st.mode === 'done' || st.mode === 'motor') lower();
+      st.mode = 'hand'; st.dragging = true; st.lastY = st.y; st.dragT = performance.now();
+      dragOff = q.y - geo.loadTop; sc.setPointerCapture(e.pointerId); e.preventDefault();
+    });
+    sc.addEventListener('pointermove', e => {
+      const q = pos(e);
+      if (!st.dragging) { sc.style.cursor = onLoad(q) ? 'grab' : 'default'; return; }
+      const p = P();
+      const top = q.y - dragOff;
+      const y = Math.max(0, Math.min(p.h, (geo.floorY - geo.boxH - top) / geo.pxPerM));
+      const now = performance.now(), dtt = Math.max(0.016, (now - st.dragT) / 1000);
+      const dy = y - st.y;
+      if (dy > 0) { st.Eout += p.m * G * dy; st.Ein += p.m * G * dy / p.eff; }
+      st.vLive = Math.max(0, dy / dtt) * 0.5 + st.vLive * 0.5;
+      st.y = y; st.dragT = now;
+    });
+    const end = () => { if (st.dragging) { st.dragging = false; st.vLive = 0; if (st.y >= P().h - 1e-6) st.mode = 'done'; } };
+    sc.addEventListener('pointerup', end); sc.addEventListener('pointercancel', end);
+
+    el('liftBtn').addEventListener('click', () => { lower(); st.mode = 'motor'; });
+    el('resetBtn').addEventListener('click', lower);
+    el('preset').addEventListener('change', applyPreset);
+    ['mass', 'height', 'time', 'eff'].forEach(id => el(id).addEventListener('input', () => { el('preset').value = 'custom'; lower(); }));
+
+    applyPreset();
+    let last = null;
+    function frame(ts) {
+      if (last === null) last = ts;
+      const dt = Math.max(0, Math.min(0.05, (ts - last) / 1000)); last = ts;
+      step(dt); drawScene(); drawEnergy(); updateReadout();
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

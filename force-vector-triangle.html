@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Addition of Forces: Vector Triangle and Components</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
+    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
+    .controls { display: grid; grid-template-columns: 1.6fr repeat(4, 0.8fr); gap: 8px; align-items: end; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    label { font-size: 0.8rem; font-weight: 600; }
+    input, select { font-size: 0.9rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
+    .toggles { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
+    .toggle { display: flex; align-items: center; gap: 5px; font-size: 0.82rem; font-weight: 600; }
+    .toggle input { width: auto; }
+    .readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
+    .readout-card .value { font-size: 1rem; font-weight: bold; }
+    .layout { display: grid; grid-template-columns: 1fr; gap: 8px; }
+    @media (min-width: 1000px) { .layout { grid-template-columns: 1.7fr 1fr; } }
+    canvas { display: block; width: 100%; border-radius: 10px; touch-action: none; }
+    #sceneCanvas { height: 460px; border: 1px solid #dbeafe; background: #ffffff; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    th, td { border: 1px solid #e2e8f0; padding: 6px; text-align: center; }
+    th { background: #f1f5f9; }
+    tr.total td { background: #fef9c3; font-weight: bold; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
+    .note { margin-top: 6px; font-size: 0.8rem; color: #475569; }
+    @media (max-width: 900px) {
+      .controls { grid-template-columns: 1fr 1fr; }
+      .controls .control-group:first-child { grid-column: 1 / -1; }
+      .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      #sceneCanvas { height: 400px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Addition of Forces: Vector Triangle and Component Method</h1>
+
+    <div class="panel">
+      <div class="controls">
+        <div class="control-group">
+          <label for="preset">Start from</label>
+          <select id="preset">
+            <option value="ex5" selected>Example 5: 30 N and 40 N at 90&deg;</option>
+            <option value="ex6">Example 6: 30 N and 40 N at 30&deg;</option>
+            <option value="opposite">Two forces nearly opposite</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="control-group"><label for="f1mag"><i>P</i> (N)</label><input id="f1mag" type="number" min="0" max="80" step="0.5" /></div>
+        <div class="control-group"><label for="f1ang"><i>P</i> angle (&deg;)</label><input id="f1ang" type="number" min="-180" max="360" step="1" /></div>
+        <div class="control-group"><label for="f2mag"><i>Q</i> (N)</label><input id="f2mag" type="number" min="0" max="80" step="0.5" /></div>
+        <div class="control-group"><label for="f2ang"><i>Q</i> angle (&deg;)</label><input id="f2ang" type="number" min="-180" max="360" step="1" /></div>
+      </div>
+      <div class="toggles">
+        <label class="toggle"><input type="checkbox" id="showOther" /> <span>Also add them the other way round (tail of <i>P</i> at the tip of <i>Q</i>)</span></label>
+        <label class="toggle"><input type="checkbox" id="showComp" /> Show components</label>
+      </div>
+      <div class="readout">
+        <div class="readout-card"><div class="title">Resultant, &Sigma;<i>F</i></div><div class="value" id="rMag">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Direction (from +x axis)</div><div class="value" id="rAng">&mdash;</div></div>
+        <div class="readout-card"><div class="title"><i>R<sub>x</sub></i> = &Sigma;<i>F<sub>x</sub></i></div><div class="value" id="rx">&mdash;</div></div>
+        <div class="readout-card"><div class="title"><i>R<sub>y</sub></i> = &Sigma;<i>F<sub>y</sub></i></div><div class="value" id="ry">&mdash;</div></div>
+      </div>
+    </div>
+
+    <div class="layout">
+      <div class="panel">
+        <div class="hint">Drag the arrowheads of <i>P</i> (blue) and <i>Q</i> (green). Scale: 1 box = 5 N.</div>
+        <canvas id="sceneCanvas"></canvas>
+        <div class="note">Vector triangle method: place the tail of <i>Q</i> at the tip of <i>P</i>; the resultant &Sigma;<i>F</i> (red) joins the tail of <i>P</i> to the tip of <i>Q</i>. Tick the first box to add them in the other order &mdash; you get the same resultant (the two triangles make a parallelogram). Measure it the way you would on paper: count boxes for the length, and read the angle from the +x axis.</div>
+      </div>
+      <div class="panel">
+        <b>Component method</b>
+        <table style="margin-top:6px">
+          <thead><tr><th>Force</th><th><i>F<sub>x</sub></i> = <i>F</i> cos &theta;</th><th><i>F<sub>y</sub></i> = <i>F</i> sin &theta;</th></tr></thead>
+          <tbody>
+            <tr><td><i>P</i></td><td id="px"></td><td id="py"></td></tr>
+            <tr><td><i>Q</i></td><td id="qx"></td><td id="qy"></td></tr>
+            <tr class="total"><td>&Sigma;<i>F</i></td><td id="sx"></td><td id="sy"></td></tr>
+          </tbody>
+        </table>
+        <div class="note"><i>R</i> = &radic;(<i>R<sub>x</sub></i><sup>2</sup> + <i>R<sub>y</sub></i><sup>2</sup>) and &theta; = tan<sup>-1</sup>(<i>R<sub>y</sub></i> / <i>R<sub>x</sub></i>), taking care over which quadrant &Sigma;<i>F</i> points into. Angles are measured anticlockwise from the +x axis.</div>
+        <div class="note" id="workLine"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const el = id => document.getElementById(id);
+    const canvas = el('sceneCanvas');
+    const PRESETS = {
+      ex5: [30, 0, 40, 90],
+      ex6: [30, 0, 40, 30],
+      opposite: [35, 10, 30, 160]
+    };
+    const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
+    const clean = v => (Math.abs(v) < 0.005 ? 0 : v); // no "-0.00"
+    const f2 = v => clean(v).toFixed(2);
+
+    function applyPreset() {
+      const p = PRESETS[el('preset').value]; if (!p) return;
+      ['f1mag', 'f1ang', 'f2mag', 'f2ang'].forEach((id, i) => el(id).value = p[i]);
+    }
+    function forces() {
+      const P = { m: Math.max(0, +el('f1mag').value || 0), a: +el('f1ang').value || 0 };
+      const Q = { m: Math.max(0, +el('f2mag').value || 0), a: +el('f2ang').value || 0 };
+      [P, Q].forEach(f => { f.x = f.m * Math.cos(rad(f.a)); f.y = f.m * Math.sin(rad(f.a)); });
+      const R = { x: P.x + Q.x, y: P.y + Q.y };
+      R.m = Math.hypot(R.x, R.y); R.a = (deg(Math.atan2(R.y, R.x)) + 360) % 360;
+      return { P, Q, R };
+    }
+
+    let view = null;
+    function setup() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const cw = Math.round(rect.width * dpr), ch = Math.round(rect.height * dpr);
+      if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
+      const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const W = rect.width, H = rect.height;
+      const box = Math.max(12, Math.min(26, Math.floor(Math.min(W / 30, H / 20)))); // px per 5 N
+      const s = box / 5; // px per N
+      const o = { x: Math.round(W * 0.42 / box) * box, y: Math.round(H * 0.62 / box) * box };
+      view = { ctx, W, H, s, o, box };
+      return view;
+    }
+    const toPx = (x, y) => ({ x: view.o.x + x * view.s, y: view.o.y - y * view.s });
+
+    function arrow(ctx, a, b, color, lw = 4, dash = null) {
+      const ang = Math.atan2(b.y - a.y, b.x - a.x), len = Math.hypot(b.x - a.x, b.y - a.y);
+      if (len < 2) return;
+      const head = Math.min(14, len * 0.45);
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
+      if (dash) ctx.setLineDash(dash);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x - Math.cos(ang) * head * 0.8, b.y - Math.sin(ang) * head * 0.8); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(b.x, b.y);
+      ctx.lineTo(b.x - head * Math.cos(ang - 0.42), b.y - head * Math.sin(ang - 0.42));
+      ctx.lineTo(b.x - head * Math.cos(ang + 0.42), b.y - head * Math.sin(ang + 0.42));
+      ctx.closePath(); ctx.fill();
+    }
+    function tag(ctx, text, a, b, color, side = 1) {
+      // label beside the middle of the arrow, pushed off the line
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, L = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+      const nx = -(b.y - a.y) / L * side, ny = (b.x - a.x) / L * side;
+      ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const tw = ctx.measureText(text).width;
+      const x = mx + nx * (16 + tw * 0.35), y = my + ny * 16;
+      ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(x - tw / 2 - 3, y - 9, tw + 6, 18);
+      ctx.fillStyle = color; ctx.fillText(text, x, y); ctx.textBaseline = 'alphabetic';
+    }
+
+    function draw() {
+      const { ctx, W, H, o, box } = setup();
+      ctx.clearRect(0, 0, W, H);
+      // grid: 1 box = 5 N
+      ctx.strokeStyle = '#eef2f7'; ctx.lineWidth = 1;
+      for (let x = o.x % box; x < W; x += box) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+      for (let y = o.y % box; y < H; y += box) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+      ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(0, o.y); ctx.lineTo(W, o.y); ctx.moveTo(o.x, 0); ctx.lineTo(o.x, H); ctx.stroke();
+      ctx.fillStyle = '#94a3b8'; ctx.font = '12px Arial'; ctx.textAlign = 'right'; ctx.fillText('+x', W - 6, o.y - 6);
+      ctx.textAlign = 'left'; ctx.fillText('+y', o.x + 6, 14);
+      ctx.fillText('1 box = 5 N', 6, H - 8);
+
+      const { P, Q, R } = forces();
+      const O = toPx(0, 0), Pt = toPx(P.x, P.y), Qt = toPx(P.x + Q.x, P.y + Q.y);
+
+      if (el('showComp').checked) {
+        // components of each force along its own tail, dashed
+        const comp = (t, v, col) => {
+          const a = toPx(t.x, t.y), bx = toPx(t.x + v.x, t.y), by = toPx(t.x + v.x, t.y + v.y);
+          ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.setLineDash([5, 4]);
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(bx.x, bx.y); ctx.lineTo(by.x, by.y); ctx.stroke(); ctx.setLineDash([]);
+        };
+        comp({ x: 0, y: 0 }, P, 'rgba(37,99,235,0.6)');
+        comp({ x: P.x, y: P.y }, Q, 'rgba(22,163,74,0.6)');
+        comp({ x: 0, y: 0 }, R, 'rgba(220,38,38,0.55)');
+        const rx = toPx(R.x, 0);
+        // Rx under (or over) the axis, Ry beside its dashed line, both outside the triangle
+        const plain = (t, x, y, align) => { ctx.font = 'bold 12px Arial'; ctx.textAlign = align; ctx.textBaseline = 'middle'; const tw = ctx.measureText(t).width; const x0 = align === 'left' ? x : align === 'right' ? x - tw : x - tw / 2; ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(x0 - 3, y - 8, tw + 6, 16); ctx.fillStyle = '#b91c1c'; ctx.fillText(t, x, y); ctx.textBaseline = 'alphabetic'; };
+        plain(`Rx = ${f2(R.x)} N`, (O.x + rx.x) / 2, O.y + (R.y >= 0 ? 34 : -34), 'center');
+        plain(`Ry = ${f2(R.y)} N`, rx.x + (R.x >= 0 ? 10 : -10), (rx.y + toPx(R.x, R.y).y) / 2, R.x >= 0 ? 'left' : 'right');
+      }
+      if (el('showOther').checked) {
+        const Qo = toPx(Q.x, Q.y);
+        arrow(ctx, O, Qo, 'rgba(22,163,74,0.45)', 3, [6, 5]);
+        arrow(ctx, Qo, Qt, 'rgba(37,99,235,0.45)', 3, [6, 5]);
+      }
+      arrow(ctx, O, Qt, '#dc2626', 4);
+      arrow(ctx, O, Pt, '#2563eb', 4);
+      arrow(ctx, Pt, Qt, '#16a34a', 4);
+      // label sides chosen so the three tags sit outside the triangle
+      const cross = (Pt.x - O.x) * (Qt.y - O.y) - (Pt.y - O.y) * (Qt.x - O.x);
+      const out = cross > 0 ? -1 : 1;
+      tag(ctx, `P = ${P.m.toFixed(1)} N`, O, Pt, '#1d4ed8', out);
+      tag(ctx, `Q = ${Q.m.toFixed(1)} N`, Pt, Qt, '#15803d', out);
+      tag(ctx, `ΣF = ${R.m.toFixed(1)} N`, O, Qt, '#b91c1c', -out);
+      // handles
+      [[Pt, '#2563eb'], [Qt, '#16a34a']].forEach(([p, c]) => { ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x, p.y, 11, 0, Math.PI * 2); ctx.stroke(); });
+      ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(O.x, O.y, 4, 0, Math.PI * 2); ctx.fill();
+      handles = { P: Pt, Q: Qt };
+    }
+
+    function updateReadout() {
+      const { P, Q, R } = forces();
+      el('rMag').textContent = `${R.m.toFixed(2)} N`;
+      el('rAng').textContent = R.m < 0.005 ? '—' : `${R.a.toFixed(1)}°`;
+      el('rx').textContent = `${f2(R.x)} N`; el('ry').textContent = `${f2(R.y)} N`;
+      el('px').textContent = `${f2(P.x)} N`; el('py').textContent = `${f2(P.y)} N`;
+      el('qx').textContent = `${f2(Q.x)} N`; el('qy').textContent = `${f2(Q.y)} N`;
+      el('sx').textContent = `${f2(R.x)} N`; el('sy').textContent = `${f2(R.y)} N`;
+      el('workLine').innerHTML = `<i>R</i> = &radic;(${f2(R.x)}<sup>2</sup> + ${f2(R.y)}<sup>2</sup>) = <b>${R.m.toFixed(2)} N</b>`;
+    }
+
+    // ---------- dragging ----------
+    let handles = null, drag = null;
+    function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    function pick(p) {
+      if (!handles) return null;
+      if (Math.hypot(p.x - handles.Q.x, p.y - handles.Q.y) < 20) return 'Q';
+      if (Math.hypot(p.x - handles.P.x, p.y - handles.P.y) < 20) return 'P';
+      return null;
+    }
+    canvas.addEventListener('pointerdown', e => { const k = pick(pos(e)); if (!k) return; drag = k; canvas.setPointerCapture(e.pointerId); e.preventDefault(); });
+    canvas.addEventListener('pointermove', e => {
+      const p = pos(e);
+      if (!drag) { canvas.style.cursor = pick(p) ? 'grab' : 'default'; return; }
+      canvas.style.cursor = 'grabbing';
+      const { P } = forces();
+      const wx = (p.x - view.o.x) / view.s, wy = (view.o.y - p.y) / view.s;
+      const bx = drag === 'P' ? wx : wx - P.x, by = drag === 'P' ? wy : wy - P.y;
+      const m = Math.min(80, Math.round(Math.hypot(bx, by) * 2) / 2);
+      let a = Math.round(deg(Math.atan2(by, bx)));
+      if (a < 0) a += 360;
+      el(drag === 'P' ? 'f1mag' : 'f2mag').value = m;
+      el(drag === 'P' ? 'f1ang' : 'f2ang').value = a;
+      el('preset').value = 'custom';
+    });
+    const end = () => { drag = null; };
+    canvas.addEventListener('pointerup', end);
+    canvas.addEventListener('pointercancel', end);
+
+    el('preset').addEventListener('change', applyPreset);
+    ['f1mag', 'f1ang', 'f2mag', 'f2ang'].forEach(id => el(id).addEventListener('input', () => { el('preset').value = 'custom'; }));
+    applyPreset();
+    function frame() { draw(); updateReadout(); requestAnimationFrame(frame); }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

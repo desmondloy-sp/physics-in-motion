@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coulomb's Law and Electric Field Lines</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
+    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
+    .controls { display: grid; grid-template-columns: 1fr 1fr auto auto auto; gap: 10px; align-items: end; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; }
+    label { font-size: 0.8rem; font-weight: 600; }
+    input[type=range] { width: 100%; }
+    .val { font-weight: normal; color: #334155; }
+    .toggle { display: flex; align-items: center; gap: 5px; font-size: 0.82rem; font-weight: 600; white-space: nowrap; padding-bottom: 4px; }
+    .readout { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
+    .readout-card .value { font-size: 1rem; font-weight: bold; }
+    canvas { display: block; width: 100%; border-radius: 10px; touch-action: none; }
+    #sceneCanvas { height: 440px; border: 1px solid #dbeafe; background: #f8fbff; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
+    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    @media (max-width: 900px) {
+      .controls { grid-template-columns: 1fr 1fr; }
+      .readout { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+      #sceneCanvas { height: 400px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Coulomb's Law and Electric Field Lines</h1>
+
+    <div class="panel">
+      <div class="controls">
+        <div class="control-group">
+          <label for="q1">Charge <i>Q<sub>1</sub></i> <span class="val" id="q1Val"></span></label>
+          <input id="q1" type="range" min="-10" max="10" step="0.5" value="5" />
+        </div>
+        <div class="control-group">
+          <label for="q2">Charge <i>Q<sub>2</sub></i> <span class="val" id="q2Val"></span></label>
+          <input id="q2" type="range" min="-10" max="10" step="0.5" value="-3" />
+        </div>
+        <label class="toggle"><input type="checkbox" id="showLines" checked /> Field lines</label>
+        <label class="toggle"><input type="checkbox" id="showGrid" /> Field arrows</label>
+        <label class="toggle"><input type="checkbox" id="showProbe" checked /> Test charge</label>
+      </div>
+
+      <div class="readout">
+        <div class="readout-card"><div class="title">Separation, <i>r</i></div><div class="value" id="rValue">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Force, <i>F</i> = <i>kQ<sub>1</sub>Q<sub>2</sub></i> / <i>r</i><sup>2</sup></div><div class="value" id="forceValue">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Nature of the force</div><div class="value" id="natureValue">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Coulomb's constant, <i>k</i></div><div class="value">8.99 &times; 10<sup>9</sup> N m<sup>2</sup> C<sup>-2</sup></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="hint">Drag Q<sub>1</sub> and Q<sub>2</sub> anywhere and watch the field lines and forces change. Drag the small yellow test charge to explore the field.</div>
+      <canvas id="sceneCanvas"></canvas>
+      <div class="note">
+        Like charges repel, unlike charges attract. The bold arrows on each charge show the force it feels &mdash; <b style="color:#16a34a;">green for attraction</b>, <b style="color:#d97706;">amber for repulsion</b>. The two forces are equal in size and opposite in direction (Newton's third law), and they grow quickly as the charges get closer: halve <i>r</i> and <i>F</i> becomes four times bigger. Field lines start on positive charges and end on negative charges (or run off to far away); the number of lines drawn is proportional to the size of each charge, and where the lines crowd together the field is stronger. The yellow test charge is a small positive charge: the arrow on it shows the direction of the field at that point.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const K = 8.99e9;
+    let WORLD_W_CM = 40; // the canvas shows 40 cm across (24 cm on a phone, so the charges are not cramped)
+    const el = id => document.getElementById(id);
+    const canvas = el('sceneCanvas');
+    const q1El = el('q1'), q2El = el('q2');
+
+    // positions in cm, origin top-left of the canvas
+    const charges = [ { x: 15, y: 0, id: 'Q1' }, { x: 25, y: 0, id: 'Q2' } ];
+    const probe = { x: 20, y: 0 };
+    let placed = false;
+    let view = null;
+    let linesCache = null, linesKey = '';
+
+    function setup() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const W = Math.round(rect.width * dpr), H = Math.round(rect.height * dpr);
+      if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (!placed) WORLD_W_CM = rect.width < 600 ? 24 : 40;
+      const s = rect.width / WORLD_W_CM; // px per cm
+      view = { ctx, w: rect.width, h: rect.height, s, hCm: rect.height / s };
+      if (!placed) {
+        charges[0].x = WORLD_W_CM / 2 - 5; charges[1].x = WORLD_W_CM / 2 + 5; // 10 cm apart, as before
+        charges[0].y = charges[1].y = view.hCm * 0.52;
+        probe.x = WORLD_W_CM / 2; probe.y = view.hCm * 0.2;
+        placed = true;
+      }
+      return view;
+    }
+
+    const qOf = i => parseFloat((i === 0 ? q1El : q2El).value);
+    const radiusPx = q => 12 + Math.min(10, Math.abs(q) * 1.1);
+    const px = p => ({ x: p.x * view.s, y: p.y * view.s });
+
+    // Field (arbitrary units) at a canvas-pixel point
+    function field(x, y) {
+      let ex = 0, ey = 0;
+      for (let i = 0; i < 2; i++) {
+        const q = qOf(i); if (q === 0) continue;
+        const c = px(charges[i]);
+        const dx = x - c.x, dy = y - c.y, d2 = dx * dx + dy * dy;
+        const d = Math.sqrt(d2) || 1e-6;
+        ex += q * dx / (d2 * d); ey += q * dy / (d2 * d);
+      }
+      return { ex, ey };
+    }
+
+    function traceLine(x, y, dir, startIdx) {
+      const pts = [{ x, y }];
+      const step = 3;
+      const cs = [0, 1].map(i => ({ c: px(charges[i]), q: qOf(i), r: radiusPx(qOf(i)) }));
+      let endIdx = -1;
+      for (let n = 0; n < 900; n++) {
+        // midpoint (RK2) step along +/-E
+        let f = field(x, y); let m = Math.hypot(f.ex, f.ey); if (m === 0) break;
+        const mx = x + dir * step * 0.5 * f.ex / m, my = y + dir * step * 0.5 * f.ey / m;
+        f = field(mx, my); m = Math.hypot(f.ex, f.ey); if (m === 0) break;
+        x += dir * step * f.ex / m; y += dir * step * f.ey / m;
+        pts.push({ x, y });
+        let hit = false;
+        for (let i = 0; i < 2; i++) {
+          if (i === startIdx || cs[i].q === 0) continue;
+          if (Math.hypot(x - cs[i].c.x, y - cs[i].c.y) < cs[i].r * 0.6) { endIdx = i; hit = true; }
+        }
+        if (hit) break;
+        if (x < -60 || y < -60 || x > view.w + 60 || y > view.h + 60) break;
+      }
+      return { pts, endIdx };
+    }
+
+    function computeLines() {
+      const key = [charges[0].x, charges[0].y, charges[1].x, charges[1].y, qOf(0), qOf(1), view.w, view.h].map(v => v.toFixed(2)).join('|');
+      if (key === linesKey) return linesCache;
+      const lines = [];
+      for (let i = 0; i < 2; i++) {
+        const q = qOf(i); if (q === 0) continue;
+        const n = Math.max(4, Math.round(Math.abs(q) * 3));
+        const c = px(charges[i]);
+        const r0 = radiusPx(q) + 1;
+        const other = charges[1 - i];
+        const base = Math.atan2(other.y - charges[i].y, other.x - charges[i].x) + Math.PI / n;
+        for (let k = 0; k < n; k++) {
+          const a = base + (k / n) * Math.PI * 2;
+          const sx = c.x + Math.cos(a) * r0, sy = c.y + Math.sin(a) * r0;
+          if (q > 0) {
+            const t = traceLine(sx, sy, +1, i);
+            lines.push({ pts: t.pts, forward: true });
+          } else {
+            const t = traceLine(sx, sy, -1, i);
+            // lines that end on a positive charge are already drawn from that charge
+            if (t.endIdx >= 0 && qOf(t.endIdx) > 0) continue;
+            lines.push({ pts: t.pts, forward: false });
+          }
+        }
+      }
+      linesKey = key; linesCache = lines;
+      return lines;
+    }
+
+    function arrow(ctx, x1, y1, x2, y2, color, lw = 3, head = 10) {
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      const a = Math.atan2(y2 - y1, x2 - x1);
+      ctx.beginPath(); ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - head * Math.cos(a - 0.42), y2 - head * Math.sin(a - 0.42));
+      ctx.lineTo(x2 - head * Math.cos(a + 0.42), y2 - head * Math.sin(a + 0.42));
+      ctx.closePath(); ctx.fill();
+    }
+    function headAt(ctx, x, y, ang, color, size = 7) {
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.moveTo(x + Math.cos(ang) * size, y + Math.sin(ang) * size);
+      ctx.lineTo(x + Math.cos(ang + 2.5) * size, y + Math.sin(ang + 2.5) * size);
+      ctx.lineTo(x + Math.cos(ang - 2.5) * size, y + Math.sin(ang - 2.5) * size);
+      ctx.closePath(); ctx.fill();
+    }
+
+    function forceN() {
+      const q1 = qOf(0) * 1e-6, q2 = qOf(1) * 1e-6;
+      const r = Math.hypot(charges[1].x - charges[0].x, charges[1].y - charges[0].y) / 100;
+      return { F: K * Math.abs(q1 * q2) / (r * r), r, q1, q2 };
+    }
+    function fmtF(F) {
+      if (F === 0) return '0 N';
+      if (F >= 0.01 && F < 1e5) return `${F.toPrecision(3)} N`;
+      const e = Math.floor(Math.log10(F));
+      return `${(F / 10 ** e).toFixed(2)} × 10^${e} N`;
+    }
+
+    function draw() {
+      const { ctx, w, h } = setup();
+      ctx.clearRect(0, 0, w, h);
+
+      // 5 cm grid for a sense of scale
+      ctx.strokeStyle = '#e8eef7'; ctx.lineWidth = 1;
+      for (let x = 0; x <= WORLD_W_CM; x += 5) { ctx.beginPath(); ctx.moveTo(x * view.s, 0); ctx.lineTo(x * view.s, h); ctx.stroke(); }
+      for (let y = 0; y <= view.hCm; y += 5) { ctx.beginPath(); ctx.moveTo(0, y * view.s); ctx.lineTo(w, y * view.s); ctx.stroke(); }
+      ctx.fillStyle = '#94a3b8'; ctx.font = '11px Arial'; ctx.textAlign = 'left';
+      ctx.fillText('grid squares: 5 cm', 6, h - 6);
+
+      if (el('showGrid').checked) {
+        const gap = 34;
+        for (let gy = gap / 2; gy < h; gy += gap) for (let gx = gap / 2; gx < w; gx += gap) {
+          const f = field(gx, gy); const m = Math.hypot(f.ex, f.ey); if (m === 0) continue;
+          const near = [0, 1].some(i => { const c = px(charges[i]); return Math.hypot(gx - c.x, gy - c.y) < radiusPx(qOf(i)) + 6; });
+          if (near) continue;
+          const alpha = Math.max(0.15, Math.min(0.9, 0.35 + 0.12 * Math.log10(m * 1e5)));
+          const ux = f.ex / m, uy = f.ey / m;
+          ctx.globalAlpha = alpha;
+          arrow(ctx, gx - ux * 10, gy - uy * 10, gx + ux * 10, gy + uy * 10, '#7c3aed', 1.5, 6);
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      if (el('showLines').checked) {
+        const lines = computeLines();
+        ctx.lineWidth = 1.4;
+        for (const L of lines) {
+          ctx.strokeStyle = 'rgba(71,85,105,0.75)';
+          ctx.beginPath(); ctx.moveTo(L.pts[0].x, L.pts[0].y);
+          for (let i = 1; i < L.pts.length; i++) ctx.lineTo(L.pts[i].x, L.pts[i].y);
+          ctx.stroke();
+          // arrowhead along the field direction, placed on a visible stretch of the line
+          const idx = Math.min(L.pts.length - 2, Math.max(1, Math.round(Math.min(L.pts.length * 0.5, 28))));
+          const a = L.pts[idx], b = L.pts[idx + 1];
+          if (a && b && a.x > 0 && a.x < w && a.y > 0 && a.y < h) {
+            let ang = Math.atan2(b.y - a.y, b.x - a.x);
+            if (!L.forward) ang += Math.PI;
+            headAt(ctx, a.x, a.y, ang, 'rgba(51,65,85,0.9)', 6);
+          }
+        }
+      }
+
+      // separation line + label
+      const p1 = px(charges[0]), p2 = px(charges[1]);
+      const { F, r } = forceN();
+      ctx.setLineDash([5, 4]); ctx.strokeStyle = '#64748b'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke(); ctx.setLineDash([]);
+      const ux = (p2.x - p1.x) / (Math.hypot(p2.x - p1.x, p2.y - p1.y) || 1), uy = (p2.y - p1.y) / (Math.hypot(p2.x - p1.x, p2.y - p1.y) || 1);
+      const nx = -uy, ny = ux;
+      const mid = { x: (p1.x + p2.x) / 2 + nx * 16, y: (p1.y + p2.y) / 2 + ny * 16 };
+      ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(248,251,255,0.85)'; ctx.fillRect(mid.x - 38, mid.y - 11, 76, 16);
+      ctx.fillStyle = '#334155'; ctx.fillText(`r = ${(r * 100).toFixed(1)} cm`, mid.x, mid.y + 1);
+
+      // force arrows on each charge
+      const q1 = qOf(0), q2 = qOf(1);
+      if (q1 !== 0 && q2 !== 0) {
+        const attract = q1 * q2 < 0;
+        const len = Math.min(95, 26 + 13 * Math.log(1 + F));
+        const col = attract ? '#16a34a' : '#d97706';
+        [[p1, 1], [p2, -1]].forEach(([p, sgn], i) => {
+          const dx = attract ? ux * sgn : -ux * sgn, dy = attract ? uy * sgn : -uy * sgn;
+          const rr = radiusPx(qOf(i)) + 3;
+          arrow(ctx, p.x + dx * rr, p.y + dy * rr, p.x + dx * (rr + len), p.y + dy * (rr + len), col, 4.5, 13);
+          if (view.w < 600) return; // narrow: one shared label is drawn below
+          // label at the arrow's tip, pushed sideways off the line
+          const tx = p.x + dx * (rr + len * 0.55) - nx * 16, ty = p.y + dy * (rr + len * 0.55) - ny * 16;
+          ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
+          ctx.fillStyle = 'rgba(248,251,255,0.85)'; const tw = ctx.measureText(`F = ${fmtF(F)}`).width;
+          ctx.fillRect(tx - tw / 2 - 3, ty - 11, tw + 6, 16);
+          ctx.fillStyle = col; ctx.fillText(`F = ${fmtF(F)}`, tx, ty + 1);
+        });
+        if (view.w < 600) {
+          const t = `F = ${fmtF(F)} on each`, sx = (p1.x + p2.x) / 2 - nx * 30, sy = (p1.y + p2.y) / 2 - ny * 30;
+          ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
+          const tw = ctx.measureText(t).width;
+          ctx.fillStyle = 'rgba(248,251,255,0.9)'; ctx.fillRect(sx - tw / 2 - 3, sy - 11, tw + 6, 16);
+          ctx.fillStyle = col; ctx.fillText(t, sx, sy + 1);
+        }
+      }
+
+      // the charges
+      charges.forEach((c, i) => {
+        const q = qOf(i), p = px(c), r0 = radiusPx(q);
+        ctx.fillStyle = q > 0 ? '#dc2626' : q < 0 ? '#2563eb' : '#94a3b8';
+        ctx.beginPath(); ctx.arc(p.x, p.y, r0, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.strokeStyle = 'white'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(p.x - r0 * 0.45, p.y); ctx.lineTo(p.x + r0 * 0.45, p.y);
+        if (q > 0) { ctx.moveTo(p.x, p.y - r0 * 0.45); ctx.lineTo(p.x, p.y + r0 * 0.45); }
+        ctx.stroke();
+        ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
+        const label = `${c.id} = ${q > 0 ? '+' : ''}${q.toFixed(1)} µC`;
+        const ly = p.y + r0 + 16 < h - 4 ? p.y + r0 + 16 : p.y - r0 - 8;
+        ctx.fillStyle = 'rgba(248,251,255,0.85)'; const tw = ctx.measureText(label).width;
+        ctx.fillRect(p.x - tw / 2 - 3, ly - 11, tw + 6, 15);
+        ctx.fillStyle = '#0f172a'; ctx.fillText(label, p.x, ly);
+      });
+
+      // test charge
+      if (el('showProbe').checked) {
+        const p = px(probe);
+        const f = field(p.x, p.y), m = Math.hypot(f.ex, f.ey);
+        if (m > 0) arrow(ctx, p.x, p.y, p.x + f.ex / m * 42, p.y + f.ey / m * 42, '#a16207', 3, 10);
+        ctx.fillStyle = '#facc15'; ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#a16207'; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.strokeStyle = '#713f12'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(p.x - 4, p.y); ctx.lineTo(p.x + 4, p.y); ctx.moveTo(p.x, p.y - 4); ctx.lineTo(p.x, p.y + 4); ctx.stroke();
+      }
+    }
+
+    function updateReadout() {
+      const { F, r } = forceN();
+      const q1 = qOf(0), q2 = qOf(1);
+      el('q1Val').textContent = `(${q1 > 0 ? '+' : ''}${q1.toFixed(1)} µC)`;
+      el('q2Val').textContent = `(${q2 > 0 ? '+' : ''}${q2.toFixed(1)} µC)`;
+      el('rValue').textContent = `${(r * 100).toFixed(1)} cm = ${r.toFixed(3)} m`;
+      el('forceValue').textContent = fmtF(F);
+      el('natureValue').textContent = F === 0 ? 'No force (a charge is zero)' : (q1 * q2 < 0 ? 'Attractive' : 'Repulsive');
+    }
+
+    // ---------- dragging ----------
+    let drag = null;
+    function pos(e) { const b = canvas.getBoundingClientRect(); return { x: e.clientX - b.left, y: e.clientY - b.top }; }
+    function hitTest(p) {
+      if (el('showProbe').checked) { const t = px(probe); if (Math.hypot(p.x - t.x, p.y - t.y) < 16) return { kind: 'probe' }; }
+      for (let i = 0; i < 2; i++) { const c = px(charges[i]); if (Math.hypot(p.x - c.x, p.y - c.y) < radiusPx(qOf(i)) + 10) return { kind: 'charge', i }; }
+      return null;
+    }
+    canvas.addEventListener('pointerdown', e => {
+      const p = pos(e); const hit = hitTest(p); if (!hit) return;
+      const target = hit.kind === 'probe' ? probe : charges[hit.i];
+      const t = px(target);
+      drag = { ...hit, dx: t.x - p.x, dy: t.y - p.y };
+      canvas.setPointerCapture(e.pointerId); e.preventDefault();
+    });
+    canvas.addEventListener('pointermove', e => {
+      const p = pos(e);
+      if (!drag) { canvas.style.cursor = hitTest(p) ? 'grab' : 'default'; return; }
+      canvas.style.cursor = 'grabbing';
+      const margin = 1.2;
+      let x = (p.x + drag.dx) / view.s, y = (p.y + drag.dy) / view.s;
+      x = Math.max(margin, Math.min(WORLD_W_CM - margin, x));
+      y = Math.max(margin, Math.min(view.hCm - margin, y));
+      if (drag.kind === 'probe') { probe.x = x; probe.y = y; }
+      else {
+        const o = charges[1 - drag.i];
+        const d = Math.hypot(x - o.x, y - o.y), minD = 1.5; // keep them at least 1.5 cm apart
+        if (d < minD) { const a = Math.atan2(y - o.y, x - o.x); x = o.x + Math.cos(a) * minD; y = o.y + Math.sin(a) * minD; }
+        charges[drag.i].x = x; charges[drag.i].y = y;
+      }
+    });
+    const end = () => { drag = null; };
+    canvas.addEventListener('pointerup', end);
+    canvas.addEventListener('pointercancel', end);
+
+    function frame() { draw(); updateReadout(); requestAnimationFrame(frame); }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

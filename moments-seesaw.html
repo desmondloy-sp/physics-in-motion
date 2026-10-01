@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Moment of a Force and the Principle of Moments (Seesaw)</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
+    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
+    .controls { display: grid; grid-template-columns: 2fr repeat(3, 1fr) auto; gap: 10px; align-items: end; }
+    .controls.second { grid-template-columns: 2fr repeat(3, 1fr) auto; margin-top: 8px; }
+    .spacer { font-size: 0.78rem; color: #475569; align-self: center; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; }
+    label { font-size: 0.8rem; font-weight: 600; }
+    input, select { font-size: 0.9rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
+    .toggle { display: flex; align-items: center; gap: 5px; font-size: 0.82rem; font-weight: 600; white-space: nowrap; padding-bottom: 8px; }
+    .toggle input { width: auto; }
+    .readout { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
+    .readout-card .value { font-size: 1rem; font-weight: bold; }
+    .readout-card.balanced { background: #ecfdf5; }
+    .readout-card.tipping { background: #fef2f2; }
+    canvas { display: block; width: 100%; border-radius: 10px; touch-action: none; }
+    #sceneCanvas { height: 360px; border: 1px solid #dbeafe; background: #f8fbff; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
+    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    @media (max-width: 900px) {
+      .controls { grid-template-columns: repeat(2, minmax(110px, 1fr)); }
+      .controls .control-group:first-child { grid-column: 1 / -1; }
+      .readout { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Moment of a Force and the Principle of Moments</h1>
+
+    <div class="panel">
+      <div class="controls">
+        <div class="control-group">
+          <label for="preset">Start from</label>
+          <select id="preset">
+            <option value="a3" selected>Tutorial A3: 30 kg, 2 m left; 40 kg on the right</option>
+            <option value="equal">Equal masses at different distances</option>
+            <option value="three">Three children</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="control-group"><label for="m1">Mass A (kg)</label><input id="m1" type="number" min="1" max="100" step="1" value="30" /></div>
+        <div class="control-group"><label for="m2">Mass B (kg)</label><input id="m2" type="number" min="1" max="100" step="1" value="40" /></div>
+        <div class="control-group"><label for="m3">Mass C (kg)</label><input id="m3" type="number" min="1" max="100" step="1" value="20" /></div>
+        <label class="toggle"><input type="checkbox" id="useC" /> Use mass C</label>
+      </div>
+      <div class="controls second">
+        <div class="spacer">Distance from the pivot (m) &mdash; negative = left of the pivot. Or just drag them.</div>
+        <div class="control-group"><label for="x1">A at (m)</label><input id="x1" type="number" min="-2.85" max="2.85" step="0.01" /></div>
+        <div class="control-group"><label for="x2">B at (m)</label><input id="x2" type="number" min="-2.85" max="2.85" step="0.01" /></div>
+        <div class="control-group"><label for="x3">C at (m)</label><input id="x3" type="number" min="-2.85" max="2.85" step="0.01" /></div>
+        <div></div>
+      </div>
+
+      <div class="readout">
+        <div class="readout-card"><div class="title">Sum of anticlockwise moments</div><div class="value" id="acwValue">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Sum of clockwise moments</div><div class="value" id="cwValue">&mdash;</div></div>
+        <div class="readout-card" id="netCard"><div class="title">Net moment (clockwise +)</div><div class="value" id="netValue">&mdash;</div></div>
+        <div class="readout-card" id="stateCard"><div class="title">Balanced?</div><div class="value" id="stateValue">&mdash;</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="hint">Drag the children along the seesaw. Tutorial A3: where must the 40 kg child B sit to balance the 30 kg child A?</div>
+      <canvas id="sceneCanvas"></canvas>
+      <div class="note">
+        Moment = force &times; perpendicular distance from the pivot to the line of action of the force. Here each force is a child's weight, <i>W</i> = <i>mg</i> with <i>g</i> = 10 m s<sup>-2</sup>, and each distance is measured along the seesaw from the pivot (shown under the beam). A weight on the <b>right</b> of the pivot turns the seesaw <b>clockwise</b>; on the <b>left</b>, <b>anticlockwise</b>. By the <b>principle of moments</b>, the seesaw balances only when the sum of clockwise moments equals the sum of anticlockwise moments. If they are not equal, it turns until one end hits the ground. The seesaw is a light plank pivoted at its centre, so its own weight has no moment. (Tutorial A3 describes a 4.0 m seesaw with the 30 kg child at one end, 2.0 m from the pivot; the plank here is 6 m long so the other presets fit, and the answer, 1.5 m, is the same.)
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const G = 10;
+    const HALF = 3; // plank is 6 m long, pivoted at its centre
+    const el = id => document.getElementById(id);
+    const canvas = el('sceneCanvas');
+    const presetEl = el('preset');
+
+    // positions in metres from the pivot (negative = left)
+    const kids = [
+      { id: 'A', massEl: el('m1'), posEl: el('x1'), x: -2, color: '#2563eb' },
+      { id: 'B', massEl: el('m2'), posEl: el('x2'), x: 2.5, color: '#16a34a' },
+      { id: 'C', massEl: el('m3'), posEl: el('x3'), x: 1, color: '#d97706' }
+    ];
+    let tilt = 0, tiltVel = 0;
+
+    const PRESETS = {
+      a3: { m: [30, 40, 20], x: [-2, 1, 1], c: false },
+      equal: { m: [30, 30, 20], x: [-2, 1, 1], c: false },
+      three: { m: [40, 20, 20], x: [-1.5, 1, 2], c: true }
+    };
+    function applyPreset() {
+      const p = PRESETS[presetEl.value]; if (!p) return;
+      kids.forEach((k, i) => { k.massEl.value = p.m[i]; k.x = p.x[i]; k.posEl.value = k.x.toFixed(2); });
+      el('useC').checked = p.c;
+    }
+
+    const active = () => kids.filter(k => k.id !== 'C' || el('useC').checked);
+    const mass = k => Math.max(1, parseFloat(k.massEl.value) || 1);
+
+    function moments() {
+      let cw = 0, acw = 0;
+      for (const k of active()) { const M = mass(k) * G * k.x; if (M > 0) cw += M; else acw -= M; }
+      const net = cw - acw;
+      const balanced = Math.abs(net) < Math.max(0.5, 0.005 * Math.max(cw, acw));
+      return { cw, acw, net, balanced };
+    }
+
+    // ---------- drawing ----------
+    let geo = null;
+    function setup() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const W = Math.round(rect.width * dpr), H = Math.round(rect.height * dpr);
+      if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
+      const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { ctx, w: rect.width, h: rect.height };
+    }
+
+    function arrow(ctx, x1, y1, x2, y2, color, lw = 3, head = 10) {
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      const a = Math.atan2(y2 - y1, x2 - x1);
+      ctx.beginPath(); ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - head * Math.cos(a - 0.45), y2 - head * Math.sin(a - 0.45));
+      ctx.lineTo(x2 - head * Math.cos(a + 0.45), y2 - head * Math.sin(a + 0.45));
+      ctx.closePath(); ctx.fill();
+    }
+
+    function draw() {
+      const { ctx, w, h } = setup();
+      ctx.clearRect(0, 0, w, h);
+      const groundY = h - 34;
+      const px = Math.min((w - 60) / (2 * HALF), 150); // px per metre
+      const pivotH = Math.min(104, HALF * px * 0.35); // keeps the resting tilt near 20 degrees at any width
+      const cx = w / 2, cy = groundY - pivotH;
+      const maxTilt = Math.asin(Math.min(0.9, pivotH / (HALF * px)));
+      geo = { px, cx, cy, maxTilt };
+      const ux = Math.cos(tilt), uy = Math.sin(tilt); // beam direction (clockwise tilt = right end down)
+      const onBeam = (x, up = 0) => ({ x: cx + ux * x * px + uy * up, y: cy + uy * x * px - ux * up });
+
+      // ground
+      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, groundY, w, h - groundY);
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(w, groundY); ctx.stroke();
+
+      // pivot
+      ctx.fillStyle = '#334155';
+      ctx.beginPath(); ctx.moveTo(cx, cy + 4); ctx.lineTo(cx - 26, groundY); ctx.lineTo(cx + 26, groundY); ctx.closePath(); ctx.fill();
+
+      // plank
+      const a = onBeam(-HALF), b = onBeam(HALF);
+      ctx.strokeStyle = '#a16207'; ctx.lineWidth = 12; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.lineCap = 'butt';
+      // metre ticks
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1.5;
+      for (let m = -HALF + 1; m < HALF; m++) { const p = onBeam(m, -4), q = onBeam(m, 4); ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke(); }
+
+      const kidsNow = active();
+      const maxW = Math.max(...kidsNow.map(k => mass(k) * G));
+      const sizeOf = k => 26 + Math.sqrt(mass(k)) * 3.2;
+      // pass 1: distances and weight arrows (drawn first so the blocks sit on top of them)
+      kidsNow.forEach((k, i) => {
+        const m = mass(k), W = m * G, size = sizeOf(k);
+        const narrow = w < 600; // on a phone the distances are shown in the position boxes instead
+        const row = 16 + i * 17;
+        const p0 = onBeam(0, -row), p1 = onBeam(k.x, -row);
+        const out = k.x >= 0 ? 1 : -1; // used by the weight label below as well
+        if (!narrow) {
+        ctx.strokeStyle = k.color; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
+        ctx.fillStyle = k.color; ctx.beginPath(); ctx.arc(p1.x, p1.y, 2.5, 0, Math.PI * 2); ctx.fill();
+        // label under the middle of its own line, so rows never collide
+        const mid = onBeam(k.x / 2, -row - 8);
+        ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(`${Math.abs(k.x).toFixed(2)} m`, mid.x, mid.y);
+        ctx.textBaseline = 'alphabetic';
+        }
+
+        const cg = onBeam(k.x, 6 + size / 2);
+        const len = Math.min(size / 2 + 26 + 50 * W / maxW, groundY - 8 - cg.y);
+        arrow(ctx, cg.x, cg.y, cg.x, cg.y + len, '#7c3aed', 3, 10);
+        const txt = narrow ? `${W.toFixed(0)} N` : `W = ${W.toFixed(0)} N`;
+        ctx.font = 'bold 12px Arial';
+        const tw = ctx.measureText(txt).width;
+        const lx = out > 0 ? cg.x - 8 - tw : cg.x + 8; // inner side of the arrow, clear of the distance label
+        ctx.fillStyle = 'rgba(248,251,255,0.9)'; ctx.fillRect(lx - 3, cg.y + len - 15, tw + 6, 16);
+        ctx.fillStyle = '#5b21b6'; ctx.textAlign = 'left'; ctx.fillText(txt, lx, cg.y + len - 3);
+      });
+      // pass 2: the children (blocks) standing on the plank
+      kidsNow.forEach(k => {
+        const m = mass(k), size = sizeOf(k);
+        const base = onBeam(k.x, 6);
+        ctx.save(); ctx.translate(base.x, base.y); ctx.rotate(tilt);
+        ctx.fillStyle = k.color; ctx.globalAlpha = drag && drag.k === k ? 0.85 : 1;
+        ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-size / 2, -size, size, size, 6) : ctx.rect(-size / 2, -size, size, size); ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = 'white'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(k.id, 0, -size * 0.68); ctx.font = '11px Arial'; ctx.fillText(`${m} kg`, 0, -size * 0.3);
+        ctx.textBaseline = 'alphabetic';
+        ctx.restore();
+        k.hit = { x: base.x + uy * size / 2, y: base.y - ux * size / 2, r: size * 0.75 };
+      });
+
+      // turning direction label
+      const mo = moments();
+      ctx.font = 'bold 14px Arial'; ctx.textAlign = 'center';
+      ctx.fillStyle = mo.balanced ? '#15803d' : '#b91c1c';
+      ctx.fillText(mo.balanced ? 'Balanced: clockwise moments = anticlockwise moments' : (mo.net > 0 ? 'Turns clockwise (right side goes down)' : 'Turns anticlockwise (left side goes down)'), w / 2, 22);
+    }
+
+    function updateReadout() {
+      const mo = moments();
+      el('acwValue').textContent = `${mo.acw.toFixed(0)} N m`;
+      el('cwValue').textContent = `${mo.cw.toFixed(0)} N m`;
+      el('netValue').textContent = `${mo.net > 0 ? '+' : ''}${mo.net.toFixed(0)} N m`;
+      el('stateValue').textContent = mo.balanced ? 'Yes' : 'No';
+      ['netCard', 'stateCard'].forEach(id => { el(id).classList.toggle('balanced', mo.balanced); el(id).classList.toggle('tipping', !mo.balanced); });
+    }
+
+    // ---------- interaction ----------
+    let drag = null;
+    function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    function pick(p) {
+      let best = null, bd = Infinity;
+      for (const k of active()) { if (!k.hit) continue; const d = Math.hypot(p.x - k.hit.x, p.y - k.hit.y); if (d < k.hit.r + 8 && d < bd) { bd = d; best = k; } }
+      return best;
+    }
+    canvas.addEventListener('pointerdown', e => {
+      const p = pos(e), k = pick(p); if (!k) return;
+      drag = { k }; canvas.setPointerCapture(e.pointerId); e.preventDefault();
+    });
+    canvas.addEventListener('pointermove', e => {
+      const p = pos(e);
+      if (!drag) { canvas.style.cursor = pick(p) ? 'grab' : 'default'; return; }
+      canvas.style.cursor = 'grabbing';
+      // project the pointer onto the (tilted) plank
+      const ux = Math.cos(tilt), uy = Math.sin(tilt);
+      let x = ((p.x - geo.cx) * ux + (p.y - geo.cy) * uy) / geo.px;
+      x = Math.round(Math.max(-HALF + 0.15, Math.min(HALF - 0.15, x)) * 100) / 100;
+      drag.k.x = x; drag.k.posEl.value = x.toFixed(2);
+      presetEl.value = 'custom';
+    });
+    const end = () => { drag = null; };
+    canvas.addEventListener('pointerup', end);
+    canvas.addEventListener('pointercancel', end);
+
+    presetEl.addEventListener('change', applyPreset);
+    [el('m1'), el('m2'), el('m3'), el('useC')].forEach(x => x.addEventListener('input', () => { presetEl.value = 'custom'; }));
+    kids.forEach(k => k.posEl.addEventListener('input', () => {
+      const v = parseFloat(k.posEl.value);
+      if (!isNaN(v)) { k.x = Math.max(-HALF + 0.15, Math.min(HALF - 0.15, v)); presetEl.value = 'custom'; }
+    }));
+
+    applyPreset();
+    let last = null;
+    function frame(ts) {
+      if (last === null) last = ts;
+      const dt = Math.max(0, Math.min(0.05, (ts - last) / 1000)); last = ts;
+      if (geo) {
+        const mo = moments();
+        const target = mo.balanced ? 0 : Math.sign(mo.net) * geo.maxTilt;
+        // ease the plank toward level or toward resting on the ground
+        tiltVel += ((target - tilt) * 30 - tiltVel * 9) * dt;
+        tilt += tiltVel * dt;
+        if (Math.abs(tilt) > geo.maxTilt) { tilt = Math.sign(tilt) * geo.maxTilt; tiltVel = 0; }
+      }
+      draw(); updateReadout();
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

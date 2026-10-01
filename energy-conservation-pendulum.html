@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conservation of Energy: A Swinging Pendulum</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
+    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
+    .controls { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1.4fr; gap: 10px; align-items: end; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; }
+    .control-group input, .control-group select { max-width: 130px; }
+    .control-group.button-group { justify-content: flex-end; }
+    .checkbox-row { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 600; }
+    .checkbox-row input { width: auto; max-width: none; }
+    label { font-size: 0.8rem; font-weight: 600; }
+    input, select, button { font-size: 0.9rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
+    .buttons { display: flex; gap: 6px; }
+    button { cursor: pointer; background: #2563eb; color: white; border: none; }
+    button:hover { background: #1d4ed8; }
+    button.secondary { background: #475569; }
+    button.danger { background: #dc2626; }
+    .readout { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
+    .readout-card .value { font-size: 1rem; font-weight: bold; }
+    .layout { display: grid; grid-template-columns: 1fr; gap: 8px; }
+    @media (min-width: 900px) { .layout { grid-template-columns: 2fr 1fr; } }
+    .animation-wrap { margin-top: 8px; }
+    canvas { display: block; width: 100%; border-radius: 10px; background: white; }
+    #sceneCanvas { height: 300px; border: 1px solid #dbeafe; background: linear-gradient(to bottom, #f8fbff 0%, #eef6ff 100%); touch-action: none; cursor: grab; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
+    .legend { display: flex; gap: 14px; font-size: 0.78rem; color: #334155; margin: 0 0 4px; flex-wrap: wrap; }
+    .legend span::before { content: ''; display: inline-block; width: 14px; height: 3px; margin-right: 5px; vertical-align: middle; background: var(--c); }
+    #barCanvas { height: 300px; border: 1px solid #e5e7eb; background: #fbfdff; }
+    .graph-box { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px; }
+    .graph-title { font-weight: 700; margin: 0 0 4px; font-size: 0.88rem; }
+    .graph-canvas { height: 170px; }
+    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    @media (max-width: 900px) { .controls { grid-template-columns: repeat(2, minmax(120px, 1fr)); } .readout { grid-template-columns: repeat(2, minmax(140px, 1fr)); } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Conservation of Energy: GPE &harr; KE in a Swinging Pendulum</h1>
+
+    <div class="panel">
+      <div class="controls">
+        <div class="control-group">
+          <label for="mass">Mass <i>m</i> (kg)</label>
+          <input id="mass" type="number" value="1" min="0.1" step="0.1" />
+        </div>
+        <div class="control-group">
+          <label for="length">Length <i>L</i> (m)</label>
+          <input id="length" type="number" value="1.2" min="0.3" step="0.1" />
+        </div>
+        <div class="control-group">
+          <label for="amplitude">Release angle &theta;<sub>0</sub> (°)</label>
+          <input id="amplitude" type="number" value="35" min="-80" max="80" step="1" />
+        </div>
+        <div class="control-group">
+          <div class="checkbox-row">
+            <input id="friction" type="checkbox" />
+            <label for="friction" style="margin:0;">Air resistance (damping)</label>
+          </div>
+        </div>
+        <div class="control-group button-group">
+          <div class="buttons">
+            <button id="startBtn">Start</button>
+            <button id="pauseBtn" class="secondary">Pause</button>
+            <button id="resetBtn" class="danger">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="readout">
+        <div class="readout-card">
+          <div class="title">Kinetic energy, KE = &frac12;<i>mv</i><sup>2</sup></div>
+          <div class="value" id="keValue">0.00 J</div>
+        </div>
+        <div class="readout-card">
+          <div class="title">Gravitational PE = <i>mgh</i></div>
+          <div class="value" id="gpeValue">0.00 J</div>
+        </div>
+        <div class="readout-card">
+          <div class="title">Total mechanical energy</div>
+          <div class="value" id="totalValue">0.00 J</div>
+        </div>
+        <div class="readout-card">
+          <div class="title">Speed at bob</div>
+          <div class="value" id="speedValue">0.00 m/s</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="layout">
+      <div class="panel animation-wrap">
+        <div class="hint">Grab the bob, pull it to one side and let go.</div>
+        <canvas id="sceneCanvas"></canvas>
+        <div class="note">With air resistance off, the total mechanical energy (GPE + KE) stays constant &mdash; energy just converts back and forth between the two forms. Switch on air resistance to see the total slowly fall as energy is lost to heat, and the swing's amplitude shrink.</div>
+      </div>
+      <div class="panel">
+        <canvas id="barCanvas"></canvas>
+        <div class="note">KE and GPE stacked bars vs. the starting total energy (dashed line).</div>
+      </div>
+    </div>
+
+    <div class="panel graph-box">
+      <div class="graph-title">Energy vs. Time</div>
+      <div class="legend"><span style="--c:#16a34a">Kinetic energy</span><span style="--c:#2563eb">Gravitational PE</span><span style="--c:#7c3aed">Total</span></div>
+      <canvas id="energyGraph" class="graph-canvas"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const G = 10;
+    const DT = 0.004;
+    const SIM_DURATION = 20;
+    const PLAYBACK_SPEED = 1;
+
+    const massEl = document.getElementById('mass');
+    const lengthEl = document.getElementById('length');
+    const amplitudeEl = document.getElementById('amplitude');
+    const frictionEl = document.getElementById('friction');
+
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    const keValue = document.getElementById('keValue');
+    const gpeValue = document.getElementById('gpeValue');
+    const totalValue = document.getElementById('totalValue');
+    const speedValue = document.getElementById('speedValue');
+
+    const sceneCanvas = document.getElementById('sceneCanvas');
+    const barCanvas = document.getElementById('barCanvas');
+    const energyGraph = document.getElementById('energyGraph');
+
+    let sim = { running: false, lastFrameTime: null, accumulator: 0, t: 0, theta: 0, omega: 0, e0: 0, points: [] };
+
+    function resizeCanvasToDisplaySize(canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+      const width = Math.round(rect.width * ratio);
+      const height = Math.round(rect.height * ratio);
+      if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
+    }
+
+    function deg2rad(d) { return (d * Math.PI) / 180; }
+
+    function params() {
+      const m = Math.max(0.1, parseFloat(massEl.value) || 0.1);
+      const L = Math.max(0.2, parseFloat(lengthEl.value) || 0.2);
+      const theta0 = deg2rad(parseFloat(amplitudeEl.value) || 0);
+      const damping = frictionEl.checked ? 0.35 : 0;
+      return { m, L, theta0, damping };
+    }
+
+    function energiesAt(theta, omega) {
+      const { m, L } = params();
+      const v = Math.abs(omega) * L;
+      const h = L * (1 - Math.cos(theta));
+      const ke = 0.5 * m * v * v;
+      const gpe = m * G * h;
+      return { v, h, ke, gpe, total: ke + gpe };
+    }
+
+    function resetSimulation() {
+      const { theta0 } = params();
+      sim.running = false;
+      sim.lastFrameTime = null;
+      sim.accumulator = 0;
+      sim.t = 0;
+      sim.theta = theta0;
+      sim.omega = 0;
+      sim.e0 = energiesAt(sim.theta, sim.omega).total;
+      const e0 = energiesAt(sim.theta, sim.omega);
+      sim.points = [{ t: 0, total: e0.total, ke: e0.ke, gpe: e0.gpe }];
+      redrawAll();
+    }
+
+    function updatePhysicsStep() {
+      const { L, damping } = params();
+      const angularAccel = -(G / L) * Math.sin(sim.theta) - damping * sim.omega;
+      sim.omega += angularAccel * DT;
+      sim.theta += sim.omega * DT;
+      sim.t += DT;
+      if (sim.t > SIM_DURATION) { sim.t = SIM_DURATION; sim.running = false; }
+      if (Math.round(sim.t / DT) % 12 === 0) {
+        const e = energiesAt(sim.theta, sim.omega);
+        sim.points.push({ t: sim.t, total: e.total, ke: e.ke, gpe: e.gpe });
+      }
+    }
+
+    function animationLoop(timestamp) {
+      if (!sim.running) return;
+      if (sim.lastFrameTime == null) sim.lastFrameTime = timestamp;
+      let frameSeconds = (timestamp - sim.lastFrameTime) / 1000;
+      sim.lastFrameTime = timestamp;
+      frameSeconds = Math.min(frameSeconds, 0.05);
+      sim.accumulator += frameSeconds * PLAYBACK_SPEED;
+      while (sim.accumulator >= DT && sim.running) { updatePhysicsStep(); sim.accumulator -= DT; }
+      redrawAll();
+      if (sim.running) requestAnimationFrame(animationLoop);
+    }
+
+    function drawScene() {
+      const ctx = sceneCanvas.getContext('2d');
+      const w = sceneCanvas.width, h = sceneCanvas.height;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = '#f8fbff'; ctx.fillRect(0, 0, w, h);
+
+      const { L } = params();
+      const pivotX = w / 2, pivotY = h * 0.12;
+      const pxPerM = Math.min(h * 0.7, w * 0.4) / L;
+      const bobX = pivotX + L * pxPerM * Math.sin(sim.theta);
+      const bobY = pivotY + L * pxPerM * Math.cos(sim.theta);
+
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(pivotX, pivotY); ctx.lineTo(pivotX, pivotY + L * pxPerM); ctx.setLineDash([4, 4]); ctx.stroke(); ctx.setLineDash([]);
+
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(pivotX, pivotY); ctx.lineTo(bobX, bobY); ctx.stroke();
+
+      ctx.fillStyle = '#334155';
+      ctx.beginPath(); ctx.arc(pivotX, pivotY, 5, 0, Math.PI * 2); ctx.fill();
+
+      const k = sceneCanvas.width / (sceneCanvas.getBoundingClientRect().width || 1);
+      const r = 16 * k;
+      // height h of the bob above its lowest point
+      const lowY = pivotY + L * pxPerM;
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5 * k; ctx.setLineDash([3 * k, 3 * k]);
+      ctx.beginPath(); ctx.moveTo(pivotX - L * pxPerM * 0.9, lowY); ctx.lineTo(pivotX + L * pxPerM * 0.9, lowY); ctx.stroke();
+      ctx.setLineDash([]);
+      const hPx = lowY - bobY;
+      if (hPx > 6 * k) {
+        const side = sim.theta >= 0 ? 1 : -1;
+        const hx = bobX + side * (r + 14 * k);
+        ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 2 * k;
+        ctx.beginPath(); ctx.moveTo(hx, bobY); ctx.lineTo(hx, lowY); ctx.moveTo(hx - 5 * k, bobY); ctx.lineTo(hx + 5 * k, bobY); ctx.moveTo(hx - 5 * k, lowY); ctx.lineTo(hx + 5 * k, lowY); ctx.stroke();
+        ctx.fillStyle = '#1d4ed8'; ctx.font = `bold ${13 * k}px Arial`;
+        ctx.textAlign = side > 0 ? 'left' : 'right';
+        ctx.fillText(`h = ${(L * (1 - Math.cos(sim.theta))).toFixed(2)} m`, hx + side * 8 * k, (bobY + lowY) / 2 + 4 * k);
+      }
+      // velocity arrow, tangent to the swing
+      const ev = energiesAt(sim.theta, sim.omega);
+      if (ev.v > 0.05) {
+        const dir = Math.sign(sim.omega);
+        const ux = Math.cos(sim.theta) * dir, uy = -Math.sin(sim.theta) * dir;
+        const len = Math.min(90, 18 * ev.v) * k;
+        const ax = bobX + ux * r, ay = bobY + uy * r, bx = ax + ux * len, by = ay + uy * len;
+        ctx.strokeStyle = '#16a34a'; ctx.fillStyle = '#16a34a'; ctx.lineWidth = 3 * k;
+        ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+        const an = Math.atan2(by - ay, bx - ax), hl = 11 * k;
+        ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx - hl * Math.cos(an - 0.45), by - hl * Math.sin(an - 0.45)); ctx.lineTo(bx - hl * Math.cos(an + 0.45), by - hl * Math.sin(an + 0.45)); ctx.closePath(); ctx.fill();
+        ctx.font = `bold ${12 * k}px Arial`; ctx.textAlign = 'center';
+        // label beside the arrow, on the side away from the string
+        const nx = -uy * dir * Math.sign(sim.theta || 1), ny = ux * dir * Math.sign(sim.theta || 1);
+        ctx.fillText(`v = ${ev.v.toFixed(2)} m/s`, (ax + bx) / 2 + nx * 22 * k, (ay + by) / 2 + ny * 22 * k + 4 * k);
+      }
+      ctx.fillStyle = dragging ? '#1d4ed8' : '#2563eb';
+      ctx.beginPath(); ctx.arc(bobX, bobY, r, 0, Math.PI * 2); ctx.fill();
+      sceneGeo = { pivotX, pivotY, pxPerM, bobX, bobY, r };
+
+      ctx.fillStyle = '#334155';
+      ctx.font = `${Math.max(11, h * 0.05)}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.fillText(`θ = ${(sim.theta * 180 / Math.PI).toFixed(1)}°   t = ${sim.t.toFixed(2)} s`, pivotX, h - 12);
+    }
+
+    function drawBars() {
+      const ctx = barCanvas.getContext('2d');
+      const w = barCanvas.width, h = barCanvas.height;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = '#fbfdff'; ctx.fillRect(0, 0, w, h);
+
+      const e = energiesAt(sim.theta, sim.omega);
+      const maxE = Math.max(sim.e0, 0.001);
+      const baseY = h - 46;
+      const barW = w * 0.28;
+      const scale = (h * 0.75) / maxE;
+      const cx = w / 2;
+
+      const dashedY = baseY - sim.e0 * scale;
+      ctx.strokeStyle = '#94a3b8'; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(20, dashedY); ctx.lineTo(w - 20, dashedY); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = '#64748b'; ctx.font = `${Math.max(10, h * 0.04)}px Arial`;
+      ctx.textAlign = 'left'; ctx.fillText('Initial total energy', 22, dashedY - 6);
+
+      const keH = e.ke * scale, gpeH = e.gpe * scale;
+      ctx.fillStyle = '#16a34a';
+      ctx.fillRect(cx - barW / 2, baseY - gpeH - keH, barW, keH);
+      ctx.fillStyle = '#2563eb';
+      ctx.fillRect(cx - barW / 2, baseY - gpeH, barW, gpeH);
+
+      ctx.fillStyle = '#334155';
+      ctx.font = `bold ${Math.max(11, h * 0.045)}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.fillText('KE', cx, baseY - gpeH - keH - 8);
+      ctx.fillText('GPE', cx, baseY + 16);
+      ctx.fillText(`stacked total = ${(e.ke + e.gpe).toFixed(2)} J`, cx, h - 6);
+    }
+
+    function getNiceStepAndTicks(min, max) {
+      const range = Math.abs(max - min);
+      if (range < 1e-9) return { step: 1, min: min - 1, max: max + 1, ticks: [min - 1, min, max, max + 1] };
+      const magnitude = Math.pow(10, Math.floor(Math.log10(range)));
+      const normalized = range / magnitude;
+      let step;
+      if (normalized <= 1.5) step = 0.2; else if (normalized <= 3) step = 0.5; else if (normalized <= 7) step = 1; else step = 2;
+      step *= magnitude;
+      const tickMin = Math.floor(min / step) * step;
+      const tickMax = Math.ceil(max / step) * step;
+      const ticks = [];
+      for (let t = tickMin; t <= tickMax + step * 0.1; t += step) ticks.push(Math.round(t * 1e10) / 1e10);
+      return { step, min: tickMin, max: tickMax, ticks };
+    }
+
+    function drawEnergyGraph() {
+      const ctx = energyGraph.getContext('2d');
+      const w = energyGraph.width, h = energyGraph.height;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
+
+      const gk = energyGraph.width / (energyGraph.getBoundingClientRect().width || 1);
+      const margin = { left: 55 * gk, right: 14 * gk, top: 12 * gk, bottom: 36 * gk };
+      const plotW = w - margin.left - margin.right;
+      const plotH = h - margin.top - margin.bottom;
+
+      const yInfo = getNiceStepAndTicks(0, Math.max(sim.e0 * 1.2, 0.5));
+      function tx(t) { return margin.left + (t / SIM_DURATION) * plotW; }
+      function ty(v) { return margin.top + ((yInfo.max - v) / (yInfo.max - yInfo.min || 1)) * plotH; }
+
+      ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1;
+      yInfo.ticks.forEach(tv => { const y = ty(tv); ctx.beginPath(); ctx.moveTo(margin.left, y); ctx.lineTo(w - margin.right, y); ctx.stroke(); });
+
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(margin.left, margin.top); ctx.lineTo(margin.left, h - margin.bottom); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(margin.left, h - margin.bottom); ctx.lineTo(w - margin.right, h - margin.bottom); ctx.stroke();
+
+      ctx.fillStyle = '#334155'; ctx.font = `${11 * gk}px Arial`;
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      yInfo.ticks.forEach(tv => ctx.fillText(tv.toFixed(1), margin.left - 6, ty(tv)));
+
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      for (let t = 0; t <= SIM_DURATION; t += 2) ctx.fillText(String(t), tx(t), h - margin.bottom + 5 * gk);
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText('time (s)', margin.left + plotW / 2, h - 3 * gk);
+      ctx.save(); ctx.translate(13 * gk, margin.top + plotH / 2); ctx.rotate(-Math.PI / 2); ctx.fillText('energy (J)', 0, 0); ctx.restore();
+
+      if (sim.points.length > 0) {
+        [['ke', '#16a34a', 2], ['gpe', '#2563eb', 2], ['total', '#7c3aed', 3]].forEach(([key, col, lw]) => {
+          ctx.strokeStyle = col; ctx.lineWidth = lw * gk;
+          ctx.beginPath();
+          sim.points.forEach((p, i) => { const x = tx(p.t), y = ty(p[key]); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+          ctx.stroke();
+        });
+      }
+    }
+
+    function updateReadout() {
+      const e = energiesAt(sim.theta, sim.omega);
+      keValue.textContent = `${e.ke.toFixed(2)} J`;
+      gpeValue.textContent = `${e.gpe.toFixed(2)} J`;
+      totalValue.textContent = `${e.total.toFixed(2)} J`;
+      speedValue.textContent = `${e.v.toFixed(2)} m/s`;
+    }
+
+    function redrawAll() {
+      drawScene();
+      drawBars();
+      drawEnergyGraph();
+      updateReadout();
+    }
+
+    [massEl, lengthEl, amplitudeEl].forEach(el => el.addEventListener('input', resetSimulation));
+    frictionEl.addEventListener('change', resetSimulation);
+
+    let dragging = false, sceneGeo = null;
+    function toDevice(e) { const r = sceneCanvas.getBoundingClientRect(); const k = sceneCanvas.width / r.width; return { x: (e.clientX - r.left) * k, y: (e.clientY - r.top) * k }; }
+    sceneCanvas.addEventListener('pointerdown', e => {
+      if (!sceneGeo) return;
+      const p = toDevice(e);
+      if (Math.hypot(p.x - sceneGeo.bobX, p.y - sceneGeo.bobY) > sceneGeo.r * 2.2) return;
+      dragging = true; sim.running = false; sim.lastFrameTime = null;
+      sceneCanvas.setPointerCapture(e.pointerId); sceneCanvas.style.cursor = 'grabbing'; e.preventDefault();
+    });
+    sceneCanvas.addEventListener('pointermove', e => {
+      if (!dragging) return;
+      const p = toDevice(e);
+      let ang = Math.atan2(p.x - sceneGeo.pivotX, p.y - sceneGeo.pivotY) * 180 / Math.PI;
+      ang = Math.max(-80, Math.min(80, ang));
+      amplitudeEl.value = Math.round(ang);
+      resetSimulation();
+    });
+    function endBobDrag() {
+      if (!dragging) return;
+      dragging = false; sceneCanvas.style.cursor = 'grab';
+      if (Math.abs(parseFloat(amplitudeEl.value)) >= 1) { sim.running = true; sim.lastFrameTime = null; requestAnimationFrame(animationLoop); }
+    }
+    sceneCanvas.addEventListener('pointerup', endBobDrag);
+    sceneCanvas.addEventListener('pointercancel', endBobDrag);
+
+    startBtn.addEventListener('click', () => {
+      if (sim.t >= SIM_DURATION) return;
+      sim.running = true;
+      sim.lastFrameTime = null;
+      requestAnimationFrame(animationLoop);
+    });
+    pauseBtn.addEventListener('click', () => { sim.running = false; sim.lastFrameTime = null; });
+    resetBtn.addEventListener('click', resetSimulation);
+
+    window.addEventListener('resize', () => {
+      resizeCanvasToDisplaySize(sceneCanvas);
+      resizeCanvasToDisplaySize(barCanvas);
+      resizeCanvasToDisplaySize(energyGraph);
+      redrawAll();
+    });
+
+    resizeCanvasToDisplaySize(sceneCanvas);
+    resizeCanvasToDisplaySize(barCanvas);
+    resizeCanvasToDisplaySize(energyGraph);
+    resetSimulation();
+  </script>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Refraction, Snell's Law and Total Internal Reflection</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
+    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
+    .controls { display: grid; grid-template-columns: 1.6fr 1fr 0.6fr 1fr 0.6fr auto; gap: 8px; align-items: end; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    label { font-size: 0.8rem; font-weight: 600; }
+    input, select { font-size: 0.9rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
+    input[type=range] { padding: 0; }
+    button { font-size: 0.88rem; padding: 7px 10px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; white-space: nowrap; }
+    button:hover { background: #334155; }
+    .readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
+    .readout-card .value { font-size: 1rem; font-weight: bold; }
+    .readout-card.tir { background: #fef2f2; }
+    canvas { display: block; width: 100%; border-radius: 10px; touch-action: none; }
+    #sceneCanvas { height: 440px; border: 1px solid #dbeafe; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
+    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    @media (max-width: 900px) {
+      .controls { grid-template-columns: 1fr 0.7fr; }
+      .controls .control-group:first-child, .controls button { grid-column: 1 / -1; }
+      .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      #sceneCanvas { height: 400px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Refraction, Snell's Law and Total Internal Reflection</h1>
+
+    <div class="panel">
+      <div class="controls">
+        <div class="control-group">
+          <label for="incidentAngle">Angle of incidence, <i>i</i>: <span id="angleLabel">30</span>&deg; (or drag the torch)</label>
+          <input id="incidentAngle" type="range" min="0" max="89" value="30" step="1" />
+        </div>
+        <div class="control-group">
+          <label for="m1">Medium 1 (top, light starts here)</label>
+          <select id="m1"><option value="1.00">Air</option><option value="1.33" selected>Water</option><option value="1.50">Glass</option><option value="custom">Custom&hellip;</option></select>
+        </div>
+        <div class="control-group"><label for="n1"><i>n<sub>i</sub></i></label><input id="n1" type="number" value="1.33" min="1" max="3" step="0.01" /></div>
+        <div class="control-group">
+          <label for="m2">Medium 2 (bottom)</label>
+          <select id="m2"><option value="1.00" selected>Air</option><option value="1.33">Water</option><option value="1.50">Glass</option><option value="custom">Custom&hellip;</option></select>
+        </div>
+        <div class="control-group"><label for="n2"><i>n<sub>R</sub></i></label><input id="n2" type="number" value="1.00" min="1" max="3" step="0.01" /></div>
+        <button id="swapBtn">Swap media</button>
+      </div>
+
+      <div class="readout">
+        <div class="readout-card"><div class="title">Angle of refraction, <i>R</i></div><div class="value" id="rValue">&mdash;</div></div>
+        <div class="readout-card" id="critCard"><div class="title">Critical angle, sin <i>i<sub>c</sub></i> = <i>n<sub>R</sub></i> / <i>n<sub>i</sub></i></div><div class="value" id="critValue">&mdash;</div></div>
+        <div class="readout-card" id="tirCard"><div class="title">Total internal reflection?</div><div class="value" id="tirValue">No</div></div>
+        <div class="readout-card"><div class="title">Speed of light, <i>v</i> = <i>c</i> / <i>n</i></div><div class="value" id="speedValue">&mdash;</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="hint">Drag the torch round to change the angle of incidence. Choose water &rarr; air or glass &rarr; air and push past the critical angle.</div>
+      <canvas id="sceneCanvas"></canvas>
+      <div class="note" id="sceneNote"></div>
+      <div class="note">
+        Snell's law: <i>n<sub>i</sub></i> sin <i>i</i> = <i>n<sub>R</sub></i> sin <i>R</i>, with both angles measured from the normal. The refractive index is <i>n</i> = <i>c</i> / <i>v</i> (<i>c</i> = 3.00 &times; 10<sup>8</sup> m s<sup>-1</sup>): the dots travelling along the rays are pulses of light, and they visibly slow down in the medium with the larger <i>n</i>. The faint ray reflected at the surface shows that a little light is always reflected; it gets stronger as <i>i</i> nears the critical angle, and beyond it all the light is reflected.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const C = 3.00e8;
+    const el = id => document.getElementById(id);
+    const canvas = el('sceneCanvas');
+    const incEl = el('incidentAngle');
+    const deg = r => r * 180 / Math.PI, rad = d => d * Math.PI / 180;
+    let W = 0, H = 0, clock = 0;
+
+    function state() {
+      const i = parseFloat(incEl.value) || 0;
+      const n1 = Math.min(3, Math.max(1, parseFloat(el('n1').value) || 1));
+      const n2 = Math.min(3, Math.max(1, parseFloat(el('n2').value) || 1));
+      const sinR = n1 / n2 * Math.sin(rad(i));
+      const hasCrit = n1 > n2;
+      const ic = hasCrit ? deg(Math.asin(n2 / n1)) : null;
+      const tir = hasCrit && sinR > 1 + 1e-12;
+      const R = tir ? null : deg(Math.asin(Math.min(1, sinR)));
+      return { i, n1, n2, hasCrit, ic, tir, R };
+    }
+    const mediumName = n => Math.abs(n - 1) < 0.005 ? 'air' : Math.abs(n - 1.33) < 0.005 ? 'water' : Math.abs(n - 1.5) < 0.005 ? 'glass' : `n = ${n.toFixed(2)}`;
+
+    function setup() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const cw = Math.round(rect.width * dpr), ch = Math.round(rect.height * dpr);
+      if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
+      const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      W = rect.width; H = rect.height;
+      return ctx;
+    }
+    function arrowHead(ctx, x, y, ang, color, size = 11) {
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.moveTo(x, y);
+      ctx.lineTo(x - size * Math.cos(ang - 0.45), y - size * Math.sin(ang - 0.45));
+      ctx.lineTo(x - size * Math.cos(ang + 0.45), y - size * Math.sin(ang + 0.45));
+      ctx.closePath(); ctx.fill();
+    }
+    function label(ctx, text, x, y, color, align = 'center') {
+      ctx.font = 'bold 13px Arial'; ctx.textAlign = align; ctx.textBaseline = 'middle';
+      const tw = ctx.measureText(text).width;
+      const x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
+      ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(x0 - 3, y - 9, tw + 6, 18);
+      ctx.fillStyle = color; ctx.fillText(text, x, y); ctx.textBaseline = 'alphabetic';
+    }
+    function tint(n) { const k = Math.min(1, (n - 1) / 0.6); return `rgba(${Math.round(219 - 90 * k)},${Math.round(234 - 60 * k)},${Math.round(254 - 20 * k)},1)`; }
+
+    function draw() {
+      const ctx = setup();
+      const s = state();
+      const P = { x: W / 2, y: H * 0.5 };
+      const L = Math.min(W * 0.46, H * 0.46);
+      ctx.fillStyle = tint(s.n1); ctx.fillRect(0, 0, W, P.y);
+      ctx.fillStyle = tint(s.n2); ctx.fillRect(0, P.y, W, H - P.y);
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(0, P.y); ctx.lineTo(W, P.y); ctx.stroke();
+      label(ctx, `Medium 1: ${mediumName(s.n1)} (n = ${s.n1.toFixed(2)})`, 10, 18, '#1e3a8a', 'left');
+      label(ctx, `Medium 2: ${mediumName(s.n2)} (n = ${s.n2.toFixed(2)})`, 10, H - 16, '#1e3a8a', 'left');
+
+      // normal
+      ctx.strokeStyle = '#64748b'; ctx.setLineDash([6, 5]); ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(P.x, P.y - L - 10); ctx.lineTo(P.x, P.y + L + 10); ctx.stroke(); ctx.setLineDash([]);
+      label(ctx, 'normal', P.x, P.y - L - 18 < 30 ? 44 : P.y - L - 18, '#475569');
+
+      // critical angle guide
+      if (s.hasCrit) {
+        const a = rad(s.ic);
+        ctx.strokeStyle = 'rgba(185,28,28,0.55)'; ctx.setLineDash([3, 5]); ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(P.x - Math.sin(a) * L, P.y - Math.cos(a) * L); ctx.stroke(); ctx.setLineDash([]);
+        // key in the top-right corner (a label on the line itself collides with the torch near the critical angle)
+        ctx.strokeStyle = 'rgba(185,28,28,0.7)'; ctx.setLineDash([3, 5]); const ky = W < 600 ? 42 : 18; // below the medium label on a narrow screen
+        ctx.beginPath(); ctx.moveTo(W - 210, ky); ctx.lineTo(W - 180, ky); ctx.stroke(); ctx.setLineDash([]);
+        label(ctx, `critical angle ${s.ic.toFixed(1)}°`, W - 174, ky, '#b91c1c', 'left');
+      }
+
+      const iR = rad(s.i);
+      const T = { x: P.x - Math.sin(iR) * L, y: P.y - Math.cos(iR) * L };
+      const inDir = { x: Math.sin(iR), y: Math.cos(iR) };
+      const reflDir = { x: Math.sin(iR), y: -Math.cos(iR) };
+      // how much light is reflected: a qualitative guide (grows toward the critical angle)
+      let reflStrength = 0.12;
+      if (s.tir) reflStrength = 1;
+      else if (s.hasCrit) reflStrength = 0.12 + 0.6 * Math.pow(s.i / s.ic, 6);
+      else reflStrength = 0.12 + 0.25 * Math.pow(s.i / 90, 6);
+
+      // incident ray
+      ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 3.5;
+      ctx.beginPath(); ctx.moveTo(T.x, T.y); ctx.lineTo(P.x, P.y); ctx.stroke();
+      arrowHead(ctx, (T.x + P.x) / 2 + inDir.x * 8, (T.y + P.y) / 2 + inDir.y * 8, Math.atan2(inDir.y, inDir.x), '#d97706');
+      // reflected ray
+      ctx.globalAlpha = Math.min(1, reflStrength);
+      ctx.strokeStyle = '#dc2626'; ctx.lineWidth = s.tir ? 3.5 : 2.5;
+      const RE = { x: P.x + reflDir.x * L, y: P.y + reflDir.y * L };
+      ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(RE.x, RE.y); ctx.stroke();
+      arrowHead(ctx, P.x + reflDir.x * L * 0.55, P.y + reflDir.y * L * 0.55, Math.atan2(reflDir.y, reflDir.x), '#dc2626');
+      ctx.globalAlpha = 1;
+      // refracted ray
+      let outDir = null;
+      if (!s.tir) {
+        const Rr = rad(s.R);
+        outDir = { x: Math.sin(Rr), y: Math.cos(Rr) };
+        ctx.globalAlpha = Math.max(0.25, 1 - reflStrength * 0.7);
+        ctx.strokeStyle = '#16a34a'; ctx.lineWidth = 3.5;
+        ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(P.x + outDir.x * L, P.y + outDir.y * L); ctx.stroke();
+        arrowHead(ctx, P.x + outDir.x * L * 0.55, P.y + outDir.y * L * 0.55, Math.atan2(outDir.y, outDir.x), '#16a34a');
+        ctx.globalAlpha = 1;
+      }
+
+      // light pulses: same frequency in both media, so their speed (and spacing) is proportional to v = c/n
+      const vPx1 = 150 / s.n1, vPx2 = 150 / s.n2;
+      const gap1 = vPx1 * 0.35, gap2 = vPx2 * 0.35;
+      ctx.fillStyle = '#fef08a'; ctx.strokeStyle = '#a16207'; ctx.lineWidth = 1;
+      const dot = (x, y) => { ctx.beginPath(); ctx.arc(x, y, 3.2, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); };
+      const off1 = (clock * vPx1) % gap1;
+      for (let d = off1; d < L; d += gap1) dot(T.x + inDir.x * d, T.y + inDir.y * d);
+      const exitDir = s.tir ? reflDir : outDir, v2 = s.tir ? vPx1 : vPx2, g2 = s.tir ? gap1 : gap2;
+      const off2 = (clock * v2) % g2;
+      for (let d = off2; d < L; d += g2) dot(P.x + exitDir.x * d, P.y + exitDir.y * d);
+
+      // angle arcs from the normal
+      if (s.i > 0.5) {
+        ctx.strokeStyle = '#d97706'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(P.x, P.y, 50, -Math.PI / 2 - iR, -Math.PI / 2); ctx.stroke();
+        const il = iR + rad(14); label(ctx, `i = ${s.i.toFixed(0)}°`, P.x - Math.sin(il) * 80, P.y - Math.cos(il) * 80, '#b45309');
+        if (s.tir) {
+          ctx.strokeStyle = '#dc2626';
+          ctx.beginPath(); ctx.arc(P.x, P.y, 62, -Math.PI / 2, -Math.PI / 2 + iR); ctx.stroke();
+          label(ctx, `r = ${s.i.toFixed(0)}°`, P.x + Math.sin(iR + rad(14)) * 92, P.y - Math.cos(iR + rad(14)) * 92, '#b91c1c');
+          label(ctx, 'Total internal reflection: no light gets out', P.x, P.y + L * 0.45, '#b91c1c');
+        } else if (s.R > 0.5) {
+          const Rr = rad(s.R);
+          ctx.strokeStyle = '#16a34a';
+          ctx.beginPath(); ctx.arc(P.x, P.y, 50, Math.PI / 2 - Rr, Math.PI / 2); ctx.stroke();
+          const rl = Rr + rad(16); label(ctx, `R = ${s.R.toFixed(1)}°`, P.x + Math.sin(rl) * 84, P.y + Math.cos(rl) * 84, '#15803d');
+        }
+      }
+
+      // torch
+      ctx.save(); ctx.translate(T.x, T.y); ctx.rotate(Math.atan2(inDir.y, inDir.x));
+      ctx.fillStyle = '#1f2937'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-32, -11, 36, 22, 5) : ctx.rect(-32, -11, 36, 22); ctx.fill();
+      ctx.fillStyle = '#fde68a'; ctx.fillRect(2, -8, 5, 16);
+      ctx.restore();
+      torchPos = T;
+    }
+
+    function updateReadout() {
+      const s = state();
+      el('angleLabel').textContent = s.i.toFixed(0);
+      el('rValue').textContent = s.tir ? 'No refracted ray' : `${s.R.toFixed(1)}°`;
+      el('critValue').textContent = s.hasCrit ? `${s.ic.toFixed(1)}°` : 'None (light enters a denser medium)';
+      el('critCard').classList.toggle('tir', s.hasCrit && s.i > s.ic);
+      el('tirValue').textContent = s.tir ? 'Yes' : 'No';
+      el('tirCard').classList.toggle('tir', s.tir);
+      const v1 = C / s.n1, v2 = C / s.n2;
+      el('speedValue').textContent = `${(v1 / 1e8).toFixed(2)} → ${(v2 / 1e8).toFixed(2)} × 10⁸ m/s`;
+      el('sceneNote').innerHTML = s.tir
+        ? `<b>${s.i.toFixed(0)}° is bigger than the critical angle (${s.ic.toFixed(1)}°).</b> Light going from the denser medium into the less dense one is totally internally reflected, obeying <i>i</i> = <i>r</i>. This needs both conditions: light travelling from denser to less dense, and <i>i</i> greater than <i>i<sub>c</sub></i>.`
+        : (s.n1 < s.n2 ? `<b>Less dense → denser:</b> the light slows down and bends <b>towards</b> the normal (<i>R</i> &lt; <i>i</i>). Check: ${s.n1.toFixed(2)} &times; sin ${s.i.toFixed(0)}° = ${(s.n1 * Math.sin(rad(s.i))).toFixed(3)} = ${s.n2.toFixed(2)} &times; sin ${s.R.toFixed(1)}°.`
+          : s.n1 > s.n2 ? `<b>Denser → less dense:</b> the light speeds up and bends <b>away from</b> the normal (<i>R</i> &gt; <i>i</i>). Check: ${s.n1.toFixed(2)} &times; sin ${s.i.toFixed(0)}° = ${(s.n1 * Math.sin(rad(s.i))).toFixed(3)} = ${s.n2.toFixed(2)} &times; sin ${s.R.toFixed(1)}°. Keep increasing <i>i</i> past ${s.ic.toFixed(1)}°&hellip;`
+          : 'Same refractive index on both sides: the light does not change speed, so it does not bend.');
+    }
+
+    // ---------- interaction ----------
+    let torchPos = null, dragging = false;
+    function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    function setFromPointer(p) {
+      const P = { x: W / 2, y: H * 0.5 };
+      const dx = P.x - p.x, dy = P.y - p.y; // from pointer toward P
+      let a = deg(Math.atan2(Math.abs(dx), Math.max(1, dy)));
+      incEl.value = Math.max(0, Math.min(89, Math.round(a)));
+    }
+    canvas.addEventListener('pointerdown', e => {
+      const p = pos(e);
+      if (!torchPos || Math.hypot(p.x - torchPos.x, p.y - torchPos.y) > 40) {
+        // anywhere in the top medium also works
+        if (p.y > H * 0.5 - 8) return;
+      }
+      dragging = true; canvas.setPointerCapture(e.pointerId); e.preventDefault(); setFromPointer(p);
+    });
+    canvas.addEventListener('pointermove', e => {
+      const p = pos(e);
+      if (!dragging) { canvas.style.cursor = p.y < H * 0.5 - 8 ? 'grab' : 'default'; return; }
+      setFromPointer(p);
+    });
+    const end = () => { dragging = false; };
+    canvas.addEventListener('pointerup', end);
+    canvas.addEventListener('pointercancel', end);
+
+    function syncSelect(sel, num) {
+      const v = parseFloat(num.value);
+      const match = [...sel.options].find(o => o.value !== 'custom' && Math.abs(parseFloat(o.value) - v) < 0.005);
+      sel.value = match ? match.value : 'custom';
+    }
+    [['m1', 'n1'], ['m2', 'n2']].forEach(([s, n]) => {
+      el(s).addEventListener('change', () => { if (el(s).value !== 'custom') el(n).value = el(s).value; else el(n).focus(); });
+      el(n).addEventListener('input', () => syncSelect(el(s), el(n)));
+    });
+    el('swapBtn').addEventListener('click', () => {
+      const a = el('n1').value; el('n1').value = el('n2').value; el('n2').value = a;
+      syncSelect(el('m1'), el('n1')); syncSelect(el('m2'), el('n2'));
+    });
+
+    let last = null;
+    function frame(ts) {
+      if (last === null) last = ts;
+      clock += Math.max(0, Math.min(0.05, (ts - last) / 1000)); last = ts;
+      draw(); updateReadout();
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Newton's Third Law: Action and Reaction</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
+    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
+    .controls { display: grid; grid-template-columns: 1.8fr 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    label { font-size: 0.8rem; font-weight: 600; }
+    .val { font-weight: normal; color: #334155; }
+    select { font-size: 0.9rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
+    input[type=range] { width: 100%; }
+    button { font-size: 0.9rem; padding: 7px 12px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; white-space: nowrap; }
+    button.go { background: #2563eb; }
+    .readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
+    .readout-card .value { font-size: 1rem; font-weight: bold; }
+    canvas { display: block; width: 100%; border-radius: 10px; touch-action: none; }
+    #sceneCanvas { height: 330px; border: 1px solid #dbeafe; background: #f8fbff; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
+    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    .hidden { display: none !important; }
+    @media (max-width: 900px) {
+      .controls { grid-template-columns: 1fr 1fr; }
+      .controls .control-group:first-child { grid-column: 1 / -1; }
+      .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Newton's Third Law: Action and Reaction Pairs</h1>
+
+    <div class="panel">
+      <div class="controls">
+        <div class="control-group">
+          <label for="scenario">Scenario</label>
+          <select id="scenario">
+            <option value="blocks" selected>Tutorial B7: a force pushes block A into block B</option>
+            <option value="skaters">Two skaters push each other apart</option>
+            <option value="puck">Puck on ice: are N and W an action&ndash;reaction pair?</option>
+          </select>
+        </div>
+        <div class="control-group" id="pGroup"><label for="push">Push <i>P</i> <span class="val" id="pushVal"></span></label><input id="push" type="range" min="0" max="60" step="1" value="30" /></div>
+        <div class="control-group" id="maGroup"><label for="mA">Mass A <span class="val" id="mAVal"></span></label><input id="mA" type="range" min="0.5" max="80" step="0.5" value="1.5" /></div>
+        <div class="control-group" id="mbGroup"><label for="mB">Mass B <span class="val" id="mBVal"></span></label><input id="mB" type="range" min="0.5" max="80" step="0.5" value="3" /></div>
+        <button id="actBtn" class="go">Reset</button>
+      </div>
+      <div class="readout" id="readout">
+        <div class="readout-card"><div class="title" id="t1">Acceleration of both</div><div class="value" id="v1">&mdash;</div></div>
+        <div class="readout-card"><div class="title" id="t2">Force of A on B</div><div class="value" id="v2">&mdash;</div></div>
+        <div class="readout-card"><div class="title" id="t3">Force of B on A</div><div class="value" id="v3">&mdash;</div></div>
+        <div class="readout-card"><div class="title" id="t4">Equal and opposite?</div><div class="value" id="v4">&mdash;</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="hint" id="hint"></div>
+      <canvas id="sceneCanvas"></canvas>
+      <div class="note" id="note"></div>
+    </div>
+  </div>
+
+  <script>
+    const el = id => document.getElementById(id);
+    const canvas = el('sceneCanvas');
+    const st = { x: 0, v: 0, t: 0, sA: { x: 0, v: 0 }, sB: { x: 0, v: 0 }, pushing: 0, sel: null };
+
+    const TEXT = {
+      blocks: {
+        hint: 'Drag the red handle to change the push P, or use the sliders. The surface is frictionless.',
+        note: 'P pushes only on A. A then pushes on B (action), and B pushes back on A (reaction). These two contact forces are <b>equal in size and opposite in direction</b>, and they act on <b>different objects</b> &mdash; so they never cancel each other. Each block feels its own forces: B has only A&rsquo;s push, which gives it acceleration <i>a</i> = <i>F</i><sub>AB</sub>/<i>m</i><sub>B</sub>; A has <i>P</i> forwards and B&rsquo;s push backwards. With the Tutorial B7 values (30 N, 1.5 kg, 3.0 kg), <i>a</i> = 30/4.5 = 6.67 m s<sup>-2</sup> and B pushes on A with 3.0 &times; 6.67 = 20 N.'
+      },
+      skaters: {
+        hint: 'Press "Push apart!" (or tap the skaters). Change their masses and try again.',
+        note: 'While their hands are in contact, A pushes B and B pushes A with forces that are equal in size and opposite in direction, for exactly the same time. The <b>forces</b> are always equal, but the lighter skater gets the bigger <b>acceleration</b> (<i>a</i> = <i>F</i>/<i>m</i>), so ends up moving faster. Like the man pushing a wall, or a rocket pushing its exhaust gases: the action and the reaction act on different objects.'
+      },
+      puck: {
+        hint: 'Tap any force arrow to see the force it is paired with by Newton\'s third law.',
+        note: 'The normal force (ice pushes up on the puck) and the weight (Earth pulls down on the puck) are equal and opposite, but they are <b>not</b> an action&ndash;reaction pair: they act on the <b>same object</b>, and they are different kinds of force (a contact force and a gravitational force). They balance because the puck is at rest (first law). The partner of the weight is the puck pulling the <b>Earth</b> upwards; the partner of the normal force is the puck pushing <b>down on the ice</b>. A third-law pair always acts on two different objects and is always the same kind of force.'
+      }
+    };
+
+    const scen = () => el('scenario').value;
+    const mA = () => +el('mA').value, mB = () => +el('mB').value, Pv = () => +el('push').value;
+
+    function reset() {
+      st.x = 0; st.v = 0; st.t = 0; st.sA = { x: -0.25, v: 0 }; st.sB = { x: 0.25, v: 0 }; st.pushing = 0; st.sel = null;
+    }
+    function setScenario() {
+      const s = scen();
+      el('hint').textContent = TEXT[s].hint; el('note').innerHTML = TEXT[s].note;
+      el('pGroup').classList.toggle('hidden', s !== 'blocks');
+      el('maGroup').classList.toggle('hidden', s === 'puck'); el('mbGroup').classList.toggle('hidden', s === 'puck');
+      el('actBtn').textContent = s === 'skaters' ? 'Push apart!' : 'Reset';
+      el('actBtn').classList.toggle('hidden', s === 'puck');
+      if (s === 'skaters') { el('mA').value = 60; el('mB').value = 40; }
+      if (s === 'blocks') { el('mA').value = 1.5; el('mB').value = 3; el('push').value = 30; }
+      reset();
+    }
+
+    const PUSH_F = 120, PUSH_T = 0.4; // skaters: 120 N for 0.4 s
+    function step(dt) {
+      const s = scen();
+      st.t += dt;
+      if (s === 'blocks') {
+        const a = Pv() / (mA() + mB());
+        st.v += a * dt; st.x += st.v * dt;
+        if (st.x > 40) { st.x = 0; st.v = 0; } // restart before they run off far away
+      } else if (s === 'skaters') {
+        if (st.pushing > 0) {
+          const h = Math.min(dt, st.pushing);
+          st.sA.v -= PUSH_F / mA() * h; st.sB.v += PUSH_F / mB() * h; st.pushing -= h;
+        }
+        st.sA.x += st.sA.v * dt; st.sB.x += st.sB.v * dt;
+      }
+    }
+
+    function setup() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const cw = Math.round(rect.width * dpr), ch = Math.round(rect.height * dpr);
+      if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
+      const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { ctx, w: rect.width, h: rect.height };
+    }
+    function arrow(ctx, x1, y1, x2, y2, color, lw = 4, head = 11) {
+      const len = Math.hypot(x2 - x1, y2 - y1); if (len < 1.5) return;
+      const a = Math.atan2(y2 - y1, x2 - x1), hd = Math.min(head, len * 0.6);
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - Math.cos(a) * hd * 0.8, y2 - Math.sin(a) * hd * 0.8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - hd * Math.cos(a - 0.45), y2 - hd * Math.sin(a - 0.45)); ctx.lineTo(x2 - hd * Math.cos(a + 0.45), y2 - hd * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill();
+    }
+    function tag(ctx, t, x, y, color, align = 'center') {
+      ctx.font = 'bold 12px Arial'; ctx.textAlign = align; ctx.textBaseline = 'middle';
+      const tw = ctx.measureText(t).width, x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
+      ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fillRect(x0 - 3, y - 8, tw + 6, 16);
+      ctx.fillStyle = color; ctx.fillText(t, x, y); ctx.textBaseline = 'alphabetic';
+    }
+    function box(ctx, x, y, w, h, fill, text) {
+      ctx.fillStyle = fill; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, 6) : ctx.rect(x, y, w, h); ctx.fill();
+      ctx.fillStyle = 'white'; ctx.font = 'bold 14px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, x + w / 2, y + h / 2); ctx.textBaseline = 'alphabetic';
+    }
+
+    let handle = null, hits = [];
+    function draw() {
+      const { ctx, w, h } = setup();
+      ctx.clearRect(0, 0, w, h);
+      const s = scen();
+      const floorY = h - 60;
+      hits = [];
+      if (s !== 'puck') {
+        ctx.fillStyle = s === 'skaters' ? '#e0f2fe' : '#e2e8f0'; ctx.fillRect(0, floorY, w, h - floorY);
+        ctx.strokeStyle = '#64748b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, floorY); ctx.lineTo(w, floorY); ctx.stroke();
+      }
+      if (s === 'blocks') {
+        const a = Pv() / (mA() + mB()), FAB = mB() * a;
+        const pxPerM = 40, camX = w * 0.45;
+        // metre marks scroll past; the camera follows the blocks
+        ctx.fillStyle = '#475569'; ctx.font = '11px Arial'; ctx.textAlign = 'center';
+        const first = Math.floor(st.x - camX / pxPerM) - 1;
+        for (let m = first; m < first + w / pxPerM + 3; m++) { const x = camX + (m - st.x) * pxPerM; ctx.fillRect(x - 0.75, floorY, 1.5, 7); if (m % 2 === 0) ctx.fillText(`${m} m`, x, floorY + 20); }
+        const wa = 60 + mA() * 3, wb = 60 + mB() * 3, hb = 64;
+        const ax = camX - wa, bx = camX;
+        box(ctx, ax, floorY - hb, wa, hb, '#2563eb', `A  ${mA()} kg`);
+        box(ctx, bx, floorY - hb, wb, hb, '#16a34a', `B  ${mB()} kg`);
+        const narrow = w < 600;
+        const k = Math.min(3.2, 150 / Math.max(Pv(), 1), (ax - 30) / Math.max(Pv(), 1)); // the push arrow must start on screen
+        // push P on A
+        const pStart = ax - 6 - Pv() * k, py = floorY - hb * 0.5;
+        if (Pv() > 0) { arrow(ctx, pStart, py, ax - 4, py, '#dc2626', 5); tag(ctx, `P = ${Pv()} N`, pStart + Pv() * k / 2, py - 16, '#b91c1c'); }
+        handle = { x: pStart, y: py, ax, k };
+        ctx.fillStyle = '#dc2626'; ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(pStart, py, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        // the third-law pair at the contact: A on B (on B, top), B on A (on A, bottom)
+        const yTop = floorY - hb - 18, yBot = floorY + 30;
+        arrow(ctx, bx, yTop, bx + FAB * k, yTop, '#7c3aed', 4);
+        tag(ctx, narrow ? `A on B: ${FAB.toFixed(1)} N` : `A pushes B: ${FAB.toFixed(1)} N (acts on B)`, bx + 6, yTop - 16, '#6d28d9', 'left');
+        arrow(ctx, bx, yBot, bx - FAB * k, yBot, '#ea580c', 4);
+        tag(ctx, narrow ? `B on A: ${FAB.toFixed(1)} N` : `B pushes A: ${FAB.toFixed(1)} N (acts on A)`, bx - 6, yBot + 16, '#c2410c', 'right');
+        ctx.strokeStyle = 'rgba(15,23,42,0.35)'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(bx, yTop + 6); ctx.lineTo(bx, yBot - 6); ctx.stroke(); ctx.setLineDash([]);
+        tag(ctx, `a = ${a.toFixed(2)} m/s²   v = ${st.v.toFixed(1)} m/s`, w / 2, 16, '#334155');
+      } else if (s === 'skaters') {
+        const pxPerM = 70, cx = w / 2;
+        const drawSkater = (sk, color, name, m, faceRight) => {
+          const x = cx + sk.x * pxPerM, sz = 30 + Math.sqrt(m) * 4;
+          ctx.fillStyle = color;
+          ctx.beginPath(); ctx.arc(x, floorY - sz * 2.2, sz * 0.32, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - sz * 0.35, floorY - sz * 1.85, sz * 0.7, sz * 1.1, 8) : ctx.rect(x - sz * 0.35, floorY - sz * 1.85, sz * 0.7, sz * 1.1); ctx.fill();
+          ctx.strokeStyle = color; ctx.lineWidth = 6;
+          ctx.beginPath(); ctx.moveTo(x - sz * 0.2, floorY - sz * 0.8); ctx.lineTo(x - sz * 0.25, floorY - 6); ctx.moveTo(x + sz * 0.2, floorY - sz * 0.8); ctx.lineTo(x + sz * 0.25, floorY - 6); ctx.stroke();
+          ctx.strokeStyle = '#334155'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - sz * 0.45, floorY - 3); ctx.lineTo(x + sz * 0.45, floorY - 3); ctx.stroke();
+          ctx.fillStyle = 'white'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center'; ctx.fillText(name, x, floorY - sz * 1.25);
+          tag(ctx, `${m} kg`, x, floorY + 18, '#334155');
+          tag(ctx, `v = ${Math.abs(sk.v).toFixed(2)} m/s`, x, floorY + 38, '#15803d');
+          hits.push({ x, y: floorY - sz, r: sz * 1.3 });
+          return { x, sz };
+        };
+        const A = drawSkater(st.sA, '#2563eb', 'A', mA(), true), B = drawSkater(st.sB, '#16a34a', 'B', mB(), false);
+        if (st.pushing > 0) {
+          const y = floorY - 30 - Math.max(A.sz, B.sz) * 2.5, len = 70;
+          arrow(ctx, A.x, y, A.x - len, y, '#ea580c', 4); tag(ctx, `B pushes A: ${PUSH_F} N`, A.x - len / 2, y - 16, '#c2410c');
+          arrow(ctx, B.x, y, B.x + len, y, '#7c3aed', 4); tag(ctx, `A pushes B: ${PUSH_F} N`, B.x + len / 2, y - 16, '#6d28d9');
+        }
+        if (Math.abs(st.sA.x) * pxPerM > w / 2 + 60 && Math.abs(st.sB.x) * pxPerM > w / 2 + 60) reset();
+      } else {
+        // puck on ice, plus the Earth and the ice as the other objects
+        const iceY = h * 0.55, cx = w / 2;
+        ctx.fillStyle = '#bae6fd'; ctx.fillRect(0, iceY, w, 40);
+        ctx.fillStyle = '#0c4a6e'; ctx.font = '12px Arial'; ctx.textAlign = 'left'; ctx.fillText('ice', 10, iceY + 24);
+        ctx.fillStyle = '#a3e635'; ctx.fillRect(0, h - 26, w, 26);
+        ctx.fillStyle = '#365314'; ctx.fillText('the Earth (below)', 10, h - 9);
+        ctx.fillStyle = '#111827'; ctx.beginPath(); ctx.ellipse(cx, iceY - 10, 44, 12, 0, 0, Math.PI * 2); ctx.fill(); ctx.fillRect(cx - 44, iceY - 22, 88, 12); ctx.beginPath(); ctx.ellipse(cx, iceY - 22, 44, 12, 0, 0, Math.PI * 2); ctx.fillStyle = '#374151'; ctx.fill();
+        tag(ctx, 'puck', cx, iceY - 46, '#111827');
+        const forcesList = [
+          { id: 'N', a: [cx - 70, iceY - 16], b: [cx - 70, iceY - 96], col: '#0891b2', txt: 'N: ice pushes puck up', on: 'puck', partner: 'N2' },
+          { id: 'W', a: [cx + 70, iceY - 16], b: [cx + 70, iceY + 64], col: '#7c3aed', txt: 'W: Earth pulls puck down', on: 'puck', partner: 'W2' },
+          { id: 'N2', a: [cx - 140, iceY + 2], b: [cx - 140, iceY + 72], col: '#0891b2', txt: 'puck pushes ice down', on: 'ice', partner: 'N' },
+          { id: 'W2', a: [cx + 170, h - 26], b: [cx + 170, h - 106], col: '#7c3aed', txt: 'puck pulls Earth up', on: 'Earth', partner: 'W' }
+        ];
+        forcesList.forEach(f => {
+          const isSel = st.sel && (st.sel === f.id || forcesList.find(g => g.id === st.sel).partner === f.id);
+          const faded = st.sel && !isSel;
+          ctx.globalAlpha = faded ? 0.18 : 1;
+          arrow(ctx, f.a[0], f.a[1], f.b[0], f.b[1], f.col, isSel ? 6 : 4);
+          const right = f.a[0] > cx;
+          tag(ctx, f.txt, f.a[0] + (right ? 10 : -10), (f.a[1] + f.b[1]) / 2, f.col, right ? 'left' : 'right');
+          ctx.globalAlpha = 1;
+          hits.push({ id: f.id, x: (f.a[0] + f.b[0]) / 2, y: (f.a[1] + f.b[1]) / 2, r: 46 });
+        });
+        if (st.sel) {
+          const f = forcesList.find(g => g.id === st.sel), p = forcesList.find(g => g.id === f.partner);
+          tag(ctx, `Third-law pair: "${f.txt}" and "${p.txt}" — on different objects (${f.on} / ${p.on}), same kind of force.`, w / 2, 18, '#0f172a');
+        } else tag(ctx, 'Tap a force to find its third-law partner', w / 2, 18, '#1d4ed8');
+      }
+    }
+
+    function updateReadout() {
+      const s = scen();
+      const set = (i, t, v) => { el('t' + i).innerHTML = t; el('v' + i).textContent = v; };
+      el('pushVal').textContent = `(${Pv()} N)`; el('mAVal').textContent = `(${mA()} kg)`; el('mBVal').textContent = `(${mB()} kg)`;
+      el('readout').classList.toggle('hidden', s === 'puck');
+      if (s === 'blocks') {
+        const a = Pv() / (mA() + mB()), F = mB() * a;
+        set(1, 'Acceleration of both, <i>a</i> = <i>P</i>/(<i>m</i><sub>A</sub>+<i>m</i><sub>B</sub>)', `${a.toFixed(2)} m/s²`);
+        set(2, 'Force of A on B (action)', `${F.toFixed(2)} N →`); set(3, 'Force of B on A (reaction)', `${F.toFixed(2)} N ←`);
+        set(4, 'Net force on A = <i>P</i> &minus; <i>F</i><sub>BA</sub>', `${(Pv() - F).toFixed(2)} N (= mA × a)`);
+      } else if (s === 'skaters') {
+        set(1, 'Force on each (while pushing)', `${PUSH_F} N, opposite`);
+        set(2, 'Acceleration of A (<i>F</i>/<i>m</i><sub>A</sub>)', `${(PUSH_F / mA()).toFixed(2)} m/s²`);
+        set(3, 'Acceleration of B (<i>F</i>/<i>m</i><sub>B</sub>)', `${(PUSH_F / mB()).toFixed(2)} m/s²`);
+        set(4, 'Final speeds A / B', `${Math.abs(st.sA.v).toFixed(2)} / ${Math.abs(st.sB.v).toFixed(2)} m/s`);
+      }
+    }
+
+    // ---------- interaction ----------
+    let drag = false;
+    function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    canvas.addEventListener('pointerdown', e => {
+      const p = pos(e), s = scen();
+      if (s === 'blocks' && handle && Math.hypot(p.x - handle.x, p.y - handle.y) < 22) { drag = true; canvas.setPointerCapture(e.pointerId); e.preventDefault(); }
+      else if (s === 'skaters' && hits.some(h => Math.hypot(p.x - h.x, p.y - h.y) < h.r)) startPush();
+      else if (s === 'puck') { const h = hits.find(h => Math.hypot(p.x - h.x, p.y - h.y) < h.r); st.sel = h ? h.id : null; }
+    });
+    canvas.addEventListener('pointermove', e => {
+      const p = pos(e);
+      if (!drag) { canvas.style.cursor = (scen() === 'blocks' && handle && Math.hypot(p.x - handle.x, p.y - handle.y) < 22) ? 'ew-resize' : (scen() !== 'blocks' && hits.some(h => Math.hypot(p.x - h.x, p.y - h.y) < h.r)) ? 'pointer' : 'default'; return; }
+      const F = Math.round(Math.max(0, Math.min(60, (handle.ax - 6 - p.x) / handle.k)));
+      el('push').value = F;
+    });
+    const end = () => { drag = false; };
+    canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
+
+    function startPush() { st.sA = { x: -0.25, v: 0 }; st.sB = { x: 0.25, v: 0 }; st.pushing = PUSH_T; }
+    el('actBtn').addEventListener('click', () => { if (scen() === 'skaters') startPush(); else reset(); });
+    el('scenario').addEventListener('change', setScenario);
+
+    setScenario();
+    let last = null;
+    function frame(ts) {
+      if (last === null) last = ts;
+      const dt = Math.max(0, Math.min(0.05, (ts - last) / 1000)); last = ts;
+      step(dt); draw(); updateReadout();
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

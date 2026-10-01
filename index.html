@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Physics in Motion</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
+    .container { max-width: 1000px; margin: 0 auto; padding: 20px 16px 32px; }
+    h1 { margin: 0 0 6px; font-size: 1.6rem; text-align: center; }
+    .intro { margin: 0 auto 20px; max-width: 640px; text-align: center; font-size: 0.95rem; color: #475569; line-height: 1.45; }
+    .chapter { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 12px 14px 14px; margin-bottom: 12px; }
+    h2 { margin: 0 0 10px; font-size: 1rem; color: #1d4ed8; }
+    h2 .num { color: #475569; font-weight: 600; margin-right: 6px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+    a.card { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #eef4ff; border: 1px solid #dbeafe; border-radius: 8px; padding: 10px 12px; color: #1f2937; text-decoration: none; font-size: 0.92rem; font-weight: 600; line-height: 1.3; min-height: 48px; }
+    a.card:hover, a.card:focus-visible { background: #dbeafe; border-color: #93c5fd; outline: none; }
+    a.card .go { color: #1d4ed8; flex: none; }
+    .foot { margin-top: 18px; text-align: center; font-size: 0.8rem; color: #64748b; }
+    @media (max-width: 600px) {
+      .container { padding-top: 14px; }
+      h1 { font-size: 1.35rem; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Physics in Motion</h1>
+    <p class="intro">Hands-on simulations for Physics in Daily Life. Pick one, then drag, slide and press Start to see the physics happen. Use your browser's Back button to return here.</p>
+
+    <section class="chapter">
+      <h2><span class="num">Chapter 2</span>Kinematics in One Dimension</h2>
+      <div class="grid">
+        <a class="card" href="1d_horizontal_motion.html">1D Kinematics (constant acceleration)<span class="go">&rarr;</span></a>
+        <a class="card" href="free-fall-motion_g%3D10.html">Free Fall Motion<span class="go">&rarr;</span></a>
+        <a class="card" href="multi-stage-1d-motion-v2.html">Multi-Stage 1D Kinematics<span class="go">&rarr;</span></a>
+      </div>
+    </section>
+
+    <section class="chapter">
+      <h2><span class="num">Chapter 3</span>Addition of Forces</h2>
+      <div class="grid">
+        <a class="card" href="force-vector-triangle.html">Addition of Forces: Vector Triangle and Components<span class="go">&rarr;</span></a>
+        <a class="card" href="force-equilibrium.html">Balanced Forces and Equilibrium<span class="go">&rarr;</span></a>
+        <a class="card" href="newtons-second-law-friction.html">Newton's Second Law with Friction<span class="go">&rarr;</span></a>
+        <a class="card" href="newtons-third-law-pairs.html">Newton's Third Law: Action and Reaction<span class="go">&rarr;</span></a>
+      </div>
+    </section>
+
+    <section class="chapter">
+      <h2><span class="num">Chapter 4</span>Moment of a Force</h2>
+      <div class="grid">
+        <a class="card" href="moments-seesaw.html">Moment of a Force and the Principle of Moments (Seesaw)<span class="go">&rarr;</span></a>
+        <a class="card" href="centre-of-gravity.html">Centre of Gravity, Stability and Equilibrium<span class="go">&rarr;</span></a>
+      </div>
+    </section>
+
+    <section class="chapter">
+      <h2><span class="num">Chapter 5</span>Work, Energy and Power</h2>
+      <div class="grid">
+        <a class="card" href="work-energy-incline.html">Work Done and the Work-Energy Relationship<span class="go">&rarr;</span></a>
+        <a class="card" href="power-efficiency-machine.html">Power and Efficiency of a Lifting Machine<span class="go">&rarr;</span></a>
+        <a class="card" href="energy-conservation-pendulum.html">Conservation of Energy: A Swinging Pendulum<span class="go">&rarr;</span></a>
+      </div>
+    </section>
+
+    <section class="chapter">
+      <h2><span class="num">Chapter 6</span>Static Electricity</h2>
+      <div class="grid">
+        <a class="card" href="coulombs-law-field.html">Coulomb's Law and Electric Field Lines<span class="go">&rarr;</span></a>
+        <a class="card" href="charging-methods.html">Charging by Friction, Contact and Induction<span class="go">&rarr;</span></a>
+      </div>
+    </section>
+
+    <section class="chapter">
+      <h2><span class="num">Chapter 7</span>Current Electricity</h2>
+      <div class="grid">
+        <a class="card" href="ohms-law-resistivity.html">Ohm's Law and the Resistivity of a Wire<span class="go">&rarr;</span></a>
+        <a class="card" href="series-parallel-circuits.html">Series and Parallel Circuits<span class="go">&rarr;</span></a>
+        <a class="card" href="electrical-power-cost.html">Electrical Power, Energy and the Cost of Electricity<span class="go">&rarr;</span></a>
+      </div>
+    </section>
+
+    <section class="chapter">
+      <h2><span class="num">Chapter 8</span>Magnetism</h2>
+      <div class="grid">
+        <a class="card" href="magnetic-field-poles.html">Magnetic Poles, Field Lines and Induced Magnetism<span class="go">&rarr;</span></a>
+        <a class="card" href="magnetic-force-motor-effect.html">Magnetic Force on a Current-Carrying Wire<span class="go">&rarr;</span></a>
+        <a class="card" href="dc-motor-animation.html">The Simple DC Motor<span class="go">&rarr;</span></a>
+      </div>
+    </section>
+
+    <section class="chapter">
+      <h2><span class="num">Chapter 9</span>Waves</h2>
+      <div class="grid">
+        <a class="card" href="wave-properties-generator.html">Transverse and Longitudinal Waves<span class="go">&rarr;</span></a>
+      </div>
+    </section>
+
+    <section class="chapter">
+      <h2><span class="num">Chapter 10</span>Reflection and Refraction of Light</h2>
+      <div class="grid">
+        <a class="card" href="reflection-of-light.html">The Law of Reflection<span class="go">&rarr;</span></a>
+        <a class="card" href="refraction-and-tir.html">Refraction, Snell's Law and Total Internal Reflection<span class="go">&rarr;</span></a>
+      </div>
+    </section>
+
+    <p class="foot">23 simulations &middot; works on laptops, tablets and phones</p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Balanced Forces and Equilibrium</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
+    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
+    .controls { display: grid; grid-template-columns: 1.5fr repeat(6, 0.6fr) auto; gap: 8px; align-items: end; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    label { font-size: 0.8rem; font-weight: 600; }
+    input, select { font-size: 0.9rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
+    button { font-size: 0.86rem; padding: 7px 10px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; }
+    button:hover { background: #334155; }
+    .readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
+    .readout-card .value { font-size: 1rem; font-weight: bold; }
+    .readout-card.ok { background: #ecfdf5; }
+    .readout-card.bad { background: #fef2f2; }
+    canvas { display: block; width: 100%; border-radius: 10px; touch-action: none; }
+    #sceneCanvas { height: 440px; border: 1px solid #dbeafe; background: #ffffff; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
+    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    @media (max-width: 900px) {
+      .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .controls .control-group:first-child, .controls button { grid-column: 1 / -1; }
+      .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      #sceneCanvas { height: 520px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Balanced Forces and Equilibrium</h1>
+
+    <div class="panel">
+      <div class="controls">
+        <div class="control-group">
+          <label for="preset">Start from</label>
+          <select id="preset">
+            <option value="balanced" selected>Three forces in equilibrium</option>
+            <option value="unbalanced">Not balanced (a net force is left over)</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="control-group"><label for="f1">F1 (N)</label><input id="f1" type="number" min="0" max="60" step="0.5" /></div>
+        <div class="control-group"><label for="a1">&theta;1 (&deg;)</label><input id="a1" type="number" step="1" /></div>
+        <div class="control-group"><label for="f2">F2 (N)</label><input id="f2" type="number" min="0" max="60" step="0.5" /></div>
+        <div class="control-group"><label for="a2">&theta;2 (&deg;)</label><input id="a2" type="number" step="1" /></div>
+        <div class="control-group"><label for="f3">F3 (N)</label><input id="f3" type="number" min="0" max="60" step="0.5" /></div>
+        <div class="control-group"><label for="a3">&theta;3 (&deg;)</label><input id="a3" type="number" step="1" /></div>
+        <button id="balanceBtn">Make F3 balance F1 + F2</button>
+      </div>
+      <div class="readout">
+        <div class="readout-card" id="netCard"><div class="title">Net force &Sigma;<i>F</i></div><div class="value" id="net">&mdash;</div></div>
+        <div class="readout-card"><div class="title">&Sigma;<i>F<sub>x</sub></i></div><div class="value" id="sx">&mdash;</div></div>
+        <div class="readout-card"><div class="title">&Sigma;<i>F<sub>y</sub></i></div><div class="value" id="sy">&mdash;</div></div>
+        <div class="readout-card" id="eqCard"><div class="title">In equilibrium?</div><div class="value" id="eq">&mdash;</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="hint">Drag the arrowheads of F1, F2 and F3. Can you make the chain on the right close up?</div>
+      <canvas id="sceneCanvas"></canvas>
+      <div class="note">
+        Left: the three forces acting at one point on the object. Right: the same forces drawn tip to tail. When &Sigma;<i>F<sub>x</sub></i> = 0 and &Sigma;<i>F<sub>y</sub></i> = 0 the chain closes into a triangle, the net force is zero, and the object is in equilibrium: it stays at rest, or keeps moving at constant velocity (Newton's first law). If the chain does not close, the red arrow from the start to the end of the chain is the net force left over. The balancing force that would restore equilibrium is equal in size and opposite in direction to it.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const el = id => document.getElementById(id);
+    const canvas = el('sceneCanvas');
+    const PRESETS = { balanced: [20, 90, 20, 210, 20, 330], unbalanced: [25, 90, 20, 210, 20, 330] };
+    const ids = ['f1', 'a1', 'f2', 'a2', 'f3', 'a3'];
+    const COLORS = ['#2563eb', '#16a34a', '#d97706'];
+    const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
+    const clean = v => (Math.abs(v) < 0.005 ? 0 : v);
+
+    function applyPreset() { const p = PRESETS[el('preset').value]; if (p) ids.forEach((id, i) => el(id).value = p[i]); }
+    function forces() {
+      return [0, 1, 2].map(i => {
+        const m = Math.max(0, +el('f' + (i + 1)).value || 0), a = +el('a' + (i + 1)).value || 0;
+        return { m, a, x: m * Math.cos(rad(a)), y: m * Math.sin(rad(a)) };
+      });
+    }
+    function net() { const F = forces(); const x = F.reduce((s, f) => s + f.x, 0), y = F.reduce((s, f) => s + f.y, 0); return { x, y, m: Math.hypot(x, y) }; }
+
+    let view = null, handles = [];
+    function setup() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const cw = Math.round(rect.width * dpr), ch = Math.round(rect.height * dpr);
+      if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
+      const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const W = rect.width, H = rect.height;
+      const stacked = W < 600;
+      const pane = stacked ? { w: W, h: H / 2 } : { w: W / 2, h: H };
+      const s = Math.min(pane.w, pane.h) * 0.36 / 30; // px per N (30 N reaches ~0.36 of the pane)
+      const O = stacked ? { x: W / 2, y: H * 0.25 } : { x: W * 0.25, y: H * 0.5 };
+      const C = stacked ? { x: W / 2, y: H * 0.75 } : { x: W * 0.75, y: H * 0.5 };
+      view = { ctx, W, H, s, O, C, stacked };
+      return view;
+    }
+    function arrow(ctx, a, b, color, lw = 4) {
+      const ang = Math.atan2(b.y - a.y, b.x - a.x), len = Math.hypot(b.x - a.x, b.y - a.y);
+      if (len < 2) return;
+      const head = Math.min(13, len * 0.45);
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x - Math.cos(ang) * head * 0.8, b.y - Math.sin(ang) * head * 0.8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(b.x, b.y);
+      ctx.lineTo(b.x - head * Math.cos(ang - 0.42), b.y - head * Math.sin(ang - 0.42));
+      ctx.lineTo(b.x - head * Math.cos(ang + 0.42), b.y - head * Math.sin(ang + 0.42));
+      ctx.closePath(); ctx.fill();
+    }
+    function textAt(ctx, t, x, y, color) {
+      ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const tw = ctx.measureText(t).width;
+      ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(x - tw / 2 - 3, y - 9, tw + 6, 18);
+      ctx.fillStyle = color; ctx.fillText(t, x, y); ctx.textBaseline = 'alphabetic';
+    }
+
+    function draw() {
+      const { ctx, W, H, s, O, C, stacked } = setup();
+      ctx.clearRect(0, 0, W, H);
+      ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+      if (stacked) { ctx.beginPath(); ctx.moveTo(10, H / 2); ctx.lineTo(W - 10, H / 2); ctx.stroke(); }
+      else { ctx.beginPath(); ctx.moveTo(W / 2, 10); ctx.lineTo(W / 2, H - 10); ctx.stroke(); }
+      ctx.fillStyle = '#64748b'; ctx.font = '12px Arial'; ctx.textAlign = 'center';
+      ctx.fillText('Forces acting at one point', O.x, stacked ? 16 : 18);
+      ctx.fillText('The same forces, tip to tail', C.x, stacked ? H / 2 + 16 : 18);
+
+      const F = forces(), N = net();
+      // left: the object and its forces
+      ctx.strokeStyle = '#e2e8f0'; ctx.beginPath(); ctx.moveTo(O.x - 120, O.y); ctx.lineTo(O.x + 120, O.y); ctx.moveTo(O.x, O.y - 120); ctx.lineTo(O.x, O.y + 120); ctx.stroke();
+      ctx.fillStyle = '#cbd5e1'; ctx.beginPath(); ctx.arc(O.x, O.y, 16, 0, Math.PI * 2); ctx.fill();
+      handles = F.map((f, i) => {
+        const tip = { x: O.x + f.x * s, y: O.y - f.y * s };
+        arrow(ctx, O, tip, COLORS[i]);
+        const ux = Math.cos(rad(f.a)), uy = -Math.sin(rad(f.a));
+        ctx.font = 'bold 13px Arial';
+        const tw = ctx.measureText(`F${i + 1} = ${f.m.toFixed(1)} N`).width;
+        textAt(ctx, `F${i + 1} = ${f.m.toFixed(1)} N`, tip.x + ux * (20 + tw / 2), tip.y + uy * 24, COLORS[i]);
+        ctx.strokeStyle = COLORS[i]; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(tip.x, tip.y, 11, 0, Math.PI * 2); ctx.stroke();
+        return tip;
+      });
+      if (N.m > 0.05) arrow(ctx, O, { x: O.x + N.x * s, y: O.y - N.y * s }, 'rgba(220,38,38,0.7)', 3);
+
+      // right: tip-to-tail chain, centred on its own bounding box
+      const pts = [{ x: 0, y: 0 }];
+      F.forEach(f => pts.push({ x: pts[pts.length - 1].x + f.x, y: pts[pts.length - 1].y + f.y }));
+      const minx = Math.min(...pts.map(p => p.x)), maxx = Math.max(...pts.map(p => p.x)), miny = Math.min(...pts.map(p => p.y)), maxy = Math.max(...pts.map(p => p.y));
+      const cxw = (minx + maxx) / 2, cyw = (miny + maxy) / 2;
+      const P = pts.map(p => ({ x: C.x + (p.x - cxw) * s, y: C.y - (p.y - cyw) * s }));
+      F.forEach((f, i) => arrow(ctx, P[i], P[i + 1], COLORS[i]));
+      if (N.m > 0.05) {
+        arrow(ctx, P[0], P[3], '#dc2626', 3);
+        const dx = P[3].x - P[0].x, dy = P[3].y - P[0].y, dl = Math.hypot(dx, dy) || 1;
+        textAt(ctx, `net force ${N.m.toFixed(1)} N`, (P[0].x + P[3].x) / 2 + dy / dl * 62, (P[0].y + P[3].y) / 2 - dx / dl * 22, '#b91c1c');
+      } else {
+        textAt(ctx, 'Closed triangle: ΣF = 0', C.x, stacked ? H - 16 : H - 24, '#15803d');
+      }
+      ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(P[0].x, P[0].y, 4, 0, Math.PI * 2); ctx.fill();
+    }
+
+    function updateReadout() {
+      const N = net();
+      el('net').textContent = `${clean(N.m).toFixed(2)} N`;
+      el('sx').textContent = `${clean(N.x).toFixed(2)} N`;
+      el('sy').textContent = `${clean(N.y).toFixed(2)} N`;
+      const ok = N.m < 0.05;
+      el('eq').textContent = ok ? 'Yes' : 'No';
+      ['netCard', 'eqCard'].forEach(id => { el(id).classList.toggle('ok', ok); el(id).classList.toggle('bad', !ok); });
+    }
+
+    let drag = -1;
+    function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    function pick(p) { let best = -1, bd = 22; handles.forEach((h, i) => { const d = Math.hypot(p.x - h.x, p.y - h.y); if (d < bd) { bd = d; best = i; } }); return best; }
+    canvas.addEventListener('pointerdown', e => { const k = pick(pos(e)); if (k < 0) return; drag = k; canvas.setPointerCapture(e.pointerId); e.preventDefault(); });
+    canvas.addEventListener('pointermove', e => {
+      const p = pos(e);
+      if (drag < 0) { canvas.style.cursor = pick(p) >= 0 ? 'grab' : 'default'; return; }
+      const { O, s } = view;
+      const x = (p.x - O.x) / s, y = (O.y - p.y) / s;
+      el('f' + (drag + 1)).value = Math.min(60, Math.round(Math.hypot(x, y) * 2) / 2);
+      let a = Math.round(deg(Math.atan2(y, x))); if (a < 0) a += 360;
+      el('a' + (drag + 1)).value = a;
+      el('preset').value = 'custom';
+    });
+    const end = () => { drag = -1; };
+    canvas.addEventListener('pointerup', end);
+    canvas.addEventListener('pointercancel', end);
+
+    el('balanceBtn').addEventListener('click', () => {
+      const F = forces();
+      const x = -(F[0].x + F[1].x), y = -(F[0].y + F[1].y);
+      el('f3').value = +Math.hypot(x, y).toFixed(2);
+      let a = deg(Math.atan2(y, x)); if (a < 0) a += 360;
+      el('a3').value = +a.toFixed(1);
+      el('preset').value = 'custom';
+    });
+    el('preset').addEventListener('change', applyPreset);
+    ids.forEach(id => el(id).addEventListener('input', () => { el('preset').value = 'custom'; }));
+    applyPreset();
+    function frame() { draw(); updateReadout(); requestAnimationFrame(frame); }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

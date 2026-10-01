@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Series and Parallel Circuits</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
+    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
+    .controls { display: grid; grid-template-columns: 1.3fr 0.8fr repeat(4, 1fr); gap: 10px; align-items: end; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    label { font-size: 0.8rem; font-weight: 600; }
+    .val { font-weight: normal; color: #334155; }
+    select { font-size: 0.9rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
+    input[type=range] { width: 100%; }
+    .buttons { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    button { font-size: 0.88rem; padding: 7px 12px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; margin-top: 8px; }
+    th, td { border: 1px solid #e2e8f0; padding: 5px; text-align: center; }
+    th { background: #f1f5f9; }
+    tr.off td { color: #94a3b8; }
+    canvas { display: block; width: 100%; border-radius: 10px; touch-action: none; }
+    #sceneCanvas { height: 400px; border: 1px solid #dbeafe; background: #fbfdff; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
+    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    .hidden { display: none !important; }
+    @media (max-width: 900px) {
+      .controls { grid-template-columns: 1fr 1fr; }
+      #sceneCanvas { height: 380px; }
+      th, td { padding: 4px 2px; font-size: 0.78rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Series and Parallel Circuits</h1>
+
+    <div class="panel">
+      <div class="controls">
+        <div class="control-group">
+          <label for="mode">Connection</label>
+          <select id="mode">
+            <option value="series" selected>Series</option>
+            <option value="parallel">Parallel</option>
+            <option value="combo">Combination: A in series with (B parallel to C)</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="count">Bulbs</label>
+          <select id="count"><option value="2">2</option><option value="3" selected>3</option></select>
+        </div>
+        <div class="control-group"><label for="emf">Battery e.m.f. <span class="val" id="emfVal"></span></label><input id="emf" type="range" min="1.5" max="12" step="0.5" value="6" /></div>
+        <div class="control-group"><label for="r1">Bulb A <span class="val" id="r1Val"></span></label><input id="r1" type="range" min="1" max="20" step="1" value="4" /></div>
+        <div class="control-group"><label for="r2">Bulb B <span class="val" id="r2Val"></span></label><input id="r2" type="range" min="1" max="20" step="1" value="4" /></div>
+        <div class="control-group" id="r3Group"><label for="r3">Bulb C <span class="val" id="r3Val"></span></label><input id="r3" type="range" min="1" max="20" step="1" value="4" /></div>
+      </div>
+      <div class="buttons">
+        <button id="ex7Btn">Example 7: three identical bulbs in series, 6 V</button>
+        <button id="fixBtn">Replace any blown bulbs</button>
+      </div>
+      <table>
+        <thead><tr><th>Bulb</th><th>Resistance</th><th>Voltage across it</th><th>Current through it</th><th>Power <i>P</i> = <i>VI</i> (brightness)</th></tr></thead>
+        <tbody id="tbody"></tbody>
+        <tfoot><tr><th>Battery</th><th id="rt"></th><th id="et"></th><th id="it"></th><th id="pt"></th></tr></tfoot>
+      </table>
+    </div>
+
+    <div class="panel">
+      <div class="hint">Tap the switch to open or close it. Tap a bulb to burn it out (tap again to replace it). The moving dots show the current: the faster they go, the bigger the current.</div>
+      <canvas id="sceneCanvas"></canvas>
+      <div class="note" id="note"></div>
+    </div>
+  </div>
+
+  <script>
+    const el = id => document.getElementById(id);
+    const canvas = el('sceneCanvas');
+    const st = { switchOn: true, blown: [false, false, false], clock: 0 };
+    const NAMES = ['A', 'B', 'C'];
+
+    const mode = () => el('mode').value;
+    const nB = () => mode() === 'combo' ? 3 : +el('count').value;
+    const Rs = () => [+el('r1').value, +el('r2').value, +el('r3').value];
+    const E = () => +el('emf').value;
+
+    // Solve the circuit: returns total current, and V and I for each bulb (ideal battery and wires)
+    function solve() {
+      const R = Rs(), n = nB(), on = st.switchOn;
+      const V = [0, 0, 0], I = [0, 0, 0];
+      let It = 0, Rt = Infinity;
+      if (mode() === 'series') {
+        const broken = st.blown.slice(0, n).some(b => b);
+        Rt = broken ? Infinity : R.slice(0, n).reduce((a, b) => a + b, 0); // a blown bulb breaks the only path
+        if (on && !broken) { It = E() / Rt; for (let k = 0; k < n; k++) { I[k] = It; V[k] = It * R[k]; } }
+        else if (on && broken) { // open circuit: the whole battery voltage appears across the gap in the blown bulb
+          const k = st.blown.slice(0, n).indexOf(true); V[k] = E(); }
+      } else if (mode() === 'parallel') {
+        let G = 0;
+        for (let k = 0; k < n; k++) if (!st.blown[k]) { G += 1 / R[k]; if (on) { I[k] = E() / R[k]; V[k] = E(); } }
+        Rt = G > 0 ? 1 / G : Infinity;
+        if (on) for (let k = 0; k < n; k++) if (st.blown[k]) V[k] = E();
+        It = I.reduce((a, b) => a + b, 0);
+      } else {
+        const g23 = (st.blown[1] ? 0 : 1 / R[1]) + (st.blown[2] ? 0 : 1 / R[2]);
+        const R23 = g23 > 0 ? 1 / g23 : Infinity;
+        Rt = st.blown[0] || !isFinite(R23) ? Infinity : R[0] + R23;
+        if (on && isFinite(Rt)) {
+          It = E() / Rt; I[0] = It; V[0] = It * R[0];
+          const V23 = It * R23; V[1] = V23; V[2] = V23;
+          I[1] = st.blown[1] ? 0 : V23 / R[1]; I[2] = st.blown[2] ? 0 : V23 / R[2];
+        } else if (on) {
+          if (st.blown[0]) V[0] = E(); else { V[1] = E(); V[2] = E(); }
+        }
+      }
+      return { It, Rt, V, I, P: V.map((v, k) => (st.blown[k] ? 0 : v * I[k])) };
+    }
+
+    // ---------- layout: wire segments carrying known currents, and component positions ----------
+    function layout(w, h, s) {
+      const L = 60, Rr = w - 40, T = 70, B = h - 70, my = (T + B) / 2;
+      const segs = [], bulbs = [], n = nB(), m = mode();
+      const seg = (pts, I) => segs.push({ pts, I });
+      const battery = { x: L, y: my };
+      const sw = { x: L + (Rr - L) * (w < 600 ? 0.16 : 0.22), y: B };
+      const amm = { x: L + (Rr - L) * (w < 600 ? 0.62 : 0.45), y: B };
+      // battery side of the loop (conventional current leaves the + terminal at the top)
+      seg([[L, my - 14], [L, T]], s.It);
+      seg([[L, B], [L, my + 14]], s.It);
+      if (m === 'series') {
+        const xs = [...Array(n)].map((_, k) => L + (Rr - L) * (k + 1) / (n + 1));
+        seg([[L, T], [Rr, T], [Rr, B], [L, B]], s.It);
+        xs.forEach((x, k) => bulbs.push({ k, x, y: T, horiz: true }));
+      } else {
+        const narrow = w < 600;
+        const x0 = m === 'combo' ? L + (Rr - L) * (narrow ? 0.42 : 0.5) : L + (Rr - L) * (narrow ? 0.3 : 0.55);
+        const idx = m === 'combo' ? [1, 2] : [...Array(n).keys()];
+        const xEnd = Rr - Math.min(110, (Rr - L) * 0.24); // leave room for the last branch's labels
+        const xs = idx.map((_, j) => x0 + (xEnd - x0) * (idx.length === 1 ? 0 : j / (idx.length - 1)));
+        if (m === 'combo') { seg([[L, T], [x0, T]], s.It); bulbs.push({ k: 0, x: L + (x0 - L) * 0.55, y: T, horiz: true }); }
+        else seg([[L, T], [x0, T]], s.It);
+        // top rail between rungs, rungs, bottom rail back
+        for (let j = 0; j < idx.length; j++) {
+          const beyond = idx.slice(j + 1).reduce((a, k) => a + s.I[k], 0);
+          if (j < idx.length - 1) { seg([[xs[j], T], [xs[j + 1], T]], beyond); seg([[xs[j + 1], B], [xs[j], B]], beyond); }
+          seg([[xs[j], T], [xs[j], B]], s.I[idx[j]]);
+          bulbs.push({ k: idx[j], x: xs[j], y: my, horiz: false });
+        }
+        seg([[x0, B], [L, B]], s.It);
+      }
+      return { L, Rr, T, B, my, segs, bulbs, battery, sw, amm };
+    }
+
+    // ---------- drawing ----------
+    function setup() {
+      const r = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+      const cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
+      if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
+      const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { ctx, w: r.width, h: r.height };
+    }
+    function tag(ctx, t, x, y, color, align = 'center', bold = true) {
+      ctx.font = `${bold ? 'bold ' : ''}12px Arial`; ctx.textAlign = align; ctx.textBaseline = 'middle';
+      const tw = ctx.measureText(t).width, x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
+      ctx.fillStyle = 'rgba(251,253,255,0.92)'; ctx.fillRect(x0 - 3, y - 8, tw + 6, 16);
+      ctx.fillStyle = color; ctx.fillText(t, x, y); ctx.textBaseline = 'alphabetic';
+    }
+
+    let geo = null;
+    function draw() {
+      const { ctx, w, h } = setup();
+      ctx.clearRect(0, 0, w, h);
+      const s = solve();
+      const g = layout(w, h, s);
+      geo = g;
+      // gaps in the wire where components sit
+      const gaps = [];
+      g.bulbs.forEach(b => gaps.push({ x: b.x, y: b.y, r: 20 }));
+      gaps.push({ x: g.sw.x, y: g.sw.y, r: 20 }, { x: g.amm.x, y: g.amm.y, r: 17 });
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      g.segs.forEach(sg => { ctx.beginPath(); ctx.moveTo(...sg.pts[0]); for (let i = 1; i < sg.pts.length; i++) ctx.lineTo(...sg.pts[i]); ctx.stroke(); });
+      // current dots (conventional current)
+      const Iref = Math.max(0.2, E() / Math.min(...Rs()));
+      ctx.fillStyle = '#f59e0b';
+      g.segs.forEach(sg => {
+        if (sg.I < 1e-9) return;
+        const speed = 18 + 110 * Math.min(1, sg.I / Iref);
+        let total = 0; const lens = [];
+        for (let i = 1; i < sg.pts.length; i++) { const d = Math.hypot(sg.pts[i][0] - sg.pts[i - 1][0], sg.pts[i][1] - sg.pts[i - 1][1]); lens.push(d); total += d; }
+        const spacing = 26, off = (st.clock * speed) % spacing;
+        for (let d = off; d < total; d += spacing) {
+          let rem = d, i = 0; while (i < lens.length - 1 && rem > lens[i]) { rem -= lens[i]; i++; }
+          const a = sg.pts[i], b = sg.pts[i + 1], t = lens[i] ? rem / lens[i] : 0;
+          const x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t;
+          if (gaps.some(q => Math.hypot(x - q.x, y - q.y) < q.r)) continue;
+          ctx.beginPath(); ctx.arc(x, y, 3.2, 0, Math.PI * 2); ctx.fill();
+        }
+      });
+      // battery (long line = +)
+      const bx = g.battery.x, by = g.battery.y;
+      ctx.fillStyle = '#fbfdff'; ctx.fillRect(bx - 20, by - 13, 40, 26);
+      ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(bx - 18, by - 7); ctx.lineTo(bx + 18, by - 7); ctx.stroke();
+      ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(bx - 9, by + 7); ctx.lineTo(bx + 9, by + 7); ctx.stroke();
+      tag(ctx, '+', bx + 26, by - 9, '#b91c1c'); tag(ctx, '−', bx + 26, by + 9, '#1d4ed8');
+      tag(ctx, `${E()} V`, bx - 24, by, '#0f172a', 'right');
+      // switch
+      const sx = g.sw.x, sy = g.sw.y;
+      ctx.fillStyle = '#fbfdff'; ctx.fillRect(sx - 20, sy - 14, 40, 20);
+      ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(sx - 16, sy, 4, 0, Math.PI * 2); ctx.arc(sx + 16, sy, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(sx - 16, sy);
+      if (st.switchOn) ctx.lineTo(sx + 16, sy); else ctx.lineTo(sx + 12, sy - 16);
+      ctx.stroke();
+      tag(ctx, st.switchOn ? 'switch closed' : 'switch open', sx, sy + 22, st.switchOn ? '#15803d' : '#b91c1c');
+      // ammeter
+      ctx.fillStyle = 'white'; ctx.strokeStyle = '#0891b2'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(g.amm.x, g.amm.y, 15, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#0891b2'; ctx.font = 'bold 14px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('A', g.amm.x, g.amm.y + 1); ctx.textBaseline = 'alphabetic';
+      tag(ctx, `${s.It.toFixed(3)} A`, g.amm.x, g.amm.y + 26, '#0e7490');
+      // bulbs
+      const Pref = E() * E() / Math.min(...Rs().slice(0, nB()));
+      g.bulbs.forEach(b => {
+        const k = b.k, P = s.P[k], blown = st.blown[k];
+        const glow = blown ? 0 : Math.min(1, Math.sqrt(P / Pref));
+        if (glow > 0.02) {
+          const gr = ctx.createRadialGradient(b.x, b.y, 4, b.x, b.y, 16 + 34 * glow);
+          gr.addColorStop(0, `rgba(253,224,71,${0.9 * glow})`); gr.addColorStop(1, 'rgba(253,224,71,0)');
+          ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(b.x, b.y, 16 + 34 * glow, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.fillStyle = blown ? '#e2e8f0' : `rgb(${255},${Math.round(255 - 40 * glow)},${Math.round(255 - 200 * glow)})`;
+        ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(b.x, b.y, 16, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = blown ? '#94a3b8' : '#0f172a'; ctx.lineWidth = 2;
+        ctx.beginPath();
+        if (blown) { ctx.moveTo(b.x - 11, b.y - 11); ctx.lineTo(b.x - 2, b.y - 2); ctx.moveTo(b.x + 11, b.y + 11); ctx.lineTo(b.x + 3, b.y + 3); }
+        else { ctx.moveTo(b.x - 11, b.y - 11); ctx.lineTo(b.x + 11, b.y + 11); ctx.moveTo(b.x + 11, b.y - 11); ctx.lineTo(b.x - 11, b.y + 11); }
+        ctx.stroke();
+        const lx = b.horiz ? b.x : b.x + 22, ly = b.horiz ? b.y - 30 : b.y - 12, al = b.horiz ? 'center' : 'left';
+        tag(ctx, `${NAMES[k]}${blown ? ' (blown)' : ''}`, lx, ly, blown ? '#94a3b8' : '#0f172a', al);
+        if (w < 600) { // narrow: short readings on two lines so neighbouring bulbs don't collide
+          const up = b.horiz ? -1 : 1;
+          tag(ctx, `${s.V[k].toFixed(1)} V`, lx, ly + up * 16, '#475569', al, false);
+          tag(ctx, `${s.I[k].toFixed(2)} A`, lx, ly + up * 31, '#475569', al, false);
+        } else tag(ctx, `${s.V[k].toFixed(2)} V, ${s.I[k].toFixed(3)} A`, lx, ly + (b.horiz ? -16 : 16), '#475569', al, false);
+      });
+    }
+
+    function updateUI() {
+      const s = solve(), R = Rs(), n = nB();
+      ['emf', 'r1', 'r2', 'r3'].forEach((id, i) => el(id + 'Val').textContent = i === 0 ? `(${E()} V)` : `(${R[i - 1]} Ω)`);
+      el('r3Group').classList.toggle('hidden', n < 3);
+      el('count').disabled = mode() === 'combo';
+      let rows = '';
+      for (let k = 0; k < n; k++) rows += `<tr class="${st.blown[k] ? 'off' : ''}"><td>${NAMES[k]}${st.blown[k] ? ' (blown)' : ''}</td><td>${R[k]} Ω</td><td>${s.V[k].toFixed(2)} V</td><td>${s.I[k].toFixed(3)} A</td><td>${s.P[k].toFixed(2)} W</td></tr>`;
+      el('tbody').innerHTML = rows;
+      el('rt').textContent = isFinite(s.Rt) ? `total ${s.Rt.toFixed(2)} Ω` : 'open circuit';
+      el('et').textContent = `${E()} V`; el('it').textContent = `${s.It.toFixed(3)} A`; el('pt').textContent = `${(E() * s.It).toFixed(2)} W`;
+      const m = mode();
+      let note = m === 'series'
+        ? 'Series: there is only one path, so the <b>same current</b> flows through every bulb, and the battery voltage is <b>shared</b> between them (the voltages add up to the e.m.f.). The total resistance is <i>R</i> = <i>R</i><sub>1</sub> + <i>R</i><sub>2</sub> + &hellip;. If one bulb blows, the circuit is broken (an open circuit): <b>no current flows and every bulb goes out</b> &mdash; the whole battery voltage then appears across the gap.'
+        : m === 'parallel'
+          ? 'Parallel: every bulb is connected directly across the battery, so each has the <b>same voltage</b>. The currents in the branches <b>add up</b> to the current from the battery, and 1/<i>R</i> = 1/<i>R</i><sub>1</sub> + 1/<i>R</i><sub>2</sub> + &hellip; &mdash; adding a bulb <i>lowers</i> the total resistance. If one bulb blows, the others stay lit (this is why homes are wired in parallel).'
+          : 'Combination: bulb A carries the whole current, which then splits between B and C. A gets a bigger share of the voltage and is the brightest when the bulbs are identical. Blow C and B gets more current (B alone now has more resistance than B and C in parallel), so A dims and B brightens.';
+      if (!st.switchOn) note = '<b>Switch open:</b> an open circuit, so no current flows anywhere. ' + note;
+      el('note').innerHTML = note;
+    }
+
+    // ---------- interaction ----------
+    function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    function hit(p) {
+      if (!geo) return null;
+      if (Math.hypot(p.x - geo.sw.x, p.y - geo.sw.y) < 26) return { kind: 'switch' };
+      const b = geo.bulbs.find(b => Math.hypot(p.x - b.x, p.y - b.y) < 24);
+      return b ? { kind: 'bulb', k: b.k } : null;
+    }
+    canvas.addEventListener('pointerdown', e => {
+      const t = hit(pos(e)); if (!t) return;
+      if (t.kind === 'switch') st.switchOn = !st.switchOn; else st.blown[t.k] = !st.blown[t.k];
+      e.preventDefault();
+    });
+    canvas.addEventListener('pointermove', e => { canvas.style.cursor = hit(pos(e)) ? 'pointer' : 'default'; });
+    el('ex7Btn').addEventListener('click', () => {
+      el('mode').value = 'series'; el('count').value = '3'; el('emf').value = 6; ['r1', 'r2', 'r3'].forEach(id => el(id).value = 4);
+      st.blown = [false, false, false]; st.switchOn = true;
+    });
+    el('fixBtn').addEventListener('click', () => { st.blown = [false, false, false]; });
+
+    let last = null;
+    function frame(ts) {
+      if (last === null) last = ts;
+      st.clock += Math.max(0, Math.min(0.05, (ts - last) / 1000)); last = ts;
+      draw(); updateUI();
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

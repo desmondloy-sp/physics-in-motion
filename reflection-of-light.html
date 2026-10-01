@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Law of Reflection</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
+    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
+    .controls { display: grid; grid-template-columns: 2fr 1fr auto auto; gap: 10px; align-items: end; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; }
+    label { font-size: 0.8rem; font-weight: 600; }
+    input[type=range] { width: 100%; }
+    button { font-size: 0.88rem; padding: 7px 10px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; white-space: nowrap; }
+    button:hover { background: #334155; }
+    .toggle { display: flex; align-items: center; gap: 5px; font-size: 0.82rem; font-weight: 600; white-space: nowrap; padding-bottom: 6px; }
+    .readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
+    .readout-card .value { font-size: 1rem; font-weight: bold; }
+    .readout-card.match { background: #ecfdf5; }
+    canvas { display: block; width: 100%; border-radius: 10px; touch-action: none; }
+    #sceneCanvas { height: 440px; border: 1px solid #dbeafe; background: #f8fbff; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
+    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    @media (max-width: 900px) {
+      .controls { grid-template-columns: 1fr 1fr; }
+      .controls .control-group:first-child { grid-column: 1 / -1; }
+      .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      #sceneCanvas { height: 400px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>The Law of Reflection</h1>
+
+    <div class="panel">
+      <div class="controls">
+        <div class="control-group">
+          <label for="incidentAngle">Angle of incidence, <i>i</i>: <span id="angleLabel">40</span>&deg; (or drag the torch)</label>
+          <input id="incidentAngle" type="range" min="0" max="85" value="40" step="1" />
+        </div>
+        <div class="control-group">
+          <label for="mirrorAngle">Mirror tilt: <span id="tiltLabel">0</span>&deg;</label>
+          <input id="mirrorAngle" type="range" min="-35" max="35" value="0" step="1" />
+        </div>
+        <label class="toggle"><input type="checkbox" id="showTarget" checked /> Target game</label>
+        <button id="newTarget">New target</button>
+      </div>
+
+      <div class="readout">
+        <div class="readout-card"><div class="title">Angle of incidence, <i>i</i></div><div class="value" id="iValue">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Angle of reflection, <i>r</i></div><div class="value" id="rValue">&mdash;</div></div>
+        <div class="readout-card match"><div class="title">Law of reflection</div><div class="value" id="checkValue"><i>i</i> = <i>r</i></div></div>
+        <div class="readout-card" id="scoreCard"><div class="title">Targets hit</div><div class="value" id="scoreValue">0</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="hint">Drag the torch to aim it, slide the yellow dot along the mirror to choose where the ray hits, or drag either end of the mirror to tilt it. Can you bounce the light onto the star?</div>
+      <canvas id="sceneCanvas"></canvas>
+      <div class="note">
+        The <b>normal</b> is the dashed line drawn perpendicular to the mirror at the point where the ray hits it. The angle of incidence <i>i</i> is measured between the incoming ray and the normal; the angle of reflection <i>r</i> between the reflected ray and the normal &mdash; never from the mirror surface. However you aim the torch or tilt the mirror, <i>i</i> = <i>r</i>, and the incident ray, the reflected ray and the normal all lie in the same plane. Tilt the mirror and watch the normal turn with it: the reflected ray moves, but the law still holds. (Sound obeys the same law when it reflects.)
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const el = id => document.getElementById(id);
+    const canvas = el('sceneCanvas');
+    const incEl = el('incidentAngle'), tiltEl = el('mirrorAngle');
+
+    let W = 0, H = 0;
+    const st = { torch: null, hitS: 0, target: null, score: 0, hitFlash: 0, placed: false };
+    let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+    const deg = r => r * 180 / Math.PI, rad = d => d * Math.PI / 180;
+
+    function mirror() {
+      const a = rad(parseFloat(tiltEl.value));
+      const len = Math.min(W * 0.84, 620);
+      const c = { x: W / 2, y: H * 0.74 };
+      const u = { x: Math.cos(a), y: Math.sin(a) };   // along the mirror
+      const n = { x: Math.sin(a), y: -Math.cos(a) };  // normal, pointing to the reflecting (front) side
+      return { c, u, n, half: len / 2, a };
+    }
+    const hitPoint = m => ({ x: m.c.x + m.u.x * st.hitS, y: m.c.y + m.u.y * st.hitS });
+
+    function angles() {
+      const m = mirror(), P = hitPoint(m);
+      const dx = P.x - st.torch.x, dy = P.y - st.torch.y, L = Math.hypot(dx, dy) || 1;
+      const d = { x: dx / L, y: dy / L };                 // incident direction
+      const dn = d.x * m.n.x + d.y * m.n.y;               // negative: travelling toward the front face
+      const r = { x: d.x - 2 * dn * m.n.x, y: d.y - 2 * dn * m.n.y };
+      const i = Math.acos(Math.min(1, Math.abs(dn)));
+      const rr = Math.acos(Math.min(1, Math.abs(r.x * m.n.x + r.y * m.n.y)));
+      return { m, P, d, r, i, rr };
+    }
+
+    function setTorchFromAngle(iDeg) {
+      // put the torch on the left of the normal at the chosen incidence angle, keeping its distance
+      const m = mirror(), P = hitPoint(m);
+      const dist = st.torch ? Math.max(120, Math.hypot(st.torch.x - P.x, st.torch.y - P.y)) : Math.min(W, H) * 0.5;
+      const ang = rad(iDeg);
+      // rotate the normal toward -u by angle i
+      const dir = { x: m.n.x * Math.cos(ang) - m.u.x * Math.sin(ang), y: m.n.y * Math.cos(ang) - m.u.y * Math.sin(ang) };
+      st.torch = { x: P.x + dir.x * dist, y: P.y + dir.y * dist };
+      clampTorch();
+    }
+    function clampTorch() {
+      const m = mirror();
+      st.torch.x = Math.max(16, Math.min(W - 16, st.torch.x));
+      st.torch.y = Math.max(16, Math.min(H - 16, st.torch.y));
+      // keep the torch in front of the mirror (at least 20 px from its plane)
+      const rel = (st.torch.x - m.c.x) * m.n.x + (st.torch.y - m.c.y) * m.n.y;
+      if (rel < 20) { st.torch.x += m.n.x * (20 - rel); st.torch.y += m.n.y * (20 - rel); }
+    }
+
+    function newTarget() {
+      const m = mirror();
+      for (let k = 0; k < 50; k++) {
+        const t = { x: W * (0.1 + 0.8 * rnd()), y: H * (0.08 + 0.45 * rnd()) };
+        const rel = (t.x - m.c.x) * m.n.x + (t.y - m.c.y) * m.n.y;
+        if (rel > 60 && Math.hypot(t.x - st.torch.x, t.y - st.torch.y) > 90) { st.target = t; return; }
+      }
+      st.target = { x: W * 0.8, y: H * 0.2 };
+    }
+
+    // ---------- drawing ----------
+    function setup() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const cw = Math.round(rect.width * dpr), ch = Math.round(rect.height * dpr);
+      if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
+      const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (st.placed && (W !== rect.width || H !== rect.height)) {
+        st.torch.x *= rect.width / W; st.torch.y *= rect.height / H;
+        if (st.target) { st.target.x *= rect.width / W; st.target.y *= rect.height / H; }
+      }
+      W = rect.width; H = rect.height;
+      if (!st.placed) { st.placed = true; setTorchFromAngle(parseFloat(incEl.value)); newTarget(); }
+      return ctx;
+    }
+
+    function arrowHead(ctx, x, y, ang, color, size = 11) {
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.moveTo(x, y);
+      ctx.lineTo(x - size * Math.cos(ang - 0.45), y - size * Math.sin(ang - 0.45));
+      ctx.lineTo(x - size * Math.cos(ang + 0.45), y - size * Math.sin(ang + 0.45));
+      ctx.closePath(); ctx.fill();
+    }
+    function rayToEdge(p, d) {
+      let t = Infinity;
+      if (d.x > 0) t = Math.min(t, (W - p.x) / d.x); if (d.x < 0) t = Math.min(t, -p.x / d.x);
+      if (d.y > 0) t = Math.min(t, (H - p.y) / d.y); if (d.y < 0) t = Math.min(t, -p.y / d.y);
+      return { x: p.x + d.x * t, y: p.y + d.y * t, t };
+    }
+    function label(ctx, text, x, y, color, align = 'center') {
+      ctx.font = 'bold 13px Arial'; ctx.textAlign = align; ctx.textBaseline = 'middle';
+      const tw = ctx.measureText(text).width;
+      const x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
+      ctx.fillStyle = 'rgba(248,251,255,0.9)'; ctx.fillRect(x0 - 3, y - 9, tw + 6, 18);
+      ctx.fillStyle = color; ctx.fillText(text, x, y);
+      ctx.textBaseline = 'alphabetic';
+    }
+
+    function draw() {
+      const ctx = setup();
+      ctx.clearRect(0, 0, W, H);
+      const A = angles(), m = A.m, P = A.P;
+
+      // mirror with hatching on the back
+      const e1 = { x: m.c.x - m.u.x * m.half, y: m.c.y - m.u.y * m.half }, e2 = { x: m.c.x + m.u.x * m.half, y: m.c.y + m.u.y * m.half };
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5;
+      for (let s = -m.half; s <= m.half; s += 13) {
+        const p = { x: m.c.x + m.u.x * s, y: m.c.y + m.u.y * s };
+        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - m.n.x * 13 - m.u.x * 7, p.y - m.n.y * 13 - m.u.y * 7); ctx.stroke();
+      }
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(e1.x, e1.y); ctx.lineTo(e2.x, e2.y); ctx.stroke(); ctx.lineCap = 'butt';
+      [e1, e2].forEach(e => { ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.arc(e.x, e.y, 7, 0, Math.PI * 2); ctx.fill(); });
+      label(ctx, 'mirror', e2.x - m.u.x * 34 - m.n.x * 26, e2.y - m.u.y * 34 - m.n.y * 26, '#334155');
+
+      // normal
+      const nl = Math.min(H * 0.55, 230);
+      ctx.strokeStyle = '#64748b'; ctx.setLineDash([6, 5]); ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(P.x - m.n.x * 30, P.y - m.n.y * 30); ctx.lineTo(P.x + m.n.x * nl, P.y + m.n.y * nl); ctx.stroke(); ctx.setLineDash([]);
+      label(ctx, 'normal', P.x + m.n.x * (nl + 12), P.y + m.n.y * (nl + 12), '#475569');
+
+      // incident ray
+      const T = st.torch;
+      ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 3.5;
+      ctx.beginPath(); ctx.moveTo(T.x, T.y); ctx.lineTo(P.x, P.y); ctx.stroke();
+      const midI = { x: (T.x + P.x) / 2, y: (T.y + P.y) / 2 };
+      arrowHead(ctx, midI.x + A.d.x * 8, midI.y + A.d.y * 8, Math.atan2(A.d.y, A.d.x), '#d97706');
+      // reflected ray, to the edge of the canvas
+      const E = rayToEdge(P, A.r);
+      ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 3.5;
+      ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(E.x, E.y); ctx.stroke();
+      const rl = Math.min(E.t * 0.5, 140);
+      arrowHead(ctx, P.x + A.r.x * rl, P.y + A.r.y * rl, Math.atan2(A.r.y, A.r.x), '#dc2626');
+
+      // angle arcs, both measured from the normal
+      const nAng = Math.atan2(m.n.y, m.n.x);
+      const inAng = Math.atan2(-A.d.y, -A.d.x), outAng = Math.atan2(A.r.y, A.r.x);
+      const arc = (from, to, R, col) => {
+        let d = to - from; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+        ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(P.x, P.y, R, from, from + d, d < 0); ctx.stroke();
+        return from + d / 2;
+      };
+      if (A.i > rad(0.5)) {
+        const mi = arc(nAng, inAng, 46, '#d97706'), mr = arc(nAng, outAng, 58, '#dc2626');
+        label(ctx, `i = ${deg(A.i).toFixed(0)}°`, P.x + Math.cos(mi) * 78, P.y + Math.sin(mi) * 78, '#b45309');
+        label(ctx, `r = ${deg(A.rr).toFixed(0)}°`, P.x + Math.cos(mr) * 92, P.y + Math.sin(mr) * 92, '#b91c1c');
+      } else {
+        label(ctx, 'i = r = 0°: the ray reflects straight back', P.x, P.y - nl * 0.5, '#b91c1c');
+      }
+
+      // target
+      if (el('showTarget').checked && st.target) {
+        const t = st.target;
+        const hit = distToRay(t, P, A.r) < 14;
+        if (hit && st.hitFlash <= 0) { st.score++; st.hitFlash = 1.2; }
+        drawStar(ctx, t.x, t.y, hit || st.hitFlash > 0 ? '#16a34a' : '#eab308');
+        if (st.hitFlash > 0) label(ctx, 'Hit!', t.x, t.y - 26, '#15803d');
+      }
+
+      // torch (a small ray box pointing along the incident ray)
+      const ta = Math.atan2(A.d.y, A.d.x);
+      ctx.save(); ctx.translate(T.x, T.y); ctx.rotate(ta);
+      ctx.fillStyle = '#1f2937'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-30, -11, 34, 22, 5) : ctx.rect(-30, -11, 34, 22); ctx.fill();
+      ctx.fillStyle = '#fde68a'; ctx.fillRect(2, -8, 5, 16);
+      ctx.restore();
+      label(ctx, 'torch', T.x - A.d.x * 44, T.y - A.d.y * 44 + (A.d.y < 0 ? 14 : -14), '#1f2937');
+
+      // hit-point handle
+      ctx.fillStyle = '#facc15'; ctx.strokeStyle = '#a16207'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(P.x, P.y, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+
+    function distToRay(p, o, d) {
+      const t = (p.x - o.x) * d.x + (p.y - o.y) * d.y;
+      if (t < 0) return Infinity;
+      return Math.hypot(p.x - (o.x + d.x * t), p.y - (o.y + d.y * t));
+    }
+    function drawStar(ctx, x, y, color) {
+      ctx.fillStyle = color; ctx.beginPath();
+      for (let k = 0; k < 10; k++) { const r = k % 2 ? 7 : 16, a = -Math.PI / 2 + k * Math.PI / 5; ctx.lineTo(x + r * Math.cos(a), y + r * Math.sin(a)); }
+      ctx.closePath(); ctx.fill();
+    }
+
+    function updateReadout() {
+      const A = angles();
+      el('iValue').textContent = `${deg(A.i).toFixed(1)}°`;
+      el('rValue').textContent = `${deg(A.rr).toFixed(1)}°`;
+      el('angleLabel').textContent = deg(A.i).toFixed(0);
+      el('tiltLabel').textContent = tiltEl.value;
+      if (!dragging || dragging.kind !== 'slider') incEl.value = Math.round(deg(A.i));
+      el('scoreValue').textContent = st.score;
+    }
+
+    // ---------- interaction ----------
+    let dragging = null;
+    function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    function pick(p) {
+      const m = mirror(), P = hitPoint(m);
+      if (Math.hypot(p.x - st.torch.x, p.y - st.torch.y) < 30) return 'torch';
+      if (Math.hypot(p.x - P.x, p.y - P.y) < 16) return 'hit';
+      for (const sgn of [-1, 1]) { const e = { x: m.c.x + m.u.x * m.half * sgn, y: m.c.y + m.u.y * m.half * sgn }; if (Math.hypot(p.x - e.x, p.y - e.y) < 22) return 'end' + sgn; }
+      const s = (p.x - m.c.x) * m.u.x + (p.y - m.c.y) * m.u.y, off = (p.x - m.c.x) * m.n.x + (p.y - m.c.y) * m.n.y;
+      if (Math.abs(s) < m.half && Math.abs(off) < 14) return 'hit';
+      return null;
+    }
+    canvas.addEventListener('pointerdown', e => {
+      const p = pos(e), k = pick(p); if (!k) return;
+      dragging = { kind: k }; canvas.setPointerCapture(e.pointerId); e.preventDefault();
+      moveTo(p);
+    });
+    canvas.addEventListener('pointermove', e => {
+      const p = pos(e);
+      if (!dragging) { const k = pick(p); canvas.style.cursor = k === 'torch' ? 'grab' : k === 'hit' ? 'ew-resize' : k ? 'alias' : 'default'; return; }
+      moveTo(p);
+    });
+    function moveTo(p) {
+      const m = mirror();
+      if (dragging.kind === 'torch') { st.torch = { x: p.x, y: p.y }; clampTorch(); }
+      else if (dragging.kind === 'hit') { st.hitS = Math.max(-m.half + 12, Math.min(m.half - 12, (p.x - m.c.x) * m.u.x + (p.y - m.c.y) * m.u.y)); }
+      else {
+        const sgn = dragging.kind === 'end1' ? 1 : -1;
+        let a = Math.atan2((p.y - m.c.y) * sgn, (p.x - m.c.x) * sgn);
+        tiltEl.value = Math.max(-35, Math.min(35, Math.round(deg(a))));
+        clampTorch();
+      }
+    }
+    const end = () => { dragging = null; };
+    canvas.addEventListener('pointerup', end);
+    canvas.addEventListener('pointercancel', end);
+
+    incEl.addEventListener('input', () => { dragging = { kind: 'slider' }; setTorchFromAngle(parseFloat(incEl.value)); dragging = null; });
+    tiltEl.addEventListener('input', clampTorch);
+    el('newTarget').addEventListener('click', () => { st.hitFlash = 0; newTarget(); });
+
+    let last = null;
+    function frame(ts) {
+      if (last === null) last = ts;
+      const dt = Math.max(0, Math.min(0.05, (ts - last) / 1000)); last = ts;
+      if (st.hitFlash > 0) { st.hitFlash -= dt; if (st.hitFlash <= 0 && el('showTarget').checked) newTarget(); }
+      draw(); updateReadout();
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

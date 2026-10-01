@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Free Fall Motion Simulation</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f3f7fb;
+      color: #1f2937;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 4px 8px;
+    }
+    h1 {
+      margin: 0 0 4px;
+      font-size: 1.1rem;
+      text-align: center;
+    }
+    .panel {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      padding: 8px;
+      margin-bottom: 8px;
+      display: flex;
+      flex-direction: column;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: 1.3fr;
+      gap: 6px;
+      align-items: end;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .control-group.compact-input input { max-width: 110px; }
+    label {
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .control-group.instructions {
+      font-size: 0.78rem;
+      color: #475569;
+      line-height: 1.3;
+    }
+
+    .control-group.instructions ul {
+      padding-left: 18px;
+      margin: 4px 0 0;
+    }
+
+    .control-group.instructions li {
+      margin-bottom: 2px;
+    }
+
+    input, select, button {
+      font-size: 0.95rem;
+      padding: 6px 8px;
+      border-radius: 7px;
+      border: 1px solid #cbd5e1;
+    }
+    .buttons {
+      display: flex;
+      gap: 6px;
+      flex-wrap: nowrap;
+    }
+    .preset-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .preset-buttons button {
+      flex: 0 0 auto;
+      width: 100%;
+      font-size: 0.8rem;
+      padding: 4px 6px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      background: #e5f0ff;
+      color: #1f2937;
+      cursor: pointer;
+    }
+
+    .preset-buttons button:hover {
+      background: #d0e2ff;
+    }
+
+    .preset-buttons button.active {
+      background: #2563eb;
+      color: #fff;
+      border-color: #1d4ed8;
+    }
+
+    button {
+      cursor: pointer;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      min-width: 0;
+      flex: 1;
+    }
+    button:hover { background: #1d4ed8; }
+    button.secondary { background: #475569; }
+    button.secondary:hover { background: #334155; }
+    button.danger { background: #dc2626; }
+    button.danger:hover { background: #b91c1c; }
+
+    .main-layout {
+      display: grid;
+      grid-template-columns: 0.8fr 1.1fr 1.1fr; /* left: controls, mid: fall, right: graphs */
+      gap: 12px;
+      align-items: start;
+    }
+
+    .main-layout > * {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .drop-panel {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+    }
+    .drop-header {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .drop-buttons {
+      width: 100%;
+      display: flex;
+      gap: 6px;
+    }
+
+    .drop-buttons button {
+      flex: 1;
+      min-width: 0;
+    }
+    .drop-title {
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    
+    #fallCanvas {
+      display: block;
+      width: 100%;
+      flex: 1 1 auto;      /* fill available vertical space */
+      min-height: 260px;   /* safety minimum so it doesn't get too small */
+      border-radius: 10px;
+      border: 1px solid #dbeafe;
+      background: linear-gradient(to bottom, #eff6ff 0%, #dbeafe 65%, #e7f5e8 65%, #dcfce7 100%);
+    }
+
+    .readout {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(120px, 1fr)); /* was 4 columns */
+      gap: 6px;  /* or 4–6 px as you prefer */
+      margin-bottom: 6px;
+    }
+    .readout-card {
+      background: #eef4ff;
+      border-radius: 8px;
+      padding: 6px 8px;
+      text-align: center;
+    }
+    .readout-card .title {
+      font-size: 0.78rem;
+      color: #475569;
+      margin-bottom: 2px;
+    }
+    .readout-card .value {
+      font-size: 1rem;
+      font-weight: bold;
+    }
+
+    .graphs {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+    .graph-box {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 6px;
+    }
+    .graph-title {
+      font-weight: 700;
+      margin: 0 0 4px;
+      font-size: 0.9rem;
+    }
+    .graph-canvas {
+      display: block;
+      width: 100%;
+      height: 150px;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .note {
+      margin-top: 4px;
+      font-size: 0.78rem;
+      color: #475569;
+    }
+
+    @media (max-width: 980px) {
+      .main-layout {
+        grid-template-columns: 1fr;
+      }
+      #fallCanvas {
+        height: 300px;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .controls,
+      .readout {
+        grid-template-columns: repeat(2, minmax(140px, 1fr));
+      }
+      h1 { font-size: 1.05rem; }
+      #fallCanvas { height: 280px; }
+      .graph-canvas { height: 110px; }
+    }
+
+    @media (max-width: 420px) {
+      .controls,
+      .readout {
+        grid-template-columns: 1fr;
+      }
+      .buttons {
+        flex-wrap: wrap;
+      }
+      button {
+        flex: 1 1 auto;
+      }
+    }
+    #fallCanvas, .graph-canvas { touch-action: none; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 4px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Free Fall Motion Simulation</h1>
+
+    <div class="main-layout">
+      <!-- Left column: controls -->
+      <div class="panel">
+        <div class="controls">
+          <div class="control-group">
+            <label>Presets</label>
+            <div class="preset-buttons">
+              <button type="button" data-preset="drop_rest">Drop from rest</button>
+              <button type="button" data-preset="throw_down">Throw down</button>
+              <button type="button" data-preset="throw_up">Throw up</button>
+              <button type="button" data-preset="moon_drop">Moon</button>
+              <button type="button" data-preset="high_platform">High platform</button>
+            </div>
+          </div>
+
+          <div class="control-group compact-input">
+            <label for="y0">Initial height <i>y</i><sub>0</sub> (m)</label>
+            <input id="y0" type="number" value="20" step="0.1" />
+          </div>
+
+          <div class="control-group compact-input">
+            <label for="v0">Initial velocity <i>v</i><sub>0</sub> (m/s)</label>
+            <input id="v0" type="number" value="0" step="0.1" />
+          </div>
+
+          <div class="control-group compact-input">
+            <label for="g">Gravity <i>g</i> (m/s²)</label>
+            <input id="g" type="number" value="10.0" step="0.1" />
+          </div>
+
+          <div class="control-group compact-input">
+            <label for="originMode">Height measured from</label>
+            <select id="originMode">
+              <option value="ground" selected>Ground (y = 0 at ground)</option>
+              <option value="release">Release point (y = 0 at release)</option>
+            </select>
+          </div>
+
+          <div class="control-group instructions">
+            <label>How to use</label>
+            <ul>
+              <li>Choose a preset, or drag the ball and its velocity arrow.</li>
+              <li>Type exact values if you need them.</li>
+              <li>Click Start to run, Pause to stop, Reset to restart.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      
+
+      <!-- Middle column: vertical motion view with buttons in header -->
+      <div class="drop-panel">
+        <div class="drop-header">
+          <div class="drop-title">Vertical Motion View</div>
+          <div class="buttons drop-buttons">
+            <button id="startBtn">Start</button>
+            <button id="pauseBtn" class="secondary">Pause</button>
+            <button id="resetBtn" class="danger">Reset</button>
+          </div>
+        </div>
+        <div class="hint">Drag the ball to set the drop height; drag the green arrow to throw it up or down. Drag across a graph to replay any moment.</div>
+        <canvas id="fallCanvas"></canvas>
+        <div class="note">
+          Object falls vertically toward the ground. Upward is positive, so free-fall acceleration is negative.
+        </div>
+      </div>
+
+      <!-- Right column: readouts + two graphs -->
+      <div>
+        <div class="readout">
+          <div class="readout-card">
+            <div class="title">Time <i>t</i></div>
+            <div class="value" id="timeValue">0.00 s</div>
+          </div>
+          <div class="readout-card">
+            <div class="title">Height <i>y</i></div>
+            <div class="value" id="yValue">20.00 m</div>
+          </div>
+          <div class="readout-card">
+            <div class="title">Velocity <i>v</i></div>
+            <div class="value" id="vValue">0.00 m/s</div>
+          </div>
+          <div class="readout-card">
+            <div class="title">Acceleration <i>a</i></div>
+            <div class="value" id="aValue">-10.00 m/s²</div>
+          </div>
+        </div>
+
+        <div class="graphs">
+          <div class="graph-box">
+            <div class="graph-title">Height–Time Graph, <i>y</i>–<i>t</i></div>
+            <canvas id="yGraph" class="graph-canvas"></canvas>
+          </div>
+          <div class="graph-box">
+            <div class="graph-title">Velocity–Time Graph, <i>v</i>–<i>t</i></div>
+            <canvas id="vGraph" class="graph-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DT = 0.02;
+    const PLAYBACK_SPEED = 1.25;
+    const MAX_TIME = 10;
+
+    const presetButtons = Array.from(document.querySelectorAll('.preset-buttons button'));
+    const y0El = document.getElementById('y0');
+    const v0El = document.getElementById('v0');
+    const gEl = document.getElementById('g');
+    const originModeEl = document.getElementById('originMode');
+
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    const timeValue = document.getElementById('timeValue');
+    const yValue = document.getElementById('yValue');
+    const vValue = document.getElementById('vValue');
+    const aValue = document.getElementById('aValue');
+
+    const fallCanvas = document.getElementById('fallCanvas');
+    const yGraphCanvas = document.getElementById('yGraph');
+    const vGraphCanvas = document.getElementById('vGraph');
+
+    const PRESETS = {
+      drop_rest: { y0: 20, v0: 0, g: 10.0 },
+      throw_down: { y0: 20, v0: -6, g: 10.0 },
+      throw_up: { y0: 18, v0: 12, g: 10.0 },
+      moon_drop: { y0: 20, v0: 0, g: 1.6 },
+      high_platform: { y0: 35, v0: 0, g: 10.0 }
+    };
+
+    let sim = {
+      running: false,
+      lastFrameTime: null,
+      accumulator: 0,
+      originMode: 'ground',
+      t: 0,
+      y0: 20,
+      v0: 0,
+      g: 9.8,
+      preset: '',
+      points: []
+    };
+    function getDisplayY(physicalY) {
+      if (sim.originMode === 'release') {
+        return physicalY - sim.y0;
+      }
+      return physicalY;
+    }
+
+
+    function resizeCanvasToDisplaySize(canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+      const width = Math.round(rect.width * ratio);
+      const height = Math.round(rect.height * ratio);
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+    }
+
+    function resizeAllCanvases() {
+      resizeCanvasToDisplaySize(fallCanvas);
+      resizeCanvasToDisplaySize(yGraphCanvas);
+      resizeCanvasToDisplaySize(vGraphCanvas);
+      redrawAll();
+    }
+
+    function applyPreset(key) {
+      const preset = PRESETS[key];
+      if (!preset) return;
+
+      sim.preset = key;
+
+      y0El.value = preset.y0;
+      v0El.value = preset.v0;
+      gEl.value = preset.g;
+
+      y0El.disabled = false;
+      v0El.disabled = false;
+
+      presetButtons.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.preset === key);
+      });
+    }
+
+    function sampleState(t) {
+      const a = -sim.g;
+      let y = sim.y0 + sim.v0 * t + 0.5 * a * t * t;
+      let v = sim.v0 + a * t;
+
+      if (y <= 0) {
+        y = 0;
+        const impactTime = solveImpactTime(sim.y0, sim.v0, sim.g);
+        if (isFinite(impactTime) && impactTime >= 0) {
+          v = sim.v0 - sim.g * impactTime;
+        }
+      }
+
+      return { t, y, v, a };
+    }
+
+    function solveImpactTime(y0, v0, g) {
+      const A = -0.5 * g;
+      const B = v0;
+      const C = y0;
+      const discriminant = B * B - 4 * A * C;
+      if (discriminant < 0) return Infinity;
+      const sqrtD = Math.sqrt(discriminant);
+      const t1 = (-B + sqrtD) / (2 * A);
+      const t2 = (-B - sqrtD) / (2 * A);
+      return [t1, t2].filter(t => t >= 0).sort((a, b) => a - b)[0] ?? Infinity;
+    }
+
+    function getStopTime() {
+      return Math.min(MAX_TIME, solveImpactTime(sim.y0, sim.v0, sim.g));
+    }
+
+    function resetSimulation() {
+      sim.running = false;
+      sim.lastFrameTime = null;
+      sim.accumulator = 0;
+      sim.originMode = originModeEl.value || 'ground';
+      sim.t = 0;
+      sim.y0 = parseFloat(y0El.value) || 0;
+      sim.v0 = parseFloat(v0El.value) || 0;
+      sim.g = Math.max(0.1, parseFloat(gEl.value) || 9.8);
+      sim.points = [sampleState(0)];
+      updateReadoutFromState();
+      redrawAll();
+    }
+
+    function updatePhysicsStep() {
+      sim.t += DT;
+      const stopTime = getStopTime();
+      if (sim.t > stopTime) sim.t = stopTime;
+      sim.points.push(sampleState(sim.t));
+      if (sim.t >= stopTime) sim.running = false;
+    }
+
+    function updateReadoutFromState() {
+      const current = sampleState(sim.t);
+      timeValue.textContent = `${current.t.toFixed(2)} s`;
+      const displayY = getDisplayY(current.y);
+      yValue.textContent = `${displayY.toFixed(2)} m`;
+      vValue.textContent = `${current.v.toFixed(2)} m/s`;
+      aValue.textContent = `${current.a.toFixed(2)} m/s²`;
+    }
+
+    function animationLoop(timestamp) {
+      if (!sim.running) return;
+      if (sim.lastFrameTime == null) sim.lastFrameTime = timestamp;
+
+      let frameSeconds = (timestamp - sim.lastFrameTime) / 1000;
+      sim.lastFrameTime = timestamp;
+      frameSeconds = Math.min(frameSeconds, 0.05);
+      sim.accumulator += frameSeconds * PLAYBACK_SPEED;
+
+      while (sim.accumulator >= DT && sim.running) {
+        updatePhysicsStep();
+        sim.accumulator -= DT;
+      }
+
+      updateReadoutFromState();
+      redrawAll();
+      if (sim.running) requestAnimationFrame(animationLoop);
+    }
+
+    function drawMixedStyleLabel(ctx, text, x, y, fontSize, rotation = 0) {
+      const variable = text.charAt(0);
+      const rest = text.slice(1);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rotation);
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      ctx.font = `italic ${fontSize}px Arial`;
+      const variableWidth = ctx.measureText(variable).width;
+      ctx.font = `${fontSize}px Arial`;
+      const restWidth = ctx.measureText(rest).width;
+      const startX = -(variableWidth + restWidth) / 2;
+      ctx.font = `italic ${fontSize}px Arial`;
+      ctx.fillText(variable, startX, 0);
+      ctx.font = `${fontSize}px Arial`;
+      ctx.fillText(rest, startX + variableWidth, 0);
+      ctx.restore();
+    }
+
+    function roundRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    function getNiceStepAndTicks(min, max) {
+      const range = Math.abs(max - min);
+      if (range < 1e-9) {
+        return { step: 1, min: min - 1, max: max + 1, ticks: [min - 1, min, max, max + 1] };
+      }
+      const magnitude = Math.pow(10, Math.floor(Math.log10(range)));
+      const normalized = range / magnitude;
+      let step;
+      if (normalized <= 1.5) step = 0.2;
+      else if (normalized <= 3) step = 0.5;
+      else if (normalized <= 7) step = 1;
+      else step = 2;
+      step *= magnitude;
+      const tickMin = Math.floor(min / step) * step;
+      const tickMax = Math.ceil(max / step) * step;
+      const ticks = [];
+      for (let tick = tickMin; tick <= tickMax + step * 0.1; tick += step) {
+        ticks.push(Math.round(tick * 1e10) / 1e10);
+      }
+      return { step, min: tickMin, max: tickMax, ticks };
+    }
+
+    function getGraphRange(key) {
+      const vals = sim.points.map(p => (key === 'y' ? getDisplayY(p.y) : p[key]));
+      let min = Math.min(...vals);
+      let max = Math.max(...vals);
+      min = Math.min(min, 0);
+      max = Math.max(max, 0);
+      if (Math.abs(max - min) < 1e-9) {
+        min -= 1;
+        max += 1;
+      }
+      const pad = 0.12 * (max - min);
+      return { min: min - pad, max: max + pad };
+    }
+
+    function drawFallScene() {
+      const ctx = fallCanvas.getContext('2d');
+      const w = fallCanvas.width;
+      const h = fallCanvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const topPad = 56;
+      const bottomPad = 42;
+      const shaftLeft = w * 0.35;
+      const shaftRight = w * 0.65;
+      const shaftTop = topPad;
+      const shaftBottom = h - bottomPad;
+      const shaftHeight = shaftBottom - shaftTop;
+
+      const ys = sim.points.map(p => p.y);
+      const maxY = Math.max(sim.y0, ...ys, 5);
+
+      function yToPx(y) {
+        return shaftBottom - (y / maxY) * shaftHeight;
+      }
+
+      ctx.fillStyle = '#eff6ff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#dcfce7';
+      ctx.fillRect(0, shaftBottom, w, h - shaftBottom);
+
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(shaftLeft, shaftTop);
+      ctx.lineTo(shaftLeft, shaftBottom);
+      ctx.lineTo(shaftRight, shaftBottom);
+      ctx.lineTo(shaftRight, shaftTop);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#64748b';  // darker gray-blue
+      ctx.lineWidth = 1.5;
+      ctx.fillStyle = '#334155';
+      ctx.font = `${Math.max(11, h * 0.028)}px Arial`;
+      ctx.textAlign = 'right';
+
+      const yTicks = getNiceStepAndTicks(0, maxY).ticks;
+      yTicks.forEach(tickVal => {
+        if (tickVal >= 0 && tickVal <= maxY) {
+          const py = yToPx(tickVal);
+          ctx.beginPath();
+          ctx.moveTo(shaftLeft - 8, py);
+          ctx.lineTo(shaftLeft, py);
+          ctx.stroke();
+          ctx.fillText(tickVal.toFixed(1), shaftLeft - 20, py + 4);
+        }
+      });
+
+      ctx.textAlign = 'left';
+      ctx.fillText('Height (m)', 10, 20);
+
+      const drawnTimes = new Set();
+      const labelStacks = new Map();
+      sim.points.forEach(point => {
+        const roundedTime = Math.round(point.t * 2) / 2;   // 0.0, 0.5, 1.0, 1.5, ...
+        if (Math.abs(point.t - roundedTime) < 0.01 && point.t >= 0 && !drawnTimes.has(roundedTime)) {
+          drawnTimes.add(roundedTime);
+          const py = yToPx(point.y);
+          ctx.fillStyle = 'rgba(37, 99, 235, 0.16)';
+          ctx.beginPath();
+          ctx.arc(w * 0.5, py, 12, 0, Math.PI * 2);
+          ctx.fill();
+
+          const stackKey = Math.round(py / 14);
+          const stackIndex = labelStacks.get(stackKey) || 0;
+          labelStacks.set(stackKey, stackIndex + 1);
+
+          ctx.fillStyle = 'rgba(52, 73, 94, 0.5)';
+          ctx.font = `${Math.max(10, h * 0.024)}px Arial`;
+          ctx.textAlign = 'center';
+          ctx.fillText(`${roundedTime.toFixed(1)} s`, w * 0.5 + 34, py - stackIndex * 16);
+        }
+      });
+
+      const current = sampleState(sim.t);
+      const ballY = yToPx(current.y);
+      ctx.fillStyle = '#2563eb';
+      ctx.beginPath();
+      ctx.arc(w * 0.5, ballY, 15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#0f172a';
+      ctx.textAlign = 'center';
+      ctx.font = `${Math.max(11, h * 0.028)}px Arial`;
+      ctx.fillText('Ball', w * 0.5, ballY - 22);
+      const k = fallCanvas.width / (fallCanvas.getBoundingClientRect().width || 1);
+      const pxPerMs = 4 * k;
+      const vTipY = ballY - current.v * pxPerMs;
+      if (Math.abs(current.v) > 0.05) {
+        const dir = Math.sign(current.v); // + is up
+        ctx.strokeStyle = '#16a34a'; ctx.fillStyle = '#16a34a'; ctx.lineWidth = 3 * k;
+        ctx.beginPath(); ctx.moveTo(w * 0.5 - 26 * k, ballY); ctx.lineTo(w * 0.5 - 26 * k, vTipY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(w * 0.5 - 26 * k, vTipY - dir * 2 * k); ctx.lineTo(w * 0.5 - 32 * k, vTipY + dir * 9 * k); ctx.lineTo(w * 0.5 - 20 * k, vTipY + dir * 9 * k); ctx.closePath(); ctx.fill();
+        ctx.textAlign = 'right'; ctx.fillStyle = '#15803d'; ctx.fillText(`v = ${current.v.toFixed(1)} m/s`, w * 0.5 - 36 * k, vTipY + 4 * k); ctx.textAlign = 'center';
+      }
+      if (sim.t === 0 && !sim.running) {
+        ctx.fillStyle = '#16a34a'; ctx.beginPath(); ctx.arc(w * 0.5 - 26 * k, vTipY, 7 * k, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = 'white'; ctx.lineWidth = 2 * k; ctx.stroke();
+      }
+      fallMap = { k, ballX: w * 0.5, ballY, handleX: w * 0.5 - 26 * k, vTipY, pxPerMs, shaftBottom, shaftHeight, maxY };
+
+      ctx.strokeStyle = '#166534';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(shaftLeft - 16, shaftBottom);
+      ctx.lineTo(shaftRight + 16, shaftBottom);
+      ctx.stroke();
+      ctx.fillStyle = '#166534';
+      ctx.fillText('Ground', w * 0.5, shaftBottom + 24);
+    }
+
+    let fallMap = null;
+    function drawGraph(canvas, key, color, yLabel) {
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const margin = { left: 70, right: 16, top: 18, bottom: 50 };
+      const plotW = w - margin.left - margin.right;
+      const plotH = h - margin.top - margin.bottom;
+      const range = getGraphRange(key);
+      const yTickInfo = getNiceStepAndTicks(range.min, range.max);
+      const stopTime = Math.max(getStopTime(), 0.5);
+
+      function tx(t) { return margin.left + (t / stopTime) * plotW; }
+      function ty(v) { return margin.top + ((yTickInfo.max - v) / (yTickInfo.max - yTickInfo.min)) * plotH; }
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 1;
+
+      yTickInfo.ticks.forEach(tickVal => {
+        if (tickVal >= yTickInfo.min && tickVal <= yTickInfo.max) {
+          const y = ty(tickVal);
+          ctx.beginPath();
+          ctx.moveTo(margin.left, y);
+          ctx.lineTo(w - margin.right, y);
+          ctx.stroke();
+        }
+      });
+
+      const xTickInfo = getNiceStepAndTicks(0, stopTime);
+      xTickInfo.ticks.forEach(tickVal => {
+        if (tickVal >= 0 && tickVal <= stopTime) {
+          const x = tx(tickVal);
+          ctx.beginPath();
+          ctx.moveTo(x, margin.top);
+          ctx.lineTo(x, h - margin.bottom);
+          ctx.stroke();
+        }
+      });
+
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(margin.left, margin.top);
+      ctx.lineTo(margin.left, h - margin.bottom);
+      ctx.lineTo(w - margin.right, h - margin.bottom);
+      ctx.stroke();
+
+      ctx.fillStyle = '#334155';
+      ctx.font = `${Math.max(11, h * 0.075)}px Arial`;
+      ctx.textAlign = 'center';
+      xTickInfo.ticks.forEach(tickVal => {
+        if (tickVal >= 0 && tickVal <= stopTime) {
+          ctx.fillText(`${tickVal.toFixed(1)}`, tx(tickVal), h - 30);
+        }
+      });
+
+      ctx.textAlign = 'right';
+      yTickInfo.ticks.forEach(tickVal => {
+        if (tickVal >= yTickInfo.min && tickVal <= yTickInfo.max) {
+          ctx.fillText(tickVal.toFixed(1), margin.left - 6, ty(tickVal) + 4);
+        }
+      });
+
+      const axisFontSize = Math.max(11, h * 0.075);
+      drawMixedStyleLabel(ctx, 't (s)', margin.left + plotW / 2, h - 8, axisFontSize);
+      drawMixedStyleLabel(ctx, yLabel, 14, margin.top + plotH / 2, axisFontSize, -Math.PI / 2);
+
+      if (sim.points.length > 0) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        sim.points.forEach((p, i) => {
+          const x = tx(p.t);
+          const yVal = key === 'y' ? getDisplayY(p.y) : p[key];
+          const y = ty(yVal);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        const last = sim.points[sim.points.length - 1];
+        const lastYVal = key === 'y' ? getDisplayY(last.y) : last[key];
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(tx(last.t), ty(lastYVal), 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function redrawAll() {
+      drawFallScene();
+      drawGraph(yGraphCanvas, 'y', '#2563eb', 'y (m)');
+      drawGraph(vGraphCanvas, 'v', '#16a34a', 'v (m/s)');
+    }
+
+    function startSimulation() {
+      if (sim.running || sim.t >= getStopTime()) return;
+      sim.y0 = parseFloat(y0El.value) || 0;
+      sim.v0 = parseFloat(v0El.value) || 0;
+      sim.g = Math.max(0.1, parseFloat(gEl.value) || 9.8);
+      if (sim.points.length === 0) sim.points.push(sampleState(sim.t));
+      sim.running = true;
+      sim.lastFrameTime = null;
+      requestAnimationFrame(animationLoop);
+    }
+
+    presetButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.preset;
+        applyPreset(key);
+        resetSimulation();
+      });
+    });
+
+    function toDevice(canvas, e) { const r = canvas.getBoundingClientRect(); const k = canvas.width / r.width; return { x: (e.clientX - r.left) * k, y: (e.clientY - r.top) * k }; }
+    function clearPresetHighlight() { sim.preset = 'custom'; presetButtons.forEach(b => b.classList.remove('active')); }
+    let dragMode = null, dragMaxY = 20;
+    fallCanvas.addEventListener('pointerdown', e => {
+      if (!fallMap || sim.running) return;
+      const p = toDevice(fallCanvas, e), m = fallMap;
+      if (sim.t === 0 && Math.hypot(p.x - m.handleX, p.y - m.vTipY) < 18 * m.k) dragMode = 'v';
+      else if (Math.hypot(p.x - m.ballX, p.y - m.ballY) < 26 * m.k) dragMode = 'y';
+      else return;
+      dragMaxY = Math.max(m.maxY, 20);
+      if (sim.t !== 0) resetSimulation();
+      fallCanvas.setPointerCapture(e.pointerId); e.preventDefault();
+    });
+    fallCanvas.addEventListener('pointermove', e => {
+      const p = toDevice(fallCanvas, e), m = fallMap;
+      if (!dragMode) {
+        if (m && !sim.running) fallCanvas.style.cursor = (sim.t === 0 && Math.hypot(p.x - m.handleX, p.y - m.vTipY) < 18 * m.k) || Math.hypot(p.x - m.ballX, p.y - m.ballY) < 26 * m.k ? 'grab' : 'default';
+        return;
+      }
+      if (dragMode === 'y') {
+        const y = (m.shaftBottom - p.y) / m.shaftHeight * dragMaxY;
+        y0El.value = Math.max(0.5, Math.min(60, Math.round(y * 2) / 2)).toFixed(1);
+      } else {
+        v0El.value = (Math.round((m.ballY - p.y) / m.pxPerMs * 2) / 2).toFixed(1);
+      }
+      clearPresetHighlight();
+      resetSimulation();
+    });
+    const endDrag = () => { dragMode = null; };
+    fallCanvas.addEventListener('pointerup', endDrag);
+    fallCanvas.addEventListener('pointercancel', endDrag);
+
+    [yGraphCanvas, vGraphCanvas].forEach(c => {
+      let scrubbing = false;
+      const scrub = e => {
+        const p = toDevice(c, e), left = 70, right = 16;
+        const stop = Math.max(getStopTime(), 0.5);
+        const t = Math.max(0, Math.min(getStopTime(), (p.x - left) / (c.width - left - right) * stop));
+        sim.running = false; sim.lastFrameTime = null;
+        sim.y0 = parseFloat(y0El.value) || 0; sim.v0 = parseFloat(v0El.value) || 0; sim.g = Math.max(0.1, parseFloat(gEl.value) || 9.8);
+        sim.points = [];
+        for (let tt = 0; tt < t; tt += DT) sim.points.push(sampleState(tt));
+        sim.t = t; sim.points.push(sampleState(t));
+        updateReadoutFromState(); redrawAll();
+      };
+      c.addEventListener('pointerdown', e => { scrubbing = true; c.setPointerCapture(e.pointerId); scrub(e); e.preventDefault(); });
+      c.addEventListener('pointermove', e => { c.style.cursor = 'ew-resize'; if (scrubbing) scrub(e); });
+      c.addEventListener('pointerup', () => { scrubbing = false; });
+      c.addEventListener('pointercancel', () => { scrubbing = false; });
+    });
+    [y0El, v0El, gEl].forEach(inp => inp.addEventListener('input', () => { clearPresetHighlight(); resetSimulation(); }));
+    originModeEl.addEventListener('change', resetSimulation);
+
+    startBtn.addEventListener('click', startSimulation);
+    pauseBtn.addEventListener('click', () => {
+      sim.running = false;
+      sim.lastFrameTime = null;
+    });
+    resetBtn.addEventListener('click', resetSimulation);
+    window.addEventListener('resize', resizeAllCanvases);
+
+    resetSimulation();
+    resizeAllCanvases();
+  </script>
+</body>
+</html>

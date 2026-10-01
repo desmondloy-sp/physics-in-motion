@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Work Done and the Work-Energy Relationship</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
+    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
+    .controls { display: grid; grid-template-columns: 1.8fr repeat(4, 1fr); gap: 10px; align-items: end; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    label { font-size: 0.8rem; font-weight: 600; }
+    .val { font-weight: normal; color: #334155; }
+    select { font-size: 0.9rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
+    input[type=range] { width: 100%; }
+    .buttons { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    button { font-size: 0.88rem; padding: 7px 12px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; }
+    button.go { background: #2563eb; }
+    .readout { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
+    .readout-card .value { font-size: 1rem; font-weight: bold; }
+    .readout-card.ok { background: #ecfdf5; }
+    canvas { display: block; width: 100%; border-radius: 10px; touch-action: none; }
+    #sceneCanvas { height: 330px; border: 1px solid #dbeafe; background: #f8fbff; }
+    #barCanvas { height: 180px; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
+    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    @media (max-width: 900px) {
+      .controls { grid-template-columns: 1fr 1fr; }
+      .controls .control-group:first-child { grid-column: 1 / -1; }
+      .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Work Done by a Force and the Work&ndash;Energy Relationship</h1>
+
+    <div class="panel">
+      <div class="controls">
+        <div class="control-group">
+          <label for="preset">Start from</label>
+          <select id="preset">
+            <option value="c1" selected>Tutorial C1: 2 kg pulled 5 m up a smooth 40&deg; ramp at constant velocity</option>
+            <option value="faster">Pull harder: the box speeds up</option>
+            <option value="angled">Pull at 30&deg; to the ramp</option>
+            <option value="weak">Pull too weak: the box slides back</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="control-group"><label for="mass">Mass <i>m</i> <span class="val" id="massVal"></span></label><input id="mass" type="range" min="0.5" max="10" step="0.5" /></div>
+        <div class="control-group"><label for="alpha">Ramp angle &alpha; <span class="val" id="alphaVal"></span></label><input id="alpha" type="range" min="5" max="60" step="1" /></div>
+        <div class="control-group"><label for="force">Pull <i>F</i> <span class="val" id="forceVal"></span></label><input id="force" type="range" min="0" max="80" step="0.01" /></div>
+        <div class="control-group"><label for="theta">Angle of <i>F</i> to ramp &theta; <span class="val" id="thetaVal"></span></label><input id="theta" type="range" min="0" max="80" step="1" /></div>
+      </div>
+      <div class="buttons">
+        <button id="goBtn" class="go">Start from A</button>
+        <button id="pauseBtn">Pause</button>
+        <button id="balanceBtn">Set F to just balance the weight along the ramp</button>
+      </div>
+      <div class="readout">
+        <div class="readout-card"><div class="title">Work done by <i>F</i> = <i>F d</i> cos&theta;</div><div class="value" id="W">&mdash;</div></div>
+        <div class="readout-card"><div class="title">GPE gained = <i>mgh</i></div><div class="value" id="gpe">&mdash;</div></div>
+        <div class="readout-card"><div class="title">KE gained = &Delta;(&frac12;<i>mv</i><sup>2</sup>)</div><div class="value" id="ke">&mdash;</div></div>
+        <div class="readout-card" id="checkCard"><div class="title"><i>W</i> &minus; &Delta;GPE &minus; &Delta;KE</div><div class="value" id="check">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Net force along the ramp</div><div class="value" id="net">&mdash;</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="hint">Drag the red handle at the tip of the pull arrow to change how hard, and in which direction, you pull. The ramp is 5 m long from A to B.</div>
+      <canvas id="sceneCanvas"></canvas>
+      <div class="note">The ramp is smooth (no friction), so all the work done by <i>F</i> goes into the box's gravitational potential energy and kinetic energy: <i>W</i> = &Delta;GPE + &Delta;KE. Only the part of <i>F</i> along the ramp, <i>F</i> cos&theta;, does work; the weight and the normal force do no work on the box (the normal force is perpendicular to the motion, and gravity's effect is counted as the GPE). When <i>F</i> cos&theta; = <i>mg</i> sin&alpha; the net force is zero and the box moves up at constant velocity &mdash; Tutorial C1: 0 N, 64.3 J, 64.3 J, <i>F</i> = 12.9 N.</div>
+    </div>
+
+    <div class="panel">
+      <b style="font-size:0.88rem">Energy account so far</b>
+      <canvas id="barCanvas"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const G = 10, LEN = 5;
+    const el = id => document.getElementById(id);
+    const rad = d => d * Math.PI / 180;
+    const PRESETS = {
+      c1: { m: 2, a: 40, F: null, th: 0, v0: 1 },
+      faster: { m: 2, a: 40, F: 20, th: 0, v0: 0 },
+      angled: { m: 2, a: 30, F: 16, th: 30, v0: 0 },
+      weak: { m: 2, a: 40, F: 8, th: 0, v0: 1.5 }
+    };
+    const sim = { s: 0, v: 0, v0: 0, W: 0, running: false, done: '' };
+    const P = () => ({ m: +el('mass').value, a: rad(+el('alpha').value), F: +el('force').value, th: rad(+el('theta').value) });
+
+    function balanceF() { const p = P(); return p.m * G * Math.sin(p.a) / Math.cos(p.th); }
+    function applyPreset() {
+      const p = PRESETS[el('preset').value]; if (!p) return;
+      el('mass').value = p.m; el('alpha').value = p.a; el('theta').value = p.th;
+      el('force').value = p.F === null ? balanceF() : p.F;
+      start(p.v0);
+    }
+    function start(v0 = sim.v0) { sim.s = 0; sim.v = v0; sim.v0 = v0; sim.W = 0; sim.running = true; sim.done = ''; }
+
+    function accel() { const p = P(); return (p.F * Math.cos(p.th) - p.m * G * Math.sin(p.a)) / p.m; }
+    function step(dt) {
+      if (!sim.running) return;
+      const p = P();
+      for (let i = 0; i < 20; i++) {
+        const h = dt / 20, a = accel();
+        const s0 = sim.s;
+        sim.v += a * h; sim.s += sim.v * h;
+        if (sim.s >= LEN) { sim.s = LEN; sim.running = false; sim.done = 'Reached B'; }
+        if (sim.s < 0 || (sim.s === 0 && sim.v < 0)) { sim.s = 0; sim.running = false; sim.done = 'Slid back to A'; }
+        sim.W += p.F * Math.cos(p.th) * (sim.s - s0);
+        if (!sim.running) break;
+      }
+    }
+    function energies() {
+      const p = P(), h = sim.s * Math.sin(p.a);
+      return { h, gpe: p.m * G * h, ke: 0.5 * p.m * (sim.v * sim.v - sim.v0 * sim.v0), W: sim.W };
+    }
+
+    function setup(c) {
+      const r = c.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+      const cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
+      if (c.width !== cw || c.height !== ch) { c.width = cw; c.height = ch; }
+      const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { ctx, w: r.width, h: r.height };
+    }
+    function arrow(ctx, x1, y1, x2, y2, color, lw = 4, head = 11) {
+      const len = Math.hypot(x2 - x1, y2 - y1); if (len < 1.5) return;
+      const a = Math.atan2(y2 - y1, x2 - x1), hd = Math.min(head, len * 0.6);
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - Math.cos(a) * hd * 0.8, y2 - Math.sin(a) * hd * 0.8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - hd * Math.cos(a - 0.45), y2 - hd * Math.sin(a - 0.45)); ctx.lineTo(x2 - hd * Math.cos(a + 0.45), y2 - hd * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill();
+    }
+    function tag(ctx, t, x, y, color, align = 'center') {
+      ctx.font = 'bold 12px Arial'; ctx.textAlign = align; ctx.textBaseline = 'middle';
+      const tw = ctx.measureText(t).width, x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
+      ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(x0 - 3, y - 8, tw + 6, 16);
+      ctx.fillStyle = color; ctx.fillText(t, x, y); ctx.textBaseline = 'alphabetic';
+    }
+
+    let geo = null;
+    function drawScene() {
+      const { ctx, w, h } = setup(el('sceneCanvas'));
+      ctx.clearRect(0, 0, w, h);
+      const p = P();
+      const ca = Math.cos(p.a), sa = Math.sin(p.a);
+      const scale = Math.min((w - 150) / (LEN * ca), (h - 110) / (LEN * sa));
+      const A = { x: 70, y: h - 40 };
+      const u = { x: ca, y: -sa }, n = { x: -sa, y: -ca }; // along the ramp (up) and its outward normal
+      const B = { x: A.x + u.x * LEN * scale, y: A.y + u.y * LEN * scale };
+      // ground + ramp
+      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, A.y, w, h - A.y);
+      ctx.fillStyle = '#cbd5e1'; ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineTo(B.x, A.y); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#475569'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(A.x - 40, A.y); ctx.lineTo(w, A.y); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke();
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(A.x, A.y, 34, -p.a, 0); ctx.stroke();
+      tag(ctx, `α = ${(+el('alpha').value)}°`, A.x + 58, A.y - 12, '#334155');
+      tag(ctx, 'A', A.x - 12, A.y + 16, '#0f172a'); tag(ctx, 'B', B.x + 12, B.y - 6, '#0f172a');
+      // height marker
+      ctx.setLineDash([4, 4]); ctx.strokeStyle = '#94a3b8'; ctx.beginPath(); ctx.moveTo(B.x + 26, B.y); ctx.lineTo(B.x + 26, A.y); ctx.stroke(); ctx.setLineDash([]);
+      const hRoom = B.x + 110 < w; // put the label on whichever side of the line has room
+      tag(ctx, `h = ${(LEN * sa).toFixed(2)} m`, hRoom ? B.x + 30 : B.x + 20, (A.y + B.y) / 2, '#475569', hRoom ? 'left' : 'right');
+
+      // box sitting on the ramp
+      const bs = 34;
+      const base = { x: A.x + u.x * (sim.s * scale + bs * 0.6), y: A.y + u.y * (sim.s * scale + bs * 0.6) };
+      const cen = { x: base.x + n.x * bs / 2, y: base.y + n.y * bs / 2 };
+      // forces: weight (down), normal (outward), pull F (at theta above the ramp direction)
+      const k = Math.min(3.2, 110 / Math.max(p.m * G, p.F, 1));
+      const W = p.m * G;
+      arrow(ctx, cen.x, cen.y, cen.x, cen.y + W * k, '#7c3aed', 3); tag(ctx, `W = ${W.toFixed(0)} N`, cen.x - 8, cen.y + W * k - 4, '#6d28d9', 'right');
+      const N = Math.max(0, W * ca - p.F * Math.sin(p.th));
+      arrow(ctx, cen.x, cen.y, cen.x + n.x * N * k, cen.y + n.y * N * k, '#0891b2', 3);
+      tag(ctx, `N = ${N.toFixed(1)} N`, cen.x + n.x * (N * k + 14), cen.y + n.y * (N * k + 14), '#0e7490');
+      const fd = { x: Math.cos(p.a + p.th), y: -Math.sin(p.a + p.th) };
+      const fs = { x: cen.x + u.x * bs / 2, y: cen.y + u.y * bs / 2 };
+      const fe = { x: fs.x + fd.x * Math.max(p.F * k, 0), y: fs.y + fd.y * Math.max(p.F * k, 0) };
+      if (p.F > 0.05) arrow(ctx, fs.x, fs.y, fe.x, fe.y, '#dc2626', 4);
+      tag(ctx, `F = ${p.F.toFixed(1)} N`, fe.x + 12, fe.y - 12, '#b91c1c', 'left');
+      ctx.fillStyle = '#dc2626'; ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(fe.x, fe.y, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      // the box goes on top, so the force arrows appear to come out of it
+      ctx.save(); ctx.translate(cen.x, cen.y); ctx.rotate(-p.a);
+      ctx.fillStyle = '#2563eb'; ctx.fillRect(-bs / 2, -bs / 2, bs, bs);
+      ctx.fillStyle = 'white'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center'; ctx.fillText(`${p.m} kg`, 0, 4);
+      ctx.restore();
+      ctx.fillStyle = '#dc2626'; ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(fe.x, fe.y, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      geo = { fs, k, a: p.a, handle: fe };
+      tag(ctx, `distance d = ${sim.s.toFixed(2)} m   v = ${sim.v.toFixed(2)} m/s${sim.done ? '   — ' + sim.done : ''}`, w - 10, 16, '#334155', 'right');
+    }
+
+    function drawBars() {
+      const { ctx, w, h } = setup(el('barCanvas'));
+      ctx.clearRect(0, 0, w, h);
+      const e = energies();
+      const rows = [['Work done by F', e.W, '#dc2626'], ['GPE gained', e.gpe, '#2563eb'], ['KE gained', e.ke, '#16a34a']];
+      const maxE = Math.max(10, ...rows.map(r => Math.abs(r[1])), e.gpe + Math.max(0, e.ke)) * 1.1;
+      const L = 120, R = 70, bh = 26, gap = 14, x0 = L + (w - L - R) * (Math.min(0, Math.min(...rows.map(r => r[1]))) < 0 ? 0.25 : 0);
+      const sc = (w - L - R) * (x0 > L ? 0.75 : 1) / maxE;
+      rows.forEach((r, i) => {
+        const y = 14 + i * (bh + gap);
+        ctx.fillStyle = '#334155'; ctx.font = '13px Arial'; ctx.textAlign = 'right'; ctx.fillText(r[0], L - 8, y + bh / 2 + 4);
+        ctx.fillStyle = r[2]; ctx.fillRect(r[1] >= 0 ? x0 : x0 + r[1] * sc, y, Math.abs(r[1]) * sc, bh);
+        ctx.fillStyle = '#0f172a'; ctx.textAlign = 'left'; ctx.fillText(`${r[1].toFixed(1)} J`, Math.max(x0, x0 + r[1] * sc) + 6, y + bh / 2 + 4);
+      });
+      // GPE + KE stacked under the work bar, to show they add up to it
+      const y = 14 + 3 * (bh + gap);
+      ctx.fillStyle = '#334155'; ctx.textAlign = 'right'; ctx.fillText('GPE + KE', L - 8, y + bh / 2 + 4);
+      ctx.fillStyle = '#2563eb'; ctx.fillRect(x0, y, Math.max(0, e.gpe) * sc, bh);
+      ctx.fillStyle = '#16a34a'; ctx.fillRect(x0 + Math.max(0, e.gpe) * sc, y, Math.max(0, e.ke) * sc, bh);
+      ctx.fillStyle = '#0f172a'; ctx.textAlign = 'left'; ctx.fillText(`${(e.gpe + e.ke).toFixed(1)} J`, x0 + Math.max(0, e.gpe + e.ke) * sc + 6, y + bh / 2 + 4);
+    }
+
+    function updateReadout() {
+      const p = P(), e = energies();
+      el('massVal').textContent = `(${p.m} kg)`; el('alphaVal').textContent = `(${el('alpha').value}°)`;
+      el('forceVal').textContent = `(${p.F.toFixed(1)} N)`; el('thetaVal').textContent = `(${el('theta').value}°)`;
+      el('W').textContent = `${e.W.toFixed(1)} J`; el('gpe').textContent = `${e.gpe.toFixed(1)} J`; el('ke').textContent = `${e.ke.toFixed(1)} J`;
+      const diff = e.W - e.gpe - e.ke;
+      el('check').textContent = `${(Math.abs(diff) < 0.05 ? 0 : diff).toFixed(1)} J`;
+      el('checkCard').classList.toggle('ok', Math.abs(diff) < 0.05);
+      const net = p.F * Math.cos(p.th) - p.m * G * Math.sin(p.a);
+      el('net').textContent = `${(Math.abs(net) < 0.005 ? 0 : net).toFixed(2)} N`;
+      el('pauseBtn').textContent = sim.running ? 'Pause' : 'Resume';
+    }
+
+    // drag the pull arrow's handle
+    let drag = false;
+    const sc = el('sceneCanvas');
+    function pos(e) { const r = sc.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    sc.addEventListener('pointerdown', e => { const q = pos(e); if (!geo || Math.hypot(q.x - geo.handle.x, q.y - geo.handle.y) > 22) return; drag = true; sc.setPointerCapture(e.pointerId); e.preventDefault(); });
+    sc.addEventListener('pointermove', e => {
+      const q = pos(e);
+      if (!drag) { sc.style.cursor = geo && Math.hypot(q.x - geo.handle.x, q.y - geo.handle.y) < 22 ? 'grab' : 'default'; return; }
+      const dx = q.x - geo.fs.x, dy = q.y - geo.fs.y;
+      const F = Math.min(80, Math.hypot(dx, dy) / geo.k);
+      let th = Math.atan2(-dy, dx) - geo.a; // angle above the ramp direction
+      th = Math.max(0, Math.min(rad(80), th));
+      el('force').value = Math.round(F * 10) / 10; el('theta').value = Math.round(th * 180 / Math.PI);
+      el('preset').value = 'custom';
+    });
+    const end = () => { drag = false; };
+    sc.addEventListener('pointerup', end); sc.addEventListener('pointercancel', end);
+
+    el('preset').addEventListener('change', applyPreset);
+    ['mass', 'alpha', 'force', 'theta'].forEach(id => el(id).addEventListener('input', () => { el('preset').value = 'custom'; }));
+    el('goBtn').addEventListener('click', () => start());
+    el('pauseBtn').addEventListener('click', () => { if (sim.done) start(); else sim.running = !sim.running; });
+    el('balanceBtn').addEventListener('click', () => { el('force').value = balanceF(); el('preset').value = 'custom'; });
+
+    applyPreset();
+    let last = null;
+    function frame(ts) {
+      if (last === null) last = ts;
+      const dt = Math.max(0, Math.min(0.05, (ts - last) / 1000)); last = ts;
+      step(dt); drawScene(); drawBars(); updateReadout();
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
