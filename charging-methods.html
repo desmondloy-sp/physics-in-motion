@@ -9,9 +9,13 @@
     body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
     .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
     h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 8px; }
+    .tab { font-size: 0.92rem; font-weight: 700; padding: 9px 6px; border-radius: 9px; border: 2px solid #cbd5e1; background: white; color: #334155; cursor: pointer; }
+    .tab.active { background: #2563eb; border-color: #2563eb; color: white; }
     .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
-    .controls { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 8px; align-items: end; }
-    .control-group { display: flex; flex-direction: column; gap: 4px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; flex: 1 1 160px; }
+    .control-group.wide { flex: 2 1 260px; }
     label { font-size: 0.8rem; font-weight: 600; }
     select, button { font-size: 0.9rem; padding: 7px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
     button { cursor: pointer; background: #2563eb; color: white; border: none; }
@@ -25,15 +29,17 @@
     canvas { display: block; width: 100%; border-radius: 10px; touch-action: none; }
     #sceneCanvas { height: 400px; border: 1px solid #dbeafe; background: #f8fbff; }
     .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
-    .tasks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px; }
-    .task { font-size: 0.8rem; padding: 6px 8px; border-radius: 8px; background: #f1f5f9; color: #334155; }
-    .task.done { background: #dcfce7; color: #166534; }
-    .task b { display: block; margin-bottom: 2px; }
+    .steps { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
+    .steps li { font-size: 0.82rem; padding: 6px 8px 6px 30px; border-radius: 8px; background: #f1f5f9; color: #334155; position: relative; }
+    .steps li::before { content: ''; position: absolute; left: 9px; top: 50%; width: 12px; height: 12px; margin-top: -7px; border: 2px solid #94a3b8; border-radius: 50%; }
+    .steps li.done { background: #dcfce7; color: #166534; }
+    .steps li.done::before { border-color: #16a34a; background: #16a34a; }
     .note { margin-top: 6px; font-size: 0.8rem; color: #475569; }
+    .note p { margin: 4px 0; }
+    .hidden { display: none !important; }
     @media (max-width: 900px) {
-      .controls { grid-template-columns: 1fr 1fr; }
       .readout { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
-      .tasks { grid-template-columns: 1fr; }
+      .tab { font-size: 0.8rem; }
     }
   </style>
 </head>
@@ -41,45 +47,40 @@
   <div class="container">
     <h1>Charging by Friction, Contact and Induction</h1>
 
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="friction" role="tab">Charging by friction</button>
+      <button class="tab" data-tab="contact" role="tab">Charging by contact</button>
+      <button class="tab" data-tab="induction" role="tab">Charging by induction</button>
+    </div>
+
     <div class="panel">
       <div class="controls">
-        <div class="control-group">
-          <label for="material">Rod and cloth</label>
+        <div class="control-group wide">
+          <label for="material" id="materialLabel">Rod and cloth</label>
           <select id="material">
             <option value="amber" selected>Amber rod + fur (amber gains electrons)</option>
             <option value="glass">Glass rod + silk (glass loses electrons)</option>
           </select>
         </div>
-        <div class="control-group">
-          <button id="earthBtn" class="secondary">Connect earth wire</button>
-        </div>
-        <div class="control-group">
-          <button id="wipeBtn" class="secondary">Discharge the rod</button>
-        </div>
-        <div class="control-group">
-          <button id="resetBtn" class="secondary">Reset everything</button>
-        </div>
+        <div class="control-group" id="earthGroup"><button id="earthBtn" class="secondary">Connect earth wire</button></div>
+        <div class="control-group" id="wipeGroup"><button id="wipeBtn" class="secondary">Discharge the rod</button></div>
+        <div class="control-group" id="rechargeGroup"><button id="rechargeBtn" class="secondary">Charge the rod again</button></div>
+        <div class="control-group"><button id="resetBtn" class="secondary">Start again</button></div>
       </div>
 
       <div class="readout">
         <div class="readout-card"><div class="title" id="rodTitle">Rod</div><div class="value" id="rodValue">Neutral</div></div>
-        <div class="readout-card"><div class="title" id="clothTitle">Cloth</div><div class="value" id="clothValue">Neutral</div></div>
-        <div class="readout-card"><div class="title">Metal sphere</div><div class="value" id="sphereValue">Neutral</div></div>
-        <div class="readout-card"><div class="title">Force of rod on sphere</div><div class="value" id="forceValue">None</div></div>
+        <div class="readout-card" id="clothCard"><div class="title" id="clothTitle">Cloth</div><div class="value" id="clothValue">Neutral</div></div>
+        <div class="readout-card" id="sphereCard"><div class="title">Metal sphere</div><div class="value" id="sphereValue">Neutral</div></div>
+        <div class="readout-card" id="forceCard"><div class="title">Force of rod on sphere</div><div class="value" id="forceValue">None</div></div>
       </div>
     </div>
 
     <div class="panel">
-      <div class="hint">Drag the rod. Rub it back and forth on the cloth, bring it near the sphere, or touch the sphere with it. Tap the switch on the earth wire to connect or disconnect it.</div>
+      <div class="hint" id="hint"></div>
       <canvas id="sceneCanvas"></canvas>
-      <div class="tasks">
-        <div class="task" id="task1"><b>1. Friction</b>Rub the rod on the cloth until both are charged.</div>
-        <div class="task" id="task2"><b>2. Contact</b>Touch the sphere with the charged end of the rod. The sphere gets the <i>same</i> sign as the rod.</div>
-        <div class="task" id="task3"><b>3. Induction</b>Without touching: hold the rod near, connect earth, disconnect earth, then take the rod away. The sphere gets the <i>opposite</i> sign.</div>
-      </div>
-      <div class="note">
-        Each <b style="color:#2563eb">&minus;</b> is a group of free electrons and each <b style="color:#dc2626">+</b> a group of fixed positive charges. Only electrons move. Rubbing transfers electrons from one insulator to the other &mdash; no charge is created, so the rod and cloth always end up equal and opposite. The charge on an insulating rod stays where it was put, so only the charged part that touches the sphere passes its charge on. In the metal sphere the free electrons move easily: a nearby charged rod pushes or pulls them to one side, leaving the other side with an equal and opposite charge. The nearer induced charge is closer to the rod, so the rod attracts even a neutral sphere. An earth wire lets electrons flow to or from the Earth.
-      </div>
+      <ul class="steps" id="steps"></ul>
+      <div class="note" id="note"></div>
     </div>
   </div>
 
@@ -92,7 +93,31 @@
       amber: { rodName: 'Amber rod', clothName: 'Fur', rodSign: -1, rodColor: '#d97706', rodEdge: '#92400e', clothColor: '#a16207', clothPattern: '#854d0e' },
       glass: { rodName: 'Glass rod', clothName: 'Silk', rodSign: +1, rodColor: '#a5f3fc', rodEdge: '#0e7490', clothColor: '#fbcfe8', clothPattern: '#f9a8d4' }
     };
-    const MAX_ROD = 10;
+    const MAX_ROD = 10, PRECHARGE = 8;
+
+    // ---------- the three tabs ----------
+    const TABS = {
+      friction: {
+        hint: 'Drag the rod and rub it back and forth on the cloth.',
+        steps: ['Rub the rod on the cloth until both are charged. Watch which way the electrons go.'],
+        note: '<p>Each <b style="color:#2563eb">&minus;</b> is a group of electrons and each <b style="color:#dc2626">+</b> a group of positive charges left behind. Only electrons move.</p>' +
+          '<p>Amber has a much greater attraction for electrons than animal fur, so when an amber rod is rubbed with fur, electrons are pulled from the fur onto the amber. The amber becomes <b>negatively</b> charged and the fur <b>positively</b> charged. (A glass rod rubbed with silk is the other way round: the glass loses electrons and becomes positive.)</p>' +
+          '<p>Rubbing does not create or destroy charge, so the rod and the cloth always end up with <b>equal and opposite</b> charges. The rod is an insulator: its charge stays where it was rubbed on.</p>'
+      },
+      contact: {
+        hint: 'The rod has already been charged by rubbing. Drag it so that its charged end touches the metal sphere, then take it away.',
+        steps: ['Touch the sphere with the charged end of the rod.', 'Take the rod away: the sphere keeps a charge of the same sign as the rod.'],
+        note: '<p>When the charged rod touches the neutral metal sphere, electrons move between them: from a negative rod onto the sphere, or from the sphere onto a positive rod. The sphere ends up with a charge of the <b>same sign</b> as the rod.</p>' +
+          '<p>The sphere is a conductor, so the charge it receives spreads out evenly over its surface. The rod is an insulator, so only the charged part that actually touches the sphere passes charge on. The insulating stand stops the charge leaking away.</p>'
+      },
+      induction: {
+        hint: 'The rod has already been charged by rubbing. Follow the steps below in order, without letting the rod touch the sphere. Tap the switch on the earth wire (or use the button) to connect and disconnect it.',
+        steps: ['Bring the charged rod near the sphere (do not touch it).', 'With the rod still near, connect the earth wire.', 'With the rod still near, disconnect the earth wire.', 'Take the rod away: the sphere keeps a charge of the opposite sign to the rod.'],
+        note: '<p>In the metal sphere the free electrons move easily. A nearby charged rod pushes them away (negative rod) or pulls them closer (positive rod), leaving the other side with an equal and opposite charge. The nearer induced charge is closer to the rod, so the rod attracts even a neutral sphere.</p>' +
+          '<p>The Earth is a large conductor. While the sphere is earthed, electrons flow between the sphere and the Earth: away from the sphere when the rod is negative, onto it when the rod is positive. Disconnecting the earth wire <b>before</b> taking the rod away traps that charge, so the sphere is left with a charge <b>opposite</b> in sign to the rod.</p>'
+      }
+    };
+    let tab = 'friction';
 
     let state;
     function freshState() {
@@ -104,23 +129,27 @@
         earthed: false,
         rubAccum: 0,
         transferClock: 0,
-        touchedSinceNeutral: false,
-        done: [false, false, false]
+        touched: false,
+        steps: [false, false, false, false]
       };
     }
+
+    const hasCloth = () => tab === 'friction';
+    const hasSphere = () => tab !== 'friction';
+    const hasEarth = () => tab === 'induction';
 
     // ---------- layout ----------
     let L = null;
     function layout(w, h) {
       const R = Math.max(46, Math.min(72, w * 0.1));
-      const cx = Math.min(w * 0.64, w - R - 110), cy = h * 0.4;
+      const cx = hasEarth() ? Math.min(w * 0.64, w - R - 110) : Math.min(w * 0.68, w - R - 40), cy = h * 0.4;
       const floorY = h - 18;
       const rodLen = Math.max(130, Math.min(200, w * 0.3));
-      const clothW = Math.max(120, Math.min(230, w * 0.28));
+      const clothW = hasCloth() ? Math.max(180, Math.min(360, w * 0.5)) : 0;
       const contactAng = 0.6;
       return {
         w, h, R, cx, cy, floorY, rodLen, rodThick: 14, chargedLen: rodLen * 0.62,
-        cloth: { x: 14, y: h * 0.66, w: clothW, h: 54 },
+        cloth: { x: (w - clothW) / 2, y: h * 0.62, w: clothW, h: 64 },
         contact: { x: cx + R * Math.cos(contactAng), y: cy + R * Math.sin(contactAng) },
         wireX: cx + R + 46,
         earthY: floorY - 34
@@ -138,6 +167,7 @@
     const SURFACE_SLOTS = 26;
 
     function sphereCharge() { return N_IONS - state.electrons.length; }
+    const rodCharge = () => state.rod.charges.reduce((s, c) => s + c.sign, 0);
 
     function rodWorldCharges() {
       const r = state.rod;
@@ -185,7 +215,6 @@
       for (let j = 0; j < SURFACE_SLOTS; j++) { const a = (j / SURFACE_SLOTS) * Math.PI * 2; slots.push({ x: 0.87 * R * Math.cos(a), y: 0.87 * R * Math.sin(a), a }); }
       let chosen;
       if (P > 0 && mag > 0) {
-        // excess electrons also crowd forward, but spread a little more
         chosen = slots.slice().sort((a, b) => (b.x * ux + b.y * uy) - (a.x * ux + a.y * uy)).slice(0, surfaceCount);
       } else {
         chosen = [];
@@ -196,6 +225,7 @@
     }
 
     function relaxElectrons(dt) {
+      if (!hasSphere()) return;
       const targets = computeTargets();
       const free = state.electrons.slice();
       const used = new Array(free.length).fill(false);
@@ -215,9 +245,7 @@
     }
 
     // ---------- transfers ----------
-    function launch(from, to, onArrive, via) {
-      state.flights.push({ from, to, via, t: 0, onArrive });
-    }
+    function launch(from, to, onArrive, via) { state.flights.push({ from, to, via, t: 0, onArrive }); }
     function nearestElectron(px, py) {
       let best = -1, bd = Infinity;
       state.electrons.forEach((e, i) => {
@@ -229,18 +257,20 @@
 
     function touching() {
       const r = state.rod;
-      return Math.hypot(r.x - L.cx, r.y - L.cy) <= L.R + 2.5;
+      return hasSphere() && Math.hypot(r.x - L.cx, r.y - L.cy) <= L.R + 2.5;
     }
+    // "near": the charged end within two radii of the sphere's surface
+    const rodNear = () => hasSphere() && rodCharge() !== 0 && Math.hypot(state.rod.x - L.cx, state.rod.y - L.cy) < L.R * 3;
+    const rodAway = () => rodCharge() === 0 || Math.hypot(state.rod.x - L.cx, state.rod.y - L.cy) > L.R * 4;
 
     function stepTransfers(dt) {
-      // flights
       for (const f of state.flights) f.t += dt / 0.45;
       const arrived = state.flights.filter(f => f.t >= 1);
       state.flights = state.flights.filter(f => f.t < 1);
       arrived.forEach(f => f.onArrive());
 
       state.transferClock += dt;
-      if (state.transferClock < 0.12 || state.flights.length > 2) return;
+      if (!hasSphere() || state.transferClock < 0.12 || state.flights.length > 2) return;
 
       const r = state.rod;
       // Contact: only charge on the part of the rod that touches can move across.
@@ -249,7 +279,7 @@
         if (tipCharges.length) {
           const c = tipCharges[0];
           state.transferClock = 0;
-          state.touchedSinceNeutral = true;
+          state.touched = true;
           const tip = { x: r.x, y: r.y };
           if (c.sign < 0) {
             r.charges.splice(r.charges.indexOf(c), 1);
@@ -269,11 +299,13 @@
         }
       }
       // Earth: electrons flow until the sphere's charge matches what the rod's presence demands.
-      if (state.earthed) {
-        const target = Math.round(externalPush().image);
+      if (hasEarth() && state.earthed) {
+        // A rod beyond 4 radii counts as "taken away" (the same test as step 4). The picture is too small to
+        // take it truly far, and at the canvas edge it would still hold one induced group on an earthed sphere,
+        // so a student who removes the rod before disconnecting the earth would wrongly see a charged sphere.
+        const target = rodAway() ? 0 : Math.round(externalPush().image);
         const q = sphereCharge() + state.flights.reduce((s, f) => s + (f.earthDelta || 0), 0);
         if (q < target && state.electrons.length) {
-          // too negative: electrons go down to earth
           const i = nearestElectron(L.contact.x, L.contact.y);
           const e = state.electrons.splice(i, 1)[0];
           launch({ x: L.cx + e.x, y: L.cy + e.y }, { x: L.wireX, y: L.earthY }, () => {}, true);
@@ -292,7 +324,7 @@
       const t = Math.min(1, f.t);
       if (f.via) {
         // along the earth wire: sphere contact -> across -> down (or reverse)
-        const up = f.from.y > f.to.y; // coming up from earth
+        const up = f.from.y > f.to.y;
         const pts = up
           ? [f.from, { x: L.wireX, y: L.contact.y }, { x: L.contact.x, y: L.contact.y }, f.to]
           : [f.from, { x: L.contact.x, y: L.contact.y }, { x: L.wireX, y: L.contact.y }, f.to];
@@ -313,17 +345,16 @@
 
     // ---------- forces ----------
     function forceOnSphere() {
+      if (!hasSphere()) return 0;
       let fx = 0;
       const rc = rodWorldCharges();
       if (!rc.length) return 0;
-      // electrons at their settled positions, without the drawing offset (an electron paired with an ion cancels it exactly)
       const sphereCharges = IONS.map(p => ({ x: L.cx + p.fx * L.R, y: L.cy + p.fy * L.R, q: 1 }))
         .concat(computeTargets(false).map(e => ({ x: L.cx + e.x, y: L.cy + e.y, q: -1 })));
       for (const s of sphereCharges) for (const c of rc) {
         const dx = s.x - c.x, dy = s.y - c.y, d = Math.hypot(dx, dy);
         fx += s.q * c.q * dx / (d * d * d);
       }
-      // positive fx points away from the rod (rod sits to the left of the sphere)
       const rodLeft = state.rod.x < L.cx;
       return rodLeft ? fx : -fx;
     }
@@ -338,7 +369,6 @@
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       return { ctx, w: rect.width, h: rect.height };
     }
-
     function drawSign(ctx, x, y, sign, r = 6.5) {
       ctx.fillStyle = sign < 0 ? '#2563eb' : '#dc2626';
       ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
@@ -365,70 +395,68 @@
       const { ctx, w, h } = setupCanvas();
       const m = MATERIALS[materialEl.value];
       ctx.clearRect(0, 0, w, h);
-
-      // floor
       ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, L.floorY, w, h - L.floorY);
 
-      // cloth
-      const c = L.cloth;
-      ctx.fillStyle = m.clothColor;
-      ctx.beginPath(); ctx.roundRect ? ctx.roundRect(c.x, c.y, c.w, c.h, 10) : ctx.rect(c.x, c.y, c.w, c.h); ctx.fill();
-      ctx.strokeStyle = m.clothPattern; ctx.lineWidth = 1.5;
-      for (let x = c.x + 8; x < c.x + c.w - 4; x += 9) {
-        ctx.beginPath(); ctx.moveTo(x, c.y + 4); ctx.lineTo(x - 4, c.y + c.h - 4); ctx.stroke();
+      if (hasCloth()) {
+        const c = L.cloth;
+        ctx.fillStyle = m.clothColor;
+        ctx.beginPath(); ctx.roundRect ? ctx.roundRect(c.x, c.y, c.w, c.h, 10) : ctx.rect(c.x, c.y, c.w, c.h); ctx.fill();
+        ctx.strokeStyle = m.clothPattern; ctx.lineWidth = 1.5;
+        for (let x = c.x + 8; x < c.x + c.w - 4; x += 9) { ctx.beginPath(); ctx.moveTo(x, c.y + 4); ctx.lineTo(x - 4, c.y + c.h - 4); ctx.stroke(); }
+        state.cloth.forEach(q => drawSign(ctx, c.x + q.fx * c.w, c.y + q.fy * c.h, q.sign, 6));
+        ctx.fillStyle = '#334155'; ctx.font = '13px Arial'; ctx.textAlign = 'left';
+        ctx.fillText(`${m.clothName} (rub the rod here)`, c.x, c.y + c.h + 17);
       }
-      state.cloth.forEach(q => drawSign(ctx, c.x + q.fx * c.w, c.y + q.fy * c.h, q.sign, 6));
-      ctx.fillStyle = '#334155'; ctx.font = '13px Arial'; ctx.textAlign = 'left';
-      ctx.fillText(`${m.clothName} (rub the rod here)`, c.x, c.y + c.h + 17);
 
-      // insulating stand
-      ctx.fillStyle = '#e7c9a0';
-      ctx.fillRect(L.cx - 6, L.cy + L.R - 4, 12, L.floorY - (L.cy + L.R - 4));
-      ctx.fillStyle = '#b08968'; ctx.fillRect(L.cx - 26, L.floorY - 6, 52, 6);
-      ctx.fillStyle = '#64748b'; ctx.font = '12px Arial'; ctx.textAlign = 'right';
-      ctx.fillText('insulating stand', L.cx - 12, L.floorY - 12);
+      if (hasSphere()) {
+        // insulating stand
+        ctx.fillStyle = '#e7c9a0';
+        ctx.fillRect(L.cx - 6, L.cy + L.R - 4, 12, L.floorY - (L.cy + L.R - 4));
+        ctx.fillStyle = '#b08968'; ctx.fillRect(L.cx - 26, L.floorY - 6, 52, 6);
+        ctx.fillStyle = '#64748b'; ctx.font = '12px Arial'; ctx.textAlign = 'right';
+        ctx.fillText('insulating stand', L.cx - 12, L.floorY - 12);
+      }
 
-      // earth wire + switch + symbol
-      const wx = L.wireX, swTop = L.contact.y + (L.earthY - L.contact.y) * 0.35, swBot = swTop + 26;
-      ctx.strokeStyle = state.earthed ? '#15803d' : '#94a3b8'; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(L.contact.x, L.contact.y); ctx.lineTo(wx, L.contact.y); ctx.lineTo(wx, swTop); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(wx, swBot); ctx.lineTo(wx, L.earthY); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(wx, swTop);
-      if (state.earthed) ctx.lineTo(wx, swBot); else ctx.lineTo(wx + 20, swBot - 6);
-      ctx.stroke();
-      ctx.fillStyle = '#334155';
-      ctx.beginPath(); ctx.arc(wx, swTop, 3.5, 0, Math.PI * 2); ctx.arc(wx, swBot, 3.5, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#334155'; ctx.lineWidth = 3;
-      [[22, 0], [14, 7], [6, 14]].forEach(([hw, dy]) => { ctx.beginPath(); ctx.moveTo(wx - hw, L.earthY + dy); ctx.lineTo(wx + hw, L.earthY + dy); ctx.stroke(); });
-      // label on whichever side of the wire has room
-      const labRight = wx + 90 < L.w;
-      ctx.fillStyle = state.earthed ? '#15803d' : '#64748b'; ctx.font = 'bold 12px Arial'; ctx.textAlign = labRight ? 'left' : 'right';
-      ctx.fillText(state.earthed ? 'Earthed' : 'Earth off', wx + (labRight ? 14 : -10), swTop - 4);
-      ctx.font = '11px Arial'; ctx.fillStyle = '#64748b';
-      ctx.fillText('(tap switch)', wx + (labRight ? 14 : -10), swTop + 10);
-      L.switchBox = { x: wx - 16, y: swTop - 14, w: 60, h: swBot - swTop + 28 };
+      if (hasEarth()) {
+        const wx = L.wireX, swTop = L.contact.y + (L.earthY - L.contact.y) * 0.35, swBot = swTop + 26;
+        ctx.strokeStyle = state.earthed ? '#15803d' : '#94a3b8'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(L.contact.x, L.contact.y); ctx.lineTo(wx, L.contact.y); ctx.lineTo(wx, swTop); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(wx, swBot); ctx.lineTo(wx, L.earthY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(wx, swTop);
+        if (state.earthed) ctx.lineTo(wx, swBot); else ctx.lineTo(wx + 20, swBot - 6);
+        ctx.stroke();
+        ctx.fillStyle = '#334155';
+        ctx.beginPath(); ctx.arc(wx, swTop, 3.5, 0, Math.PI * 2); ctx.arc(wx, swBot, 3.5, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#334155'; ctx.lineWidth = 3;
+        [[22, 0], [14, 7], [6, 14]].forEach(([hw, dy]) => { ctx.beginPath(); ctx.moveTo(wx - hw, L.earthY + dy); ctx.lineTo(wx + hw, L.earthY + dy); ctx.stroke(); });
+        const labRight = wx + 90 < L.w;
+        ctx.fillStyle = state.earthed ? '#15803d' : '#64748b'; ctx.font = 'bold 12px Arial'; ctx.textAlign = labRight ? 'left' : 'right';
+        ctx.fillText(state.earthed ? 'Earthed' : 'Earth off', wx + (labRight ? 14 : -10), swTop - 4);
+        ctx.font = '11px Arial'; ctx.fillStyle = '#64748b';
+        ctx.fillText('(tap switch)', wx + (labRight ? 14 : -10), swTop + 10);
+        L.switchBox = { x: wx - 16, y: swTop - 14, w: 60, h: swBot - swTop + 28 };
+      } else L.switchBox = null;
 
-      // sphere
-      const grad = ctx.createRadialGradient(L.cx - L.R * 0.35, L.cy - L.R * 0.35, L.R * 0.1, L.cx, L.cy, L.R);
-      grad.addColorStop(0, '#f8fafc'); grad.addColorStop(1, '#94a3b8');
-      ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(L.cx, L.cy, L.R, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.5; ctx.stroke();
-      IONS.forEach(p => drawPlus(ctx, L.cx + p.fx * L.R, L.cy + p.fy * L.R));
-      state.electrons.forEach(e => drawSign(ctx, L.cx + e.x, L.cy + e.y, -1, 5.5));
-      ctx.fillStyle = '#334155'; ctx.font = '13px Arial'; ctx.textAlign = 'center';
-      ctx.fillText('Metal sphere', L.cx, L.cy - L.R - 10);
+      if (hasSphere()) {
+        const grad = ctx.createRadialGradient(L.cx - L.R * 0.35, L.cy - L.R * 0.35, L.R * 0.1, L.cx, L.cy, L.R);
+        grad.addColorStop(0, '#f8fafc'); grad.addColorStop(1, '#94a3b8');
+        ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(L.cx, L.cy, L.R, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.5; ctx.stroke();
+        IONS.forEach(p => drawPlus(ctx, L.cx + p.fx * L.R, L.cy + p.fy * L.R));
+        state.electrons.forEach(e => drawSign(ctx, L.cx + e.x, L.cy + e.y, -1, 5.5));
+        ctx.fillStyle = '#334155'; ctx.font = '13px Arial'; ctx.textAlign = 'center';
+        ctx.fillText('Metal sphere', L.cx, L.cy - L.R - 10);
 
-      // force on the sphere
-      const F = forceOnSphere();
-      const fmag = Math.abs(F);
-      if (fmag > 2e-6) {
-        const len = Math.min(70, 14 + Math.sqrt(fmag) * 1500);
-        const dirToRod = state.rod.x < L.cx ? -1 : 1;
-        const d = F < 0 ? dirToRod : -dirToRod; // F<0 : toward the rod
-        const ay = L.cy - L.R - 34;
-        arrow(ctx, L.cx, ay, L.cx + d * len, ay, F < 0 ? '#16a34a' : '#f59e0b', 3.5, 11);
-        ctx.fillStyle = F < 0 ? '#15803d' : '#b45309'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
-        ctx.fillText(F < 0 ? 'attracted to rod' : 'repelled by rod', L.cx + d * len / 2, ay - 9);
+        const F = forceOnSphere(), fmag = Math.abs(F);
+        if (fmag > 2e-6) {
+          const len = Math.min(70, 14 + Math.sqrt(fmag) * 1500);
+          const dirToRod = state.rod.x < L.cx ? -1 : 1;
+          const d = F < 0 ? dirToRod : -dirToRod;
+          const ay = L.cy - L.R - 34;
+          arrow(ctx, L.cx, ay, L.cx + d * len, ay, F < 0 ? '#16a34a' : '#f59e0b', 3.5, 11);
+          ctx.fillStyle = F < 0 ? '#15803d' : '#b45309'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
+          ctx.fillText(F < 0 ? 'attracted to rod' : 'repelled by rod', L.cx + d * len / 2, ay - 9);
+        }
       }
 
       // rod
@@ -442,37 +470,47 @@
       ctx.fillStyle = '#334155'; ctx.font = '12px Arial'; ctx.textAlign = 'left';
       ctx.fillText(`${m.rodName} (drag me)`, x0, r.y - L.rodThick / 2 - 6);
 
-      // electrons in flight
       state.flights.forEach(f => { const p = flightPos(f); drawSign(ctx, p.x, p.y, -1, 6); });
     }
 
-    // ---------- readouts ----------
+    // ---------- readouts and steps ----------
     function describe(q) {
       if (q === 0) return 'Neutral';
       return q > 0 ? `Positive (+${q})` : `Negative (${q})`;
     }
+    function updateSteps() {
+      const m = MATERIALS[materialEl.value];
+      const s = state.steps, sq = sphereCharge(), rq = rodCharge(), clothQ = state.cloth.reduce((a, c) => a + c.sign, 0);
+      if (tab === 'friction') {
+        if (rq !== 0 && clothQ !== 0) s[0] = true;
+      } else if (tab === 'contact') {
+        if (state.touched && sq !== 0 && Math.sign(sq) === m.rodSign) s[0] = true;
+        if (s[0] && rodAway() && sq !== 0 && Math.sign(sq) === m.rodSign && !state.flights.length) s[1] = true;
+      } else {
+        // the steps only count in order, and touching the sphere spoils the run
+        if (state.touched) return;
+        if (!s[0] && rodNear() && !state.earthed) s[0] = true;
+        if (s[0] && !s[1] && rodNear() && state.earthed) s[1] = true;
+        if (s[1] && !s[2] && rodNear() && !state.earthed && sq !== 0 && Math.sign(sq) === -m.rodSign) s[2] = true;
+        if (s[2] && !s[3] && rodAway() && !state.earthed && sq !== 0 && Math.sign(sq) === -m.rodSign) s[3] = true;
+      }
+    }
     function updateReadout() {
       const m = MATERIALS[materialEl.value];
-      const rodQ = state.rod.charges.reduce((s, c) => s + c.sign, 0);
       const clothQ = state.cloth.reduce((s, c) => s + c.sign, 0);
-      const sq = sphereCharge();
       el('rodTitle').textContent = m.rodName;
       el('clothTitle').textContent = m.clothName;
-      el('rodValue').textContent = describe(rodQ);
+      el('rodValue').textContent = describe(rodCharge());
       el('clothValue').textContent = describe(clothQ);
-      el('sphereValue').textContent = describe(sq);
+      el('sphereValue').textContent = describe(sphereCharge());
       const F = forceOnSphere();
       el('forceValue').textContent = Math.abs(F) < 2e-6 ? 'None' : (F < 0 ? 'Attraction' : 'Repulsion');
       const eb = el('earthBtn');
       eb.textContent = state.earthed ? 'Disconnect earth wire' : 'Connect earth wire';
       eb.className = state.earthed ? 'earth-on' : 'secondary';
-
-      if (sq === 0 && state.flights.length === 0) state.touchedSinceNeutral = false;
-      if (rodQ !== 0 && clothQ !== 0) state.done[0] = true;
-      if (sq !== 0 && Math.sign(sq) === m.rodSign && state.touchedSinceNeutral) state.done[1] = true;
-      const rodGone = rodQ === 0 || Math.hypot(state.rod.x - L.cx, state.rod.y - L.cy) > L.R * 4;
-      if (sq !== 0 && Math.sign(sq) === -m.rodSign && !state.touchedSinceNeutral && !state.earthed && rodGone) state.done[2] = true;
-      state.done.forEach((d, i) => el('task' + (i + 1)).classList.toggle('done', d));
+      updateSteps();
+      [...el('steps').children].forEach((li, i) => li.classList.toggle('done', state.steps[i]));
+      if (tab === 'induction' && state.touched) el('hint').textContent = 'The rod touched the sphere, so that was charging by contact. Press "Start again" to try induction without touching.';
     }
 
     // ---------- interaction ----------
@@ -482,10 +520,10 @@
       const r = state.rod;
       return p.x >= r.x - L.rodLen - 6 && p.x <= r.x + 8 && Math.abs(p.y - r.y) <= L.rodThick / 2 + 12;
     }
+    const inSwitch = p => L.switchBox && p.x >= L.switchBox.x && p.x <= L.switchBox.x + L.switchBox.w && p.y >= L.switchBox.y && p.y <= L.switchBox.y + L.switchBox.h;
     canvas.addEventListener('pointerdown', e => {
       const p = pos(e);
-      const sb = L.switchBox;
-      if (sb && p.x >= sb.x && p.x <= sb.x + sb.w && p.y >= sb.y && p.y <= sb.y + sb.h) { state.earthed = !state.earthed; return; }
+      if (inSwitch(p)) { state.earthed = !state.earthed; return; }
       if (onRod(p)) {
         drag = { dx: state.rod.x - p.x, dy: state.rod.y - p.y, lastX: p.x };
         canvas.setPointerCapture(e.pointerId);
@@ -494,7 +532,7 @@
     });
     canvas.addEventListener('pointermove', e => {
       const p = pos(e);
-      if (!drag) { canvas.style.cursor = onRod(p) ? 'grab' : (L.switchBox && p.x >= L.switchBox.x && p.x <= L.switchBox.x + L.switchBox.w && p.y >= L.switchBox.y && p.y <= L.switchBox.y + L.switchBox.h ? 'pointer' : 'default'); return; }
+      if (!drag) { canvas.style.cursor = onRod(p) ? 'grab' : inSwitch(p) ? 'pointer' : 'default'; return; }
       canvas.style.cursor = 'grabbing';
       moveRod(p.x + drag.dx, p.y + drag.dy);
       rub(Math.abs(p.x - drag.lastX));
@@ -508,6 +546,7 @@
       const r = state.rod;
       r.x = Math.max(L.rodLen * 0.4, Math.min(L.w - 6, x));
       r.y = Math.max(20, Math.min(L.floorY - 12, y));
+      if (!hasSphere()) return;
       // the rod cannot pass into the sphere: it stops against the surface
       const dy = r.y - L.cy;
       if (Math.abs(dy) < L.R && r.x - L.rodLen < L.cx) {
@@ -519,6 +558,7 @@
     }
 
     function rub(dxMoved) {
+      if (!hasCloth()) return;
       const r = state.rod, c = L.cloth, m = MATERIALS[materialEl.value];
       if (Math.abs(r.y - (c.y + c.h / 2)) > c.h / 2 + 2) return;
       const segA = Math.max(r.x - L.chargedLen, c.x), segB = Math.min(r.x, c.x + c.w);
@@ -533,34 +573,56 @@
       }
     }
 
-    el('earthBtn').addEventListener('click', () => { state.earthed = !state.earthed; });
-    el('wipeBtn').addEventListener('click', () => { state.rod.charges = []; });
-    el('resetBtn').addEventListener('click', reset);
-    materialEl.addEventListener('change', reset);
+    // On the contact and induction tabs the rod arrives already charged by rubbing, spread along its charged end.
+    function precharge() {
+      const m = MATERIALS[materialEl.value];
+      state.rod.charges = [];
+      for (let i = 0; i < PRECHARGE; i++) state.rod.charges.push({ s: 10 + (L.chargedLen - 22) * i / (PRECHARGE - 1), sign: m.rodSign });
+    }
 
     function reset() {
-      const keep = state ? state.done : null;
       state = freshState();
-      if (keep) state.done = keep;
-      state.electrons = IONS.map(p => ({ x: p.fx * (L ? L.R : 60) + 9, y: p.fy * (L ? L.R : 60) + 2 }));
-      state.rod.placed = false;
+      L = null;
+      ensureLayout();
+      state.electrons = IONS.map(p => ({ x: p.fx * L.R + 9, y: p.fy * L.R + 2 }));
+      if (hasSphere()) precharge();
+      const t = TABS[tab];
+      el('hint').textContent = t.hint;
+      el('note').innerHTML = t.note;
+      el('steps').innerHTML = t.steps.map((s, i) => `<li>${t.steps.length > 1 ? `<b>${i + 1}.</b> ` : ''}${s}</li>`).join('');
+      el('clothCard').classList.toggle('hidden', !hasCloth());
+      el('sphereCard').classList.toggle('hidden', !hasSphere());
+      el('forceCard').classList.toggle('hidden', !hasSphere());
+      el('earthGroup').classList.toggle('hidden', !hasEarth());
+      el('wipeGroup').classList.toggle('hidden', !hasCloth());
+      el('rechargeGroup').classList.toggle('hidden', hasCloth());
+      el('materialLabel').textContent = hasCloth() ? 'Rod and cloth' : 'Rod (already charged by rubbing)';
     }
 
     function ensureLayout() {
       const rect = canvas.getBoundingClientRect();
       const nl = layout(rect.width, rect.height);
       const changed = !L || L.w !== nl.w || L.h !== nl.h;
-      if (changed && L) {
-        // keep the rod in the same relative place after a resize
-        state.rod.x *= nl.w / L.w; state.rod.y *= nl.h / L.h;
-      }
+      if (changed && L) { state.rod.x *= nl.w / L.w; state.rod.y *= nl.h / L.h; }
       L = Object.assign(L || {}, nl);
       if (!state.rod.placed) {
-        state.rod.x = L.cloth.x + L.cloth.w + L.rodLen * 0.45; state.rod.y = L.h * 0.22; state.rod.placed = true;
-        state.electrons = IONS.map(p => ({ x: p.fx * L.R + 9, y: p.fy * L.R + 2 }));
+        if (hasCloth()) { state.rod.x = L.cloth.x + L.rodLen * 0.9; state.rod.y = L.h * 0.25; }
+        else { state.rod.x = Math.max(L.rodLen + 16, L.cx - L.R * 4.6); state.rod.y = L.cy; }
+        state.rod.placed = true;
       }
       if (changed) moveRod(state.rod.x, state.rod.y);
     }
+
+    document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => {
+      tab = b.dataset.tab;
+      document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === b));
+      reset();
+    }));
+    el('earthBtn').addEventListener('click', () => { state.earthed = !state.earthed; });
+    el('wipeBtn').addEventListener('click', () => { state.rod.charges = []; });
+    el('rechargeBtn').addEventListener('click', precharge);
+    el('resetBtn').addEventListener('click', reset);
+    materialEl.addEventListener('change', reset);
 
     reset();
     let last = null;

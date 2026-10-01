@@ -40,7 +40,7 @@
     <div class="panel">
       <div class="controls">
         <div class="control-group">
-          <label for="mode">Start from</label>
+          <label for="mode">Scenarios</label>
           <select id="mode">
             <option value="single" selected>One bar magnet</option>
             <option value="repel">Two magnets: like poles facing</option>
@@ -74,7 +74,9 @@
     const canvas = el('sceneCanvas');
     const modeEl = el('mode');
 
-    const BAR_L = 140, BAR_W = 34, POLE_IN = 0.4; // poles sit 40% of the length from the centre, near the ends
+    const BAR_L = 140, BAR_W = 34;
+    const K_SUB = 5, FACE_IN = 3;   // each pole: 5 small poles across the end face, 3 px inside it
+    const LINES_PER_POLE = 16;      // field lines per pole of strength 1, spaced by equal flux
     const CHI = { iron: 1.1e4, steel: 0.55e4 };  // how easily each material is magnetised (model units)
     const M_MAX = { iron: 0.85, steel: 0.8 };
 
@@ -118,10 +120,25 @@
 
     // ---------- geometry ----------
     const axis = o => ({ x: Math.cos(o.ang), y: Math.sin(o.ang) });
+    // A bar magnet's poles are its END FACES, so each pole is spread across the end face as K_SUB small poles.
+    // (A single point pole set back inside the bar makes the field beside the middle of the bar almost as strong
+    // as at the ends, and the drawing then crowds lines over the magnet's sides.)
     function poles(o) {
-      const u = axis(o), d = BAR_L * POLE_IN;
       if (o.m === 0) return [];
-      return [ { x: o.x + u.x * d, y: o.y + u.y * d, s: o.m, obj: o }, { x: o.x - u.x * d, y: o.y - u.y * d, s: -o.m, obj: o } ];
+      const u = axis(o), v = { x: -u.y, y: u.x }, a = BAR_L / 2 - FACE_IN, out = [];
+      for (let i = 0; i < K_SUB; i++) {
+        const b = (i / (K_SUB - 1) - 0.5) * BAR_W * 0.76;
+        out.push({ x: o.x + u.x * a + v.x * b, y: o.y + u.y * a + v.y * b, s: o.m / K_SUB, obj: o });
+        out.push({ x: o.x - u.x * a + v.x * b, y: o.y - u.y * a + v.y * b, s: -o.m / K_SUB, obj: o });
+      }
+      return out;
+    }
+    // One entry per magnetised end face (for seeding the field lines)
+    function poleEnds() {
+      return objects.filter(o => Math.abs(o.m) >= 0.12).flatMap(o => {
+        const u = axis(o), a = BAR_L / 2 - FACE_IN;
+        return [{ x: o.x + u.x * a, y: o.y + u.y * a, s: o.m, obj: o }, { x: o.x - u.x * a, y: o.y - u.y * a, s: -o.m, obj: o }];
+      });
     }
     function corners(o, pad = 0) {
       const u = axis(o), v = { x: -u.y, y: u.x };
@@ -151,17 +168,12 @@
       }
       return { bx, by };
     }
-    // The field PATTERN drawn on the page. A textbook field diagram is a flat (2D) picture, so the lines,
-    // compasses and filings use the flat-picture field (1/r). Then the spacing of the drawn lines honestly
-    // shows the field strength: slicing a 3D field would squeeze lines together where they really spread out.
-    function fieldAt(x, y, polesList) {
-      let bx = 0, by = 0;
-      for (const p of polesList) {
-        const dx = x - p.x, dy = y - p.y, d2 = dx * dx + dy * dy + 4;
-        bx += p.s * dx / d2; by += p.s * dy / d2;
-      }
-      return { bx, by };
-    }
+    // The field PATTERN drawn on the page: the real (3D) field of the magnets, in the plane of the page.
+    // An earlier version used a flat-picture (1/r) field; with that law the field beside the middle of a bar is
+    // nearly as strong as at its ends, so the drawing crowded loops over the magnet's sides and looked as if
+    // the field were strongest there. With the 3D law and poles on the end faces, the lines crowd at the poles.
+    // Few lines per pole (LINES_PER_POLE) keeps like poles from bunching along the neutral line.
+    function fieldAt(x, y, polesList) { return field3(x, y, polesList); }
 
     function updateInduced() {
       for (const o of objects) {
@@ -194,34 +206,63 @@
       const key = objects.map(o => [o.x, o.y, o.ang, o.m].map(v => v.toFixed(3)).join(',')).join(';') + `|${W}x${H}`;
       if (key === lineKey) return lineCache;
       const ps = allPoles();
+      const ends = poleEnds();
       const lines = [];
-      const strong = ps.filter(p => Math.abs(p.s) >= 0.12);
-      for (const start of strong) {
-        // Lines start evenly round every pole, in number proportional to the pole's strength.
-        // From an N pole trace along the field; from an S pole trace against it and keep only the lines
-        // that come from far away (a line that reaches an N pole was already drawn from that N pole).
+      const R0 = BAR_W / 2 + 7; // seeding circle round each end face (it wraps round the bar's corners)
+      for (const start of ends) {
+        // Lines leave each end face spaced by EQUAL FLUX, in number proportional to the pole's strength, so the
+        // spacing of the drawn lines shows the field strength. From an N end trace along the field; from an
+        // S end trace against it and keep only the lines that come from far away (a line that reaches an N end
+        // was already drawn from that N end).
         const dir = start.s > 0 ? 1 : -1;
-        const n = Math.round(28 * Math.abs(start.s));
+        const n = Math.round(LINES_PER_POLE * Math.abs(start.s));
+        const M = 720, cum = [0];
+        for (let i = 0; i < M; i++) {
+          const a = (i + 0.5) / M * Math.PI * 2, ux = Math.cos(a), uy = Math.sin(a);
+          const f = fieldAt(start.x + ux * R0, start.y + uy * R0, ps);
+          cum.push(cum[i] + Math.max(0, dir * (f.bx * ux + f.by * uy)));
+        }
+        const total = cum[M];
+        if (!(total > 0)) continue;
         for (let k = 0; k < n; k++) {
-          const a0 = (k + 0.5) / n * Math.PI * 2;
-          let x = start.x + Math.cos(a0) * 5, y = start.y + Math.sin(a0) * 5;
-          const pts = [{ x, y }];
-          let endPole = null;
+          const target = (k + 0.5) / n * total;
+          let i = 0; while (i < M - 1 && cum[i + 1] < target) i++;
+          const a0 = (i + (target - cum[i]) / Math.max(1e-12, cum[i + 1] - cum[i])) / M * Math.PI * 2;
+          let x = start.x + Math.cos(a0) * R0, y = start.y + Math.sin(a0) * R0;
+          // a seed inside a bar starts a line that runs inside the magnet (hidden under it), so it is not drawn
+          if (objects.some(q => insideBar(q, x, y, 0))) continue;
+          // run the line back from the seed to the end face it came from, so every line starts on the magnet
+          const back = [];
+          {
+            let bx = x, by = y;
+            for (let st = 0; st < 60; st++) {
+              const f = fieldAt(bx, by, ps), m = Math.hypot(f.bx, f.by); if (m === 0) break;
+              bx -= dir * 1.2 * f.bx / m; by -= dir * 1.2 * f.by / m;
+              back.push({ x: bx, y: by });
+              if (insideBar(start.obj, bx, by, 0)) break;
+            }
+          }
+          const pts = back.reverse().concat([{ x, y }]);
+          let endObj = null, endSign = 0;
           for (let st = 0; st < 5000; st++) {
-            const near = strong.reduce((m, p) => Math.min(m, Math.hypot(x - p.x, y - p.y)), Infinity);
-            const stepLen = near < 24 ? 1.5 : (near < 120 ? 3 : 6);
+            const near = ends.reduce((m, p) => Math.min(m, Math.hypot(x - p.x, y - p.y)), Infinity);
+            const stepLen = near < 40 ? 1.5 : (near < 140 ? 3 : 6);
             let f = fieldAt(x, y, ps), m = Math.hypot(f.bx, f.by); if (m === 0) break;
             const hx = x + dir * 0.5 * stepLen * f.bx / m, hy = y + dir * 0.5 * stepLen * f.by / m;
             f = fieldAt(hx, hy, ps); m = Math.hypot(f.bx, f.by); if (m === 0) break;
             x += dir * stepLen * f.bx / m; y += dir * stepLen * f.by / m;
             pts.push({ x, y });
-            const hit = strong.find(p => p !== start && Math.sign(p.s) === -dir && Math.hypot(x - p.x, y - p.y) < 4);
-            if (hit) { endPole = hit; break; }
+            const into = objects.find(q => insideBar(q, x, y, 0));
+            if (into) {
+              // which end of that bar did it reach?
+              const l = toLocal(into, x, y);
+              endObj = into; endSign = Math.sign(l.a) * Math.sign(into.m || 1);
+              break;
+            }
             if (x < -700 || y < -700 || x > W + 700 || y > H + 700) break;
           }
-          if (dir < 0 && endPole) continue;
-          // the part of a line inside a bar is hidden under the bar; skip lines that never come out
-          const visible = pts.filter(p => p.x > -2 && p.y > -2 && p.x < W + 2 && p.y < H + 2 && !objects.some(q => insideBar(q, p.x, p.y, 1)));
+          if (dir < 0 && endObj && endSign > 0 && Math.abs(endObj.m) >= 0.12) continue;
+          const visible = pts.filter(p => p.x > -2 && p.y > -2 && p.x < W + 2 && p.y < H + 2);
           if (visible.length < 4) continue;
           lines.push({ pts, forward: dir > 0 });
         }
@@ -333,7 +374,7 @@
           if (objects.some(o => insideBar(o, x, y, 3))) continue;
           const b = fieldAt(x, y, ps), m = Math.hypot(b.bx, b.by);
           if (m === 0) continue;
-          const alpha = Math.max(0.08, Math.min(0.85, 0.55 + 0.35 * Math.log10(m * 120)));
+          const alpha = Math.max(0.08, Math.min(0.85, 0.55 + 0.35 * Math.log10(m * 6000)));
           ctx.strokeStyle = `rgba(51,65,85,${alpha})`;
           const ux = b.bx / m * 4, uy = b.by / m * 4;
           ctx.beginPath(); ctx.moveTo(x - ux, y - uy); ctx.lineTo(x + ux, y + uy); ctx.stroke();

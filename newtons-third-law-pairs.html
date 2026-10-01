@@ -10,14 +10,17 @@
     .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
     h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
     .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
-    .controls { display: grid; grid-template-columns: 1.8fr 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
+    .controls { display: grid; grid-template-columns: 1.8fr 1fr 1fr 1fr; gap: 10px; align-items: end; }
     .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
     label { font-size: 0.8rem; font-weight: 600; }
     .val { font-weight: normal; color: #334155; }
     select { font-size: 0.9rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
     input[type=range] { width: 100%; }
-    button { font-size: 0.9rem; padding: 7px 12px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; white-space: nowrap; }
+    .buttons { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    button { font-size: 0.9rem; padding: 7px 14px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; white-space: nowrap; }
     button.go { background: #2563eb; }
+    button.danger { background: #dc2626; }
+    button:disabled { opacity: 0.45; cursor: default; }
     .readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
     .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
     .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
@@ -26,6 +29,8 @@
     #sceneCanvas { height: 330px; border: 1px solid #dbeafe; background: #f8fbff; }
     .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
     .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    .note ul { margin: 2px 0 0; padding-left: 18px; }
+    .note li { margin: 2px 0; }
     .hidden { display: none !important; }
     @media (max-width: 900px) {
       .controls { grid-template-columns: 1fr 1fr; }
@@ -41,23 +46,27 @@
     <div class="panel">
       <div class="controls">
         <div class="control-group">
-          <label for="scenario">Scenario</label>
+          <label for="scenario">Scenarios</label>
           <select id="scenario">
-            <option value="blocks" selected>Tutorial B7: a force pushes block A into block B</option>
+            <option value="puck" selected>Puck on ice: are N and W an action&ndash;reaction pair?</option>
+            <option value="blocks">Tutorial B7: a force pushes block A into block B</option>
             <option value="skaters">Two skaters push each other apart</option>
-            <option value="puck">Puck on ice: are N and W an action&ndash;reaction pair?</option>
           </select>
         </div>
         <div class="control-group" id="pGroup"><label for="push">Push <i>P</i> <span class="val" id="pushVal"></span></label><input id="push" type="range" min="0" max="60" step="1" value="30" /></div>
         <div class="control-group" id="maGroup"><label for="mA">Mass A <span class="val" id="mAVal"></span></label><input id="mA" type="range" min="0.5" max="80" step="0.5" value="1.5" /></div>
         <div class="control-group" id="mbGroup"><label for="mB">Mass B <span class="val" id="mBVal"></span></label><input id="mB" type="range" min="0.5" max="80" step="0.5" value="3" /></div>
-        <button id="actBtn" class="go">Reset</button>
+      </div>
+      <div class="buttons" id="motionButtons">
+        <button id="startBtn" class="go">Start</button>
+        <button id="pauseBtn">Pause</button>
+        <button id="resetBtn" class="danger">Reset</button>
       </div>
       <div class="readout" id="readout">
-        <div class="readout-card"><div class="title" id="t1">Acceleration of both</div><div class="value" id="v1">&mdash;</div></div>
-        <div class="readout-card"><div class="title" id="t2">Force of A on B</div><div class="value" id="v2">&mdash;</div></div>
-        <div class="readout-card"><div class="title" id="t3">Force of B on A</div><div class="value" id="v3">&mdash;</div></div>
-        <div class="readout-card"><div class="title" id="t4">Equal and opposite?</div><div class="value" id="v4">&mdash;</div></div>
+        <div class="readout-card"><div class="title" id="t1">&nbsp;</div><div class="value" id="v1">&mdash;</div></div>
+        <div class="readout-card"><div class="title" id="t2">&nbsp;</div><div class="value" id="v2">&mdash;</div></div>
+        <div class="readout-card"><div class="title" id="t3">&nbsp;</div><div class="value" id="v3">&mdash;</div></div>
+        <div class="readout-card"><div class="title" id="t4">&nbsp;</div><div class="value" id="v4">&mdash;</div></div>
       </div>
     </div>
 
@@ -71,20 +80,28 @@
   <script>
     const el = id => document.getElementById(id);
     const canvas = el('sceneCanvas');
-    const st = { x: 0, v: 0, t: 0, sA: { x: 0, v: 0 }, sB: { x: 0, v: 0 }, pushing: 0, sel: null };
+    const RUN_T = 10;                 // the blocks are pushed for 10 s, then the run stops
+    const PUSH_F = 120, PUSH_T = 0.4; // skaters: 120 N for 0.4 s
+    const st = { x: 0, v: 0, t: 0, sA: { x: 0, v: 0 }, sB: { x: 0, v: 0 }, pushing: 0, pushed: false, running: false, done: false, sel: null };
 
     const TEXT = {
       blocks: {
-        hint: 'Drag the red handle to change the push P, or use the sliders. The surface is frictionless.',
-        note: 'P pushes only on A. A then pushes on B (action), and B pushes back on A (reaction). These two contact forces are <b>equal in size and opposite in direction</b>, and they act on <b>different objects</b> &mdash; so they never cancel each other. Each block feels its own forces: B has only A&rsquo;s push, which gives it acceleration <i>a</i> = <i>F</i><sub>AB</sub>/<i>m</i><sub>B</sub>; A has <i>P</i> forwards and B&rsquo;s push backwards. With the Tutorial B7 values (30 N, 1.5 kg, 3.0 kg), <i>a</i> = 30/4.5 = 6.67 m s<sup>-2</sup> and B pushes on A with 3.0 &times; 6.67 = 20 N.'
+        hint: 'Press Start: P pushes the two blocks for 10 s on a frictionless surface. Change P by dragging the red handle or with the sliders (before you start).',
+        note: 'P pushes only on A. A then pushes on B (action), and B pushes back on A (reaction). These two contact forces are <b>equal in size and opposite in direction</b>, and they act on <b>different objects</b> &mdash; so they never cancel each other. Each block feels its own forces: B has only A&rsquo;s push, which gives it acceleration <i>a</i> = <i>F</i><sub>AB</sub>/<i>m</i><sub>B</sub>; A has <i>P</i> forwards and B&rsquo;s push backwards. With the Tutorial B7 values (30 N, 1.5 kg, 3.0 kg), <i>a</i> = 30/4.5 = 6.67 m s<sup>-2</sup> and B pushes on A with 3.0 &times; 6.67 = 20 N. After 10 s from rest, <i>v</i> = <i>at</i> = 66.7 m s<sup>-1</sup>.'
       },
       skaters: {
-        hint: 'Press "Push apart!" (or tap the skaters). Change their masses and try again.',
-        note: 'While their hands are in contact, A pushes B and B pushes A with forces that are equal in size and opposite in direction, for exactly the same time. The <b>forces</b> are always equal, but the lighter skater gets the bigger <b>acceleration</b> (<i>a</i> = <i>F</i>/<i>m</i>), so ends up moving faster. Like the man pushing a wall, or a rocket pushing its exhaust gases: the action and the reaction act on different objects.'
+        hint: 'Press Start to make them push apart. Change their masses and try again.',
+        note: 'While their hands are in contact (for 0.4 s), A pushes B and B pushes A with forces that are equal in size and opposite in direction, for exactly the same time. The <b>forces</b> are always equal, but the lighter skater gets the bigger <b>acceleration</b> (<i>a</i> = <i>F</i>/<i>m</i>), so ends up moving faster. Once their hands separate there is no force on either skater (the ice is frictionless), so their acceleration drops to <b>zero</b> and each glides on at a constant speed. Like the man pushing a wall, or a rocket pushing its exhaust gases: the action and the reaction act on different objects.'
       },
       puck: {
         hint: 'Tap any force arrow to see the force it is paired with by Newton\'s third law.',
-        note: 'The normal force (ice pushes up on the puck) and the weight (Earth pulls down on the puck) are equal and opposite, but they are <b>not</b> an action&ndash;reaction pair: they act on the <b>same object</b>, and they are different kinds of force (a contact force and a gravitational force). They balance because the puck is at rest (first law). The partner of the weight is the puck pulling the <b>Earth</b> upwards; the partner of the normal force is the puck pushing <b>down on the ice</b>. A third-law pair always acts on two different objects and is always the same kind of force.'
+        note: '<ul>' +
+          '<li>The normal force <b>N</b> (ice pushes up on the puck) and the weight <b>W</b> (Earth pulls down on the puck) are equal and opposite, but they are <b>not</b> an action&ndash;reaction pair.</li>' +
+          '<li>They act on the <b>same object</b> (the puck), and they are different kinds of force: N is a contact force, W is a gravitational force.</li>' +
+          '<li>They balance because the puck is at rest (Newton&rsquo;s first law).</li>' +
+          '<li>The partner of the weight is the puck pulling the <b>Earth</b> upwards. The partner of the normal force is the puck pushing <b>down on the ice</b>.</li>' +
+          '<li>A third-law pair always acts on <b>two different objects</b>, and the two forces are always the same kind of force.</li>' +
+          '</ul>'
       }
     };
 
@@ -92,32 +109,35 @@
     const mA = () => +el('mA').value, mB = () => +el('mB').value, Pv = () => +el('push').value;
 
     function reset() {
-      st.x = 0; st.v = 0; st.t = 0; st.sA = { x: -0.25, v: 0 }; st.sB = { x: 0.25, v: 0 }; st.pushing = 0; st.sel = null;
+      st.x = 0; st.v = 0; st.t = 0; st.sA = { x: -0.25, v: 0 }; st.sB = { x: 0.25, v: 0 }; st.pushing = 0; st.pushed = false;
+      st.running = false; st.done = false; st.sel = null;
     }
     function setScenario() {
       const s = scen();
       el('hint').textContent = TEXT[s].hint; el('note').innerHTML = TEXT[s].note;
       el('pGroup').classList.toggle('hidden', s !== 'blocks');
       el('maGroup').classList.toggle('hidden', s === 'puck'); el('mbGroup').classList.toggle('hidden', s === 'puck');
-      el('actBtn').textContent = s === 'skaters' ? 'Push apart!' : 'Reset';
-      el('actBtn').classList.toggle('hidden', s === 'puck');
+      el('motionButtons').classList.toggle('hidden', s === 'puck');
       if (s === 'skaters') { el('mA').value = 60; el('mB').value = 40; }
       if (s === 'blocks') { el('mA').value = 1.5; el('mB').value = 3; el('push').value = 30; }
       reset();
     }
 
-    const PUSH_F = 120, PUSH_T = 0.4; // skaters: 120 N for 0.4 s
     function step(dt) {
+      if (!st.running) return;
       const s = scen();
-      st.t += dt;
       if (s === 'blocks') {
         const a = Pv() / (mA() + mB());
-        st.v += a * dt; st.x += st.v * dt;
-        if (st.x > 40) { st.x = 0; st.v = 0; } // restart before they run off far away
+        const h = Math.min(dt, RUN_T - st.t);
+        // exact for constant acceleration, so the run ends on v = a t exactly
+        st.x += st.v * h + 0.5 * a * h * h; st.v += a * h; st.t += h;
+        if (st.t >= RUN_T - 1e-9) { st.t = RUN_T; st.v = a * RUN_T; st.running = false; st.done = true; }
       } else if (s === 'skaters') {
+        st.t += dt;
         if (st.pushing > 0) {
           const h = Math.min(dt, st.pushing);
           st.sA.v -= PUSH_F / mA() * h; st.sB.v += PUSH_F / mB() * h; st.pushing -= h;
+          if (st.pushing <= 1e-12) { st.pushing = 0; st.sA.v = -PUSH_F * PUSH_T / mA(); st.sB.v = PUSH_F * PUSH_T / mB(); }
         }
         st.sA.x += st.sA.v * dt; st.sB.x += st.sB.v * dt;
       }
@@ -144,9 +164,13 @@
       ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fillRect(x0 - 3, y - 8, tw + 6, 16);
       ctx.fillStyle = color; ctx.fillText(t, x, y); ctx.textBaseline = 'alphabetic';
     }
-    function box(ctx, x, y, w, h, fill, text) {
+    // name on one line, mass under it, so the label fits even the narrow blocks used on a phone
+    function box(ctx, x, y, w, h, fill, name, sub) {
       ctx.fillStyle = fill; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, 6) : ctx.rect(x, y, w, h); ctx.fill();
-      ctx.fillStyle = 'white'; ctx.font = 'bold 14px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, x + w / 2, y + h / 2); ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = 'white'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = 'bold 15px Arial'; ctx.fillText(name, x + w / 2, y + h / 2 - 9);
+      ctx.font = '12px Arial'; ctx.fillText(sub, x + w / 2, y + h / 2 + 10);
+      ctx.textBaseline = 'alphabetic';
     }
 
     let handle = null, hits = [];
@@ -162,33 +186,45 @@
       }
       if (s === 'blocks') {
         const a = Pv() / (mA() + mB()), FAB = mB() * a;
-        const pxPerM = 40, camX = w * 0.45;
-        // metre marks scroll past; the camera follows the blocks
-        ctx.fillStyle = '#475569'; ctx.font = '11px Arial'; ctx.textAlign = 'center';
-        const first = Math.floor(st.x - camX / pxPerM) - 1;
-        for (let m = first; m < first + w / pxPerM + 3; m++) { const x = camX + (m - st.x) * pxPerM; ctx.fillRect(x - 0.75, floorY, 1.5, 7); if (m % 2 === 0) ctx.fillText(`${m} m`, x, floorY + 20); }
-        const wa = 60 + mA() * 3, wb = 60 + mB() * 3, hb = 64;
-        const ax = camX - wa, bx = camX;
-        box(ctx, ax, floorY - hb, wa, hb, '#2563eb', `A  ${mA()} kg`);
-        box(ctx, bx, floorY - hb, wb, hb, '#16a34a', `B  ${mB()} kg`);
+        const narrowView = w < 600;
+        const wa = (narrowView ? 40 : 60) + mA() * 3, wb = (narrowView ? 40 : 60) + mB() * 3, hb = 64;
+        // The view does not scroll: the whole 10 s run is squeezed into the width of the picture,
+        // so the blocks start on the left and stop on the right (not to scale).
+        const xEnd = 0.5 * a * RUN_T * RUN_T;
+        const k = Math.min(3.2, 150 / Math.max(Pv(), 1), w * 0.15 / Math.max(Pv(), 1));
+        const startX = 30 + Math.max(Pv(), 1) * k + wa;   // room for the push arrow behind A
+        const endX = Math.max(startX, w - 16 - wb);
+        const bx = xEnd > 0 ? startX + (endX - startX) * st.x / xEnd : startX, ax = bx - wa;
+        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 5]);
+        ctx.beginPath(); ctx.moveTo(startX, floorY + 4); ctx.lineTo(startX, floorY + 22); ctx.moveTo(endX, floorY + 4); ctx.lineTo(endX, floorY + 22); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = '#64748b'; ctx.font = '11px Arial'; ctx.textAlign = 'center';
+        ctx.fillText('start (t = 0)', startX, floorY + 36); ctx.fillText(`after ${RUN_T} s`, endX, floorY + 36);
+        ctx.fillText('(distance not to scale)', (startX + endX) / 2, floorY + 52);
+        box(ctx, ax, floorY - hb, wa, hb, '#2563eb', 'A', `${mA()} kg`);
+        box(ctx, bx, floorY - hb, wb, hb, '#16a34a', 'B', `${mB()} kg`);
         const narrow = w < 600;
-        const k = Math.min(3.2, 150 / Math.max(Pv(), 1), (ax - 30) / Math.max(Pv(), 1)); // the push arrow must start on screen
         // push P on A
         const pStart = ax - 6 - Pv() * k, py = floorY - hb * 0.5;
         if (Pv() > 0) { arrow(ctx, pStart, py, ax - 4, py, '#dc2626', 5); tag(ctx, `P = ${Pv()} N`, pStart + Pv() * k / 2, py - 16, '#b91c1c'); }
         handle = { x: pStart, y: py, ax, k };
-        ctx.fillStyle = '#dc2626'; ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(pStart, py, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        // the third-law pair at the contact: A on B (on B, top), B on A (on A, bottom)
-        const yTop = floorY - hb - 18, yBot = floorY + 30;
-        arrow(ctx, bx, yTop, bx + FAB * k, yTop, '#7c3aed', 4);
-        tag(ctx, narrow ? `A on B: ${FAB.toFixed(1)} N` : `A pushes B: ${FAB.toFixed(1)} N (acts on B)`, bx + 6, yTop - 16, '#6d28d9', 'left');
-        arrow(ctx, bx, yBot, bx - FAB * k, yBot, '#ea580c', 4);
-        tag(ctx, narrow ? `B on A: ${FAB.toFixed(1)} N` : `B pushes A: ${FAB.toFixed(1)} N (acts on A)`, bx - 6, yBot + 16, '#c2410c', 'right');
-        ctx.strokeStyle = 'rgba(15,23,42,0.35)'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(bx, yTop + 6); ctx.lineTo(bx, yBot - 6); ctx.stroke(); ctx.setLineDash([]);
-        tag(ctx, `a = ${a.toFixed(2)} m/s²   v = ${st.v.toFixed(1)} m/s`, w / 2, 16, '#334155');
+        if (!st.running && st.t === 0) { ctx.fillStyle = '#dc2626'; ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(pStart, py, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+        // the third-law pair at the contact, both drawn above the blocks: A on B (points right), B on A (points left)
+        const yAB = floorY - hb - 18, yBA = floorY - hb - 58;
+        const fits = (x, tw, align) => align === 'left' ? x + tw < w - 4 : x - tw > 4;
+        ctx.font = 'bold 12px Arial';
+        const tAB = narrow ? `A on B: ${FAB.toFixed(1)} N` : `A pushes B: ${FAB.toFixed(1)} N (acts on B)`;
+        const tBA = narrow ? `B on A: ${FAB.toFixed(1)} N` : `B pushes A: ${FAB.toFixed(1)} N (acts on A)`;
+        ctx.strokeStyle = 'rgba(15,23,42,0.35)'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(bx, yBA - 6); ctx.lineTo(bx, floorY - hb); ctx.stroke(); ctx.setLineDash([]);
+        arrow(ctx, bx, yAB, bx + FAB * k, yAB, '#7c3aed', 4);
+        tag(ctx, tAB, bx + 4, yAB - 16, '#6d28d9', fits(bx + 4, ctx.measureText(tAB).width, 'left') ? 'left' : 'right');
+        arrow(ctx, bx, yBA, bx - FAB * k, yBA, '#ea580c', 4);
+        ctx.font = 'bold 12px Arial';
+        tag(ctx, tBA, bx - 4, yBA - 16, '#c2410c', fits(bx - 4, ctx.measureText(tBA).width, 'right') ? 'right' : 'left');
+        tag(ctx, `t = ${st.t.toFixed(1)} s    a = ${a.toFixed(2)} m/s²    v = ${st.v.toFixed(1)} m/s`, w / 2, 16, '#334155');
+        if (st.done) tag(ctx, `After ${RUN_T} s from rest: final speed v = at = ${(a * RUN_T).toFixed(1)} m/s`, w / 2, 38, '#15803d');
       } else if (s === 'skaters') {
         const pxPerM = 70, cx = w / 2;
-        const drawSkater = (sk, color, name, m, faceRight) => {
+        const drawSkater = (sk, color, name, m) => {
           const x = cx + sk.x * pxPerM, sz = 30 + Math.sqrt(m) * 4;
           ctx.fillStyle = color;
           ctx.beginPath(); ctx.arc(x, floorY - sz * 2.2, sz * 0.32, 0, Math.PI * 2); ctx.fill();
@@ -199,16 +235,19 @@
           ctx.fillStyle = 'white'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center'; ctx.fillText(name, x, floorY - sz * 1.25);
           tag(ctx, `${m} kg`, x, floorY + 18, '#334155');
           tag(ctx, `v = ${Math.abs(sk.v).toFixed(2)} m/s`, x, floorY + 38, '#15803d');
-          hits.push({ x, y: floorY - sz, r: sz * 1.3 });
           return { x, sz };
         };
-        const A = drawSkater(st.sA, '#2563eb', 'A', mA(), true), B = drawSkater(st.sB, '#16a34a', 'B', mB(), false);
+        const A = drawSkater(st.sA, '#2563eb', 'A', mA()), B = drawSkater(st.sB, '#16a34a', 'B', mB());
         if (st.pushing > 0) {
           const y = floorY - 30 - Math.max(A.sz, B.sz) * 2.5, len = 70;
           arrow(ctx, A.x, y, A.x - len, y, '#ea580c', 4); tag(ctx, `B pushes A: ${PUSH_F} N`, A.x - len / 2, y - 16, '#c2410c');
           arrow(ctx, B.x, y, B.x + len, y, '#7c3aed', 4); tag(ctx, `A pushes B: ${PUSH_F} N`, B.x + len / 2, y - 16, '#6d28d9');
+        } else if (st.pushed) {
+          tag(ctx, 'Hands apart: no force on either skater, so no acceleration', w / 2, 18, '#334155');
         }
-        if (Math.abs(st.sA.x) * pxPerM > w / 2 + 60 && Math.abs(st.sB.x) * pxPerM > w / 2 + 60) reset();
+        // stop once both have glided out of the picture (no replay)
+        if (st.pushed && st.pushing === 0 && Math.abs(st.sA.x) * pxPerM > w / 2 + 60 && Math.abs(st.sB.x) * pxPerM > w / 2 + 60) { st.running = false; st.done = true; }
+        if (st.done) tag(ctx, `Final speeds: A ${Math.abs(st.sA.v).toFixed(2)} m/s, B ${Math.abs(st.sB.v).toFixed(2)} m/s. Press Reset to try again.`, w / 2, 40, '#15803d');
       } else {
         // puck on ice, plus the Earth and the ice as the other objects
         const iceY = h * 0.55, cx = w / 2;
@@ -219,18 +258,22 @@
         ctx.fillStyle = '#111827'; ctx.beginPath(); ctx.ellipse(cx, iceY - 10, 44, 12, 0, 0, Math.PI * 2); ctx.fill(); ctx.fillRect(cx - 44, iceY - 22, 88, 12); ctx.beginPath(); ctx.ellipse(cx, iceY - 22, 44, 12, 0, 0, Math.PI * 2); ctx.fillStyle = '#374151'; ctx.fill();
         tag(ctx, 'puck', cx, iceY - 46, '#111827');
         const forcesList = [
-          { id: 'N', a: [cx - 70, iceY - 16], b: [cx - 70, iceY - 96], col: '#0891b2', txt: 'N: ice pushes puck up', on: 'puck', partner: 'N2' },
-          { id: 'W', a: [cx + 70, iceY - 16], b: [cx + 70, iceY + 64], col: '#7c3aed', txt: 'W: Earth pulls puck down', on: 'puck', partner: 'W2' },
-          { id: 'N2', a: [cx - 140, iceY + 2], b: [cx - 140, iceY + 72], col: '#0891b2', txt: 'puck pushes ice down', on: 'ice', partner: 'N' },
-          { id: 'W2', a: [cx + 170, h - 26], b: [cx + 170, h - 106], col: '#7c3aed', txt: 'puck pulls Earth up', on: 'Earth', partner: 'W' }
+          { id: 'N', a: [cx - 70, iceY - 16], b: [cx - 70, iceY - 96], txt: 'N: ice pushes puck up', on: 'puck', partner: 'N2' },
+          { id: 'W', a: [cx + 70, iceY - 16], b: [cx + 70, iceY + 64], txt: 'W: Earth pulls puck down', on: 'puck', partner: 'W2' },
+          { id: 'N2', a: [cx - 140, iceY + 2], b: [cx - 140, iceY + 72], txt: 'puck pushes ice down', on: 'ice', partner: 'N' },
+          { id: 'W2', a: [cx + 170, h - 26], b: [cx + 170, h - 106], txt: 'puck pulls Earth up', on: 'Earth', partner: 'W' }
         ];
+        // Every force is the same grey until one is tapped; then it and its partner share one colour.
+        const PAIR_COL = { N: '#0891b2', N2: '#0891b2', W: '#7c3aed', W2: '#7c3aed' };
         forcesList.forEach(f => {
           const isSel = st.sel && (st.sel === f.id || forcesList.find(g => g.id === st.sel).partner === f.id);
           const faded = st.sel && !isSel;
+          const col = isSel ? PAIR_COL[st.sel] : '#475569';
+          f.col = col;
           ctx.globalAlpha = faded ? 0.18 : 1;
-          arrow(ctx, f.a[0], f.a[1], f.b[0], f.b[1], f.col, isSel ? 6 : 4);
+          arrow(ctx, f.a[0], f.a[1], f.b[0], f.b[1], col, isSel ? 6 : 4);
           const right = f.a[0] > cx;
-          tag(ctx, f.txt, f.a[0] + (right ? 10 : -10), (f.a[1] + f.b[1]) / 2, f.col, right ? 'left' : 'right');
+          tag(ctx, f.txt, f.a[0] + (right ? 10 : -10), (f.a[1] + f.b[1]) / 2, col, right ? 'left' : 'right');
           ctx.globalAlpha = 1;
           hits.push({ id: f.id, x: (f.a[0] + f.b[0]) / 2, y: (f.a[1] + f.b[1]) / 2, r: 46 });
         });
@@ -246,39 +289,51 @@
       const set = (i, t, v) => { el('t' + i).innerHTML = t; el('v' + i).textContent = v; };
       el('pushVal').textContent = `(${Pv()} N)`; el('mAVal').textContent = `(${mA()} kg)`; el('mBVal').textContent = `(${mB()} kg)`;
       el('readout').classList.toggle('hidden', s === 'puck');
+      el('startBtn').disabled = st.running || st.done;
+      el('pauseBtn').disabled = !st.running;
+      el('startBtn').textContent = s === 'skaters' && !st.pushed ? 'Start (push apart)' : (st.t > 0 && !st.done ? 'Resume' : 'Start');
+      // the set-up can only be changed before a run starts
+      const lockInputs = st.t > 0 || st.running;
+      ['push', 'mA', 'mB'].forEach(id => { el(id).disabled = lockInputs; });
       if (s === 'blocks') {
         const a = Pv() / (mA() + mB()), F = mB() * a;
         set(1, 'Acceleration of both, <i>a</i> = <i>P</i>/(<i>m</i><sub>A</sub>+<i>m</i><sub>B</sub>)', `${a.toFixed(2)} m/s²`);
         set(2, 'Force of A on B (action)', `${F.toFixed(2)} N →`); set(3, 'Force of B on A (reaction)', `${F.toFixed(2)} N ←`);
-        set(4, 'Net force on A = <i>P</i> &minus; <i>F</i><sub>BA</sub>', `${(Pv() - F).toFixed(2)} N (= mA × a)`);
+        set(4, st.done ? `Final speed after ${RUN_T} s` : `Speed (run lasts ${RUN_T} s)`, `${st.v.toFixed(1)} m/s`);
       } else if (s === 'skaters') {
-        set(1, 'Force on each (while pushing)', `${PUSH_F} N, opposite`);
-        set(2, 'Acceleration of A (<i>F</i>/<i>m</i><sub>A</sub>)', `${(PUSH_F / mA()).toFixed(2)} m/s²`);
-        set(3, 'Acceleration of B (<i>F</i>/<i>m</i><sub>B</sub>)', `${(PUSH_F / mB()).toFixed(2)} m/s²`);
-        set(4, 'Final speeds A / B', `${Math.abs(st.sA.v).toFixed(2)} / ${Math.abs(st.sB.v).toFixed(2)} m/s`);
+        const touching = st.pushing > 0;
+        set(1, 'Force on each skater now', touching ? `${PUSH_F} N, opposite` : (st.pushed ? '0 N (not touching)' : '0 N (not pushing yet)'));
+        set(2, 'Acceleration of A now (<i>F</i>/<i>m</i><sub>A</sub>)', touching ? `${(PUSH_F / mA()).toFixed(2)} m/s²` : '0 m/s²');
+        set(3, 'Acceleration of B now (<i>F</i>/<i>m</i><sub>B</sub>)', touching ? `${(PUSH_F / mB()).toFixed(2)} m/s²` : '0 m/s²');
+        set(4, 'Speeds A / B', `${Math.abs(st.sA.v).toFixed(2)} / ${Math.abs(st.sB.v).toFixed(2)} m/s`);
       }
     }
 
     // ---------- interaction ----------
     let drag = false;
     function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    const canDragHandle = () => scen() === 'blocks' && handle && st.t === 0 && !st.running;
     canvas.addEventListener('pointerdown', e => {
       const p = pos(e), s = scen();
-      if (s === 'blocks' && handle && Math.hypot(p.x - handle.x, p.y - handle.y) < 22) { drag = true; canvas.setPointerCapture(e.pointerId); e.preventDefault(); }
-      else if (s === 'skaters' && hits.some(h => Math.hypot(p.x - h.x, p.y - h.y) < h.r)) startPush();
+      if (canDragHandle() && Math.hypot(p.x - handle.x, p.y - handle.y) < 22) { drag = true; canvas.setPointerCapture(e.pointerId); e.preventDefault(); }
       else if (s === 'puck') { const h = hits.find(h => Math.hypot(p.x - h.x, p.y - h.y) < h.r); st.sel = h ? h.id : null; }
     });
     canvas.addEventListener('pointermove', e => {
       const p = pos(e);
-      if (!drag) { canvas.style.cursor = (scen() === 'blocks' && handle && Math.hypot(p.x - handle.x, p.y - handle.y) < 22) ? 'ew-resize' : (scen() !== 'blocks' && hits.some(h => Math.hypot(p.x - h.x, p.y - h.y) < h.r)) ? 'pointer' : 'default'; return; }
+      if (!drag) { canvas.style.cursor = (canDragHandle() && Math.hypot(p.x - handle.x, p.y - handle.y) < 22) ? 'ew-resize' : (scen() === 'puck' && hits.some(h => Math.hypot(p.x - h.x, p.y - h.y) < h.r)) ? 'pointer' : 'default'; return; }
       const F = Math.round(Math.max(0, Math.min(60, (handle.ax - 6 - p.x) / handle.k)));
       el('push').value = F;
     });
     const end = () => { drag = false; };
     canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
 
-    function startPush() { st.sA = { x: -0.25, v: 0 }; st.sB = { x: 0.25, v: 0 }; st.pushing = PUSH_T; }
-    el('actBtn').addEventListener('click', () => { if (scen() === 'skaters') startPush(); else reset(); });
+    el('startBtn').addEventListener('click', () => {
+      if (st.done) return;
+      if (scen() === 'skaters' && !st.pushed) { st.pushing = PUSH_T; st.pushed = true; }
+      st.running = true;
+    });
+    el('pauseBtn').addEventListener('click', () => { st.running = false; });
+    el('resetBtn').addEventListener('click', reset);
     el('scenario').addEventListener('change', setScenario);
 
     setScenario();
