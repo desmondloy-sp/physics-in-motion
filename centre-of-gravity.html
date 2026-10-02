@@ -30,6 +30,8 @@
     #equilCanvas { height: 340px; border: 1px solid #e5e7eb; background: #fbfdff; cursor: grab; }
     .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
     .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    .note ul { margin: 2px 0 0; padding-left: 18px; }
+    .note li { margin: 2px 0; }
     @media (max-width: 900px) {
       .controls { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
       .readout { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
@@ -69,7 +71,7 @@
 
       <div class="readout">
         <div class="readout-card">
-          <div class="title">Combined CG (from base centre)</div>
+          <div class="title">Combined CG (from the base centre, box upright)</div>
           <div class="value" id="cgValue">&mdash;</div>
         </div>
         <div class="readout-card">
@@ -91,14 +93,23 @@
       <div class="panel">
         <div class="hint">Drag the blue box sideways to tilt it, then let go. Drag the red load to slide it along the top.</div>
         <canvas id="sceneCanvas"></canvas>
-        <div class="note">
-          The dashed purple line drops straight down (a "plumb line") from the combined centre of gravity. While it passes <b>inside</b> the pivot edge, the weight's moment turns the box back &mdash; it falls back onto its base. Once the CG passes <b>beyond</b> the pivot edge, the weight's moment turns it the other way and it topples. A <b>lower CG</b> or a <b>broader base</b> makes the toppling angle bigger, so the object is more stable (a coach's luggage bay, a racing car's wide track, a floor fan's heavy base). Try it: stack a heavy load on top and watch the toppling angle shrink.
-        </div>
+        <div class="note"><ul>
+          <li>The dashed purple line drops straight down from the combined centre of gravity: it is the line of action of the weight.</li>
+          <li>While that line passes <b>inside</b> the pivot edge, the weight's moment turns the box back, so it falls back onto its base.</li>
+          <li>Once the centre of gravity passes <b>beyond</b> the pivot edge, the weight's moment turns the box the other way, so it topples.</li>
+          <li>A <b>lower</b> centre of gravity or a <b>wider base</b> makes the toppling angle bigger, so the object is more stable (a coach's luggage bay, a racing car's wide track, a floor fan's heavy base).</li>
+          <li>Try it: put a heavy load on top and watch the toppling angle shrink.</li>
+        </ul></div>
       </div>
       <div class="panel">
         <div class="hint">Drag each ball a little way along its surface and let go.</div>
         <canvas id="equilCanvas"></canvas>
-        <div class="note">Stable: the ball returns to where it was. Unstable: it keeps moving away. Neutral: it stays wherever you leave it. (The notes use a cone the same way: on its base, on its apex, on its side.)</div>
+        <div class="note"><ul>
+          <li><b>Stable:</b> the ball returns to where it was.</li>
+          <li><b>Unstable:</b> it keeps moving away.</li>
+          <li><b>Neutral:</b> it stays wherever you leave it.</li>
+          <li>The notes use a cone the same way: on its base, on its tip, on its side.</li>
+        </ul></div>
       </div>
     </div>
   </div>

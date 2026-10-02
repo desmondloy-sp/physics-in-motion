@@ -10,8 +10,11 @@
     .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
     h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
     .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
-    .controls { display: grid; grid-template-columns: 1.6fr 1fr 0.6fr 1fr 0.6fr auto; gap: 8px; align-items: end; }
-    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: end; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 130px; }
+    .control-group.scen { flex: 2.2 1 300px; }
+    .control-group.ang { flex: 1.8 1 230px; }
+    .control-group.n { flex: 0.5 1 64px; }
     label { font-size: 0.8rem; font-weight: 600; }
     input, select { font-size: 0.9rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
     input[type=range] { padding: 0; }
@@ -26,9 +29,11 @@
     #sceneCanvas { height: 440px; border: 1px solid #dbeafe; }
     .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
     .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    .note ul { margin: 2px 0 0; padding-left: 18px; }
+    .note li { margin: 2px 0; }
+    .question { margin-top: 6px; font-size: 0.85rem; font-weight: 700; color: #7c2d12; background: #fff7ed; border-radius: 7px; padding: 6px 8px; }
+    .question:empty { display: none; }
     @media (max-width: 900px) {
-      .controls { grid-template-columns: 1fr 0.7fr; }
-      .controls .control-group:first-child, .controls button { grid-column: 1 / -1; }
       .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       #sceneCanvas { height: 400px; }
     }
@@ -40,22 +45,32 @@
 
     <div class="panel">
       <div class="controls">
-        <div class="control-group">
-          <label for="incidentAngle">Angle of incidence, <i>i</i>: <span id="angleLabel">30</span>&deg; (or drag the torch)</label>
-          <input id="incidentAngle" type="range" min="0" max="89" value="30" step="1" />
+        <div class="control-group scen">
+          <label for="scenario">Scenarios</label>
+          <select id="scenario">
+            <option value="ex2" selected>Example 2: air into water, 50&deg;</option>
+            <option value="ex3">Example 3: water into air, 30&deg;</option>
+            <option value="ex4">Example 4: water into air, 50&deg;</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="control-group ang">
+          <label for="incidentAngle">Angle of incidence, <i>i</i>: <span id="angleLabel">50</span>&deg; (or drag the torch)</label>
+          <input id="incidentAngle" type="range" min="0" max="89" value="50" step="1" />
         </div>
         <div class="control-group">
           <label for="m1">Medium 1 (top, light starts here)</label>
-          <select id="m1"><option value="1.00">Air</option><option value="1.33" selected>Water</option><option value="1.50">Glass</option><option value="custom">Custom&hellip;</option></select>
+          <select id="m1"><option value="1.00" selected>Air</option><option value="1.33">Water</option><option value="1.50">Glass</option><option value="custom">Custom&hellip;</option></select>
         </div>
-        <div class="control-group"><label for="n1"><i>n<sub>i</sub></i></label><input id="n1" type="number" value="1.33" min="1" max="3" step="0.01" /></div>
+        <div class="control-group n"><label for="n1"><i>n<sub>i</sub></i></label><input id="n1" type="number" value="1.00" min="1" max="3" step="0.01" /></div>
         <div class="control-group">
           <label for="m2">Medium 2 (bottom)</label>
-          <select id="m2"><option value="1.00" selected>Air</option><option value="1.33">Water</option><option value="1.50">Glass</option><option value="custom">Custom&hellip;</option></select>
+          <select id="m2"><option value="1.00">Air</option><option value="1.33" selected>Water</option><option value="1.50">Glass</option><option value="custom">Custom&hellip;</option></select>
         </div>
-        <div class="control-group"><label for="n2"><i>n<sub>R</sub></i></label><input id="n2" type="number" value="1.00" min="1" max="3" step="0.01" /></div>
+        <div class="control-group n"><label for="n2"><i>n<sub>R</sub></i></label><input id="n2" type="number" value="1.33" min="1" max="3" step="0.01" /></div>
         <button id="swapBtn">Swap media</button>
       </div>
+      <div class="question" id="question"></div>
 
       <div class="readout">
         <div class="readout-card"><div class="title">Angle of refraction, <i>R</i></div><div class="value" id="rValue">&mdash;</div></div>
@@ -66,11 +81,15 @@
     </div>
 
     <div class="panel">
-      <div class="hint">Drag the torch round to change the angle of incidence. Choose water &rarr; air or glass &rarr; air and push past the critical angle.</div>
+      <div class="hint">Drag the torch round to change the angle of incidence. Then work through the scenarios in order: air into water, water into air, and past the critical angle.</div>
       <canvas id="sceneCanvas"></canvas>
       <div class="note" id="sceneNote"></div>
       <div class="note">
-        Snell's law: <i>n<sub>i</sub></i> sin <i>i</i> = <i>n<sub>R</sub></i> sin <i>R</i>, with both angles measured from the normal. The refractive index is <i>n</i> = <i>c</i> / <i>v</i> (<i>c</i> = 3.00 &times; 10<sup>8</sup> m s<sup>-1</sup>): the dots travelling along the rays are pulses of light, and they visibly slow down in the medium with the larger <i>n</i>. The faint ray reflected at the surface shows that a little light is always reflected; it gets stronger as <i>i</i> nears the critical angle, and beyond it all the light is reflected.
+        <ul>
+          <li>Snell's law: <i>n<sub>i</sub></i> sin <i>i</i> = <i>n<sub>R</sub></i> sin <i>R</i>. Both angles are measured from the normal, not from the surface.</li>
+          <li>The refractive index is <i>n</i> = <i>c</i> / <i>v</i>, with <i>c</i> = 3.00 &times; 10<sup>8</sup> m s<sup>-1</sup>. The dots travelling along the rays are pulses of light: they slow down in the medium with the larger <i>n</i>.</li>
+          <li>The faint ray reflected at the surface shows that a little light is always reflected. It gets stronger as <i>i</i> nears the critical angle, and beyond the critical angle all the light is reflected.</li>
+        </ul>
       </div>
     </div>
   </div>
@@ -243,8 +262,26 @@
       const P = { x: W / 2, y: H * 0.5 };
       const dx = P.x - p.x, dy = P.y - p.y; // from pointer toward P
       let a = deg(Math.atan2(Math.abs(dx), Math.max(1, dy)));
-      incEl.value = Math.max(0, Math.min(89, Math.round(a)));
+      const v = Math.max(0, Math.min(89, Math.round(a)));
+      if (+incEl.value !== v) { incEl.value = v; toCustom(); }
     }
+
+    // ---------- scenarios (the notes' worked examples, in the notes' order) ----------
+    const SCEN = {
+      ex2: { i: 50, n1: '1.00', n2: '1.33', q: 'Example 2: light travels from air (n = 1.00) into water (n = 1.33) at an angle of incidence of 50°. Find the angle of refraction R, then check your answer against the readout.' },
+      ex3: { i: 30, n1: '1.33', n2: '1.00', q: 'Example 3: light travels from water (n = 1.33) into air (n = 1.00) at an angle of incidence of 30°. Find the angle of refraction R.' },
+      ex4: { i: 50, n1: '1.33', n2: '1.00', q: 'Example 4: (a) Find the critical angle from water (n = 1.33) into air. (b) At an angle of incidence of 50°, is the light refracted into the air or reflected back into the water? Decide first, then look.' },
+    };
+    function applyScenario(key) {
+      const sc = SCEN[key];
+      el('question').textContent = sc ? sc.q : '';
+      if (!sc) return;
+      incEl.value = sc.i; el('n1').value = sc.n1; el('n2').value = sc.n2;
+      syncSelect(el('m1'), el('n1')); syncSelect(el('m2'), el('n2'));
+    }
+    function toCustom() { if (el('scenario').value !== 'custom') { el('scenario').value = 'custom'; el('question').textContent = ''; } }
+    el('scenario').addEventListener('change', () => applyScenario(el('scenario').value));
+    incEl.addEventListener('input', toCustom);
     canvas.addEventListener('pointerdown', e => {
       const p = pos(e);
       if (!torchPos || Math.hypot(p.x - torchPos.x, p.y - torchPos.y) > 40) {
@@ -268,13 +305,15 @@
       sel.value = match ? match.value : 'custom';
     }
     [['m1', 'n1'], ['m2', 'n2']].forEach(([s, n]) => {
-      el(s).addEventListener('change', () => { if (el(s).value !== 'custom') el(n).value = el(s).value; else el(n).focus(); });
-      el(n).addEventListener('input', () => syncSelect(el(s), el(n)));
+      el(s).addEventListener('change', () => { toCustom(); if (el(s).value !== 'custom') el(n).value = el(s).value; else el(n).focus(); });
+      el(n).addEventListener('input', () => { toCustom(); syncSelect(el(s), el(n)); });
     });
     el('swapBtn').addEventListener('click', () => {
+      toCustom();
       const a = el('n1').value; el('n1').value = el('n2').value; el('n2').value = a;
       syncSelect(el('m1'), el('n1')); syncSelect(el('m2'), el('n2'));
     });
+    applyScenario(el('scenario').value);
 
     let last = null;
     function frame(ts) {

@@ -227,7 +227,7 @@
     <div class="panel">
       <div class="controls">
         <div class="control-group">
-          <label for="preset">Preset</label>
+          <label for="preset">Scenarios</label>
           <select id="preset">
             <option value="custom">Custom (type values or drag the cart)</option>
             <option value="right_constant_v" selected>Moving right, constant <i>v</i></option>
@@ -414,6 +414,7 @@
     function resetSimulation() {
       sim.running = false;
       sim.lastFrameTime = null;
+      pauseBtn.textContent = 'Pause';
       sim.accumulator = 0;
       sim.t = 0;
       sim.preset = presetEl.value;
@@ -919,15 +920,23 @@
       resetSimulation();
     });
 
-    startBtn.addEventListener('click', startSimulation);
+    startBtn.addEventListener('click', () => { startSimulation(); pauseBtn.textContent = 'Pause'; });
 
+    // Pause toggles to Play, which carries on from where the run was paused
     pauseBtn.addEventListener('click', () => {
-      sim.running = false;
-      sim.lastFrameTime = null;
+      if (sim.running) {
+        sim.running = false;
+        sim.lastFrameTime = null;
+        pauseBtn.textContent = 'Play';
+      } else if (sim.t > 0) {
+        startSimulation();
+        pauseBtn.textContent = 'Pause';
+      }
     });
 
     resetBtn.addEventListener('click', () => {
       resetSimulation();
+      pauseBtn.textContent = 'Pause';
     });
 
     window.addEventListener('resize', resizeAllCanvases);

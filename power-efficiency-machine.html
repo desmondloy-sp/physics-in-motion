@@ -30,6 +30,11 @@
     #energyCanvas { height: 380px; border: 1px solid #e5e7eb; background: #fbfdff; }
     .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
     .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    .note ul { margin: 2px 0 0; padding-left: 18px; }
+    .note li { margin: 2px 0; }
+    .question { margin-top: 8px; font-size: 0.85rem; font-weight: 700; color: #7c2d12; background: #fff7ed; border-radius: 7px; padding: 6px 8px; }
+    .question:empty { display: none; }
+    button:disabled { opacity: 0.45; cursor: default; }
     @media (max-width: 900px) {
       .controls { grid-template-columns: 1fr 1fr; }
       .controls .control-group:first-child { grid-column: 1 / -1; }
@@ -44,11 +49,11 @@
     <div class="panel">
       <div class="controls">
         <div class="control-group">
-          <label for="preset">Start from</label>
+          <label for="preset">Scenarios</label>
           <select id="preset">
-            <option value="ex5" selected>Example 5: 50 kg up 2.0 m in 1 minute, 50% efficient</option>
-            <option value="c2">Tutorial C2: 32 kg up 12 m per minute, 120 W input</option>
-            <option value="c3">Tutorial C3: 500 N load up 3 m in 2 s, 60% efficient</option>
+            <option value="ex5" selected>Example 5: 50 kg up 2.0 m in 1 min</option>
+            <option value="c2">Tutorial C2: 32 kg up 12 m per min</option>
+            <option value="c3">Tutorial C3: 500 N up 3 m in 2 s</option>
             <option value="custom">Custom</option>
           </select>
         </div>
@@ -59,11 +64,13 @@
       </div>
       <div class="buttons">
         <button id="liftBtn" class="go">Run the motor</button>
+        <button id="pauseBtn">Pause</button>
         <button id="resetBtn">Lower the load</button>
         <span style="font-size:0.8rem;color:#475569;align-self:center" id="speedNote"></span>
       </div>
+      <div class="question" id="question"></div>
       <div class="readout">
-        <div class="readout-card"><div class="title">Work done = GPE gained = <i>mgh</i></div><div class="value" id="gpe">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Work done for the whole lift = GPE gained = <i>mgh</i></div><div class="value" id="gpe">&mdash;</div></div>
         <div class="readout-card"><div class="title">Useful power output = <i>mgh</i>/<i>t</i></div><div class="value" id="pout">&mdash;</div></div>
         <div class="readout-card"><div class="title">Power input = output &divide; efficiency</div><div class="value" id="pin">&mdash;</div></div>
         <div class="readout-card"><div class="title">Power wasted (heat, sound)</div><div class="value" id="pwaste">&mdash;</div></div>
@@ -78,7 +85,12 @@
       </div>
       <div class="panel">
         <canvas id="energyCanvas"></canvas>
-        <div class="note">Efficiency = useful energy output &divide; total energy input &times; 100% (= useful power output &divide; power input &times; 100%). The motor must take in more energy than the load gains; the difference is wasted, mostly as heat and sound. Power is the rate of doing work, <i>P</i> = <i>W</i>/<i>t</i>: the same lift done in less time needs more power. <i>g</i> = 10 m s<sup>-2</sup>.</div>
+        <div class="note"><ul>
+          <li>Efficiency = useful energy output &divide; total energy input &times; 100%, which is the same as useful power output &divide; power input &times; 100%.</li>
+          <li>The motor must take in more energy than the load gains. The difference is wasted, mostly as heat and sound.</li>
+          <li>Power is the rate of doing work, <i>P</i> = <i>W</i>/<i>t</i>. The same lift done in less time needs more power.</li>
+          <li><i>g</i> = 10 m s<sup>-2</sup>.</li>
+        </ul></div>
       </div>
     </div>
   </div>
@@ -92,20 +104,26 @@
       c3: { m: 50, h: 3, t: 2, eff: 60 }                       // 500 N load = 50 kg with g = 10
     };
     const P = () => ({ m: +el('mass').value, h: +el('height').value, t: +el('time').value, eff: +el('eff').value / 100 });
-    const st = { y: 0, mode: 'idle', clock: 0, Ein: 0, Eout: 0, vLive: 0, lastY: 0, dragging: false, dragT: 0 };
+    const QUESTIONS = {
+      ex5: 'Example 5: (a) How much power is needed to lift a 50 kg mass to a height of 2.0 m at constant speed if the lift takes 1 minute? (b) What is the power input of the motor if it is 50% efficient?',
+      c2: 'Tutorial C2: a motor lifts 32 kg of load per minute to a height of 12 m. Find (a) the work done, (b) the power output, and (c) the efficiency if the input power is 120 W.',
+      c3: 'Tutorial C3: a 60% efficient machine lifts a 500 N load through a height of 3 m in 2 s. Find (a) the useful power output and (b) the power input.',
+    };
+    const st = { y: 0, mode: 'idle', clock: 0, Ein: 0, Eout: 0, vLive: 0, lastY: 0, dragging: false, dragT: 0, paused: false };
 
     function applyPreset() {
+      el('question').textContent = QUESTIONS[el('preset').value] || '';
       const p = PRESETS[el('preset').value]; if (!p) return;
       el('mass').value = p.m; el('height').value = p.h; el('time').value = p.t; el('eff').value = p.eff;
       lower();
     }
-    function lower() { st.y = 0; st.mode = 'idle'; st.clock = 0; st.Ein = 0; st.Eout = 0; st.vLive = 0; }
+    function lower() { st.y = 0; st.mode = 'idle'; st.clock = 0; st.Ein = 0; st.Eout = 0; st.vLive = 0; st.paused = false; }
     const playRate = () => Math.max(1, P().t / 6); // show any lift in about 6 real seconds
 
     function step(dt) {
       const p = P();
       const yPrev = st.y;
-      if (st.mode === 'motor') {
+      if (st.mode === 'motor' && !st.paused) {
         st.clock += dt * playRate();
         st.y = Math.min(p.h, p.h * st.clock / p.t);
         if (st.y >= p.h) st.mode = 'done';
@@ -115,7 +133,7 @@
       const dy = st.y - yPrev;
       if (!st.dragging) {
         if (dy > 0) { st.Eout += p.m * G * dy; st.Ein += p.m * G * dy / p.eff; }
-        st.vLive = st.mode === 'motor' ? p.h / p.t : 0;
+        st.vLive = st.mode === 'motor' && !st.paused ? p.h / p.t : 0;
       }
     }
 
@@ -193,7 +211,8 @@
         ctx.closePath(); ctx.fill(); }
       tag(ctx, `input ${EinFull.toFixed(0)} J (100%)`, x0 + (x1 - x0) * 0.16, y0 + barH / 2, '#92400e');
       tag(ctx, `useful: GPE ${EoutFull.toFixed(0)} J (${(p.eff * 100).toFixed(1)}%)`, x1 - 6, y0 - 6 + usefulH / 2, '#166534', 'right');
-      tag(ctx, `wasted ${(EinFull - EoutFull).toFixed(0)} J (${(100 - p.eff * 100).toFixed(1)}%) as heat & sound`, x0 + (x1 - x0) * 0.62, y0 + barH + 74, '#991b1b', 'left');
+      // on a phone the full label runs past the right edge, so drop the "as heat & sound" ending there
+      tag(ctx, `wasted ${(EinFull - EoutFull).toFixed(0)} J (${(100 - p.eff * 100).toFixed(1)}%)${w < 520 ? '' : ' as heat & sound'}`, x0 + (x1 - x0) * (w < 520 ? 0.45 : 0.62), y0 + barH + 74, '#991b1b', 'left');
       // live meters for this lift
       const my = h - 110, mw = x1 - x0 - 110;
       const meter = (label, val, full, color, y) => {
@@ -217,6 +236,8 @@
       el('pout').textContent = `${out.toFixed(2)} W`; el('pin').textContent = `${inp.toFixed(2)} W`; el('pwaste').textContent = `${(inp - out).toFixed(2)} W`;
       el('plive').textContent = `${(p.m * G * st.vLive).toFixed(1)} W`;
       el('speedNote').textContent = playRate() > 1 ? `The animation runs ${playRate().toFixed(0)}× faster than real time.` : '';
+      el('pauseBtn').disabled = st.mode !== 'motor';
+      el('pauseBtn').textContent = st.mode === 'motor' && st.paused ? 'Play' : 'Pause';
     }
 
     // lift by hand
@@ -246,9 +267,10 @@
     sc.addEventListener('pointerup', end); sc.addEventListener('pointercancel', end);
 
     el('liftBtn').addEventListener('click', () => { lower(); st.mode = 'motor'; });
+    el('pauseBtn').addEventListener('click', () => { if (st.mode === 'motor') st.paused = !st.paused; });
     el('resetBtn').addEventListener('click', lower);
     el('preset').addEventListener('change', applyPreset);
-    ['mass', 'height', 'time', 'eff'].forEach(id => el(id).addEventListener('input', () => { el('preset').value = 'custom'; lower(); }));
+    ['mass', 'height', 'time', 'eff'].forEach(id => el(id).addEventListener('input', () => { el('preset').value = 'custom'; el('question').textContent = ''; lower(); }));
 
     applyPreset();
     let last = null;

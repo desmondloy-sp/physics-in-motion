@@ -266,12 +266,11 @@
       <div class="panel">
         <div class="controls">
           <div class="control-group">
-            <label>Presets</label>
+            <label>Scenarios</label>
             <div class="preset-buttons">
               <button type="button" data-preset="drop_rest">Drop from rest</button>
               <button type="button" data-preset="throw_down">Throw down</button>
               <button type="button" data-preset="throw_up">Throw up</button>
-              <button type="button" data-preset="moon_drop">Moon</button>
               <button type="button" data-preset="high_platform">High platform</button>
             </div>
           </div>
@@ -302,9 +301,9 @@
           <div class="control-group instructions">
             <label>How to use</label>
             <ul>
-              <li>Choose a preset, or drag the ball and its velocity arrow.</li>
+              <li>Choose a scenario, or drag the ball and its velocity arrow.</li>
               <li>Type exact values if you need them.</li>
-              <li>Click Start to run, Pause to stop, Reset to restart.</li>
+              <li>Click Start to run, Pause to stop (then Play to carry on), Reset to restart.</li>
             </ul>
           </div>
         </div>
@@ -392,7 +391,6 @@
       drop_rest: { y0: 20, v0: 0, g: 10.0 },
       throw_down: { y0: 20, v0: -6, g: 10.0 },
       throw_up: { y0: 18, v0: 12, g: 10.0 },
-      moon_drop: { y0: 20, v0: 0, g: 1.6 },
       high_platform: { y0: 35, v0: 0, g: 10.0 }
     };
 
@@ -487,6 +485,7 @@
     function resetSimulation() {
       sim.running = false;
       sim.lastFrameTime = null;
+      pauseBtn.textContent = 'Pause';
       sim.accumulator = 0;
       sim.originMode = originModeEl.value || 'ground';
       sim.t = 0;
@@ -889,12 +888,19 @@
     [y0El, v0El, gEl].forEach(inp => inp.addEventListener('input', () => { clearPresetHighlight(); resetSimulation(); }));
     originModeEl.addEventListener('change', resetSimulation);
 
-    startBtn.addEventListener('click', startSimulation);
+    startBtn.addEventListener('click', () => { startSimulation(); pauseBtn.textContent = 'Pause'; });
+    // Pause toggles to Play, which carries on from where the run was paused
     pauseBtn.addEventListener('click', () => {
-      sim.running = false;
-      sim.lastFrameTime = null;
+      if (sim.running) {
+        sim.running = false;
+        sim.lastFrameTime = null;
+        pauseBtn.textContent = 'Play';
+      } else if (sim.t > 0) {
+        startSimulation();
+        pauseBtn.textContent = 'Pause';
+      }
     });
-    resetBtn.addEventListener('click', resetSimulation);
+    resetBtn.addEventListener('click', () => { resetSimulation(); pauseBtn.textContent = 'Pause'; });
     window.addEventListener('resize', resizeAllCanvases);
 
     resetSimulation();

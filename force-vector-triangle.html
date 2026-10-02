@@ -31,6 +31,8 @@
     tr.total td { background: #fef9c3; font-weight: bold; }
     .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
     .note { margin-top: 6px; font-size: 0.8rem; color: #475569; }
+    .note ul { margin: 2px 0 0; padding-left: 18px; }
+    .note li { margin: 2px 0; }
     @media (max-width: 900px) {
       .controls { grid-template-columns: 1fr 1fr; }
       .controls .control-group:first-child { grid-column: 1 / -1; }
@@ -46,7 +48,7 @@
     <div class="panel">
       <div class="controls">
         <div class="control-group">
-          <label for="preset">Start from</label>
+          <label for="preset">Scenarios</label>
           <select id="preset">
             <option value="ex5" selected>Example 5: 30 N and 40 N at 90&deg;</option>
             <option value="ex6">Example 6: 30 N and 40 N at 30&deg;</option>
@@ -62,6 +64,7 @@
       <div class="toggles">
         <label class="toggle"><input type="checkbox" id="showOther" /> <span>Also add them the other way round (tail of <i>P</i> at the tip of <i>Q</i>)</span></label>
         <label class="toggle"><input type="checkbox" id="showComp" /> Show components</label>
+        <label class="toggle"><input type="checkbox" id="showAns" checked /> Show the answers</label>
       </div>
       <div class="readout">
         <div class="readout-card"><div class="title">Resultant, &Sigma;<i>F</i></div><div class="value" id="rMag">&mdash;</div></div>
@@ -75,7 +78,11 @@
       <div class="panel">
         <div class="hint">Drag the arrowheads of <i>P</i> (blue) and <i>Q</i> (green). Scale: 1 box = 5 N.</div>
         <canvas id="sceneCanvas"></canvas>
-        <div class="note">Vector triangle method: place the tail of <i>Q</i> at the tip of <i>P</i>; the resultant &Sigma;<i>F</i> (red) joins the tail of <i>P</i> to the tip of <i>Q</i>. Tick the first box to add them in the other order &mdash; you get the same resultant (the two triangles make a parallelogram). Measure it the way you would on paper: count boxes for the length, and read the angle from the +x axis.</div>
+        <div class="note"><ul>
+          <li>Vector triangle method: place the tail of <i>Q</i> at the tip of <i>P</i>. The resultant &Sigma;<i>F</i> (red) joins the tail of <i>P</i> to the tip of <i>Q</i>.</li>
+          <li>Tick the first box to add them in the other order: you get the same resultant.</li>
+          <li>Measure the resultant the way you would on paper: count boxes for its length, and read its angle from the +x axis. Untick <b>Show the answers</b> first, then tick it to check.</li>
+        </ul></div>
       </div>
       <div class="panel">
         <b>Component method</b>
@@ -203,7 +210,7 @@
       const out = cross > 0 ? -1 : 1;
       tag(ctx, `P = ${P.m.toFixed(1)} N`, O, Pt, '#1d4ed8', out);
       tag(ctx, `Q = ${Q.m.toFixed(1)} N`, Pt, Qt, '#15803d', out);
-      tag(ctx, `ΣF = ${R.m.toFixed(1)} N`, O, Qt, '#b91c1c', -out);
+      tag(ctx, el('showAns').checked ? `ΣF = ${R.m.toFixed(1)} N` : 'ΣF = ?', O, Qt, '#b91c1c', -out);
       // handles
       [[Pt, '#2563eb'], [Qt, '#16a34a']].forEach(([p, c]) => { ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x, p.y, 11, 0, Math.PI * 2); ctx.stroke(); });
       ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(O.x, O.y, 4, 0, Math.PI * 2); ctx.fill();
@@ -212,13 +219,15 @@
 
     function updateReadout() {
       const { P, Q, R } = forces();
-      el('rMag').textContent = `${R.m.toFixed(2)} N`;
-      el('rAng').textContent = R.m < 0.005 ? '—' : `${R.a.toFixed(1)}°`;
-      el('rx').textContent = `${f2(R.x)} N`; el('ry').textContent = `${f2(R.y)} N`;
+      const ans = el('showAns').checked; // hidden answers let a student measure or calculate first
+      el('rMag').textContent = ans ? `${R.m.toFixed(2)} N` : '?';
+      el('rAng').textContent = !ans ? '?' : R.m < 0.005 ? '—' : `${R.a.toFixed(1)}°`;
+      el('rx').textContent = ans ? `${f2(R.x)} N` : '?'; el('ry').textContent = ans ? `${f2(R.y)} N` : '?';
       el('px').textContent = `${f2(P.x)} N`; el('py').textContent = `${f2(P.y)} N`;
       el('qx').textContent = `${f2(Q.x)} N`; el('qy').textContent = `${f2(Q.y)} N`;
-      el('sx').textContent = `${f2(R.x)} N`; el('sy').textContent = `${f2(R.y)} N`;
-      el('workLine').innerHTML = `<i>R</i> = &radic;(${f2(R.x)}<sup>2</sup> + ${f2(R.y)}<sup>2</sup>) = <b>${R.m.toFixed(2)} N</b>`;
+      el('sx').textContent = ans ? `${f2(R.x)} N` : '?'; el('sy').textContent = ans ? `${f2(R.y)} N` : '?';
+      el('workLine').innerHTML = ans ? `<i>R</i> = &radic;(${f2(R.x)}<sup>2</sup> + ${f2(R.y)}<sup>2</sup>) = <b>${R.m.toFixed(2)} N</b>`
+        : 'Add the columns, work out <i>R</i> and &theta;, then tick <b>Show the answers</b> to check.';
     }
 
     // ---------- dragging ----------

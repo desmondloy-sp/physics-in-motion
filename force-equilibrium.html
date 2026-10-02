@@ -26,6 +26,8 @@
     #sceneCanvas { height: 440px; border: 1px solid #dbeafe; background: #ffffff; }
     .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
     .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    .note ul { margin: 2px 0 0; padding-left: 18px; }
+    .note li { margin: 2px 0; }
     @media (max-width: 900px) {
       .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .controls .control-group:first-child, .controls button { grid-column: 1 / -1; }
@@ -41,7 +43,7 @@
     <div class="panel">
       <div class="controls">
         <div class="control-group">
-          <label for="preset">Start from</label>
+          <label for="preset">Scenarios</label>
           <select id="preset">
             <option value="balanced" selected>Three forces in equilibrium</option>
             <option value="unbalanced">Not balanced (a net force is left over)</option>
@@ -54,7 +56,7 @@
         <div class="control-group"><label for="a2">&theta;2 (&deg;)</label><input id="a2" type="number" step="1" /></div>
         <div class="control-group"><label for="f3">F3 (N)</label><input id="f3" type="number" min="0" max="60" step="0.5" /></div>
         <div class="control-group"><label for="a3">&theta;3 (&deg;)</label><input id="a3" type="number" step="1" /></div>
-        <button id="balanceBtn">Make F3 balance F1 + F2</button>
+        <button id="balanceBtn" title="Try it yourself first">Show the answer: make F3 balance F1 + F2</button>
       </div>
       <div class="readout">
         <div class="readout-card" id="netCard"><div class="title">Net force &Sigma;<i>F</i></div><div class="value" id="net">&mdash;</div></div>
@@ -65,11 +67,15 @@
     </div>
 
     <div class="panel">
-      <div class="hint">Drag the arrowheads of F1, F2 and F3. Can you make the chain on the right close up?</div>
+      <div class="hint">Drag the arrowheads of F1, F2 and F3. Can you make the chain on the right close up? Try it yourself before you press <b>Show the answer</b>.</div>
       <canvas id="sceneCanvas"></canvas>
-      <div class="note">
-        Left: the three forces acting at one point on the object. Right: the same forces drawn tip to tail. When &Sigma;<i>F<sub>x</sub></i> = 0 and &Sigma;<i>F<sub>y</sub></i> = 0 the chain closes into a triangle, the net force is zero, and the object is in equilibrium: it stays at rest, or keeps moving at constant velocity (Newton's first law). If the chain does not close, the red arrow from the start to the end of the chain is the net force left over. The balancing force that would restore equilibrium is equal in size and opposite in direction to it.
-      </div>
+      <div class="note"><ul>
+        <li>Left: the three forces acting at one point on the object. Right: the same forces drawn tip to tail.</li>
+        <li>When &Sigma;<i>F<sub>x</sub></i> = 0 and &Sigma;<i>F<sub>y</sub></i> = 0, the chain closes into a triangle and the net force is zero.</li>
+        <li>The object is then in equilibrium: it stays at rest, or keeps moving at constant velocity (Newton's first law).</li>
+        <li>If the chain does not close, the red arrow from the start to the end of the chain is the net force left over.</li>
+        <li>The balancing force that would restore equilibrium is equal in size and opposite in direction to that net force.</li>
+      </ul></div>
     </div>
   </div>
 

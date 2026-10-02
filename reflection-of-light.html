@@ -26,6 +26,8 @@
     #sceneCanvas { height: 440px; border: 1px solid #dbeafe; background: #f8fbff; }
     .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
     .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    .note ul { margin: 2px 0 0; padding-left: 18px; }
+    .note li { margin: 2px 0; }
     @media (max-width: 900px) {
       .controls { grid-template-columns: 1fr 1fr; }
       .controls .control-group:first-child { grid-column: 1 / -1; }
@@ -63,9 +65,13 @@
     <div class="panel">
       <div class="hint">Drag the torch to aim it, slide the yellow dot along the mirror to choose where the ray hits, or drag either end of the mirror to tilt it. Can you bounce the light onto the star?</div>
       <canvas id="sceneCanvas"></canvas>
-      <div class="note">
-        The <b>normal</b> is the dashed line drawn perpendicular to the mirror at the point where the ray hits it. The angle of incidence <i>i</i> is measured between the incoming ray and the normal; the angle of reflection <i>r</i> between the reflected ray and the normal &mdash; never from the mirror surface. However you aim the torch or tilt the mirror, <i>i</i> = <i>r</i>, and the incident ray, the reflected ray and the normal all lie in the same plane. Tilt the mirror and watch the normal turn with it: the reflected ray moves, but the law still holds. (Sound obeys the same law when it reflects.)
-      </div>
+      <div class="note"><ul>
+        <li>The <b>normal</b> is the dashed line drawn perpendicular to the mirror at the point where the ray hits it.</li>
+        <li>The angle of incidence <i>i</i> is measured between the incoming ray and the normal. The angle of reflection <i>r</i> is measured between the reflected ray and the normal, never from the mirror surface.</li>
+        <li>However you aim the torch or tilt the mirror, <i>i</i> = <i>r</i>. The incident ray, the reflected ray and the normal all lie in the same plane.</li>
+        <li>Tilt the mirror and watch the normal turn with it: the reflected ray moves, but the law still holds.</li>
+        <li>Sound obeys the same law when it reflects.</li>
+      </ul></div>
     </div>
   </div>
 

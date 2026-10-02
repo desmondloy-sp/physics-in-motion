@@ -843,8 +843,10 @@
         ctx.fillText(tickVal.toFixed(1), px, trackY + 42);
       });
 
+      // top-right: the Start/Pause/Reset buttons sit over the top-left corner and hid this label
+      ctx.textAlign = 'right';
+      ctx.fillText('Position (m)', w - 12, 24);
       ctx.textAlign = 'left';
-      ctx.fillText('Position (m)', 12, 24);
 
       const drawnTimes = new Set();
       const labelStacks = new Map();
@@ -1158,6 +1160,7 @@
     function resetSimulation() {
       sim.running = false;
       sim.lastFrameTime = null;
+      pauseBtn.textContent = 'Pause';
       sim.accumulator = 0;
       sim.t = 0;
       sim.points = [];
@@ -1248,12 +1251,19 @@
     // editing any stage value restarts from t = 0 so the graphs always match the settings shown
     document.addEventListener('input', e => { if (e.target.matches('input') && !sim.running) resetSimulation(); });
 
-    startBtn.addEventListener('click', startSimulation);
+    startBtn.addEventListener('click', () => { startSimulation(); pauseBtn.textContent = 'Pause'; });
+    // Pause toggles to Play, which carries on from where the run was paused
     pauseBtn.addEventListener('click', () => {
-      sim.running = false;
-      sim.lastFrameTime = null;
+      if (sim.running) {
+        sim.running = false;
+        sim.lastFrameTime = null;
+        pauseBtn.textContent = 'Play';
+      } else if (sim.t > 0 && sim.t < sim.totalDuration) {
+        startSimulation();
+        pauseBtn.textContent = 'Pause';
+      }
     });
-    resetBtn.addEventListener('click', resetSimulation);
+    resetBtn.addEventListener('click', () => { resetSimulation(); pauseBtn.textContent = 'Pause'; });
 
     document.addEventListener('click', (e) => {
       const btn = e.target.closest('.stage-count-btn');

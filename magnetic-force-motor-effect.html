@@ -10,12 +10,17 @@
     .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
     h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
     .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
-    .controls { display: grid; grid-template-columns: repeat(3, 1fr) auto auto; gap: 10px; align-items: end; }
+    .controls { display: grid; grid-template-columns: repeat(3, 1fr) auto; gap: 10px; align-items: end; }
     .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .label-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 26px; }
     label { font-size: 0.8rem; font-weight: 600; }
     .val { font-weight: normal; color: #334155; }
     input[type=range] { width: 100%; }
     button { font-size: 0.88rem; padding: 7px 12px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; white-space: nowrap; }
+    button.small { font-size: 0.76rem; padding: 4px 8px; background: #7c3aed; }
+    .toggle { display: flex; align-items: center; gap: 5px; font-size: 0.85rem; font-weight: 600; white-space: nowrap; padding-bottom: 4px; }
+    .note ul { margin: 2px 0 0; padding-left: 18px; }
+    .note li { margin: 2px 0; }
     .readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
     .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
     .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
@@ -38,11 +43,19 @@
 
     <div class="panel">
       <div class="controls">
-        <div class="control-group"><label for="cur">Current <i>I</i> <span class="val" id="curVal"></span></label><input id="cur" type="range" min="0" max="3" step="0.05" value="0.45" /></div>
-        <div class="control-group"><label for="bf">Field strength <i>B</i> <span class="val" id="bfVal"></span></label><input id="bf" type="range" min="0" max="0.5" step="0.01" value="0.15" /></div>
-        <div class="control-group"><label for="len">Length of wire in the field <i>L</i> <span class="val" id="lenVal"></span></label><input id="len" type="range" min="1" max="20" step="0.5" value="8" /></div>
-        <button id="revBtn">Reverse the current</button>
-        <button id="flipBtn">Swap the magnet's poles</button>
+        <div class="control-group">
+          <div class="label-row"><label for="cur">Current <i>I</i> <span class="val" id="curVal"></span></label><button id="revBtn" class="small">Reverse</button></div>
+          <input id="cur" type="range" min="0" max="3" step="0.05" value="0.45" />
+        </div>
+        <div class="control-group">
+          <div class="label-row"><label for="bf">Field strength <i>B</i> <span class="val" id="bfVal"></span></label><button id="flipBtn" class="small">Swap poles</button></div>
+          <input id="bf" type="range" min="0" max="0.5" step="0.01" value="0.15" />
+        </div>
+        <div class="control-group">
+          <div class="label-row"><label for="len">Length of wire in the field <i>L</i> <span class="val" id="lenVal"></span></label></div>
+          <input id="len" type="range" min="1" max="20" step="0.5" value="8" />
+        </div>
+        <label class="toggle"><input type="checkbox" id="showF" checked /> Show the force</label>
       </div>
       <div class="readout">
         <div class="readout-card"><div class="title">Force on the end-on wire, <i>F</i> = <i>BIL</i></div><div class="value" id="fEnd">&mdash;</div></div>
@@ -54,14 +67,25 @@
 
     <div class="layout">
       <div class="panel">
-        <div class="hint">End-on view: the wire points straight into or out of the page. Tap the wire to reverse its current.</div>
+        <div class="hint">End-on view: the wire points straight into or out of the page. Tap the wire to reverse its current. To test yourself, untick <b>Show the force</b>, reverse the current or swap the poles, predict the direction of the force, then tick it again to check.</div>
         <canvas id="endCanvas"></canvas>
-        <div class="note">The field of the magnet (left to right) and the circular field of the current add together. On one side of the wire they point the same way and the field is stronger (field lines crowded); on the other side they oppose and the field is weaker. The wire is pushed from the stronger side towards the weaker side. Check with Fleming's left-hand rule: <b>F</b>irst finger along the <b>F</b>ield, se<b>C</b>ond finger along the <b>C</b>urrent, thu<b>M</b>b gives the <b>M</b>otion. &odot; = current out of the page, &otimes; = into the page.</div>
+        <div class="note"><ul>
+          <li>&odot; = current out of the page, &otimes; = current into the page.</li>
+          <li>The field of the magnet (left to right) and the circular field of the current add together.</li>
+          <li>On one side of the wire the two fields point the same way, so the field is stronger (field lines crowded). On the other side they oppose, so the field is weaker.</li>
+          <li>The wire is pushed from the stronger side towards the weaker side.</li>
+          <li>Check with Fleming's left-hand rule: <b>F</b>irst finger along the <b>F</b>ield, se<b>C</b>ond finger along the <b>C</b>urrent, thu<b>M</b>b gives the <b>M</b>otion.</li>
+        </ul></div>
       </div>
       <div class="panel">
         <div class="hint">Side view: drag the end of the wire to tilt it in the field.</div>
         <canvas id="sideCanvas"></canvas>
-        <div class="note"><i>F</i> = <i>BIL</i> sin&theta;, where &theta; is the angle between the wire and the field. The force is biggest (<i>F</i> = <i>BIL</i>) when the wire is at 90&deg; to the field, and zero when the wire runs along the field lines. In this view the force points into or out of the page. Notes Example 3: 8.0 cm, 0.15 T, 0.45 A at 90&deg; gives 5.4 &times; 10<sup>-3</sup> N.</div>
+        <div class="note"><ul>
+          <li><i>F</i> = <i>BIL</i> sin&theta;, where &theta; is the angle between the wire and the field.</li>
+          <li>The force is biggest (<i>F</i> = <i>BIL</i>) when the wire is at 90&deg; to the field, and zero when the wire runs along the field lines.</li>
+          <li>In this view the force points into or out of the page.</li>
+          <li>Notes Example 3: 8.0 cm of wire in a 0.15 T field, carrying 0.45 A at 90&deg; to the field, feels a force of 5.4 &times; 10<sup>-3</sup> N.</li>
+        </ul></div>
       </div>
     </div>
   </div>
@@ -111,8 +135,9 @@
       const top = 20, bot = h - 20;
       poles(ctx, w, h, top, bot);
       const x0 = 50, x1 = w - 50;
-      const F = Fmax(), up = endForceUp();
-      st.disp += ((I() > 0 && B() > 0 ? (up ? -1 : 1) * Math.min(60, 12 + F * 6000) : 0) - st.disp) * 0.08;
+      const F = Fmax(), up = endForceUp(), show = el('showF').checked;
+      // with the force hidden the wire stays put, so its movement can't give the answer away
+      st.disp += ((show && I() > 0 && B() > 0 ? (up ? -1 : 1) * Math.min(60, 12 + F * 6000) : 0) - st.disp) * 0.08;
       const cx = (x0 + x1) / 2, cy = h / 2 + st.disp;
       const B0 = Math.max(B(), 1e-4) * (st.fieldRight ? 1 : -1);
       const k = I() * (st.outOfPage ? 1 : -1) * 3.0; // strength of the wire's own circular field (display units)
@@ -146,7 +171,8 @@
       if (st.outOfPage) { ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.fill(); }
       else { ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(cx - 7, cy - 7); ctx.lineTo(cx + 7, cy + 7); ctx.moveTo(cx + 7, cy - 7); ctx.lineTo(cx - 7, cy + 7); ctx.stroke(); }
       endGeo = { cx, cy };
-      if (F > 0) {
+      if (F > 0 && !show) tag(ctx, 'Which way is the force? Predict, then tick Show the force.', cx, top + 14, '#7c3aed');
+      else if (F > 0) {
         const len = Math.min(90, 20 + F * 9000);
         arrow(ctx, cx + 22, cy, cx + 22, cy + (up ? -len : len), '#dc2626', 4.5);
         tag(ctx, `F = ${(F * 1000).toFixed(2)} mN`, cx + 32, cy + (up ? -len * 0.6 : len * 0.6), '#b91c1c', 'left');
@@ -190,7 +216,8 @@
       const Fz = Math.sin(wireAng) * (st.fieldRight ? -1 : 1);
       const Fs = Fmax() * Math.abs(Math.sin(dth));
       const r = 10 + 26 * Math.min(1, Fs / 0.01);
-      if (Fs > 1e-7) {
+      if (Fs > 1e-7 && !el('showF').checked) tag(ctx, 'Force hidden: predict into or out of the page', cx, bot - 16, '#7c3aed');
+      else if (Fs > 1e-7) {
         ctx.strokeStyle = '#dc2626'; ctx.fillStyle = '#dc2626'; ctx.lineWidth = 3;
         const fx = cx + 90, fy = cy + 90 > bot - 40 ? cy - 90 : cy + 90;
         ctx.beginPath(); ctx.arc(fx, fy, r, 0, Math.PI * 2); ctx.stroke();
@@ -207,7 +234,7 @@
       el('curVal').textContent = `(${I().toFixed(2)} A)`; el('bfVal').textContent = `(${B().toFixed(2)} T)`; el('lenVal').textContent = `(${(+el('len').value).toFixed(1)} cm)`;
       const F = Fmax();
       el('fEnd').textContent = `${(F * 1000).toFixed(2)} mN = ${F.toExponential(2)} N`;
-      el('dEnd').textContent = F > 0 ? (endForceUp() ? 'Up the page' : 'Down the page') : 'No force';
+      el('dEnd').textContent = F <= 0 ? 'No force' : !el('showF').checked ? 'Hidden: predict it' : endForceUp() ? 'Up the page' : 'Down the page';
       if (sideGeo) { el('thV').textContent = `${sideGeo.thetaDeg.toFixed(0)}°`; el('fSide').textContent = `${(sideGeo.Fs * 1000).toFixed(2)} mN`; }
     }
 

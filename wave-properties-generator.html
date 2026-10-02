@@ -10,14 +10,23 @@
     .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
     h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
     .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
-    .controls { display: grid; grid-template-columns: 1.3fr 1.3fr repeat(3, 1fr); gap: 10px; align-items: end; }
+    .groups { display: grid; grid-template-columns: auto 1fr; gap: 8px; }
+    .group { border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 8px 8px; min-width: 0; }
+    .group-title { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #64748b; margin-bottom: 6px; }
+    .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; align-items: end; }
     .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
     label { font-size: 0.8rem; font-weight: 600; }
     .val { font-weight: normal; color: #334155; }
     select { font-size: 0.9rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
     input[type=range] { width: 100%; }
-    .buttons { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
-    button { font-size: 0.88rem; padding: 7px 12px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; }
+    input:disabled { opacity: 0.4; }
+    button { font-size: 0.88rem; padding: 7px 12px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; white-space: nowrap; }
+    button.go { background: #2563eb; }
+    button.danger { background: #dc2626; }
+    button:disabled { opacity: 0.4; cursor: default; }
+    .note ul { margin: 2px 0 0; padding-left: 18px; }
+    .note li { margin: 2px 0; }
     .readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
     .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
     .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
@@ -28,6 +37,7 @@
     .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
     .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
     @media (max-width: 900px) {
+      .groups { grid-template-columns: 1fr; }
       .controls { grid-template-columns: 1fr 1fr; }
       .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
@@ -38,28 +48,38 @@
     <h1>Transverse and Longitudinal Waves</h1>
 
     <div class="panel">
-      <div class="controls">
-        <div class="control-group">
-          <label for="waveType">Wave type</label>
-          <select id="waveType">
-            <option value="transverse" selected>Transverse (e.g. a rope, water)</option>
-            <option value="longitudinal">Longitudinal (e.g. sound)</option>
-          </select>
+      <div class="groups">
+        <div class="group">
+          <div class="group-title">Simulation controls</div>
+          <div class="row">
+            <button id="startBtn" class="go">Start</button>
+            <button id="pauseBtn">Pause</button>
+            <button id="stepBtn" title="Move the wave on by one eighth of a period">Next step &#9654;</button>
+            <button id="clearBtn" class="danger">Reset</button>
+          </div>
         </div>
-        <div class="control-group">
-          <label for="source">Source</label>
-          <select id="source">
-            <option value="auto" selected>Vibrator (steady frequency)</option>
-            <option value="hand">By hand: drag the red end</option>
-          </select>
+        <div class="group">
+          <div class="group-title">Experimental controls</div>
+          <div class="controls">
+            <div class="control-group">
+              <label for="waveType">Wave type</label>
+              <select id="waveType">
+                <option value="transverse" selected>Transverse (rope)</option>
+                <option value="longitudinal">Longitudinal (sound)</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label for="source">Source</label>
+              <select id="source">
+                <option value="auto" selected>Vibrator</option>
+                <option value="hand">By hand</option>
+              </select>
+            </div>
+            <div class="control-group"><label for="amp">Amplitude <i>a</i> <span class="val" id="ampVal"></span></label><input id="amp" type="range" min="0.5" max="5" step="0.1" value="2.5" /></div>
+            <div class="control-group"><label for="freq">Frequency <i>f</i> <span class="val" id="freqVal"></span></label><input id="freq" type="range" min="0.2" max="3" step="0.05" value="1" /></div>
+            <div class="control-group"><label for="speed">Wave speed <i>v</i> (set by the medium) <span class="val" id="speedVal"></span></label><input id="speed" type="range" min="5" max="60" step="1" value="20" /></div>
+          </div>
         </div>
-        <div class="control-group"><label for="amp">Amplitude <i>a</i> <span class="val" id="ampVal"></span></label><input id="amp" type="range" min="0.5" max="5" step="0.1" value="2.5" /></div>
-        <div class="control-group"><label for="freq">Frequency <i>f</i> <span class="val" id="freqVal"></span></label><input id="freq" type="range" min="0.2" max="3" step="0.05" value="1" /></div>
-        <div class="control-group"><label for="speed">Wave speed <i>v</i> (set by the medium) <span class="val" id="speedVal"></span></label><input id="speed" type="range" min="5" max="60" step="1" value="20" /></div>
-      </div>
-      <div class="buttons">
-        <button id="pauseBtn">Pause</button>
-        <button id="clearBtn">Start again (still rope)</button>
       </div>
       <div class="readout">
         <div class="readout-card"><div class="title">Period <i>T</i> = 1/<i>f</i></div><div class="value" id="Tv">&mdash;</div></div>
@@ -85,7 +105,7 @@
     const el = id => document.getElementById(id);
     const WORLD = 80;     // the rope is 80 cm long
     const SPACING = 2;    // one particle every 2 cm
-    const st = { t: 0, running: true, buf: [{ t: 0, y: 0 }], handY: 0, dragging: false, pick: 20, hist: [] };
+    const st = { t: 0, running: false, started: false, buf: [{ t: 0, y: 0 }], handY: 0, dragging: false, pick: 20, hist: [] };
     const P = () => {
       const f = +el('freq').value, v = +el('speed').value, lam = v / f;
       let a = +el('amp').value;
@@ -108,8 +128,13 @@
     // Displacement of the particle whose rest position is x (cm): the source's motion, delayed by x/v
     const disp = (x, t) => sourceAt(t - x / P().v);
 
-    function step(dt) {
-      if (!st.running) return;
+    function step(dt) { if (st.running) advance(dt); }
+    // Next step: move the vibrator's wave on by exactly one eighth of a period
+    function nextStep() {
+      const target = st.t + P().T / 8;
+      while (st.t < target - 1e-9) advance(Math.min(1 / 120, target - st.t));
+    }
+    function advance(dt) {
       st.t += dt;
       if (!auto()) {
         st.buf.push({ t: st.t, y: st.handY });
@@ -255,13 +280,30 @@
       const p = P(), long = el('waveType').value === 'longitudinal';
       el('ampVal').textContent = `(${p.a.toFixed(1)} cm${long && p.a < +el('amp').value ? ', limited' : ''})`;
       el('freqVal').textContent = `(${p.f.toFixed(2)} Hz)`; el('speedVal').textContent = `(${p.v} cm/s)`;
-      el('Tv').textContent = `${p.T.toFixed(2)} s`; el('Lv').textContent = `${p.lam.toFixed(1)} cm`;
+      // with the hand as the source, the period and wavelength come from the hand, not from the sliders
+      el('Tv').textContent = auto() ? `${p.T.toFixed(2)} s` : 'set by your hand';
+      el('Lv').textContent = auto() ? `${p.lam.toFixed(1)} cm` : 'set by your hand';
       el('Vv').textContent = `${p.v.toFixed(0)} cm/s`; el('Av').textContent = auto() ? `${p.a.toFixed(1)} cm` : 'set by your hand';
-      el('pauseBtn').textContent = st.running ? 'Pause' : 'Resume';
-      el('hint').textContent = auto() ? 'Change the frequency and watch the wavelength change while the speed stays the same. Tap a particle to follow it.' : `Drag the red end ${long ? 'left and right' : 'up and down'} to make your own wave. Try a single flick, then a steady wiggle.`;
-      el('note').innerHTML = long
-        ? 'In a <b>longitudinal</b> wave (like sound) the particles vibrate <b>parallel</b> to the direction the wave travels, crowding together into <b>compressions</b> and spreading apart into <b>rarefactions</b>. The wavelength is the distance between two neighbouring compressions. The particles do not travel with the wave &mdash; each one just vibrates about its own rest position; only the energy moves along.'
-        : 'In a <b>transverse</b> wave the particles vibrate <b>perpendicular</b> to the direction the wave travels. The amplitude is the biggest displacement from the rest position; the wavelength is the distance between two neighbouring crests. In one period the wave moves forward one wavelength, so <i>v</i> = &lambda;/<i>T</i> = <i>f</i>&lambda;. The speed is set by the medium: raise the frequency and the wavelength gets shorter.';
+      el('amp').disabled = !auto(); el('freq').disabled = !auto();
+      el('pauseBtn').textContent = st.started && !st.running ? 'Play' : 'Pause';
+      el('pauseBtn').disabled = !st.started;
+      el('startBtn').disabled = st.started;
+      el('stepBtn').disabled = !auto() || st.running;
+      el('hint').textContent = auto()
+        ? (st.started ? 'Change the frequency and watch the wavelength change while the speed stays the same. Press Pause, then Next step, to move the wave on one eighth of a period at a time. Tap a particle to follow it.'
+          : 'Press Start to switch on the vibrator, or press Next step to move the wave on one eighth of a period at a time.')
+        : `Drag the red end ${long ? 'left and right' : 'up and down'} to make your own wave. Try a single flick, then a steady wiggle.`;
+      el('note').innerHTML = '<ul>' + (long ? [
+          'In a <b>longitudinal</b> wave (like sound) the particles vibrate <b>parallel</b> to the direction the wave travels.',
+          'The particles crowd together into <b>compressions</b> and spread apart into <b>rarefactions</b>.',
+          'The wavelength is the distance between two neighbouring compressions.',
+          'The particles do not travel with the wave: each one vibrates about its own rest position. Only the energy moves along.',
+        ] : [
+          'In a <b>transverse</b> wave the particles vibrate <b>perpendicular</b> to the direction the wave travels.',
+          'The amplitude is the biggest displacement from the rest position. The wavelength is the distance between two neighbouring crests.',
+          'In one period the wave moves forward one wavelength, so <i>v</i> = &lambda;/<i>T</i> = <i>f</i>&lambda;.',
+          'The speed is set by the medium: raise the frequency and the wavelength gets shorter.',
+        ]).map(t => `<li>${t}</li>`).join('') + '</ul>';
     }
 
     // ---------- interaction ----------
@@ -269,7 +311,7 @@
     function pos(e) { const r = sc.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
     sc.addEventListener('pointerdown', e => {
       const q = pos(e);
-      if (!auto() && geo && Math.hypot(q.x - geo.src.x, q.y - geo.src.y) < 30) { st.dragging = true; sc.setPointerCapture(e.pointerId); e.preventDefault(); return; }
+      if (!auto() && geo && Math.hypot(q.x - geo.src.x, q.y - geo.src.y) < 30) { st.dragging = true; st.started = true; st.running = true; sc.setPointerCapture(e.pointerId); e.preventDefault(); return; }
       if (geo) { // tap near a particle to follow it
         const i = Math.round((q.x - geo.x0) / geo.s / SPACING);
         if (i >= 0 && i <= WORLD / SPACING) { st.pick = i; st.hist = []; }
@@ -285,8 +327,10 @@
     const end = () => { st.dragging = false; };
     sc.addEventListener('pointerup', end); sc.addEventListener('pointercancel', end);
 
-    function clearAll() { st.t = 0; st.buf = [{ t: 0, y: 0 }]; st.handY = 0; st.hist = []; }
-    el('pauseBtn').addEventListener('click', () => { st.running = !st.running; });
+    function clearAll() { st.t = 0; st.buf = [{ t: 0, y: 0 }]; st.handY = 0; st.hist = []; st.running = false; st.started = false; }
+    el('startBtn').addEventListener('click', () => { st.started = true; st.running = true; });
+    el('pauseBtn').addEventListener('click', () => { if (st.started) st.running = !st.running; });
+    el('stepBtn').addEventListener('click', () => { if (auto() && !st.running) { st.started = true; nextStep(); } });
     el('clearBtn').addEventListener('click', clearAll);
     ['source', 'waveType'].forEach(id => el(id).addEventListener('change', clearAll));
     el('freq').addEventListener('input', () => { if (auto()) st.hist = []; });

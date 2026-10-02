@@ -38,6 +38,12 @@
     #meterCanvas { height: 150px; border: 1px solid #e5e7eb; background: #fbfdff; }
     .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 6px; }
     .note { margin-top: 6px; font-size: 0.8rem; color: #475569; }
+    .note ul { margin: 2px 0 0; padding-left: 18px; }
+    .note li { margin: 2px 0; }
+    .question { margin-top: 8px; font-size: 0.85rem; font-weight: 700; color: #7c2d12; background: #fff7ed; border-radius: 7px; padding: 6px 8px; }
+    .question:empty { display: none; }
+    button.danger { background: #dc2626; }
+    .app.hidden { display: none; }
     @media (max-width: 900px) {
       .controls { grid-template-columns: 1fr 1fr; }
       .controls .control-group:first-child { grid-column: 1 / -1; }
@@ -52,10 +58,10 @@
     <div class="panel">
       <div class="controls">
         <div class="control-group">
-          <label for="preset">Start from</label>
+          <label for="preset">Scenarios</label>
           <select id="preset">
-            <option value="ex13" selected>Example 13: a 2.0 kW kettle, 5 min three times a day</option>
-            <option value="ex12">Example 12: a 1500 W 240 V kettle (try 120 V)</option>
+            <option value="ex13" selected>Example 13: a 2.0 kW kettle for a month</option>
+            <option value="ex12">Example 12: a 1500 W 240 V kettle at a lower voltage</option>
             <option value="home">A typical flat</option>
             <option value="custom">Custom</option>
           </select>
@@ -71,6 +77,7 @@
         <div class="readout-card"><div class="title">Energy for the period, <i>E</i> = <i>Pt</i></div><div class="value" id="eAll">&mdash;</div></div>
         <div class="readout-card"><div class="title">Cost for the period</div><div class="value" id="cost">&mdash;</div></div>
       </div>
+      <div class="question" id="question"></div>
     </div>
 
     <div class="panel">
@@ -81,12 +88,17 @@
     <div class="panel">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
         <button id="runBtn" class="go">Run the period on the meter</button>
+        <button id="resetRunBtn" class="danger">Reset the meter</button>
         <span style="font-size:0.8rem;color:#475569" id="runNote"></span>
       </div>
       <canvas id="meterCanvas"></canvas>
-      <div class="note">
-        Power is the rate of using energy: <i>P</i> = <i>E</i>/<i>t</i> = <i>VI</i> = <i>I</i><sup>2</sup><i>R</i> = <i>V</i><sup>2</sup>/<i>R</i>. An appliance's <b>rating</b> (e.g. 1500 W 240 V) is the power it uses at its rated voltage; its heating element keeps the same resistance (<i>R</i> = <i>V</i><sup>2</sup>/<i>P</i> = 38.4 &Omega; for that kettle), so on a lower supply voltage it uses less power &mdash; at 120 V only a quarter, 375 W. Electricity in Singapore is paid for by the kilowatt-hour: 1 kWh is the energy a 1 kW appliance uses in 1 hour, = 3.6 &times; 10<sup>6</sup> J. Energy in kWh = power in kW &times; time in hours.
-      </div>
+      <div class="note"><ul>
+        <li>Power is the rate of using energy: <i>P</i> = <i>E</i>/<i>t</i> = <i>VI</i> = <i>I</i><sup>2</sup><i>R</i> = <i>V</i><sup>2</sup>/<i>R</i>.</li>
+        <li>An appliance's <b>rating</b> (e.g. 2000 W 240 V) is the power it uses when it is connected to its rated voltage.</li>
+        <li id="ex12Note">The heating element keeps the same resistance, <i>R</i> = <i>V</i><sup>2</sup>/<i>P</i> = 38.4 &Omega; for the 1500 W 240 V kettle. So on a lower supply voltage it uses less power: at 120 V only a quarter, 375 W.</li>
+        <li>Electricity in Singapore is paid for by the kilowatt-hour. 1 kWh is the energy a 1 kW appliance uses in 1 hour, = 3.6 &times; 10<sup>6</sup> J.</li>
+        <li>Energy in kWh = power in kW &times; time in hours.</li>
+      </ul></div>
     </div>
   </div>
 
@@ -109,6 +121,10 @@
       ex12: { on: { kettle15: 1 }, V: 240, days: 1 },
       home: { on: { kettle2: 0.25, aircon: 8, fridge: 24, tv: 4, lamp: 6, fan: 8 }, V: 240, days: 30 }
     };
+    const QUESTIONS = {
+      ex12: 'Example 12: a kettle is rated 1500 W 240 V. (a) What is the resistance of its heating element? (b) What is the current at 240 V? (c) If the supply voltage drops to 120 V, what power does it use? Work it out, then slide the supply voltage to 120 V to check.',
+      ex13: 'Example 13: the water in a 2.0 kW kettle boils in 5.0 minutes. The kettle is used 3 times a day. Find the cost of running it for a month of 30 days at $0.27 per kWh.',
+    };
     const run = { t: 0, running: false, energy: 0 };
 
     const Vs = () => +el('volt').value;
@@ -125,12 +141,14 @@
         </div>`).join('');
       APPS.forEach(a => {
         const card = el('card-' + a.id), h = el('h-' + a.id);
-        card.addEventListener('click', e => { if (e.target === h) return; state[a.id].on = !state[a.id].on; el('preset').value = 'custom'; resetRun(); });
-        h.addEventListener('input', () => { state[a.id].hours = +h.value; el('preset').value = 'custom'; resetRun(); });
+        card.addEventListener('click', e => { if (e.target === h) return; state[a.id].on = !state[a.id].on; toCustom(); resetRun(); });
+        h.addEventListener('input', () => { state[a.id].hours = +h.value; toCustom(); resetRun(); });
         h.addEventListener('click', e => e.stopPropagation());
       });
     }
+    function toCustom() { el('preset').value = 'custom'; el('question').textContent = ''; }
     function applyPreset() {
+      el('question').textContent = QUESTIONS[el('preset').value] || '';
       const p = PRESETS[el('preset').value]; if (!p) return;
       APPS.forEach(a => { state[a.id].on = a.id in p.on; state[a.id].hours = a.id in p.on ? p.on[a.id] : a.hours; });
       el('volt').value = p.V; el('days').value = p.days; resetRun();
@@ -145,21 +163,26 @@
 
     function updateUI() {
       const t = totals();
-      el('voltVal').textContent = `(${Vs()} V)`; el('daysVal').textContent = `(${t.days} days)`;
+      el('voltVal').textContent = `(${Vs()} V)`; el('daysVal').textContent = `(${t.days} ${t.days === 1 ? "day" : "days"})`;
       el('pNow').textContent = t.P >= 1000 ? `${(t.P / 1000).toFixed(3)} kW` : `${t.P.toFixed(0)} W`;
       el('iNow').textContent = `${(t.P / Vs()).toFixed(2)} A`;
       el('eDay').textContent = kwh(t.Eday); el('eAll').textContent = kwh(t.Eall); el('cost').textContent = money(t.cost);
+      // only show what the scenario needs: Example 12 is about its one kettle, and that kettle only appears there
+      const ex12 = el('preset').value === 'ex12';
       APPS.forEach(a => {
         const s = state[a.id], p = power(a);
+        const visible = ex12 ? s.on : (a.id !== 'kettle15' || s.on);
+        el('card-' + a.id).classList.toggle('hidden', !visible);
         el('card-' + a.id).classList.toggle('on', s.on);
         el('now-' + a.id).textContent = s.on ? `${p.toFixed(0)} W` : 'off';
         const h = el('h-' + a.id); if (+h.value !== s.hours) h.value = s.hours;
         const mins = s.hours * 60;
         el('hl-' + a.id).textContent = `Used ${s.hours >= 1 ? s.hours + ' h' : mins.toFixed(0) + ' min'} per day`;
         const e = p / 1000 * s.hours * t.days;
-        el('c-' + a.id).textContent = s.on ? `${(p / 1000).toFixed(3)} kW × ${s.hours} h × ${t.days} days = ${e.toFixed(3)} kWh → ${money(e * t.tariff)}` : '';
+        el('c-' + a.id).textContent = s.on ? `${(p / 1000).toFixed(3)} kW × ${s.hours} h × ${t.days} ${t.days === 1 ? "day" : "days"} = ${e.toFixed(3)} kWh → ${money(e * t.tariff)}` : '';
       });
-      el('runBtn').textContent = run.running ? 'Pause' : run.t > 0 && run.t < t.days ? 'Resume' : 'Run the period on the meter';
+      el('ex12Note').style.display = ex12 || state.kettle15.on ? '' : 'none';
+      el('runBtn').textContent = run.running ? 'Pause' : run.t > 0 && run.t < t.days ? 'Play' : 'Run the period on the meter';
       el('runNote').textContent = `One day passes every second. At $${t.tariff.toFixed(2)} per kWh.`;
     }
 
@@ -177,9 +200,10 @@
       // electricity meter display
       const mx = 16, my = 16, mw = Math.min(300, w * 0.42), mh = 70;
       ctx.fillStyle = '#1f2937'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(mx, my, mw, mh, 10) : ctx.rect(mx, my, mw, mh); ctx.fill();
-      ctx.fillStyle = '#94a3b8'; ctx.font = '11px Arial'; ctx.textAlign = 'left'; ctx.fillText('ELECTRICITY METER (kWh)', mx + 12, my + 16);
+      const narrow = mw < 220; // phone: shorter heading and smaller digits so they stop short of the spinning disc
+      ctx.fillStyle = '#94a3b8'; ctx.font = '11px Arial'; ctx.textAlign = 'left'; ctx.fillText(narrow ? 'METER (kWh)' : 'ELECTRICITY METER (kWh)', mx + 12, my + 16);
       const digits = run.energy.toFixed(2).padStart(8, '0');
-      ctx.font = 'bold 26px monospace'; ctx.fillStyle = '#4ade80'; ctx.fillText(digits, mx + 12, my + 52);
+      ctx.font = `bold ${narrow ? 17 : 26}px monospace`; ctx.fillStyle = '#4ade80'; ctx.fillText(digits, mx + 10, my + 50);
       // spinning disc speed tracks the power being used
       const cx = mx + mw - 30, cy = my + mh / 2, ang = (run.energy * 40) % (Math.PI * 2);
       ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, 16, 0, Math.PI * 2); ctx.stroke();
@@ -196,7 +220,9 @@
         ctx.fillStyle = '#0f172a'; ctx.font = 'bold 14px Arial'; ctx.fillText(`Day ${Math.min(t.days, run.t).toFixed(1)} — ${money(run.energy * t.tariff)}`, mx, my + mh + 26);
       }
       ctx.fillStyle = '#64748b'; ctx.font = '12px Arial';
-      ctx.fillText(`${kwh(t.Eday)} per day × ${t.days} days = ${kwh(t.Eall)};  ${kwh(t.Eall)} × $${t.tariff.toFixed(2)} = ${money(t.cost)}`, mx, h - 12);
+      const line1 = `${kwh(t.Eday)} per day × ${t.days} ${t.days === 1 ? "day" : "days"} = ${kwh(t.Eall)}`, line2 = `${kwh(t.Eall)} × $${t.tariff.toFixed(2)} = ${money(t.cost)}`;
+      if (ctx.measureText(`${line1};  ${line2}`).width < w - 2 * mx) ctx.fillText(`${line1};  ${line2}`, mx, h - 12);
+      else { ctx.fillText(line1, mx, h - 26); ctx.fillText(line2, mx, h - 10); } // too wide for a phone: two lines
     }
 
     el('runBtn').addEventListener('click', () => {
@@ -204,8 +230,9 @@
       if (run.t >= t.days) resetRun();
       run.running = !run.running;
     });
+    el('resetRunBtn').addEventListener('click', resetRun);
     el('preset').addEventListener('change', applyPreset);
-    ['volt', 'days', 'tariff'].forEach(id => el(id).addEventListener('input', () => { if (id !== 'volt') el('preset').value = el('preset').value; resetRun(); }));
+    ['volt', 'days', 'tariff'].forEach(id => el(id).addEventListener('input', resetRun));
 
     build(); applyPreset();
     let last = null;

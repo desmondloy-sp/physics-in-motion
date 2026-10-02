@@ -34,6 +34,8 @@
     .tabs button.on { background: #2563eb; color: white; }
     .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
     .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    .note ul { margin: 2px 0 0; padding-left: 18px; }
+    .note li { margin: 2px 0; }
     @media (max-width: 900px) {
       .controls { grid-template-columns: 1fr 1fr; }
       .controls .control-group:first-child { grid-column: 1 / -1; }
@@ -80,7 +82,11 @@
       <div class="panel">
         <div class="hint">Drag the crocodile clip along the wire to change the length <i>L</i> in the circuit.</div>
         <canvas id="rigCanvas"></canvas>
-        <div class="note">The ammeter is in <b>series</b> with the wire; the voltmeter is connected <b>in parallel</b> across the length of wire being tested. <i>R</i> = &rho;<i>L</i>/<i>A</i>: a longer wire has more resistance, a thicker wire (bigger <i>A</i>) has less, and a material with higher resistivity has more. Low-resistivity metals (silver, copper) make good connecting wires; high-resistivity nichrome and tungsten are used in heating elements and filaments.</div>
+        <div class="note"><ul>
+          <li>The ammeter is in <b>series</b> with the wire. The voltmeter is connected <b>in parallel</b> across the length of wire being tested.</li>
+          <li><i>R</i> = &rho;<i>L</i>/<i>A</i>: a longer wire has more resistance, a thicker wire (bigger <i>A</i>) has less, and a material with a higher resistivity has more.</li>
+          <li>Low-resistivity metals (silver, copper) make good connecting wires. High-resistivity nichrome and tungsten are used in heating elements and filaments.</li>
+        </ul></div>
       </div>
       <div class="panel">
         <div class="tabs"><button id="tabVI" class="on">V&ndash;I graph</button><button id="tabRL">R&ndash;L graph</button></div>

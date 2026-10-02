@@ -10,7 +10,7 @@
     .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
     h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
     .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
-    .controls { display: grid; grid-template-columns: 1.3fr 0.8fr repeat(4, 1fr); gap: 10px; align-items: end; }
+    .controls { display: grid; grid-template-columns: 2fr 1.3fr 0.6fr repeat(4, 1fr); gap: 10px; align-items: end; }
     .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
     label { font-size: 0.8rem; font-weight: 600; }
     .val { font-weight: normal; color: #334155; }
@@ -26,9 +26,14 @@
     #sceneCanvas { height: 400px; border: 1px solid #dbeafe; background: #fbfdff; }
     .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
     .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    .note ul { margin: 2px 0 0; padding-left: 18px; }
+    .note li { margin: 2px 0; }
+    .question { margin-top: 8px; font-size: 0.85rem; font-weight: 700; color: #7c2d12; background: #fff7ed; border-radius: 7px; padding: 6px 8px; }
+    .question:empty { display: none; }
     .hidden { display: none !important; }
     @media (max-width: 900px) {
       .controls { grid-template-columns: 1fr 1fr; }
+      .controls .scen { grid-column: 1 / -1; }
       #sceneCanvas { height: 380px; }
       th, td { padding: 4px 2px; font-size: 0.78rem; }
     }
@@ -40,25 +45,35 @@
 
     <div class="panel">
       <div class="controls">
+        <div class="control-group scen">
+          <label for="scenario">Scenarios</label>
+          <select id="scenario">
+            <option value="ex8" selected>Example 8: two in series</option>
+            <option value="ex7">Example 7: three in series</option>
+            <option value="ex9">Example 9: two in parallel</option>
+            <option value="combo">A, then B and C in parallel</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
         <div class="control-group">
           <label for="mode">Connection</label>
           <select id="mode">
             <option value="series" selected>Series</option>
             <option value="parallel">Parallel</option>
-            <option value="combo">Combination: A in series with (B parallel to C)</option>
+            <option value="combo">A in series with (B parallel to C)</option>
           </select>
         </div>
         <div class="control-group">
           <label for="count">Bulbs</label>
-          <select id="count"><option value="2">2</option><option value="3" selected>3</option></select>
+          <select id="count"><option value="2" selected>2</option><option value="3">3</option></select>
         </div>
-        <div class="control-group"><label for="emf">Battery e.m.f. <span class="val" id="emfVal"></span></label><input id="emf" type="range" min="1.5" max="12" step="0.5" value="6" /></div>
+        <div class="control-group"><label for="emf">Battery emf <span class="val" id="emfVal"></span></label><input id="emf" type="range" min="1.5" max="12" step="0.5" value="1.5" /></div>
         <div class="control-group"><label for="r1">Bulb A <span class="val" id="r1Val"></span></label><input id="r1" type="range" min="1" max="20" step="1" value="4" /></div>
-        <div class="control-group"><label for="r2">Bulb B <span class="val" id="r2Val"></span></label><input id="r2" type="range" min="1" max="20" step="1" value="4" /></div>
+        <div class="control-group"><label for="r2">Bulb B <span class="val" id="r2Val"></span></label><input id="r2" type="range" min="1" max="20" step="1" value="6" /></div>
         <div class="control-group" id="r3Group"><label for="r3">Bulb C <span class="val" id="r3Val"></span></label><input id="r3" type="range" min="1" max="20" step="1" value="4" /></div>
       </div>
+      <div class="question" id="question"></div>
       <div class="buttons">
-        <button id="ex7Btn">Example 7: three identical bulbs in series, 6 V</button>
         <button id="fixBtn">Replace any blown bulbs</button>
       </div>
       <table>
@@ -255,13 +270,23 @@
       el('rt').textContent = isFinite(s.Rt) ? `total ${s.Rt.toFixed(2)} Ω` : 'open circuit';
       el('et').textContent = `${E()} V`; el('it').textContent = `${s.It.toFixed(3)} A`; el('pt').textContent = `${(E() * s.It).toFixed(2)} W`;
       const m = mode();
-      let note = m === 'series'
-        ? 'Series: there is only one path, so the <b>same current</b> flows through every bulb, and the battery voltage is <b>shared</b> between them (the voltages add up to the e.m.f.). The total resistance is <i>R</i> = <i>R</i><sub>1</sub> + <i>R</i><sub>2</sub> + &hellip;. If one bulb blows, the circuit is broken (an open circuit): <b>no current flows and every bulb goes out</b> &mdash; the whole battery voltage then appears across the gap.'
-        : m === 'parallel'
-          ? 'Parallel: every bulb is connected directly across the battery, so each has the <b>same voltage</b>. The currents in the branches <b>add up</b> to the current from the battery, and 1/<i>R</i> = 1/<i>R</i><sub>1</sub> + 1/<i>R</i><sub>2</sub> + &hellip; &mdash; adding a bulb <i>lowers</i> the total resistance. If one bulb blows, the others stay lit (this is why homes are wired in parallel).'
-          : 'Combination: bulb A carries the whole current, which then splits between B and C. A gets a bigger share of the voltage and is the brightest when the bulbs are identical. Blow C and B gets more current (B alone now has more resistance than B and C in parallel), so A dims and B brightens.';
-      if (!st.switchOn) note = '<b>Switch open:</b> an open circuit, so no current flows anywhere. ' + note;
-      el('note').innerHTML = note;
+      const items = m === 'series' ? [
+          '<b>Series:</b> there is only one path, so the <b>same current</b> flows through every bulb.',
+          'The battery voltage is <b>shared</b> between the bulbs: their voltages add up to the emf.',
+          'The total resistance is <i>R</i> = <i>R</i><sub>1</sub> + <i>R</i><sub>2</sub> + &hellip;',
+          'If one bulb blows, the circuit is broken (an open circuit): <b>no current flows and every bulb goes out</b>. The whole battery voltage then appears across the gap.',
+        ] : m === 'parallel' ? [
+          '<b>Parallel:</b> every bulb is connected directly across the battery, so each has the <b>same voltage</b>.',
+          'The currents in the branches <b>add up</b> to the current from the battery.',
+          'The total resistance follows 1/<i>R</i> = 1/<i>R</i><sub>1</sub> + 1/<i>R</i><sub>2</sub> + &hellip;, so adding a bulb <b>lowers</b> the total resistance.',
+          'If one bulb blows, the others stay lit. This is why homes are wired in parallel.',
+        ] : [
+          'Bulb A carries the whole current, which then splits between B and C.',
+          'With identical bulbs, A gets the biggest share of the voltage, so it is the brightest.',
+          'Blow C and B gets more current: B on its own has more resistance than B and C in parallel. So A dims and B brightens.',
+        ];
+      if (!st.switchOn) items.unshift('<b>Switch open:</b> an open circuit, so no current flows anywhere.');
+      el('note').innerHTML = '<ul>' + items.map(t => `<li>${t}</li>`).join('') + '</ul>';
     }
 
     // ---------- interaction ----------
@@ -278,10 +303,26 @@
       e.preventDefault();
     });
     canvas.addEventListener('pointermove', e => { canvas.style.cursor = hit(pos(e)) ? 'pointer' : 'default'; });
-    el('ex7Btn').addEventListener('click', () => {
-      el('mode').value = 'series'; el('count').value = '3'; el('emf').value = 6; ['r1', 'r2', 'r3'].forEach(id => el(id).value = 4);
+    // ---------- scenarios (the notes' worked examples) ----------
+    const SCEN = {
+      ex8:   { mode: 'series',   n: '2', E: 1.5, R: [4, 6, 4], q: 'Example 8: a 4.0 Ω and a 6.0 Ω bulb in series with a 1.5 V battery. Work out the total resistance and the current, then check them in the table.' },
+      ex7:   { mode: 'series',   n: '3', E: 6,   R: [4, 4, 4], q: 'Example 7: three identical bulbs in series. (a) Which bulb is the brightest? (b) What happens if bulb C burns out? Decide first, then tap bulb C to check.' },
+      ex9:   { mode: 'parallel', n: '2', E: 2,   R: [3, 6, 4], q: 'Example 9: a 3.0 Ω and a 6.0 Ω bulb in parallel across a 2.0 V battery. Find the total resistance, the current from the battery, and the current in each bulb.' },
+      combo: { mode: 'combo',    n: '3', E: 6,   R: [4, 4, 4], q: '' },
+    };
+    function applyScenario(key) {
+      const sc = SCEN[key];
+      el('question').textContent = sc ? sc.q : '';
+      if (!sc) return;
+      el('mode').value = sc.mode; el('count').value = sc.n; el('emf').value = sc.E;
+      ['r1', 'r2', 'r3'].forEach((id, i) => el(id).value = sc.R[i]);
       st.blown = [false, false, false]; st.switchOn = true;
-    });
+    }
+    function toCustom() { if (el('scenario').value !== 'custom') { el('scenario').value = 'custom'; el('question').textContent = ''; } }
+    el('scenario').addEventListener('change', () => applyScenario(el('scenario').value));
+    ['mode', 'count'].forEach(id => el(id).addEventListener('change', toCustom));
+    ['emf', 'r1', 'r2', 'r3'].forEach(id => el(id).addEventListener('input', toCustom));
+    applyScenario(el('scenario').value);
     el('fixBtn').addEventListener('click', () => { st.blown = [false, false, false]; });
 
     let last = null;
