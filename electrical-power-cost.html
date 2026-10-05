@@ -187,7 +187,14 @@
         const mins = s.hours * 60;
         el('hl-' + a.id).textContent = `Used ${s.hours >= 1 ? s.hours + ' h' : mins.toFixed(0) + ' min'} per day`;
         const e = p / 1000 * s.hours * t.days;
-        el('c-' + a.id).textContent = s.on ? `${(p / 1000).toFixed(3)} kW × ${s.hours} h × ${t.days} ${t.days === 1 ? "day" : "days"} = ${e.toFixed(3)} kWh → ${money(e * t.tariff)}` : '';
+        // the whole working, one step per line: energy for the period, then its cost (no arrow jumping to a price)
+        const dayWord = t.days === 1 ? 'day' : 'days';
+        let work = `Energy = ${(p / 1000).toFixed(3)} kW × ${s.hours} h × ${t.days} ${dayWord} = ${e.toFixed(3)} kWh<br>Cost for ${t.days} ${dayWord} = ${e.toFixed(3)} kWh × ${money(t.tariff)} = ${money(e * t.tariff)}`;
+        if (a.id === 'kettle15') { // Example 12 is about the element's resistance and the power at a lower voltage
+          const R = a.V * a.V / a.P;
+          work = `<i>R</i> = <i>V</i><sup>2</sup>/<i>P</i> = ${a.V}<sup>2</sup>/${a.P} = ${R.toFixed(1)} Ω<br>At ${Vs()} V: <i>P</i> = <i>V</i><sup>2</sup>/<i>R</i> = ${Vs()}<sup>2</sup>/${R.toFixed(1)} = ${p.toFixed(0)} W<br>` + work;
+        }
+        el('c-' + a.id).innerHTML = s.on ? work : '';
       });
       el('ex12Note').style.display = ex12 || state.kettle15.on ? '' : 'none';
       el('runBtn').textContent = run.running ? 'Pause' : run.t > 0 && run.t < t.days ? 'Play' : 'Run the period on the meter';

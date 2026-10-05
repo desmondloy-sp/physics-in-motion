@@ -33,6 +33,17 @@
     .note { margin-top: 6px; font-size: 0.8rem; color: #475569; }
     .note ul { margin: 2px 0 0; padding-left: 18px; }
     .note li { margin: 2px 0; }
+    /* Worked equations, set like the notes: italic symbols, stacked fractions, a root sign with a bar. */
+    .math { margin-top: 10px; font-family: 'Times New Roman', Times, serif; font-size: 1.08rem; color: #1f2937; }
+    .math .eq { display: flex; align-items: center; flex-wrap: wrap; gap: 0 6px; margin: 8px 0; min-height: 2.4em; }
+    .math .step { font-family: Arial, Helvetica, sans-serif; font-size: 0.8rem; font-weight: 600; color: #475569; margin-top: 10px; }
+    .math .frac { display: inline-flex; flex-direction: column; text-align: center; vertical-align: middle; line-height: 1.15; }
+    .math .frac > span:first-child { border-bottom: 1px solid currentColor; padding: 0 3px; }
+    .math .frac > span:last-child { padding: 0 3px; }
+    .math .root { display: inline-flex; align-items: flex-end; }
+    .math .root > i.rs { font-style: normal; font-size: 1.35em; line-height: 1; }
+    .math .root > span { border-top: 1px solid currentColor; padding: 1px 2px 0; }
+    .math b { font-family: Arial, Helvetica, sans-serif; }
     @media (max-width: 900px) {
       .controls { grid-template-columns: 1fr 1fr; }
       .controls .control-group:first-child { grid-column: 1 / -1; }
@@ -58,16 +69,16 @@
         <div class="control-group">
           <label for="preset">Scenarios</label>
           <select id="preset">
-            <option value="ex5" selected>Example 5: 30 N and 40 N at 90&deg;</option>
-            <option value="ex6">Example 6: 30 N and 40 N at 30&deg;</option>
+            <option value="ex5" selected>30 N and 40 N, 90&deg; apart</option>
+            <option value="ex6">30 N and 40 N, 30&deg; apart</option>
             <option value="opposite">Two forces nearly opposite</option>
             <option value="custom">Custom</option>
           </select>
         </div>
-        <div class="control-group"><label for="f1mag"><i>P</i> (N)</label><input id="f1mag" type="number" min="0" max="80" step="0.5" /></div>
-        <div class="control-group"><label for="f1ang"><i>P</i> angle (&deg;)</label><input id="f1ang" type="number" min="-180" max="360" step="1" /></div>
-        <div class="control-group"><label for="f2mag"><i>Q</i> (N)</label><input id="f2mag" type="number" min="0" max="80" step="0.5" /></div>
-        <div class="control-group"><label for="f2ang"><i>Q</i> angle (&deg;)</label><input id="f2ang" type="number" min="-180" max="360" step="1" /></div>
+        <div class="control-group"><label for="f1mag"><i>P</i> (N)</label><input id="f1mag" type="number" min="0" max="80" step="0.1" /></div>
+        <div class="control-group"><label for="f1ang"><i>P</i> angle (&deg;)</label><input id="f1ang" type="number" min="-180" max="360" step="0.1" /></div>
+        <div class="control-group"><label for="f2mag"><i>Q</i> (N)</label><input id="f2mag" type="number" min="0" max="80" step="0.1" /></div>
+        <div class="control-group"><label for="f2ang"><i>Q</i> angle (&deg;)</label><input id="f2ang" type="number" min="-180" max="360" step="0.1" /></div>
       </div>
       <div class="toggles">
         <label class="toggle"><input type="checkbox" id="showOther" /> <span>Also add them the other way round (tail of <i>P</i> at the tip of <i>Q</i>)</span></label>
@@ -76,7 +87,7 @@
       </div>
       <div class="readout">
         <div class="readout-card"><div class="title">Resultant, &Sigma;<i>F</i></div><div class="value" id="rMag">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Direction (from +x axis)</div><div class="value" id="rAng">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Direction (from the +<i>x</i>-axis)</div><div class="value" id="rAng">&mdash;</div></div>
         <div class="readout-card"><div class="title"><i>R<sub>x</sub></i> = &Sigma;<i>F<sub>x</sub></i></div><div class="value" id="rx">&mdash;</div></div>
         <div class="readout-card"><div class="title"><i>R<sub>y</sub></i> = &Sigma;<i>F<sub>y</sub></i></div><div class="value" id="ry">&mdash;</div></div>
       </div>
@@ -89,21 +100,21 @@
         <div class="note"><ul>
           <li>Vector triangle method: place the tail of <i>Q</i> at the tip of <i>P</i>. The resultant &Sigma;<i>F</i> (red) joins the tail of <i>P</i> to the tip of <i>Q</i>.</li>
           <li>Tick the first box to add them in the other order: you get the same resultant.</li>
-          <li>Measure the resultant the way you would on paper: count boxes for its length, and read its angle from the +x axis. Untick <b>Show the answers</b> first, then tick it to check.</li>
+          <li>Measure the resultant the way you would on paper: count boxes for its length, and read its angle from the +<i>x</i>-axis. Untick <b>Show the answers</b> first, then tick it to check.</li>
         </ul></div>
       </div>
       <div class="panel">
         <b>Component method</b>
         <table style="margin-top:6px">
-          <thead><tr><th>Force</th><th><i>F<sub>x</sub></i> = <i>F</i> cos &theta;</th><th><i>F<sub>y</sub></i> = <i>F</i> sin &theta;</th></tr></thead>
+          <thead><tr><th>Force</th><th><i>F<sub>x</sub></i> = <i>F</i> cos <i>&theta;</i></th><th><i>F<sub>y</sub></i> = <i>F</i> sin <i>&theta;</i></th></tr></thead>
           <tbody>
             <tr><td><i>P</i></td><td id="px"></td><td id="py"></td></tr>
             <tr><td><i>Q</i></td><td id="qx"></td><td id="qy"></td></tr>
             <tr class="total"><td>&Sigma;<i>F</i></td><td id="sx"></td><td id="sy"></td></tr>
           </tbody>
         </table>
-        <div class="note"><i>R</i> = &radic;(<i>R<sub>x</sub></i><sup>2</sup> + <i>R<sub>y</sub></i><sup>2</sup>) and &theta; = tan<sup>-1</sup>(<i>R<sub>y</sub></i> / <i>R<sub>x</sub></i>), taking care over which quadrant &Sigma;<i>F</i> points into. Angles are measured anticlockwise from the +x axis.</div>
-        <div class="note" id="workLine"></div>
+        <div class="note">Angles are measured anticlockwise from the +<i>x</i>-axis.</div>
+        <div class="math" id="workLine"></div>
       </div>
     </div>
   </div>
@@ -117,12 +128,38 @@
       opposite: [35, 10, 30, 160]
     };
     const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
-    const clean = v => (Math.abs(v) < 0.005 ? 0 : v); // no "-0.00"
-    const f2 = v => clean(v).toFixed(2);
+    const clean = v => (Math.abs(v) < 0.05 ? 0 : v); // no "-0.0"
+    const f1 = v => clean(v).toFixed(1).replace('-', '−'); // every number on the page to one decimal place
 
     function applyPreset() {
       const p = PRESETS[el('preset').value]; if (!p) return;
-      ['f1mag', 'f1ang', 'f2mag', 'f2ang'].forEach((id, i) => el(id).value = p[i]);
+      ['f1mag', 'f1ang', 'f2mag', 'f2ang'].forEach((id, i) => el(id).value = p[i].toFixed(1));
+    }
+
+    // Canvas text with <i>, <sub> and <sup> runs, so symbols of physical quantities are italic, as in the notes.
+    // Honours ctx.textAlign; returns the width. measureOnly = true draws nothing.
+    function richText(ctx, s, x, y, measureOnly) {
+      const base = ctx.font, m = base.match(/([\d.]+)px/), size = m ? +m[1] : 12;
+      const runs = []; let it = false, sub = 0;
+      for (const tok of String(s).split(/(<\/?(?:i|sub|sup)>)/)) {
+        if (tok === '<i>') it = true; else if (tok === '</i>') it = false;
+        else if (tok === '<sub>') sub = 1; else if (tok === '<sup>') sub = -1;
+        else if (tok === '</sub>' || tok === '</sup>') sub = 0;
+        else if (tok) {
+          let f = sub ? base.replace(/[\d.]+px/, (size * 0.75).toFixed(1) + 'px') : base;
+          if (it) f = 'italic ' + f;
+          ctx.font = f; runs.push({ t: tok, f, sub, w: ctx.measureText(tok).width });
+        }
+      }
+      ctx.font = base;
+      const w = runs.reduce((a, r) => a + r.w, 0);
+      if (measureOnly) return w;
+      const align = ctx.textAlign;
+      let cx = align === 'center' ? x - w / 2 : (align === 'right' || align === 'end') ? x - w : x;
+      ctx.textAlign = 'left';
+      for (const r of runs) { ctx.font = r.f; ctx.fillText(r.t, cx, y + (r.sub === 1 ? size * 0.3 : r.sub === -1 ? -size * 0.4 : 0)); cx += r.w; }
+      ctx.textAlign = align; ctx.font = base;
+      return w;
     }
     function forces() {
       const P = { m: Math.max(0, +el('f1mag').value || 0), a: +el('f1ang').value || 0 };
@@ -167,10 +204,10 @@
       const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, L = Math.hypot(b.x - a.x, b.y - a.y) || 1;
       const nx = -(b.y - a.y) / L * side, ny = (b.x - a.x) / L * side;
       ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      const tw = ctx.measureText(text).width;
+      const tw = richText(ctx, text, 0, 0, true);
       const x = mx + nx * (16 + tw * 0.35), y = my + ny * 16;
       ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(x - tw / 2 - 3, y - 9, tw + 6, 18);
-      ctx.fillStyle = color; ctx.fillText(text, x, y); ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = color; richText(ctx, text, x, y); ctx.textBaseline = 'alphabetic';
     }
 
     function draw() {
@@ -182,8 +219,8 @@
       for (let y = o.y % box; y < H; y += box) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
       ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.moveTo(0, o.y); ctx.lineTo(W, o.y); ctx.moveTo(o.x, 0); ctx.lineTo(o.x, H); ctx.stroke();
-      ctx.fillStyle = '#94a3b8'; ctx.font = '12px Arial'; ctx.textAlign = 'right'; ctx.fillText('+x', W - 6, o.y - 6);
-      ctx.textAlign = 'left'; ctx.fillText('+y', o.x + 6, 14);
+      ctx.fillStyle = '#94a3b8'; ctx.font = '12px Arial'; ctx.textAlign = 'right'; richText(ctx, '+<i>x</i>', W - 6, o.y - 6);
+      ctx.textAlign = 'left'; richText(ctx, '+<i>y</i>', o.x + 6, 14);
       ctx.fillText('1 box = 5 N', 6, H - 8);
 
       const { P, Q, R } = forces();
@@ -201,9 +238,9 @@
         comp({ x: 0, y: 0 }, R, 'rgba(220,38,38,0.55)');
         const rx = toPx(R.x, 0);
         // Rx under (or over) the axis, Ry beside its dashed line, both outside the triangle
-        const plain = (t, x, y, align) => { ctx.font = 'bold 12px Arial'; ctx.textAlign = align; ctx.textBaseline = 'middle'; const tw = ctx.measureText(t).width; const x0 = align === 'left' ? x : align === 'right' ? x - tw : x - tw / 2; ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(x0 - 3, y - 8, tw + 6, 16); ctx.fillStyle = '#b91c1c'; ctx.fillText(t, x, y); ctx.textBaseline = 'alphabetic'; };
-        plain(`Rx = ${f2(R.x)} N`, (O.x + rx.x) / 2, O.y + (R.y >= 0 ? 34 : -34), 'center');
-        plain(`Ry = ${f2(R.y)} N`, rx.x + (R.x >= 0 ? 10 : -10), (rx.y + toPx(R.x, R.y).y) / 2, R.x >= 0 ? 'left' : 'right');
+        const plain = (t, x, y, align) => { ctx.font = 'bold 12px Arial'; ctx.textAlign = align; ctx.textBaseline = 'middle'; const tw = richText(ctx, t, 0, 0, true); const x0 = align === 'left' ? x : align === 'right' ? x - tw : x - tw / 2; ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(x0 - 3, y - 8, tw + 6, 16); ctx.fillStyle = '#b91c1c'; richText(ctx, t, x, y); ctx.textBaseline = 'alphabetic'; };
+        plain(`<i>R<sub>x</sub></i> = ${f1(R.x)} N`, (O.x + rx.x) / 2, O.y + (R.y >= 0 ? 34 : -34), 'center');
+        plain(`<i>R<sub>y</sub></i> = ${f1(R.y)} N`, rx.x + (R.x >= 0 ? 10 : -10), (rx.y + toPx(R.x, R.y).y) / 2, R.x >= 0 ? 'left' : 'right');
       }
       if (el('showOther').checked) {
         const Qo = toPx(Q.x, Q.y);
@@ -216,11 +253,10 @@
       // label sides chosen so the three tags sit outside the triangle
       const cross = (Pt.x - O.x) * (Qt.y - O.y) - (Pt.y - O.y) * (Qt.x - O.x);
       const out = cross > 0 ? -1 : 1;
-      tag(ctx, `P = ${P.m.toFixed(1)} N`, O, Pt, '#1d4ed8', out);
-      tag(ctx, `Q = ${Q.m.toFixed(1)} N`, Pt, Qt, '#15803d', out);
-      tag(ctx, el('showAns').checked ? `ΣF = ${R.m.toFixed(1)} N` : 'ΣF = ?', O, Qt, '#b91c1c', -out);
-      // handles
-      [[Pt, '#2563eb'], [Qt, '#16a34a']].forEach(([p, c]) => { ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x, p.y, 11, 0, Math.PI * 2); ctx.stroke(); });
+      tag(ctx, `<i>P</i> = ${P.m.toFixed(1)} N`, O, Pt, '#1d4ed8', out);
+      tag(ctx, `<i>Q</i> = ${Q.m.toFixed(1)} N`, Pt, Qt, '#15803d', out);
+      tag(ctx, el('showAns').checked ? `Σ<i>F</i> = ${R.m.toFixed(1)} N` : 'Σ<i>F</i> = ?', O, Qt, '#b91c1c', -out);
+      // no handle circles: the hint says to drag the arrowheads themselves
       ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(O.x, O.y, 4, 0, Math.PI * 2); ctx.fill();
       handles = { P: Pt, Q: Qt };
     }
@@ -228,14 +264,48 @@
     function updateReadout() {
       const { P, Q, R } = forces();
       const ans = el('showAns').checked; // hidden answers let a student measure or calculate first
-      el('rMag').textContent = ans ? `${R.m.toFixed(2)} N` : '?';
-      el('rAng').textContent = !ans ? '?' : R.m < 0.005 ? '—' : `${R.a.toFixed(1)}°`;
-      el('rx').textContent = ans ? `${f2(R.x)} N` : '?'; el('ry').textContent = ans ? `${f2(R.y)} N` : '?';
-      el('px').textContent = `${f2(P.x)} N`; el('py').textContent = `${f2(P.y)} N`;
-      el('qx').textContent = `${f2(Q.x)} N`; el('qy').textContent = `${f2(Q.y)} N`;
-      el('sx').textContent = ans ? `${f2(R.x)} N` : '?'; el('sy').textContent = ans ? `${f2(R.y)} N` : '?';
-      el('workLine').innerHTML = ans ? `<i>R</i> = &radic;(${f2(R.x)}<sup>2</sup> + ${f2(R.y)}<sup>2</sup>) = <b>${R.m.toFixed(2)} N</b>`
-        : 'Add the columns, work out <i>R</i> and &theta;, then tick <b>Show the answers</b> to check.';
+      el('rMag').textContent = ans ? `${R.m.toFixed(1)} N` : '?';
+      el('rAng').textContent = !ans ? '?' : R.m < 0.05 ? '—' : `${R.a.toFixed(1)}°`;
+      el('rx').textContent = ans ? `${f1(R.x)} N` : '?'; el('ry').textContent = ans ? `${f1(R.y)} N` : '?';
+      el('px').textContent = `${f1(P.x)} N`; el('py').textContent = `${f1(P.y)} N`;
+      el('qx').textContent = `${f1(Q.x)} N`; el('qy').textContent = `${f1(Q.y)} N`;
+      el('sx').textContent = ans ? `${f1(R.x)} N` : '?'; el('sy').textContent = ans ? `${f1(R.y)} N` : '?';
+      const html = workings(P, Q, R, ans);
+      if (html !== lastWork) { el('workLine').innerHTML = html; lastWork = html; }
+    }
+
+    // The component method written out as on paper (notes p. 3-31, steps 3 to 6), numbers to one decimal place.
+    let lastWork = '';
+    const num = v => { const t = f1(v); return t.startsWith('−') ? '(' + t + ')' : t; };
+    const frac = (a, b) => `<span class="frac"><span>${a}</span><span>${b}</span></span>`;
+    function workings(P, Q, R, ans) {
+      const Rx = '<i>R<sub>x</sub></i>', Ry = '<i>R<sub>y</sub></i>';
+      const q = v => ans ? v : '?';
+      let h = '<div class="step">Add the columns</div>';
+      h += `<div class="eq">${Rx} = <i>P<sub>x</sub></i> + <i>Q<sub>x</sub></i> = ${num(P.x)} + ${num(Q.x)} = ${q(f1(R.x) + ' N')}</div>`;
+      h += `<div class="eq">${Ry} = <i>P<sub>y</sub></i> + <i>Q<sub>y</sub></i> = ${num(P.y)} + ${num(Q.y)} = ${q(f1(R.y) + ' N')}</div>`;
+      h += '<div class="step">Size of the resultant (Pythagoras&rsquo; theorem)</div>';
+      h += `<div class="eq"><i>R</i> = <span class="root"><i class="rs">&radic;</i><span>${Rx}<sup>2</sup> + ${Ry}<sup>2</sup></span></span>`
+        + (ans ? ` = <span class="root"><i class="rs">&radic;</i><span>${num(R.x)}<sup>2</sup> + ${num(R.y)}<sup>2</sup></span></span> = <b>${R.m.toFixed(1)} N</b>` : ' = ?') + '</div>';
+      h += '<div class="step">Direction</div>';
+      if (!ans) {
+        h += `<div class="eq">tan <i>&theta;</i> = ${frac(Ry, Rx)} = ?</div><div class="note">Work out <i>R</i> and <i>&theta;</i>, then tick <b>Show the answers</b> to check.</div>`;
+        return h;
+      }
+      if (R.m < 0.05) return h + '<div class="eq">The forces cancel: there is no resultant, so no direction.</div>';
+      const ax = Math.abs(clean(R.x)), ay = Math.abs(clean(R.y));
+      const alpha = deg(Math.atan2(ay, ax));
+      const right = clean(R.x) >= 0, up = clean(R.y) >= 0;
+      if (right && up) {
+        h += `<div class="eq">tan <i>&theta;</i> = ${frac(Ry, Rx)} = ${frac(f1(R.y), f1(R.x))}, so <i>&theta;</i> = <b>${alpha.toFixed(1)}&deg;</b></div>`;
+      } else {
+        h += `<div class="eq">tan <i>&alpha;</i> = ${frac('|' + Ry + '|', '|' + Rx + '|')} = ${frac(ay.toFixed(1), ax.toFixed(1))}, so <i>&alpha;</i> = ${alpha.toFixed(1)}&deg;</div>`;
+        const where = (right ? 'right' : 'left') + ' and ' + (up ? 'up' : 'down');
+        const th = right ? (up ? alpha : 360 - alpha) : (up ? 180 - alpha : 180 + alpha);
+        const how = right ? '360&deg; &minus; ' : (up ? '180&deg; &minus; ' : '180&deg; + ');
+        h += `<div class="eq">&Sigma;<i>F</i> points ${where}, so <i>&theta;</i> = ${how}${alpha.toFixed(1)}&deg; = <b>${th.toFixed(1)}&deg;</b></div>`;
+      }
+      return h;
     }
 
     // ---------- dragging ----------
@@ -258,8 +328,8 @@
       const m = Math.min(80, Math.round(Math.hypot(bx, by) * 2) / 2);
       let a = Math.round(deg(Math.atan2(by, bx)));
       if (a < 0) a += 360;
-      el(drag === 'P' ? 'f1mag' : 'f2mag').value = m;
-      el(drag === 'P' ? 'f1ang' : 'f2ang').value = a;
+      el(drag === 'P' ? 'f1mag' : 'f2mag').value = m.toFixed(1);
+      el(drag === 'P' ? 'f1ang' : 'f2ang').value = a.toFixed(1);
       el('preset').value = 'custom';
     });
     const end = () => { drag = null; };

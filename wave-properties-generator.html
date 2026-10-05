@@ -159,11 +159,37 @@
       const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       return { ctx, w: r.width, h: r.height };
     }
+    // Canvas text with <i>, <sub> and <sup> runs, so symbols of physical quantities are italic, as in the notes.
+    // Honours ctx.textAlign; returns the width. measureOnly = true draws nothing.
+    function richText(ctx, s, x, y, measureOnly) {
+      const base = ctx.font, m = base.match(/([\d.]+)px/), size = m ? +m[1] : 12;
+      const runs = []; let it = false, sub = 0;
+      for (const tok of String(s).split(/(<\/?(?:i|sub|sup)>)/)) {
+        if (tok === '<i>') it = true; else if (tok === '</i>') it = false;
+        else if (tok === '<sub>') sub = 1; else if (tok === '<sup>') sub = -1;
+        else if (tok === '</sub>' || tok === '</sup>') sub = 0;
+        else if (tok) {
+          let f = sub ? base.replace(/[\d.]+px/, (size * 0.75).toFixed(1) + 'px') : base;
+          if (it) f = 'italic ' + f;
+          ctx.font = f; runs.push({ t: tok, f, sub, w: ctx.measureText(tok).width });
+        }
+      }
+      ctx.font = base;
+      const w = runs.reduce((a, r) => a + r.w, 0);
+      if (measureOnly) return w;
+      const align = ctx.textAlign;
+      let cx = align === 'center' ? x - w / 2 : (align === 'right' || align === 'end') ? x - w : x;
+      ctx.textAlign = 'left';
+      for (const r of runs) { ctx.font = r.f; ctx.fillText(r.t, cx, y + (r.sub === 1 ? size * 0.3 : r.sub === -1 ? -size * 0.4 : 0)); cx += r.w; }
+      ctx.textAlign = align; ctx.font = base;
+      return w;
+    }
+
     function tag(ctx, t, x, y, color, align = 'center') {
       ctx.font = 'bold 12px Arial'; ctx.textAlign = align; ctx.textBaseline = 'middle';
-      const tw = ctx.measureText(t).width, x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
+      const tw = richText(ctx, t, 0, 0, true), x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
       ctx.fillStyle = 'rgba(251,253,255,0.92)'; ctx.fillRect(x0 - 3, y - 8, tw + 6, 16);
-      ctx.fillStyle = color; ctx.fillText(t, x, y); ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = color; richText(ctx, t, x, y); ctx.textBaseline = 'alphabetic';
     }
     function bracketH(ctx, x1, x2, y, color, label) {
       ctx.strokeStyle = color; ctx.lineWidth = 2;
@@ -209,11 +235,22 @@
           for (let k = -2; k < 60; k++) { const x = p.lam * (p.f * st.t - 0.25 - k); if (x >= 0 && x <= Math.min(WORLD, front)) crests.push(x); }
           crests.sort((a, b) => a - b);
           if (crests.length >= 2) {
-            bracketH(ctx, x0 + crests[0] * s, x0 + crests[1] * s, mid - p.a * s - 22, '#7c3aed', `wavelength λ = ${p.lam.toFixed(1)} cm`);
+            bracketH(ctx, x0 + crests[0] * s, x0 + crests[1] * s, mid - p.a * s - 22, '#7c3aed', `wavelength <i>λ</i> = ${p.lam.toFixed(1)} cm`);
             const cx = x0 + crests[0] * s;
-            ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx - 14, mid); ctx.lineTo(cx - 14, mid - p.a * s); ctx.stroke();
-            tag(ctx, `a = ${p.a.toFixed(1)} cm`, cx - 18, mid - p.a * s / 2, '#b91c1c', 'right');
-            tag(ctx, 'crest', cx, mid - p.a * s - 44 < 34 ? mid - p.a * s + 16 : mid - p.a * s - 44, '#475569');
+            // the amplitude label sits left of a crest; when the first crest is too near the left edge for it to fit,
+            // mark the amplitude at the next crest instead (it was cut off on a phone)
+            const aText = `<i>a</i> = ${p.a.toFixed(1)} cm`;
+            ctx.font = 'bold 12px Arial'; const aw = richText(ctx, aText, 0, 0, true);
+            const ax = cx - 18 - aw - 3 < 2 ? x0 + crests[1] * s : cx;
+            ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(ax - 14, mid); ctx.lineTo(ax - 14, mid - p.a * s); ctx.stroke();
+            tag(ctx, aText, ax - 18, mid - p.a * s / 2, '#b91c1c', 'right');
+            // "crest" normally sits just above the wavelength bracket. When the wavelength is short on screen (a phone)
+            // it would land on the wavelength label, so it goes one row higher; below the crest only if neither fits.
+            ctx.font = 'bold 12px Arial';
+            const lamW = richText(ctx, `wavelength <i>λ</i> = ${p.lam.toFixed(1)} cm`, 0, 0, true), crW = ctx.measureText('crest').width;
+            const clash = (crests[1] - crests[0]) * s / 2 < (lamW + crW) / 2 + 8;
+            const cy = mid - p.a * s - (clash ? 58 : 44);
+            tag(ctx, 'crest', cx, cy < 34 ? mid - p.a * s + 16 : cy, '#475569');
             const tr = crests[0] + p.lam / 2;
             if (tr <= Math.min(WORLD, front)) tag(ctx, 'trough', x0 + tr * s, mid + p.a * s + 16, '#475569');
           }
@@ -280,7 +317,7 @@
         if (ta > t0 && ta > x / p.v) {
           ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 2; const yy = Y(amax * 0.92);
           ctx.beginPath(); ctx.moveTo(X(ta), yy - 5); ctx.lineTo(X(ta), yy + 5); ctx.moveTo(X(tb), yy - 5); ctx.lineTo(X(tb), yy + 5); ctx.moveTo(X(ta), yy); ctx.lineTo(X(tb), yy); ctx.stroke();
-          tag(ctx, `period T = ${p.T.toFixed(2)} s`, (X(ta) + X(tb)) / 2, yy + 12, '#6d28d9');
+          tag(ctx, `period <i>T</i> = ${p.T.toFixed(2)} s`, (X(ta) + X(tb)) / 2, yy + 12, '#6d28d9');
         }
       }
     }

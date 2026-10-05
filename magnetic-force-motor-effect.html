@@ -26,7 +26,10 @@
     .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
     .readout-card .value { font-size: 1rem; font-weight: bold; }
     .layout { display: grid; grid-template-columns: 1fr; gap: 8px; }
-    @media (min-width: 900px) { .layout { grid-template-columns: 1.25fr 1fr; } }
+    @media (min-width: 900px) {
+      .layout { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto; }
+      .layout > .panel { display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 0; align-content: start; }
+    }
     canvas { display: block; width: 100%; border-radius: 10px; touch-action: pan-y; }
     #endCanvas, #sideCanvas { height: 360px; border: 1px solid #dbeafe; background: #fbfdff; }
     .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
@@ -68,8 +71,8 @@
       <div class="readout">
         <div class="readout-card"><div class="title">Force on the end-on wire, <i>F</i> = <i>BIL</i></div><div class="value" id="fEnd">&mdash;</div></div>
         <div class="readout-card"><div class="title">Its direction (Fleming's left-hand rule)</div><div class="value" id="dEnd">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Tilted wire: angle to the field &theta;</div><div class="value" id="thV">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Tilted wire: <i>F</i> = <i>BIL</i> sin&theta;</div><div class="value" id="fSide">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Tilted wire: angle to the field <i>&theta;</i></div><div class="value" id="thV">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Tilted wire: <i>F</i> = <i>BIL</i> sin<i>&theta;</i></div><div class="value" id="fSide">&mdash;</div></div>
       </div>
     </div>
 
@@ -89,7 +92,7 @@
         <div class="hint">Side view: drag the end of the wire to tilt it in the field.</div>
         <canvas id="sideCanvas"></canvas>
         <div class="note"><ul>
-          <li><i>F</i> = <i>BIL</i> sin&theta;, where &theta; is the angle between the wire and the field.</li>
+          <li><i>F</i> = <i>BIL</i> sin<i>&theta;</i>, where <i>&theta;</i> is the angle between the wire and the field.</li>
           <li>The force is biggest (<i>F</i> = <i>BIL</i>) when the wire is at 90&deg; to the field, and zero when the wire runs along the field lines.</li>
           <li>In this view the force points into or out of the page.</li>
           <li>Notes Example 3: 8.0 cm of wire in a 0.15 T field, carrying 0.45 A at 90&deg; to the field, feels a force of 5.4 &times; 10<sup>-3</sup> N.</li>
@@ -118,11 +121,37 @@
       ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - Math.cos(a) * hd * 0.8, y2 - Math.sin(a) * hd * 0.8); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - hd * Math.cos(a - 0.45), y2 - hd * Math.sin(a - 0.45)); ctx.lineTo(x2 - hd * Math.cos(a + 0.45), y2 - hd * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill();
     }
+    // Canvas text with <i>, <sub> and <sup> runs, so symbols of physical quantities are italic, as in the notes.
+    // Honours ctx.textAlign; returns the width. measureOnly = true draws nothing.
+    function richText(ctx, s, x, y, measureOnly) {
+      const base = ctx.font, m = base.match(/([\d.]+)px/), size = m ? +m[1] : 12;
+      const runs = []; let it = false, sub = 0;
+      for (const tok of String(s).split(/(<\/?(?:i|sub|sup)>)/)) {
+        if (tok === '<i>') it = true; else if (tok === '</i>') it = false;
+        else if (tok === '<sub>') sub = 1; else if (tok === '<sup>') sub = -1;
+        else if (tok === '</sub>' || tok === '</sup>') sub = 0;
+        else if (tok) {
+          let f = sub ? base.replace(/[\d.]+px/, (size * 0.75).toFixed(1) + 'px') : base;
+          if (it) f = 'italic ' + f;
+          ctx.font = f; runs.push({ t: tok, f, sub, w: ctx.measureText(tok).width });
+        }
+      }
+      ctx.font = base;
+      const w = runs.reduce((a, r) => a + r.w, 0);
+      if (measureOnly) return w;
+      const align = ctx.textAlign;
+      let cx = align === 'center' ? x - w / 2 : (align === 'right' || align === 'end') ? x - w : x;
+      ctx.textAlign = 'left';
+      for (const r of runs) { ctx.font = r.f; ctx.fillText(r.t, cx, y + (r.sub === 1 ? size * 0.3 : r.sub === -1 ? -size * 0.4 : 0)); cx += r.w; }
+      ctx.textAlign = align; ctx.font = base;
+      return w;
+    }
+
     function tag(ctx, t, x, y, color, align = 'center') {
       ctx.font = 'bold 12px Arial'; ctx.textAlign = align; ctx.textBaseline = 'middle';
-      const tw = ctx.measureText(t).width, x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
+      const tw = richText(ctx, t, 0, 0, true), x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
       ctx.fillStyle = 'rgba(251,253,255,0.92)'; ctx.fillRect(x0 - 3, y - 8, tw + 6, 16);
-      ctx.fillStyle = color; ctx.fillText(t, x, y); ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = color; richText(ctx, t, x, y); ctx.textBaseline = 'alphabetic';
     }
     function poles(ctx, w, h, top, bot) {
       const left = st.fieldRight ? 'N' : 'S', right = st.fieldRight ? 'S' : 'N';
@@ -136,7 +165,7 @@
     function endForceUp() { const bs = st.fieldRight ? 1 : -1, is = st.outOfPage ? 1 : -1; return bs * is > 0; } // z x x = +y (up)
 
     // ---------- end-on view with the combined ("catapult") field ----------
-    let endGeo = null;
+    let endGeo = null, endGeoLines = [];
     function drawEnd() {
       const { ctx, w, h } = setup(el('endCanvas'));
       ctx.clearRect(0, 0, w, h);
@@ -148,30 +177,50 @@
       st.disp += ((show && I() > 0 && B() > 0 ? (up ? -1 : 1) * Math.min(60, 12 + F * 6000) : 0) - st.disp) * 0.08;
       const cx = (x0 + x1) / 2, cy = h / 2 + st.disp;
       const B0 = Math.max(B(), 1e-4) * (st.fieldRight ? 1 : -1);
-      const k = I() * (st.outOfPage ? 1 : -1) * 3.0; // strength of the wire's own circular field (display units)
+      // Strength of the wire's own circular field, in display units. Real values put the neutral point a fraction of
+      // a millimetre from the wire, inside the drawn wire, where it cut lines off; here it sits ~34 px away on the
+      // weak side, so the lines from the magnet all pass round the wire.
+      const RN = 34;
+      const k = (I() > 0 ? 1 : 0) * Math.abs(B0) * (RN * RN + 30) / RN * (st.outOfPage ? 1 : -1);
+      // Image currents mirrored in the top and bottom edges of the gap (opposite current, repeated every 2 gap heights)
+      // make the field run along those edges, so no line seeded between the poles can leave through them. Without
+      // them the outermost line left the gap whenever the wire sat off-centre.
+      const srcs = [];
+      for (let n = -3; n <= 3; n++) { srcs.push({ y: cy + n * 2 * (bot - top), s: 1 }); srcs.push({ y: 2 * top - cy + n * 2 * (bot - top), s: -1 }); }
       const field = (x, y) => {
-        const dx = x - cx, dy = -(y - cy); const r2 = dx * dx + dy * dy + 30;
         // uniform field along x, plus anticlockwise (for current out of page) circular field, in maths axes (y up)
-        const bx = B0 * 60 + k * (-dy) / r2 * 60, by = k * dx / r2 * 60;
+        let bx = B0, by = 0;
+        for (const q of srcs) {
+          const dx = x - cx, dy = -(y - q.y); const r2 = dx * dx + dy * dy + 30;
+          bx += q.s * k * (-dy) / r2; by += q.s * k * dx / r2;
+        }
         return { bx, by: -by }; // back to canvas axes
       };
-      // stream lines seeded evenly along the upstream side
+      // stream lines (RK4 on the unit direction) seeded evenly along the upstream side; each runs to the far pole
       ctx.strokeStyle = 'rgba(71,85,105,0.75)'; ctx.lineWidth = 1.4;
+      const dir = (x, y) => { const f = field(x, y), m = Math.hypot(f.bx, f.by) || 1e-12; return { x: f.bx / m, y: f.by / m }; };
+      const rk = (x, y, hS) => {
+        const a = dir(x, y), b = dir(x + a.x * hS / 2, y + a.y * hS / 2), c = dir(x + b.x * hS / 2, y + b.y * hS / 2), d = dir(x + c.x * hS, y + c.y * hS);
+        return { x: x + hS * (a.x + 2 * b.x + 2 * c.x + d.x) / 6, y: y + hS * (a.y + 2 * b.y + 2 * c.y + d.y) / 6 };
+      };
+      const headOn = (mid) => { ctx.fillStyle = 'rgba(71,85,105,0.9)'; ctx.beginPath(); ctx.moveTo(mid.x + Math.cos(mid.a) * 6, mid.y + Math.sin(mid.a) * 6); ctx.lineTo(mid.x + Math.cos(mid.a + 2.5) * 6, mid.y + Math.sin(mid.a + 2.5) * 6); ctx.lineTo(mid.x + Math.cos(mid.a - 2.5) * 6, mid.y + Math.sin(mid.a - 2.5) * 6); ctx.closePath(); ctx.fill(); };
+      const ends = [];
       const n = 13;
       for (let i = 0; i < n; i++) {
         let x = st.fieldRight ? x0 : x1, y = top + 14 + (bot - top - 28) * i / (n - 1);
         ctx.beginPath(); ctx.moveTo(x, y);
-        let mid = null, steps = 0;
-        for (; steps < 1500; steps++) {
-          const f = field(x, y), m = Math.hypot(f.bx, f.by); if (m < 1e-9) break;
-          x += 2.5 * f.bx / m; y += 2.5 * f.by / m; ctx.lineTo(x, y);
-          if (steps === 60) mid = { x, y, a: Math.atan2(f.by, f.bx) };
+        let mid = null;
+        for (let steps = 0; steps < 3000; steps++) {
+          const q = rk(x, y, 2);
+          if (steps === 75) mid = { x: q.x, y: q.y, a: Math.atan2(q.y - y, q.x - x) };
+          x = q.x; y = q.y; ctx.lineTo(x, y);
           if (x < x0 - 1 || x > x1 + 1 || y < top || y > bot) break;
-          if (Math.hypot(x - cx, y - cy) < 14) break;
         }
         ctx.stroke();
-        if (mid) { ctx.fillStyle = 'rgba(71,85,105,0.9)'; ctx.beginPath(); ctx.moveTo(mid.x + Math.cos(mid.a) * 6, mid.y + Math.sin(mid.a) * 6); ctx.lineTo(mid.x + Math.cos(mid.a + 2.5) * 6, mid.y + Math.sin(mid.a + 2.5) * 6); ctx.lineTo(mid.x + Math.cos(mid.a - 2.5) * 6, mid.y + Math.sin(mid.a - 2.5) * 6); ctx.closePath(); ctx.fill(); }
+        ends.push({ x, y });
+        if (mid) headOn(mid);
       }
+      endGeoLines = ends;
       // the wire
       ctx.fillStyle = '#fef3c7'; ctx.strokeStyle = '#92400e'; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(cx, cy, 14, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
@@ -183,7 +232,7 @@
       else if (F > 0) {
         const len = Math.min(90, 20 + F * 9000);
         arrow(ctx, cx + 22, cy, cx + 22, cy + (up ? -len : len), '#dc2626', 4.5);
-        tag(ctx, `F = ${(F * 1000).toFixed(2)} mN`, cx + 32, cy + (up ? -len * 0.6 : len * 0.6), '#b91c1c', 'left');
+        tag(ctx, `<i>F</i> = ${(F * 1000).toFixed(2)} mN`, cx + 32, cy + (up ? -len * 0.6 : len * 0.6), '#b91c1c', 'left');
         tag(ctx, 'weaker field', cx - 70, cy + (up ? -48 : 48), '#475569');
         tag(ctx, 'stronger field', cx - 70, cy + (up ? 48 : -48), '#475569');
       } else tag(ctx, I() === 0 ? 'No current, so no force' : 'No field, so no force', cx, cy - 40, '#475569');
@@ -212,14 +261,14 @@
       // current arrow along the wire
       const s = st.sideCurrentAlong ? 1 : -1;
       arrow(ctx, cx - d.x * 30 * s, cy - d.y * 30 * s, cx + d.x * 30 * s, cy + d.y * 30 * s, '#fde68a', 3, 10);
-      tag(ctx, 'I', cx + d.x * 44 * s + 10, cy + d.y * 44 * s - 10, '#92400e');
+      tag(ctx, '<i>I</i>', cx + d.x * 44 * s + 10, cy + d.y * 44 * s - 10, '#92400e');
       // theta arc from the field direction
       const fieldAng = st.fieldRight ? 0 : Math.PI;
       const wireAng = Math.atan2(-d.y * s, d.x * s); // current direction in maths angle
       let dth = wireAng - fieldAng; while (dth > Math.PI) dth -= 2 * Math.PI; while (dth < -Math.PI) dth += 2 * Math.PI;
       ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, 44, -fieldAng, -(fieldAng + dth), dth > 0); ctx.stroke();
       const thetaDeg = Math.abs(dth) * 180 / Math.PI;
-      tag(ctx, `θ = ${thetaDeg.toFixed(0)}°`, cx + Math.cos(fieldAng + dth / 2) * 64, cy - Math.sin(fieldAng + dth / 2) * 64, '#6d28d9');
+      tag(ctx, `<i>θ</i> = ${thetaDeg.toFixed(0)}°`, cx + Math.cos(fieldAng + dth / 2) * 64, cy - Math.sin(fieldAng + dth / 2) * 64, '#6d28d9');
       // force: in or out of the page. F = I (d x B): d = (cos a, sin a), B = (+-1, 0) -> z = -sin(a) * (+-1)
       const Fz = Math.sin(wireAng) * (st.fieldRight ? -1 : 1);
       const Fs = Fmax() * Math.abs(Math.sin(dth));
@@ -231,8 +280,8 @@
         ctx.beginPath(); ctx.arc(fx, fy, r, 0, Math.PI * 2); ctx.stroke();
         if (Fz > 0) { ctx.beginPath(); ctx.arc(fx, fy, r * 0.25, 0, Math.PI * 2); ctx.fill(); }
         else { ctx.beginPath(); ctx.moveTo(fx - r * 0.6, fy - r * 0.6); ctx.lineTo(fx + r * 0.6, fy + r * 0.6); ctx.moveTo(fx + r * 0.6, fy - r * 0.6); ctx.lineTo(fx - r * 0.6, fy + r * 0.6); ctx.stroke(); }
-        tag(ctx, `F ${Fz > 0 ? 'out of' : 'into'} the page: ${(Fs * 1000).toFixed(2)} mN`, fx, fy + r + 14, '#b91c1c');
-      } else tag(ctx, 'Wire along the field: F = 0', cx, bot - 16, '#b91c1c');
+        tag(ctx, `<i>F</i> ${Fz > 0 ? 'out of' : 'into'} the page: ${(Fs * 1000).toFixed(2)} mN`, fx, fy + r + 14, '#b91c1c');
+      } else tag(ctx, 'Wire along the field: <i>F</i> = 0', cx, bot - 16, '#b91c1c');
       ctx.fillStyle = '#b45309'; ctx.beginPath(); ctx.arc(p2.x, p2.y, 9, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.stroke();
       sideGeo = { cx, cy, p1, p2, thetaDeg, Fs, Fz };

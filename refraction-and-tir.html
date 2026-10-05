@@ -56,9 +56,9 @@
         <div class="control-group scen">
           <label for="scenario">Scenarios</label>
           <select id="scenario">
-            <option value="ex2" selected>Example 2: air into water, 50&deg;</option>
-            <option value="ex3">Example 3: water into air, 30&deg;</option>
-            <option value="ex4">Example 4: water into air, 50&deg;</option>
+            <option value="ex2" selected>Example 2: air into water, i = 50&deg;</option>
+            <option value="ex3">Example 3: water into air, i = 30&deg;</option>
+            <option value="ex4">Example 4: water into air, i = 50&deg;</option>
             <option value="custom">Custom</option>
           </select>
         </div>
@@ -139,12 +139,38 @@
       ctx.lineTo(x - size * Math.cos(ang + 0.45), y - size * Math.sin(ang + 0.45));
       ctx.closePath(); ctx.fill();
     }
+    // Canvas text with <i>, <sub> and <sup> runs, so symbols of physical quantities are italic, as in the notes.
+    // Honours ctx.textAlign; returns the width. measureOnly = true draws nothing.
+    function richText(ctx, s, x, y, measureOnly) {
+      const base = ctx.font, m = base.match(/([\d.]+)px/), size = m ? +m[1] : 12;
+      const runs = []; let it = false, sub = 0;
+      for (const tok of String(s).split(/(<\/?(?:i|sub|sup)>)/)) {
+        if (tok === '<i>') it = true; else if (tok === '</i>') it = false;
+        else if (tok === '<sub>') sub = 1; else if (tok === '<sup>') sub = -1;
+        else if (tok === '</sub>' || tok === '</sup>') sub = 0;
+        else if (tok) {
+          let f = sub ? base.replace(/[\d.]+px/, (size * 0.75).toFixed(1) + 'px') : base;
+          if (it) f = 'italic ' + f;
+          ctx.font = f; runs.push({ t: tok, f, sub, w: ctx.measureText(tok).width });
+        }
+      }
+      ctx.font = base;
+      const w = runs.reduce((a, r) => a + r.w, 0);
+      if (measureOnly) return w;
+      const align = ctx.textAlign;
+      let cx = align === 'center' ? x - w / 2 : (align === 'right' || align === 'end') ? x - w : x;
+      ctx.textAlign = 'left';
+      for (const r of runs) { ctx.font = r.f; ctx.fillText(r.t, cx, y + (r.sub === 1 ? size * 0.3 : r.sub === -1 ? -size * 0.4 : 0)); cx += r.w; }
+      ctx.textAlign = align; ctx.font = base;
+      return w;
+    }
+
     function label(ctx, text, x, y, color, align = 'center') {
       ctx.font = 'bold 13px Arial'; ctx.textAlign = align; ctx.textBaseline = 'middle';
-      const tw = ctx.measureText(text).width;
+      const tw = richText(ctx, text, 0, 0, true);
       const x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
       ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(x0 - 3, y - 9, tw + 6, 18);
-      ctx.fillStyle = color; ctx.fillText(text, x, y); ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = color; richText(ctx, text, x, y); ctx.textBaseline = 'alphabetic';
     }
     function tint(n) { const k = Math.min(1, (n - 1) / 0.6); return `rgba(${Math.round(219 - 90 * k)},${Math.round(234 - 60 * k)},${Math.round(254 - 20 * k)},1)`; }
 
@@ -157,8 +183,8 @@
       ctx.fillStyle = tint(s.n2); ctx.fillRect(0, P.y, W, H - P.y);
       ctx.strokeStyle = '#334155'; ctx.lineWidth = 2.5;
       ctx.beginPath(); ctx.moveTo(0, P.y); ctx.lineTo(W, P.y); ctx.stroke();
-      label(ctx, `Medium 1: ${mediumName(s.n1)} (n = ${s.n1.toFixed(2)})`, 10, 18, '#1e3a8a', 'left');
-      label(ctx, `Medium 2: ${mediumName(s.n2)} (n = ${s.n2.toFixed(2)})`, 10, H - 16, '#1e3a8a', 'left');
+      label(ctx, `Medium 1: ${mediumName(s.n1)} (<i>n</i> = ${s.n1.toFixed(2)})`, 10, 18, '#1e3a8a', 'left');
+      label(ctx, `Medium 2: ${mediumName(s.n2)} (<i>n</i> = ${s.n2.toFixed(2)})`, 10, H - 16, '#1e3a8a', 'left');
 
       // normal
       ctx.strokeStyle = '#64748b'; ctx.setLineDash([6, 5]); ctx.lineWidth = 1.5;
@@ -175,7 +201,7 @@
         // key in the top-right corner (a label on the line itself collides with the torch near the critical angle)
         ctx.strokeStyle = 'rgba(185,28,28,0.7)'; ctx.setLineDash([3, 5]); const ky = W < 600 ? 42 : 18; // below the medium label on a narrow screen
         ctx.beginPath(); ctx.moveTo(W - 210, ky); ctx.lineTo(W - 180, ky); ctx.stroke(); ctx.setLineDash([]);
-        label(ctx, `critical angle ${s.ic.toFixed(1)}°`, W - 174, ky, '#b91c1c', 'left');
+        label(ctx, `critical angle <i>i</i><sub>c</sub> = ${s.ic.toFixed(1)}°`, W - 174, ky, '#b91c1c', 'left');
       }
 
       const iR = rad(s.i);
@@ -226,17 +252,17 @@
       if (s.i > 0.5) {
         ctx.strokeStyle = '#d97706'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(P.x, P.y, 50, -Math.PI / 2 - iR, -Math.PI / 2); ctx.stroke();
-        const il = iR + rad(14); label(ctx, `i = ${s.i.toFixed(0)}°`, P.x - Math.sin(il) * 80, P.y - Math.cos(il) * 80, '#b45309');
+        const il = iR + rad(14); label(ctx, `<i>i</i> = ${s.i.toFixed(0)}°`, P.x - Math.sin(il) * 80, P.y - Math.cos(il) * 80, '#b45309');
         if (s.tir) {
           ctx.strokeStyle = '#dc2626';
           ctx.beginPath(); ctx.arc(P.x, P.y, 62, -Math.PI / 2, -Math.PI / 2 + iR); ctx.stroke();
-          label(ctx, `r = ${s.i.toFixed(0)}°`, P.x + Math.sin(iR + rad(14)) * 92, P.y - Math.cos(iR + rad(14)) * 92, '#b91c1c');
+          label(ctx, `<i>r</i> = ${s.i.toFixed(0)}°`, P.x + Math.sin(iR + rad(14)) * 92, P.y - Math.cos(iR + rad(14)) * 92, '#b91c1c');
           label(ctx, 'Total internal reflection: no light gets out', P.x, P.y + L * 0.45, '#b91c1c');
         } else if (s.R > 0.5) {
           const Rr = rad(s.R);
           ctx.strokeStyle = '#16a34a';
           ctx.beginPath(); ctx.arc(P.x, P.y, 50, Math.PI / 2 - Rr, Math.PI / 2); ctx.stroke();
-          const rl = Rr + rad(16); label(ctx, `R = ${s.R.toFixed(1)}°`, P.x + Math.sin(rl) * 84, P.y + Math.cos(rl) * 84, '#15803d');
+          const rl = Rr + rad(16); label(ctx, `<i>R</i> = ${s.R.toFixed(1)}°`, P.x + Math.sin(rl) * 84, P.y + Math.cos(rl) * 84, '#15803d');
         }
       }
 
@@ -278,13 +304,13 @@
 
     // ---------- scenarios (the notes' worked examples, in the notes' order) ----------
     const SCEN = {
-      ex2: { i: 50, n1: '1.00', n2: '1.33', q: 'Example 2: light travels from air (n = 1.00) into water (n = 1.33) at an angle of incidence of 50°. Find the angle of refraction R, then check your answer against the readout.' },
-      ex3: { i: 30, n1: '1.33', n2: '1.00', q: 'Example 3: light travels from water (n = 1.33) into air (n = 1.00) at an angle of incidence of 30°. Find the angle of refraction R.' },
-      ex4: { i: 50, n1: '1.33', n2: '1.00', q: 'Example 4: (a) Find the critical angle from water (n = 1.33) into air. (b) At an angle of incidence of 50°, is the light refracted into the air or reflected back into the water? Decide first, then look.' },
+      ex2: { i: 50, n1: '1.00', n2: '1.33', q: 'Example 2: light travels from air (<i>n</i> = 1.00) into water (<i>n</i> = 1.33) at an angle of incidence of 50°. Find the angle of refraction <i>R</i>, then check your answer against the readout.' },
+      ex3: { i: 30, n1: '1.33', n2: '1.00', q: 'Example 3: light travels from water (<i>n</i> = 1.33) into air (<i>n</i> = 1.00) at an angle of incidence of 30°. Find the angle of refraction <i>R</i>.' },
+      ex4: { i: 50, n1: '1.33', n2: '1.00', q: 'Example 4: (a) Find the critical angle from water (<i>n</i> = 1.33) into air. (b) At an angle of incidence of 50°, is the light refracted into the air or reflected back into the water? Decide first, then look.' },
     };
     function applyScenario(key) {
       const sc = SCEN[key];
-      el('question').textContent = sc ? sc.q : '';
+      el('question').innerHTML = sc ? sc.q : '';
       if (!sc) return;
       incEl.value = sc.i; el('n1').value = sc.n1; el('n2').value = sc.n2;
       syncSelect(el('m1'), el('n1')); syncSelect(el('m2'), el('n2'));

@@ -85,7 +85,7 @@
         <button id="fixBtn">Replace any blown bulbs</button>
       </div>
       <table>
-        <thead><tr><th>Bulb</th><th>Resistance</th><th>Voltage across it</th><th>Current through it</th><th>Power <i>P</i> = <i>VI</i> (brightness)</th></tr></thead>
+        <thead><tr><th>Circuit element</th><th>Resistance</th><th>Voltage</th><th>Current</th><th>Power <i>P</i> = <i>VI</i> (brightness)</th></tr></thead>
         <tbody id="tbody"></tbody>
         <tfoot><tr><th>Battery</th><th id="rt"></th><th id="et"></th><th id="it"></th><th id="pt"></th></tr></tfoot>
       </table>
@@ -103,6 +103,9 @@
     const canvas = el('sceneCanvas');
     const st = { switchOn: true, blown: [false, false, false], clock: 0 };
     const NAMES = ['A', 'B', 'C'];
+    // Fixed scales: a bulb glows fully at 4 W and the dots run at full speed at 3 A, whatever the emf.
+    // (Before, both were relative to the emf, so turning the emf up changed nothing on screen.)
+    const P_FULL = 4, I_FULL = 3;
 
     const mode = () => el('mode').value;
     const nB = () => mode() === 'combo' ? 3 : +el('count').value;
@@ -205,7 +208,7 @@
       ctx.strokeStyle = '#334155'; ctx.lineWidth = 3; ctx.lineCap = 'round';
       g.segs.forEach(sg => { ctx.beginPath(); ctx.moveTo(...sg.pts[0]); for (let i = 1; i < sg.pts.length; i++) ctx.lineTo(...sg.pts[i]); ctx.stroke(); });
       // current dots (conventional current)
-      const Iref = Math.max(0.2, E() / Math.min(...Rs()));
+      const Iref = I_FULL;
       ctx.fillStyle = '#f59e0b';
       g.segs.forEach(sg => {
         if (sg.I < 1e-9) return;
@@ -241,7 +244,7 @@
       ctx.fillStyle = '#0891b2'; ctx.font = 'bold 14px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('A', g.amm.x, g.amm.y + 1); ctx.textBaseline = 'alphabetic';
       tag(ctx, `${s.It.toFixed(3)} A`, g.amm.x, g.amm.y + 26, '#0e7490');
       // bulbs
-      const Pref = E() * E() / Math.min(...Rs().slice(0, nB()));
+      const Pref = P_FULL;
       g.bulbs.forEach(b => {
         const k = b.k, P = s.P[k], blown = st.blown[k];
         const glow = blown ? 0 : Math.min(1, Math.sqrt(P / Pref));
@@ -272,8 +275,9 @@
       ['emf', 'r1', 'r2', 'r3'].forEach((id, i) => el(id + 'Val').textContent = i === 0 ? `(${E()} V)` : `(${R[i - 1]} Ω)`);
       el('r3Group').classList.toggle('hidden', n < 3);
       el('count').disabled = mode() === 'combo';
+      if (mode() === 'combo' && el('count').value !== '3') el('count').value = '3';
       let rows = '';
-      for (let k = 0; k < n; k++) rows += `<tr class="${st.blown[k] ? 'off' : ''}"><td>${NAMES[k]}${st.blown[k] ? ' (blown)' : ''}</td><td>${R[k]} Ω</td><td>${s.V[k].toFixed(2)} V</td><td>${s.I[k].toFixed(3)} A</td><td>${s.P[k].toFixed(2)} W</td></tr>`;
+      for (let k = 0; k < n; k++) rows += `<tr class="${st.blown[k] ? 'off' : ''}"><td>Bulb ${NAMES[k]}${st.blown[k] ? ' (blown)' : ''}</td><td>${R[k]} Ω</td><td>${s.V[k].toFixed(2)} V</td><td>${s.I[k].toFixed(3)} A</td><td>${s.P[k].toFixed(2)} W</td></tr>`;
       el('tbody').innerHTML = rows;
       el('rt').textContent = isFinite(s.Rt) ? `total ${s.Rt.toFixed(2)} Ω` : 'open circuit';
       el('et').textContent = `${E()} V`; el('it').textContent = `${s.It.toFixed(3)} A`; el('pt').textContent = `${(E() * s.It).toFixed(2)} W`;

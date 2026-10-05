@@ -24,6 +24,13 @@
     .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
     .readout-card .value { font-size: 1rem; font-weight: bold; }
     .readout-card.warn { background: #fef2f2; }
+    .readout.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .nw { white-space: nowrap; }
+    [hidden] { display: none !important; }
+    .exp-tabs { margin-bottom: 8px; }
+    .exp-tabs button { font-weight: 600; }
+    #ohmControls { grid-template-columns: 1.6fr 1fr; }
+    @media (max-width: 900px) { #ohmControls { grid-template-columns: 1fr; } }
     .layout { display: grid; grid-template-columns: 1fr; gap: 8px; }
     @media (min-width: 900px) { .layout { grid-template-columns: 1.4fr 1fr; } }
     canvas { display: block; width: 100%; border-radius: 10px; touch-action: pan-y; }
@@ -57,9 +64,20 @@
     <h1>Ohm's Law and the Resistivity of a Wire</h1>
 
     <div class="panel">
-      <div class="controls">
+      <div class="tabs exp-tabs"><button id="expOhm" class="on">Ohm's law</button><button id="expRes">Resistivity of a wire</button></div>
+      <div class="controls" id="ohmControls">
         <div class="control-group">
-          <label for="material">Wire material (resistivity &rho; at 20 &deg;C, from the notes)</label>
+          <label for="component">Component</label>
+          <select id="component">
+            <option value="resistor" selected>Fixed resistor (15 &Omega;)</option>
+            <option value="lamp">Filament lamp (3.0 V, 0.60 W)</option>
+          </select>
+        </div>
+        <div class="control-group"><label for="voltO">Supply voltage <i>V</i> <span class="val" id="voltOVal"></span></label><input id="voltO" type="range" min="0" max="3" step="0.1" value="1.5" /></div>
+      </div>
+      <div class="controls" id="resControls" hidden>
+        <div class="control-group">
+          <label for="material">Wire material (resistivity <i>&rho;</i> at 20 &deg;C, from the notes)</label>
           <select id="material">
             <option value="1.6e-8">Silver (1.6 &times; 10&#8315;&#8312; &Omega; m)</option>
             <option value="1.7e-8">Copper (1.7 &times; 10&#8315;&#8312; &Omega; m)</option>
@@ -76,29 +94,39 @@
       <div class="buttons">
         <button id="recBtn" class="go">Record this reading</button>
         <button id="clearBtn">Clear the graphs</button>
-        <span style="font-size:0.8rem;color:#475569" id="recNote">Take readings at several voltages (for the V&ndash;I graph) or several lengths (for the R&ndash;L graph).</span>
+        <span style="font-size:0.8rem;color:#475569" id="recNote">Take readings at several voltages, then choose the other component and do the same.</span>
       </div>
-      <div class="readout">
+      <div class="readout three" id="ohmReadout">
+        <div class="readout-card"><div class="title">Voltmeter <span class="nw">reading <i>V</i></span></div><div class="value" id="oV">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Ammeter <span class="nw">reading <i>I</i></span></div><div class="value" id="oI">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Resistance <span class="nw"><i>R</i> = <i>V</i>/<i>I</i></span></div><div class="value" id="oR">&mdash;</div></div>
+      </div>
+      <div class="readout" id="resReadout" hidden>
         <div class="readout-card"><div class="title">Length in the circuit, <i>L</i></div><div class="value" id="lenV">&mdash;</div></div>
         <div class="readout-card"><div class="title">Cross-sectional area <i>A</i> = &pi;<i>d</i><sup>2</sup>/4</div><div class="value" id="areaV">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Resistance <i>R</i> = &rho;<i>L</i>/<i>A</i></div><div class="value" id="resV">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Voltmeter reading</div><div class="value" id="vV">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Resistance <i>R</i> = <i>&rho;</i><i>L</i>/<i>A</i></div><div class="value" id="resV">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Voltmeter reading <i>V</i></div><div class="value" id="vV">&mdash;</div></div>
         <div class="readout-card" id="iCard"><div class="title">Ammeter reading <i>I</i> = <i>V</i>/<i>R</i></div><div class="value" id="iV">&mdash;</div></div>
       </div>
     </div>
 
     <div class="layout">
       <div class="panel">
-        <div class="hint">Drag the crocodile clip along the wire to change the length <i>L</i> in the circuit.</div>
+        <div class="hint" id="rigHint">Set a voltage and press Record this reading. Repeat at several voltages, then choose the other component.</div>
         <canvas id="rigCanvas"></canvas>
-        <div class="note"><ul>
+        <div class="note" id="ohmNote"><ul>
+          <li>The ammeter is in <b>series</b> with the component. The voltmeter is connected <b>in parallel</b> across it.</li>
+          <li>Ohm's law: the current <i>I</i> is directly proportional to the voltage <i>V</i>, provided the physical conditions (e.g. temperature) of the conductor stay the same.</li>
+          <li>The lamp is rated 3.0 V, so the supply stops at 3.0 V (Tutorial B7).</li>
+        </ul></div>
+        <div class="note" id="resNote" hidden><ul>
           <li>The ammeter is in <b>series</b> with the wire. The voltmeter is connected <b>in parallel</b> across the length of wire being tested.</li>
-          <li><i>R</i> = &rho;<i>L</i>/<i>A</i>: a longer wire has more resistance, a thicker wire (bigger <i>A</i>) has less, and a material with a higher resistivity has more.</li>
+          <li><i>R</i> = <i>&rho;</i><i>L</i>/<i>A</i>: a longer wire has more resistance, a thicker wire (bigger <i>A</i>) has less, and a material with a higher resistivity has more.</li>
           <li>Low-resistivity metals (silver, copper) make good connecting wires. High-resistivity nichrome and tungsten are used in heating elements and filaments.</li>
         </ul></div>
       </div>
       <div class="panel">
-        <div class="tabs"><button id="tabVI" class="on">V&ndash;I graph</button><button id="tabRL">R&ndash;L graph</button></div>
+        <div class="tabs" id="graphTabs" hidden><button id="tabVI" class="on"><i>V</i>&ndash;<i>I</i> graph</button><button id="tabRL"><i>R</i>&ndash;<i>L</i> graph</button></div>
         <canvas id="graphCanvas"></canvas>
         <div class="note" id="graphNote"></div>
       </div>
@@ -108,12 +136,48 @@
   <script>
     const el = id => document.getElementById(id);
     const MYSTERY_RHO = 1.18e-6; // same as the notes' Example 6 wire (3.6 ohm, 0.64 mm, 98.5 cm)
-    const st = { L: 0.6, vi: [], rl: [], tab: 'VI' };
+    const st = { L: 0.6, vi: [], rl: [], tab: 'VI', exp: 'ohm', ohm: { resistor: [], lamp: [] } };
+    // Ohm's law experiment. The resistor is 15 ohm at every voltage. The lamp is Tutorial B7's (0.60 W at 3.0 V, so
+    // 15 ohm when lit); its filament heats as the current grows, so its resistance rises from about 3 ohm cold
+    // (an illustrative value, not from the notes) to 15 ohm at 3.0 V. I = V/R still rises with V at every voltage.
+    const RES_R = 15;
+    const comp = () => el('component').value;
+    const VO = () => +el('voltO').value;
+    const RO = (v = VO()) => comp() === 'lamp' ? 3 + 12 * Math.pow(v / 3, 0.8) : RES_R;
+    const IO = (v = VO()) => v / RO(v);
+    const COMP_COLOR = { resistor: '#dc2626', lamp: '#d97706' };
+    const COMP_NAME = { resistor: 'resistor', lamp: 'filament lamp' };
     const rho = () => el('material').value === 'mystery' ? MYSTERY_RHO : parseFloat(el('material').value);
     const area = () => Math.PI * Math.pow(+el('diam').value * 1e-3, 2) / 4;
     const R = () => rho() * st.L / area();
     const V = () => +el('volt').value;
     const I = () => V() / R();
+
+    // Canvas text with <i>, <sub> and <sup> runs, so symbols of physical quantities are italic, as in the notes.
+    // Honours ctx.textAlign; returns the width. measureOnly = true draws nothing.
+    function richText(ctx, s, x, y, measureOnly) {
+      const base = ctx.font, m = base.match(/([\d.]+)px/), size = m ? +m[1] : 12;
+      const runs = []; let it = false, sub = 0;
+      for (const tok of String(s).split(/(<\/?(?:i|sub|sup)>)/)) {
+        if (tok === '<i>') it = true; else if (tok === '</i>') it = false;
+        else if (tok === '<sub>') sub = 1; else if (tok === '<sup>') sub = -1;
+        else if (tok === '</sub>' || tok === '</sup>') sub = 0;
+        else if (tok) {
+          let f = sub ? base.replace(/[\d.]+px/, (size * 0.75).toFixed(1) + 'px') : base;
+          if (it) f = 'italic ' + f;
+          ctx.font = f; runs.push({ t: tok, f, sub, w: ctx.measureText(tok).width });
+        }
+      }
+      ctx.font = base;
+      const w = runs.reduce((a, r) => a + r.w, 0);
+      if (measureOnly) return w;
+      const align = ctx.textAlign;
+      let cx = align === 'center' ? x - w / 2 : (align === 'right' || align === 'end') ? x - w : x;
+      ctx.textAlign = 'left';
+      for (const r of runs) { ctx.font = r.f; ctx.fillText(r.t, cx, y + (r.sub === 1 ? size * 0.3 : r.sub === -1 ? -size * 0.4 : 0)); cx += r.w; }
+      ctx.textAlign = align; ctx.font = base;
+      return w;
+    }
 
     function sup(n) { return String(n).replace(/-/g, '⁻').replace(/\d/g, d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]); }
     function sci(x, dp = 2) { if (x === 0) return '0'; const e = Math.floor(Math.log10(Math.abs(x))); return `${(x / 10 ** e).toFixed(dp)} × 10${sup(e)}`; }
@@ -175,9 +239,12 @@
       ctx.fillText(`${V().toFixed(1)} V supply`, cellX, topY + 32);
       meter(ctx, ammX, topY, 'A', '#0891b2', fmtI(I()));
       // voltmeter in parallel across the tested length
-      const vY = wireY - 70, vX = (x0 + xc) / 2;
+      // Symmetric: one lead lands on the terminal block where the tested length starts, the other on the clip
+      // where it ends, so the voltmeter spans exactly the length L.
+      const vY = wireY - 70, vL = x0 - 3, vX = (vL + xc) / 2;
       ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 2; ctx.setLineDash([]);
-      ctx.beginPath(); ctx.moveTo(x0 + 6, wireY - 3); ctx.lineTo(x0 + 6, vY); ctx.lineTo(vX - 17, vY); ctx.moveTo(vX + 17, vY); ctx.lineTo(xc - 12, vY); ctx.lineTo(xc - 12, wireY - 3); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(vL, wireY - 8); ctx.lineTo(vL, vY); ctx.lineTo(vX - 17, vY); ctx.moveTo(vX + 17, vY); ctx.lineTo(xc, vY); ctx.lineTo(xc, wireY - 34); ctx.stroke();
+      ctx.fillStyle = '#7c3aed'; [[vL, wireY - 8], [xc, wireY - 34]].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill(); });
       meter(ctx, vX, vY, 'V', '#7c3aed', `${V().toFixed(2)} V`);
       // crocodile clip (the drag handle)
       ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.moveTo(xc, wireY - 4); ctx.lineTo(xc - 10, wireY - 26); ctx.lineTo(xc + 10, wireY - 26); ctx.closePath(); ctx.fill();
@@ -185,7 +252,7 @@
       rig.clip = { x: xc, y: wireY - 20 };
       // L dimension
       ctx.strokeStyle = '#b45309'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x0, wireY + 58); ctx.lineTo(xc, wireY + 58); ctx.moveTo(x0, wireY + 52); ctx.lineTo(x0, wireY + 64); ctx.moveTo(xc, wireY + 52); ctx.lineTo(xc, wireY + 64); ctx.stroke();
-      ctx.fillStyle = '#b45309'; ctx.font = 'bold 12px Arial'; ctx.fillText(`L = ${st.L.toFixed(2)} m`, (x0 + xc) / 2, wireY + 75);
+      ctx.fillStyle = '#b45309'; ctx.font = 'bold 12px Arial'; richText(ctx, `<i>L</i> = ${st.L.toFixed(2)} m`, (x0 + xc) / 2, wireY + 75);
       if (I() > 10) { // wrapped to the canvas width, last line at the bottom (the canvas is taller on a phone for this)
         ctx.fillStyle = '#b91c1c'; ctx.font = 'bold 13px Arial';
         const lines = [];
@@ -210,21 +277,30 @@
       const pts = isVI ? st.vi : st.rl;
       const xs = isVI ? 'I' : 'L', ys = isVI ? 'V' : 'R';
       const L = 58, Rm = 16, T = 16, B = 42, pw = w - L - Rm, ph = h - T - B;
+      // Fixed scales that never jump while readings are taken: V-I runs to the 6 V supply maximum and the current
+      // that gives at this length; R-L runs over the whole 1.00 m wire and its resistance. (Changing the wire
+      // clears the readings, so a new scale always starts on an empty graph.)
       const nice = v => { const e = Math.pow(10, Math.floor(Math.log10(v))); const m = v / e; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * e; };
-      const xMax = nice(Math.max(isVI ? I() : 1, ...pts.map(p => p[xs]), 1e-6) * 1.1);
-      const yMax = nice(Math.max(isVI ? 6 : R(), ...pts.map(p => p[ys]), 1e-6) * 1.1);
+      const Rfull = rho() / area(); // resistance of the whole 1.00 m wire
+      const xMax = isVI ? nice(6 / R()) : 1;
+      const yMax = isVI ? 6 : nice(Rfull);
       const X = v => L + v / xMax * pw, Y = v => T + ph - v / yMax * ph;
       ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1; ctx.fillStyle = '#475569'; ctx.font = '11px Arial';
+      const yDiv = isVI ? 6 : 5; // 1 V steps up to 6 V
       for (let k = 0; k <= 5; k++) {
-        const xv = xMax * k / 5, yv = yMax * k / 5;
-        ctx.beginPath(); ctx.moveTo(X(xv), T); ctx.lineTo(X(xv), T + ph); ctx.moveTo(L, Y(yv)); ctx.lineTo(L + pw, Y(yv)); ctx.stroke();
+        const xv = xMax * k / 5;
+        ctx.beginPath(); ctx.moveTo(X(xv), T); ctx.lineTo(X(xv), T + ph); ctx.stroke();
         ctx.textAlign = 'center'; ctx.fillText(+xv.toPrecision(3), X(xv), T + ph + 15);
+      }
+      for (let k = 0; k <= yDiv; k++) {
+        const yv = yMax * k / yDiv;
+        ctx.beginPath(); ctx.moveTo(L, Y(yv)); ctx.lineTo(L + pw, Y(yv)); ctx.stroke();
         ctx.textAlign = 'right'; ctx.fillText(+yv.toPrecision(3), L - 6, Y(yv) + 4);
       }
       ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(L, T + ph); ctx.lineTo(L + pw, T + ph); ctx.stroke();
       ctx.fillStyle = '#0f172a'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
-      ctx.fillText(isVI ? 'current I (A)' : 'length L (m)', L + pw / 2, h - 6);
-      ctx.save(); ctx.translate(14, T + ph / 2); ctx.rotate(-Math.PI / 2); ctx.fillText(isVI ? 'voltage V (V)' : 'resistance R (Ω)', 0, 0); ctx.restore();
+      richText(ctx, isVI ? 'current <i>I</i> (A)' : 'length <i>L</i> (m)', L + pw / 2, h - 6);
+      ctx.save(); ctx.translate(14, T + ph / 2); ctx.rotate(-Math.PI / 2); richText(ctx, isVI ? 'voltage <i>V</i> (V)' : 'resistance <i>R</i> (Ω)', 0, 0); ctx.restore();
       const g = fit(pts, xs, ys);
       if (g !== null && pts.length >= 2) {
         ctx.strokeStyle = 'rgba(37,99,235,0.6)'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
@@ -237,9 +313,121 @@
       const cx = isVI ? I() : st.L, cy = isVI ? V() : R();
       if (cx <= xMax && cy <= yMax) { ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X(cx), Y(cy), 6, 0, Math.PI * 2); ctx.stroke(); }
       let note;
-      if (isVI) note = pts.length >= 2 ? `Gradient of the V–I line = R = ${fmtR(g)}. A straight line through the origin means the wire is an <b>ohmic conductor</b> (V ∝ I).` : 'Record readings at different voltages (keep the clip still). An ohmic conductor gives a straight line through the origin, and the gradient is its resistance.';
-      else note = pts.length >= 2 ? `Gradient of the R–L line = ρ/A = ${g.toPrecision(3)} Ω/m, so <b>ρ = gradient × A = ${sci(g * area())} Ω m</b>. R ∝ L: doubling the length doubles the resistance.` : 'Record readings at different lengths (move the clip). The gradient of R against L is ρ/A, so ρ = gradient × A.';
+      if (isVI) note = pts.length >= 2 ? `Gradient of the <i>V</i>–<i>I</i> line = <i>R</i> = ${fmtR(g)}. A straight line through the origin means the wire is an <b>ohmic conductor</b> (<i>V</i> ∝ <i>I</i>).` : 'Record readings at different voltages (keep the clip still). An ohmic conductor gives a straight line through the origin, and the gradient is its resistance.';
+      else note = pts.length >= 2 ? `Gradient of the <i>R</i>–<i>L</i> line = <i>ρ</i>/<i>A</i> = ${g.toPrecision(3)} Ω/m, so <b><i>ρ</i> = gradient × <i>A</i> = ${sci(g * area())} Ω m</b>. <i>R</i> ∝ <i>L</i>: doubling the length doubles the resistance.` : 'Record readings at different lengths (move the clip). The gradient of <i>R</i> against <i>L</i> is <i>ρ</i>/<i>A</i>, so <i>ρ</i> = gradient × <i>A</i>.';
       el('graphNote').innerHTML = note;
+    }
+
+    // ---------- Ohm's law experiment: supply, ammeter in series, voltmeter across one component ----------
+    function drawOhmRig() {
+      const { ctx, w, h } = setup(el('rigCanvas'));
+      ctx.clearRect(0, 0, w, h);
+      const xL = Math.max(40, w * 0.12), xR = w - xL, topY = h * 0.2, botY = h * 0.56, cx = w / 2;
+      const v = VO(), i = IO(v), lamp = comp() === 'lamp';
+      const supX = xL + (cx - xL) * 0.6, ammX = cx + (xR - cx) * 0.45, half = 30; // half = room for the component
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(supX - 8, topY); ctx.lineTo(xL, topY); ctx.lineTo(xL, botY); ctx.lineTo(cx - half, botY);
+      ctx.moveTo(cx + half, botY); ctx.lineTo(xR, botY); ctx.lineTo(xR, topY); ctx.lineTo(ammX + 17, topY);
+      ctx.moveTo(ammX - 17, topY); ctx.lineTo(supX + 8, topY);
+      ctx.stroke();
+      // variable supply: a cell (long line +, short line -) with an arrow through it
+      ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(supX - 8, topY - 16); ctx.lineTo(supX - 8, topY + 16); ctx.stroke();
+      ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(supX + 8, topY - 8); ctx.lineTo(supX + 8, topY + 8); ctx.stroke();
+      ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(supX - 20, topY + 18); ctx.lineTo(supX + 20, topY - 18);
+      ctx.moveTo(supX + 20, topY - 18); ctx.lineTo(supX + 11, topY - 16); ctx.moveTo(supX + 20, topY - 18); ctx.lineTo(supX + 18, topY - 9); ctx.stroke();
+      ctx.fillStyle = '#334155'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
+      ctx.fillText('+', supX - 16, topY - 18); ctx.fillText('−', supX + 18, topY + 22);
+      ctx.fillText(`${v.toFixed(1)} V supply`, supX, topY + 38);
+      meter(ctx, ammX, topY, 'A', '#0891b2', fmtI(i));
+      // the component on the bottom wire
+      if (lamp) {
+        const b = Math.min(1, v * i / 0.6); // brightness: power over the rated 0.60 W
+        if (b > 0.01) {
+          const g = ctx.createRadialGradient(cx, botY, 6, cx, botY, 22 + 48 * b);
+          g.addColorStop(0, `rgba(253,224,71,${0.9 * b})`); g.addColorStop(1, 'rgba(253,224,71,0)');
+          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, botY, 22 + 48 * b, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.strokeStyle = '#334155'; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.moveTo(cx - half, botY); ctx.lineTo(cx - 18, botY); ctx.moveTo(cx + 18, botY); ctx.lineTo(cx + half, botY); ctx.stroke();
+        ctx.fillStyle = `rgba(254,240,138,${0.25 + 0.75 * b})`;
+        ctx.beginPath(); ctx.arc(cx, botY, 18, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        const d = 18 * Math.SQRT1_2;
+        ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx - d, botY - d); ctx.lineTo(cx + d, botY + d); ctx.moveTo(cx + d, botY - d); ctx.lineTo(cx - d, botY + d); ctx.stroke();
+      } else {
+        ctx.fillStyle = 'white'; ctx.strokeStyle = '#334155'; ctx.lineWidth = 2.5;
+        ctx.fillRect(cx - 24, botY - 9, 48, 18); ctx.strokeRect(cx - 24, botY - 9, 48, 18);
+        ctx.beginPath(); ctx.moveTo(cx - half, botY); ctx.lineTo(cx - 24, botY); ctx.moveTo(cx + 24, botY); ctx.lineTo(cx + half, botY); ctx.stroke();
+      }
+      ctx.fillStyle = '#0f172a'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
+      ctx.fillText(lamp ? 'filament lamp' : `${RES_R} Ω resistor`, cx, botY - 30);
+      // voltmeter in parallel across the component
+      const vY = botY + 72, a = cx - half - 14, bx = cx + half + 14;
+      ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(a, botY); ctx.lineTo(a, vY); ctx.lineTo(cx - 17, vY); ctx.moveTo(cx + 17, vY); ctx.lineTo(bx, vY); ctx.lineTo(bx, botY); ctx.stroke();
+      ctx.fillStyle = '#7c3aed'; [a, bx].forEach(x => { ctx.beginPath(); ctx.arc(x, botY, 3.5, 0, Math.PI * 2); ctx.fill(); });
+      meter(ctx, cx, vY, 'V', '#7c3aed', `${v.toFixed(2)} V`);
+    }
+
+    function drawOhmGraph() {
+      const { ctx, w, h } = setup(el('graphCanvas'));
+      ctx.clearRect(0, 0, w, h);
+      const L = 58, Rm = 16, T = 16, B = 42, pw = w - L - Rm, ph = h - T - B;
+      const xMax = 0.25, yMax = 3; // fixed: the lamp's 0.20 A at its rated 3.0 V fits, and so does the resistor's
+      const X = v => L + v / xMax * pw, Y = v => T + ph - v / yMax * ph;
+      ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1; ctx.fillStyle = '#475569'; ctx.font = '11px Arial';
+      for (let k = 0; k <= 5; k++) {
+        const xv = xMax * k / 5;
+        ctx.beginPath(); ctx.moveTo(X(xv), T); ctx.lineTo(X(xv), T + ph); ctx.stroke();
+        ctx.textAlign = 'center'; ctx.fillText(+xv.toFixed(2), X(xv), T + ph + 15);
+      }
+      for (let k = 0; k <= 6; k++) {
+        const yv = yMax * k / 6;
+        ctx.beginPath(); ctx.moveTo(L, Y(yv)); ctx.lineTo(L + pw, Y(yv)); ctx.stroke();
+        ctx.textAlign = 'right'; ctx.fillText(+yv.toFixed(1), L - 6, Y(yv) + 4);
+      }
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(L, T + ph); ctx.lineTo(L + pw, T + ph); ctx.stroke();
+      ctx.fillStyle = '#0f172a'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
+      richText(ctx, 'current <i>I</i> (A)', L + pw / 2, h - 6);
+      ctx.save(); ctx.translate(14, T + ph / 2); ctx.rotate(-Math.PI / 2); richText(ctx, 'voltage <i>V</i> (V)', 0, 0); ctx.restore();
+      // each component's readings, joined from the origin in order of current, so the shape shows
+      const shown = [];
+      for (const k of ['resistor', 'lamp']) {
+        const pts = st.ohm[k].slice().sort((p, q) => p.I - q.I);
+        if (!pts.length) continue;
+        shown.push(k);
+        ctx.strokeStyle = COMP_COLOR[k]; ctx.globalAlpha = 0.6; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+        ctx.beginPath(); ctx.moveTo(X(0), Y(0)); pts.forEach(p => ctx.lineTo(X(p.I), Y(p.V))); ctx.stroke();
+        ctx.setLineDash([]); ctx.globalAlpha = 1;
+        ctx.fillStyle = COMP_COLOR[k]; pts.forEach(p => { ctx.beginPath(); ctx.arc(X(p.I), Y(p.V), 5, 0, Math.PI * 2); ctx.fill(); });
+      }
+      // the present (unrecorded) reading as a hollow circle
+      ctx.strokeStyle = COMP_COLOR[comp()]; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X(IO()), Y(VO()), 6, 0, Math.PI * 2); ctx.stroke();
+      // key, top left inside the axes
+      if (!shown.includes(comp())) shown.push(comp());
+      ctx.font = '12px Arial'; ctx.textAlign = 'left';
+      shown.forEach((k, n) => {
+        ctx.fillStyle = COMP_COLOR[k]; ctx.beginPath(); ctx.arc(L + 14, T + 12 + n * 18, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#0f172a'; ctx.fillText(COMP_NAME[k], L + 24, T + 16 + n * 18);
+      });
+      const name = COMP_NAME[comp()], pts = st.ohm[comp()].filter(p => p.V > 0);
+      let note;
+      if (pts.length < 3) note = `Record at least three readings at different voltages for the ${name}. Is <i>V</i>/<i>I</i> the same each time?`;
+      else {
+        const rs = pts.map(p => p.V / p.I), lo = Math.min(...rs), hi = Math.max(...rs);
+        note = (hi - lo) / lo < 0.01
+          ? `<i>V</i>/<i>I</i> = ${fmtR(lo)} for every reading, so the ${name}'s <i>V</i>–<i>I</i> graph is a straight line through the origin, and its gradient is the resistance. The ${name} obeys Ohm's law: it is an <b>ohmic conductor</b>.`
+          : `<i>V</i>/<i>I</i> rises from ${fmtR(lo)} to ${fmtR(hi)} as the voltage goes up, so the ${name}'s <i>V</i>–<i>I</i> graph is a curve, not a straight line. It does <b>not</b> obey Ohm's law: it is a <b>non-ohmic conductor</b>. A bigger current makes the filament hotter, and a hotter filament has a bigger resistance; Ohm's law needs the temperature to stay the same.`;
+      }
+      if (st.ohm.resistor.length && st.ohm.lamp.length) note += ' Both components’ readings stay on the graph, so you can compare them.';
+      el('graphNote').innerHTML = note;
+    }
+
+    function updateOhmReadout() {
+      el('voltOVal').textContent = `(${VO().toFixed(1)} V)`;
+      el('oV').textContent = `${VO().toFixed(2)} V`;
+      el('oI').textContent = fmtI(IO());
+      el('oR').textContent = VO() > 0 ? fmtR(VO() / IO()) : '—';
     }
 
     function updateReadout() {
@@ -258,25 +446,59 @@
     function pos(e) { const r = rc.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
     const nearClip = q => rig && Math.abs(q.x - rig.clip.x) < 22 && Math.abs(q.y - rig.clip.y) < 30;
     const nearWire = q => rig && q.x >= rig.x0 && q.x <= rig.x1 && Math.abs(q.y - rig.wireY) < 16;
-    rc.addEventListener('pointerdown', e => { const q = pos(e); if (!nearClip(q) && !nearWire(q)) return; drag = true; rc.setPointerCapture(e.pointerId); e.preventDefault(); moveClip(q); });
-    rc.addEventListener('pointermove', e => { const q = pos(e); if (!drag) { rc.style.cursor = nearClip(q) || nearWire(q) ? 'ew-resize' : 'default'; return; } moveClip(q); });
+    rc.addEventListener('pointerdown', e => { if (st.exp !== 'res') return; const q = pos(e); if (!nearClip(q) && !nearWire(q)) return; drag = true; rc.setPointerCapture(e.pointerId); e.preventDefault(); moveClip(q); });
+    rc.addEventListener('pointermove', e => { if (st.exp !== 'res') { rc.style.cursor = 'default'; return; } const q = pos(e); if (!drag) { rc.style.cursor = nearClip(q) || nearWire(q) ? 'ew-resize' : 'default'; return; } moveClip(q); });
     function moveClip(q) { st.L = Math.round(Math.max(0.1, Math.min(1, (q.x - rig.x0) / rig.ppm)) * 100) / 100; }
     const end = () => { drag = false; };
     rc.addEventListener('pointerup', end); rc.addEventListener('pointercancel', end);
 
     el('recBtn').addEventListener('click', () => {
+      if (st.exp === 'ohm') {
+        // one reading per voltage per component: recording the same voltage again replaces it
+        const set = st.ohm[comp()], v = VO();
+        const k = set.findIndex(p => Math.abs(p.V - v) < 1e-9);
+        if (k >= 0) set.splice(k, 1);
+        set.push({ V: v, I: IO(v) });
+        el('recNote').innerHTML = `Recorded for the ${COMP_NAME[comp()]}: <i>V</i> = ${v.toFixed(1)} V, <i>I</i> = ${fmtI(IO(v))}.`;
+        return;
+      }
       // a V-I set must all be at one length: a new length starts a new set, and says so
-      if (st.vi.length && Math.abs(st.vi[0].L - st.L) > 1e-9) { st.vi = []; el('recNote').textContent = `New length (${st.L.toFixed(2)} m): the V–I graph started a new set of readings. The R–L graph keeps them all.`; }
-      else el('recNote').textContent = `Recorded: L = ${st.L.toFixed(2)} m, V = ${V().toFixed(1)} V, I = ${fmtI(I())}.`;
+      if (st.vi.length && Math.abs(st.vi[0].L - st.L) > 1e-9) { st.vi = []; el('recNote').innerHTML = `New length (${st.L.toFixed(2)} m): the <i>V</i>–<i>I</i> graph started a new set of readings. The <i>R</i>–<i>L</i> graph keeps them all.`; }
+      else el('recNote').innerHTML = `Recorded: <i>L</i> = ${st.L.toFixed(2)} m, <i>V</i> = ${V().toFixed(1)} V, <i>I</i> = ${fmtI(I())}.`;
       st.vi.push({ I: I(), V: V(), L: st.L });
       st.rl.push({ L: st.L, R: R() });
     });
-    el('clearBtn').addEventListener('click', () => { st.vi = []; st.rl = []; });
+    el('clearBtn').addEventListener('click', () => {
+      if (st.exp === 'ohm') st.ohm = { resistor: [], lamp: [] }; else { st.vi = []; st.rl = []; }
+    });
+    const REC_NOTE = {
+      ohm: 'Take readings at several voltages, then choose the other component and do the same.',
+      res: 'Take readings at several voltages (for the <i>V</i>&ndash;<i>I</i> graph) or several lengths (for the <i>R</i>&ndash;<i>L</i> graph).',
+    };
+    const RIG_HINT = {
+      ohm: 'Set a voltage and press Record this reading. Repeat at several voltages, then choose the other component.',
+      res: 'Drag the crocodile clip along the wire to change the length <i>L</i> in the circuit.',
+    };
+    function setExp(x) {
+      st.exp = x;
+      const ohm = x === 'ohm';
+      el('expOhm').classList.toggle('on', ohm); el('expRes').classList.toggle('on', !ohm);
+      ['ohmControls', 'ohmReadout', 'ohmNote'].forEach(id => { el(id).hidden = !ohm; });
+      ['resControls', 'resReadout', 'resNote', 'graphTabs'].forEach(id => { el(id).hidden = ohm; });
+      el('rigHint').innerHTML = RIG_HINT[x]; el('recNote').innerHTML = REC_NOTE[x];
+    }
+    el('expOhm').addEventListener('click', () => setExp('ohm'));
+    el('expRes').addEventListener('click', () => setExp('res'));
+    el('component').addEventListener('change', () => { el('recNote').innerHTML = REC_NOTE.ohm; });
     ['material', 'diam'].forEach(id => el(id).addEventListener('input', () => { st.vi = []; st.rl = []; }));
     el('tabVI').addEventListener('click', () => { st.tab = 'VI'; el('tabVI').classList.add('on'); el('tabRL').classList.remove('on'); });
     el('tabRL').addEventListener('click', () => { st.tab = 'RL'; el('tabRL').classList.add('on'); el('tabVI').classList.remove('on'); });
 
-    function frame() { drawRig(); drawGraph(); updateReadout(); requestAnimationFrame(frame); }
+    function frame() {
+      if (st.exp === 'ohm') { drawOhmRig(); drawOhmGraph(); updateOhmReadout(); }
+      else { drawRig(); drawGraph(); updateReadout(); }
+      requestAnimationFrame(frame);
+    }
     requestAnimationFrame(frame);
   </script>
   <script>

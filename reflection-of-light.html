@@ -17,7 +17,8 @@
     button { font-size: 0.88rem; padding: 7px 10px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; white-space: nowrap; }
     button:hover { background: #334155; }
     .toggle { display: flex; align-items: center; gap: 5px; font-size: 0.82rem; font-weight: 600; white-space: nowrap; padding-bottom: 6px; }
-    .readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; margin-top: 8px; }
+    .hidden { display: none !important; }
     .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
     .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
     .readout-card .value { font-size: 1rem; font-weight: bold; }
@@ -31,7 +32,7 @@
     @media (max-width: 900px) {
       .controls { grid-template-columns: 1fr 1fr; }
       .controls .control-group:first-child { grid-column: 1 / -1; }
-      .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .readout { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); }
       #sceneCanvas { height: 400px; }
     }
     /* Touch screens (phones, tablets; Samsung Internet reports hover: hover on a phone, so only pointer is tested):
@@ -59,6 +60,7 @@
           <input id="mirrorAngle" type="range" min="-35" max="35" value="0" step="1" />
         </div>
         <label class="toggle"><input type="checkbox" id="showTarget" checked /> Target game</label>
+        <label class="toggle"><input type="checkbox" id="showOld" /> Compare with the level mirror</label>
         <button id="newTarget">New target</button>
       </div>
 
@@ -67,6 +69,7 @@
         <div class="readout-card"><div class="title">Angle of reflection, <i>r</i></div><div class="value" id="rValue">&mdash;</div></div>
         <div class="readout-card match"><div class="title">Law of reflection</div><div class="value" id="checkValue"><i>i</i> = <i>r</i></div></div>
         <div class="readout-card" id="scoreCard"><div class="title">Targets hit</div><div class="value" id="scoreValue">0</div></div>
+        <div class="readout-card hidden" id="turnCard"><div class="title">Reflected ray turned through</div><div class="value" id="turnValue">&mdash;</div></div>
       </div>
     </div>
 
@@ -78,6 +81,7 @@
         <li>The angle of incidence <i>i</i> is measured between the incoming ray and the normal. The angle of reflection <i>r</i> is measured between the reflected ray and the normal, never from the mirror surface.</li>
         <li>However you aim the torch or tilt the mirror, <i>i</i> = <i>r</i>. The incident ray, the reflected ray and the normal all lie in the same plane.</li>
         <li>Tilt the mirror and watch the normal turn with it: the reflected ray moves, but the law still holds.</li>
+        <li>Tick <b>Compare with the level mirror</b>, then tilt the mirror: the dashed ray is where the light would go off a level mirror. With the incident ray unchanged, tilting the mirror through an angle turns the reflected ray through twice that angle.</li>
         <li>Sound obeys the same law when it reflects.</li>
       </ul></div>
     </div>
@@ -173,12 +177,41 @@
       if (d.y > 0) t = Math.min(t, (H - p.y) / d.y); if (d.y < 0) t = Math.min(t, -p.y / d.y);
       return { x: p.x + d.x * t, y: p.y + d.y * t, t };
     }
+    // Canvas text with <i>, <sub> and <sup> runs, so symbols of physical quantities are italic, as in the notes.
+    // Honours ctx.textAlign; returns the width. measureOnly = true draws nothing.
+    function richText(ctx, s, x, y, measureOnly) {
+      const base = ctx.font, m = base.match(/([\d.]+)px/), size = m ? +m[1] : 12;
+      const runs = []; let it = false, sub = 0;
+      for (const tok of String(s).split(/(<\/?(?:i|sub|sup)>)/)) {
+        if (tok === '<i>') it = true; else if (tok === '</i>') it = false;
+        else if (tok === '<sub>') sub = 1; else if (tok === '<sup>') sub = -1;
+        else if (tok === '</sub>' || tok === '</sup>') sub = 0;
+        else if (tok) {
+          let f = sub ? base.replace(/[\d.]+px/, (size * 0.75).toFixed(1) + 'px') : base;
+          if (it) f = 'italic ' + f;
+          ctx.font = f; runs.push({ t: tok, f, sub, w: ctx.measureText(tok).width });
+        }
+      }
+      ctx.font = base;
+      const w = runs.reduce((a, r) => a + r.w, 0);
+      if (measureOnly) return w;
+      const align = ctx.textAlign;
+      let cx = align === 'center' ? x - w / 2 : (align === 'right' || align === 'end') ? x - w : x;
+      ctx.textAlign = 'left';
+      for (const r of runs) { ctx.font = r.f; ctx.fillText(r.t, cx, y + (r.sub === 1 ? size * 0.3 : r.sub === -1 ? -size * 0.4 : 0)); cx += r.w; }
+      ctx.textAlign = align; ctx.font = base;
+      return w;
+    }
+
     function label(ctx, text, x, y, color, align = 'center') {
       ctx.font = 'bold 13px Arial'; ctx.textAlign = align; ctx.textBaseline = 'middle';
-      const tw = ctx.measureText(text).width;
-      const x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
+      const tw = richText(ctx, text, 0, 0, true);
+      let x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
+      // keep the whole label inside the canvas (a phone is narrow)
+      const shift = x0 - 5 < 0 ? 5 - x0 : x0 + tw + 5 > W ? W - 5 - (x0 + tw) : 0;
+      x += shift; x0 += shift;
       ctx.fillStyle = 'rgba(248,251,255,0.9)'; ctx.fillRect(x0 - 3, y - 9, tw + 6, 18);
-      ctx.fillStyle = color; ctx.fillText(text, x, y);
+      ctx.fillStyle = color; richText(ctx, text, x, y);
       ctx.textBaseline = 'alphabetic';
     }
 
@@ -218,6 +251,29 @@
       const rl = Math.min(E.t * 0.5, 140);
       arrowHead(ctx, P.x + A.r.x * rl, P.y + A.r.y * rl, Math.atan2(A.r.y, A.r.x), '#dc2626');
 
+      // compare: where the same incident ray would go off a level mirror (normal straight up)
+      if (el('showOld').checked) {
+        const oldR = { x: A.d.x, y: -Math.abs(A.d.y) }; // level mirror: the vertical part of the direction flips upwards
+        const OE = rayToEdge(P, oldR);
+        ctx.strokeStyle = 'rgba(100,116,139,0.55)'; ctx.lineWidth = 2; ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(P.x - 90, P.y); ctx.lineTo(P.x + 90, P.y); ctx.stroke(); // the level mirror
+        ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 3; ctx.setLineDash([8, 6]);
+        ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(OE.x, OE.y); ctx.stroke(); ctx.setLineDash([]);
+        const turn = turnedThrough(A);
+        if (turn > 0.5) {
+          const a0 = Math.atan2(oldR.y, oldR.x), a1 = Math.atan2(A.r.y, A.r.x);
+          let dd = a1 - a0; while (dd > Math.PI) dd -= 2 * Math.PI; while (dd < -Math.PI) dd += 2 * Math.PI;
+          ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(P.x, P.y, 120, a0, a0 + dd, dd < 0); ctx.stroke();
+          const am = a0 + dd / 2;
+          label(ctx, `${turn.toFixed(0)}°`, P.x + Math.cos(am) * 140, P.y + Math.sin(am) * 140, '#6d28d9');
+        }
+        // beside the dashed ray, on the side away from the real reflected ray and past the angle label
+        let px = -oldR.y, py = oldR.x; if (px * A.r.x + py * A.r.y > 0) { px = -px; py = -py; }
+        const lt = Math.max(60, Math.min(OE.t - 40, 230));
+        ctx.font = 'bold 13px Arial'; const lw = richText(ctx, 'reflected ray off a level mirror', 0, 0, true);
+        label(ctx, 'reflected ray off a level mirror', P.x + oldR.x * lt + px * (lw / 2 + 10), P.y + oldR.y * lt + py * 16, '#6d28d9');
+      }
+
       // angle arcs, both measured from the normal
       const nAng = Math.atan2(m.n.y, m.n.x);
       const inAng = Math.atan2(-A.d.y, -A.d.x), outAng = Math.atan2(A.r.y, A.r.x);
@@ -228,10 +284,10 @@
       };
       if (A.i > rad(0.5)) {
         const mi = arc(nAng, inAng, 46, '#d97706'), mr = arc(nAng, outAng, 58, '#dc2626');
-        label(ctx, `i = ${deg(A.i).toFixed(0)}°`, P.x + Math.cos(mi) * 78, P.y + Math.sin(mi) * 78, '#b45309');
-        label(ctx, `r = ${deg(A.rr).toFixed(0)}°`, P.x + Math.cos(mr) * 92, P.y + Math.sin(mr) * 92, '#b91c1c');
+        label(ctx, `<i>i</i> = ${deg(A.i).toFixed(0)}°`, P.x + Math.cos(mi) * 78, P.y + Math.sin(mi) * 78, '#b45309');
+        label(ctx, `<i>r</i> = ${deg(A.rr).toFixed(0)}°`, P.x + Math.cos(mr) * 92, P.y + Math.sin(mr) * 92, '#b91c1c');
       } else {
-        label(ctx, 'i = r = 0°: the ray reflects straight back', P.x, P.y - nl * 0.5, '#b91c1c');
+        label(ctx, '<i>i</i> = <i>r</i> = 0°: the ray reflects straight back', P.x, P.y - nl * 0.5, '#b91c1c');
       }
 
       // target
@@ -256,6 +312,11 @@
       ctx.beginPath(); ctx.arc(P.x, P.y, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     }
 
+    // angle between the reflected ray now and the one a level mirror would give, for the same incident ray
+    function turnedThrough(A) {
+      const oldR = { x: A.d.x, y: -Math.abs(A.d.y) };
+      return deg(Math.acos(Math.max(-1, Math.min(1, oldR.x * A.r.x + oldR.y * A.r.y))));
+    }
     function distToRay(p, o, d) {
       const t = (p.x - o.x) * d.x + (p.y - o.y) * d.y;
       if (t < 0) return Infinity;
@@ -275,6 +336,9 @@
       el('tiltLabel').textContent = tiltEl.value;
       if (!dragging || dragging.kind !== 'slider') incEl.value = Math.round(deg(A.i));
       el('scoreValue').textContent = st.score;
+      const cmp = el('showOld').checked;
+      el('turnCard').classList.toggle('hidden', !cmp);
+      if (cmp) { const t = Math.abs(+tiltEl.value); el('turnValue').textContent = `${turnedThrough(A).toFixed(1)}° = 2 × ${t}°`; }
     }
 
     // ---------- interaction ----------

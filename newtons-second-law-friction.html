@@ -14,7 +14,7 @@
     .group { border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 8px 8px; min-width: 0; }
     .group-title { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #64748b; margin-bottom: 6px; }
     .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-    .controls { display: grid; grid-template-columns: 1.7fr 1fr 1fr 1.3fr; gap: 10px; align-items: end; }
+    .controls { display: grid; grid-template-columns: 1.7fr 1fr 1fr 1.3fr 1.1fr; gap: 10px; align-items: end; }
     .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
     label { font-size: 0.8rem; font-weight: 600; }
     .val { font-weight: normal; color: #334155; }
@@ -78,16 +78,16 @@
             <div class="control-group">
               <label for="preset">Scenarios</label>
               <select id="preset">
-                <option value="rest" selected>At rest, nothing pushing (first law)</option>
-                <option value="accelerate">Push bigger than friction (speeds up)</option>
-                <option value="ex14">Example 14: uniform velocity</option>
-                <option value="slowdown">Sliding with no push (friction slows it)</option>
+                <option value="accelerate" selected>Push bigger than friction</option>
+                <option value="ex14">Push equal to friction</option>
+                <option value="slowdown">No push</option>
                 <option value="custom">Custom</option>
               </select>
             </div>
             <div class="control-group"><label for="mass">Mass <i>m</i> <span class="val" id="massVal"></span></label><input id="mass" type="range" min="1" max="20" step="0.5" /></div>
             <div class="control-group"><label for="fric">Friction <i>f</i> <span class="val" id="fricVal"></span></label><input id="fric" type="range" min="0" max="40" step="0.2" /></div>
-            <div class="control-group"><label for="force">Applied force <i>F</i> <span class="val" id="forceVal"></span></label><input id="force" type="range" min="-40" max="40" step="0.2" /></div>
+            <div class="control-group"><label for="force">Applied force <i>F</i> <span class="val" id="forceVal"></span></label><input id="force" type="range" min="0" max="40" step="0.2" /></div>
+            <div class="control-group"><label for="u">Starting velocity <i>u</i> <span class="val" id="uVal"></span></label><input id="u" type="range" min="0.5" max="6" step="0.5" /></div>
           </div>
         </div>
       </div>
@@ -96,7 +96,7 @@
         <div class="readout-card" id="netCard"><div class="title">Net force &Sigma;<i>F</i></div><div class="value" id="net">&mdash;</div></div>
         <div class="readout-card"><div class="title">Acceleration <i>a</i> = &Sigma;<i>F</i> / <i>m</i></div><div class="value" id="acc">&mdash;</div></div>
         <div class="readout-card"><div class="title">Velocity <i>v</i></div><div class="value" id="vel">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Friction acting now</div><div class="value" id="fnow">&mdash;</div></div>
+        <div class="readout-card"><div class="title">Friction <i>f</i></div><div class="value" id="fnow">&mdash;</div></div>
         <div class="readout-card"><div class="title">Normal force <i>N</i> = <i>W</i> = <i>mg</i></div><div class="value" id="nval">&mdash;</div></div>
       </div>
       <div class="status" id="status"></div>
@@ -104,14 +104,8 @@
 
     <div class="layout">
       <div class="panel">
-        <div class="hint">Press Start for a 10 s run. Grab the red handle on the force arrow and drag it left or right to push or pull the block, before the run or while it moves.</div>
+        <div class="hint">The block is already sliding to the right. Press Start for a 10 s run. Drag the tip of the red force arrow to change the push, before the run or while it moves.</div>
         <canvas id="sceneCanvas"></canvas>
-        <div class="note"><ul>
-          <li>Friction always opposes motion.</li>
-          <li>While the block is at rest, friction matches your push, up to its limit <i>f</i>. The forces stay balanced and the block stays at rest (first law).</li>
-          <li>Push harder than <i>f</i> and there is a net force, so the block accelerates in the direction of the net force (second law).</li>
-          <li>If the push exactly equals friction while the block is moving, the net force is zero, so it carries on at constant velocity.</li>
-        </ul></div>
       </div>
       <div class="panel">
         <canvas id="fbdCanvas"></canvas>
@@ -128,36 +122,63 @@
   <script>
     const G = 10;
     const el = id => document.getElementById(id);
+    // Every scenario starts with the block already sliding, so friction is always the same size f and opposes
+    // the motion. A block at rest (friction that changes with the push) is left out: the course doesn't teach it.
     const PRESETS = {
-      rest: { m: 5, f: 8, F: 0, v0: 0 },
-      accelerate: { m: 5, f: 8, F: 20, v0: 0 },
-      ex14: { m: 5, f: 17.6, F: 17.6, v0: 2 },
-      slowdown: { m: 5, f: 8, F: 0, v0: 6 }
+      accelerate: { m: 5, f: 8, F: 20, u: 2 },
+      ex14: { m: 5, f: 17.6, F: 17.6, u: 2 },
+      slowdown: { m: 5, f: 8, F: 0, u: 6 }
     };
     const T_RUN = 10; // one run lasts 10 s, then the block and the graph stop
     const QUESTIONS = {
-      ex14: 'Example 14: a box is pulled along a horizontal surface at uniform velocity by a force P. The friction Q between the box and the surface is 17.6 N. Draw the free-body diagram and find P. Press Start: the velocity stays the same, so what must the net force be?',
+      ex14: 'Example 14: a box is pulled on a horizontal surface at uniform velocity by a force <i>P</i>. The frictional force <i>Q</i> between the box and the surface is 17.6 N. Draw the free-body diagram of the box and find the magnitude of <i>P</i>. Press Start: the velocity stays the same, so what must the net force be?',
     };
-    const sim = { x: 0, v: 0, t: 0, running: false, started: false, hist: [] };
+    const sim = { x: 0, v: 0, t: 0, running: false, started: false, stopped: false, hist: [] };
+    // Canvas text with <i>, <sub> and <sup> runs, so symbols of physical quantities are italic, as in the notes.
+    // Honours ctx.textAlign; returns the width. measureOnly = true draws nothing.
+    function richText(ctx, s, x, y, measureOnly) {
+      const base = ctx.font, m = base.match(/([\d.]+)px/), size = m ? +m[1] : 12;
+      const runs = []; let it = false, sub = 0;
+      for (const tok of String(s).split(/(<\/?(?:i|sub|sup)>)/)) {
+        if (tok === '<i>') it = true; else if (tok === '</i>') it = false;
+        else if (tok === '<sub>') sub = 1; else if (tok === '<sup>') sub = -1;
+        else if (tok === '</sub>' || tok === '</sup>') sub = 0;
+        else if (tok) {
+          let f = sub ? base.replace(/[\d.]+px/, (size * 0.75).toFixed(1) + 'px') : base;
+          if (it) f = 'italic ' + f;
+          ctx.font = f; runs.push({ t: tok, f, sub, w: ctx.measureText(tok).width });
+        }
+      }
+      ctx.font = base;
+      const w = runs.reduce((a, r) => a + r.w, 0);
+      if (measureOnly) return w;
+      const align = ctx.textAlign;
+      let cx = align === 'center' ? x - w / 2 : (align === 'right' || align === 'end') ? x - w : x;
+      ctx.textAlign = 'left';
+      for (const r of runs) { ctx.font = r.f; ctx.fillText(r.t, cx, y + (r.sub === 1 ? size * 0.3 : r.sub === -1 ? -size * 0.4 : 0)); cx += r.w; }
+      ctx.textAlign = align; ctx.font = base;
+      return w;
+    }
+
 
     function applyPreset() {
-      el('question').textContent = QUESTIONS[el('preset').value] || '';
+      el('question').innerHTML = QUESTIONS[el('preset').value] || '';
       const p = PRESETS[el('preset').value]; if (!p) return;
-      el('mass').value = p.m; el('fric').value = p.f; el('force').value = p.F;
-      reset(p.v0);
+      el('mass').value = p.m; el('fric').value = p.f; el('force').value = p.F; el('u').value = p.u;
+      reset();
     }
-    function reset(v0 = 0) { sim.x = 0; sim.v = v0; sim.t = 0; sim.hist = [{ t: 0, v: v0 }]; sim.running = false; sim.started = false; }
-    const done = () => sim.t >= T_RUN - 1e-9;
+    function reset() { const u = +el('u').value; sim.x = 0; sim.v = u; sim.t = 0; sim.hist = [{ t: 0, v: u }]; sim.running = false; sim.started = false; sim.stopped = false; }
+    // one decimal place, without float drift (3.7499999 s is 3.75 s, which shows as 3.8)
+    const d1 = v => (Math.round(v * 1e6) / 1e6).toFixed(1);
+    const done = () => sim.stopped || sim.t >= T_RUN - 1e-9;
     const P = () => ({ m: +el('mass').value, f: +el('fric').value, F: +el('force').value });
 
-    // Friction and net force for the current state
-    function forces(v) {
+    // Friction and net force while the block slides to the right: friction is f, to the left.
+    // Once a run has stopped the block, there is no sliding friction to show (moving: false).
+    function forces() {
       const { m, f, F } = P();
-      let fr;
-      if (Math.abs(v) > 1e-9) fr = -Math.sign(v) * f;             // sliding: full friction against the motion
-      else if (Math.abs(F) <= f) fr = -F;                          // at rest: static friction balances the push
-      else fr = -Math.sign(F) * f;                                 // at rest but pushed too hard: starts to slide
-      return { m, f, F, fr, net: F + fr, a: (F + fr) / m, N: m * G };
+      if (sim.stopped) return { m, f, F, fr: 0, net: 0, a: 0, N: m * G, moving: false };
+      return { m, f, F, fr: -f, net: F - f, a: (F - f) / m, N: m * G, moving: true };
     }
 
     function step(dt) {
@@ -165,12 +186,13 @@
       for (let i = 0; i < n; i++) {
         const h = Math.min(dt / n, T_RUN - sim.t); // the last sub-step ends exactly at 10 s
         if (h <= 0) break;
-        const s = forces(sim.v);
+        const s = forces();
         const v0 = sim.v, v1 = v0 + s.a * h;
-        // friction can stop a sliding block but never push it backwards
-        if (v0 !== 0 && Math.sign(v1) !== Math.sign(v0) && Math.abs(s.F) <= s.f) {
-          sim.x += v0 * (-v0 / s.a) / 2; // it stops part-way through this sub-step, after v0^2 / 2|a|
-          sim.v = 0;
+        // friction can stop a sliding block but never push it backwards: the run ends when it stops
+        if (v1 <= 0) {
+          const tau = -v0 / s.a; // it stops part-way through this sub-step, after v0^2 / 2|a|
+          sim.x += v0 * tau / 2; sim.t += tau; sim.v = 0; sim.stopped = true;
+          break;
         } else {
           sim.x += (v0 + v1) / 2 * h; // exact for constant acceleration within the sub-step
           sim.v = v1;
@@ -199,9 +221,9 @@
     }
     function tag(ctx, t, x, y, color, align = 'center') {
       ctx.font = 'bold 12px Arial'; ctx.textAlign = align; ctx.textBaseline = 'middle';
-      const tw = ctx.measureText(t).width, x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
+      const tw = richText(ctx, t, 0, 0, true), x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
       ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(x0 - 3, y - 8, tw + 6, 16);
-      ctx.fillStyle = color; ctx.fillText(t, x, y); ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = color; richText(ctx, t, x, y); ctx.textBaseline = 'alphabetic';
     }
 
     let handle = null;
@@ -219,58 +241,58 @@
       for (let m = first; m < first + w / pxPerM + 3; m++) {
         const x = bx + (m - sim.x) * pxPerM;
         ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x, floorY); ctx.lineTo(x, floorY + 8); ctx.stroke();
-        ctx.fillText(`${m} m`, x, floorY + 20);
+        // the tick always shows; its label only when the whole label fits (no half-cut "28 m" at the edge)
+        const lw = ctx.measureText(`${m} m`).width / 2;
+        if (x - lw >= 0 && x + lw <= w) ctx.fillText(`${m} m`, x, floorY + 20);
       }
       // block
       const { m } = P();
       const size = 44 + m * 1.6, top = floorY - size;
       ctx.fillStyle = '#2563eb'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(bx - size / 2, top, size, size, 6) : ctx.rect(bx - size / 2, top, size, size); ctx.fill();
-      ctx.fillStyle = 'white'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.fillText(`${m} kg`, bx, top + size / 2 + 5);
-      const s = forces(sim.v);
-      // applied force, drawn from the side of the block it pushes/pulls from, with a drag handle at its tip
+      ctx.fillStyle = 'white'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.fillText(`${(+m).toFixed(1)} kg`, bx, top + size / 2 + 5);
+      const s = forces();
+      // applied force, pushing from the right-hand side of the block; its tip is what you drag
       const cy = top + size * 0.35;
-      const dir = s.F >= 0 ? 1 : -1;
-      const startX = bx + dir * size / 2;
+      const startX = bx + size / 2;
       const endX = startX + s.F * PX_PER_N;
-      if (Math.abs(s.F) > 0.1) arrow(ctx, startX, cy, endX, cy, '#dc2626', 4);
-      handle = { x: Math.abs(s.F) > 0.1 ? endX : bx + size / 2 + 14, y: cy, bx, size };
-      ctx.fillStyle = '#dc2626'; ctx.strokeStyle = 'white'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(handle.x, handle.y, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      tag(ctx, `F = ${Math.abs(s.F).toFixed(1)} N`, (startX + handle.x) / 2, cy - 18, '#b91c1c');
-      // friction along the floor contact
-      if (Math.abs(s.fr) > 0.05) {
+      if (s.F > 0.1) arrow(ctx, startX, cy, endX, cy, '#dc2626', 4);
+      handle = { x: s.F > 0.1 ? endX : startX + 6, y: cy, bx, size }; // no push: grab next to the block's side
+      tag(ctx, `<i>F</i> = ${s.F.toFixed(1)} N`, s.F > 0.1 ? (startX + endX) / 2 : startX + 34, cy - 18, '#b91c1c');
+      // friction along the floor contact, only while the block slides
+      if (s.moving && Math.abs(s.fr) > 0.05) {
         const fdir = Math.sign(s.fr);
         const fx0 = bx + fdir * size * 0.1;
         arrow(ctx, fx0, floorY - 6, fx0 + s.fr * PX_PER_N, floorY - 6, '#d97706', 4);
-        tag(ctx, `f = ${Math.abs(s.fr).toFixed(1)} N`, fx0 + s.fr * PX_PER_N / 2, floorY + 32, '#b45309');
+        tag(ctx, `<i>f</i> = ${Math.abs(s.fr).toFixed(1)} N`, fx0 + s.fr * PX_PER_N / 2, floorY + 32, '#b45309');
       }
       // velocity arrow above
       if (Math.abs(sim.v) > 0.02) {
         arrow(ctx, bx, top - 14, bx + Math.max(-110, Math.min(110, sim.v * 22)), top - 14, '#16a34a', 3, 9);
-        tag(ctx, `v = ${sim.v.toFixed(2)} m/s`, bx, top - 30, '#15803d');
+        tag(ctx, `<i>v</i> = ${sim.v.toFixed(1)} m/s`, bx, top - 30, '#15803d');
       }
       ctx.fillStyle = '#334155'; ctx.font = '12px Arial'; ctx.textAlign = 'left';
-      ctx.fillText(`t = ${sim.t.toFixed(1)} s   x = ${sim.x.toFixed(2)} m`, 8, 16);
+      richText(ctx, `<i>t</i> = ${d1(sim.t)} s     <i>x</i> = ${d1(sim.x)} m`, 8, 16);
     }
 
     function drawFBD() {
       const { ctx, w, h } = setup(el('fbdCanvas'));
       ctx.clearRect(0, 0, w, h);
-      const s = forces(sim.v);
+      const s = forces();
       const cx = w / 2, cy = h / 2 - 12, half = 26;
       const maxF = Math.max(s.N, Math.abs(s.F), Math.abs(s.fr), 1);
       const k = Math.min(w * 0.34, h / 2 - half - 30) / maxF; // N and W must stay inside the canvas
       ctx.fillStyle = '#334155'; ctx.fillRect(cx - half, cy - half, 2 * half, 2 * half);
       arrow(ctx, cx, cy - half, cx, cy - half - s.N * k, '#0891b2', 3.5);
-      tag(ctx, `N = ${s.N.toFixed(0)} N`, cx + 10, cy - half - s.N * k * 0.6, '#0e7490', 'left');
+      tag(ctx, `<i>N</i> = ${s.N.toFixed(1)} N`, cx + 10, cy - half - s.N * k * 0.6, '#0e7490', 'left');
       arrow(ctx, cx, cy + half, cx, cy + half + s.N * k, '#7c3aed', 3.5);
-      tag(ctx, `W = ${s.N.toFixed(0)} N`, cx + 10, cy + half + s.N * k * 0.6, '#6d28d9', 'left');
-      if (Math.abs(s.F) > 0.05) { const d = Math.sign(s.F); arrow(ctx, cx + d * half, cy - 8, cx + d * half + s.F * k, cy - 8, '#dc2626', 3.5); tag(ctx, `F = ${Math.abs(s.F).toFixed(1)} N`, cx + d * half + s.F * k * 0.5, cy - 24, '#b91c1c'); }
-      if (Math.abs(s.fr) > 0.05) { const d = Math.sign(s.fr); arrow(ctx, cx + d * half, cy + 10, cx + d * half + s.fr * k, cy + 10, '#d97706', 3.5); tag(ctx, `f = ${Math.abs(s.fr).toFixed(1)} N`, cx + d * half + s.fr * k * 0.5, cy + 26, '#b45309'); }
+      tag(ctx, `<i>W</i> = ${s.N.toFixed(1)} N`, cx + 10, cy + half + s.N * k * 0.6, '#6d28d9', 'left');
+      if (s.moving && s.F > 0.05) { const d = 1; arrow(ctx, cx + d * half, cy - 8, cx + d * half + s.F * k, cy - 8, '#dc2626', 3.5); tag(ctx, `<i>F</i> = ${s.F.toFixed(1)} N`, cx + d * half + s.F * k * 0.5, cy - 24, '#b91c1c'); }
+      if (s.moving && Math.abs(s.fr) > 0.05) { const d = Math.sign(s.fr); arrow(ctx, cx + d * half, cy + 10, cx + d * half + s.fr * k, cy + 10, '#d97706', 3.5); tag(ctx, `<i>f</i> = ${Math.abs(s.fr).toFixed(1)} N`, cx + d * half + s.fr * k * 0.5, cy + 26, '#b45309'); }
       // net force
       const ny = h - 12;
-      if (Math.abs(s.net) > 0.05) { arrow(ctx, cx, ny, cx + s.net * k * 1.5, ny, '#b91c1c', 3); tag(ctx, `ΣF = ${Math.abs(s.net).toFixed(1)} N ${s.net > 0 ? 'right' : 'left'}`, cx, ny - 14, '#b91c1c'); }
-      else tag(ctx, 'ΣF = 0: forces balanced', cx, ny, '#15803d');
+      if (!s.moving) tag(ctx, 'The block has stopped', cx, ny, '#334155');
+      else if (Math.abs(s.net) > 0.05) { arrow(ctx, cx, ny, cx + s.net * k * 1.5, ny, '#b91c1c', 3); tag(ctx, `Σ<i>F</i> = ${Math.abs(s.net).toFixed(1)} N ${s.net > 0 ? 'right' : 'left'}`, cx, ny - 14, '#b91c1c'); }
+      else tag(ctx, 'Σ<i>F</i> = 0: forces balanced', cx, ny, '#15803d');
     }
 
     function drawGraph() {
@@ -279,34 +301,37 @@
       const L = 46, R = 10, T = 10, B = 26, pw = w - L - R, ph = h - T - B;
       const t0 = 0, t1 = T_RUN;
       const vmax = Math.max(2, ...sim.hist.map(p => Math.abs(p.v))) * 1.15;
-      const X = t => L + (t - t0) / 10 * pw, Y = v => T + ph / 2 - v / vmax * ph / 2;
+      const X = t => L + (t - t0) / 10 * pw, Y = v => T + ph - v / vmax * ph;
       ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1; ctx.font = '11px Arial'; ctx.fillStyle = '#475569';
       const step = vmax > 10 ? 5 : vmax > 4 ? 2 : 1;
       ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-      for (let v = -Math.floor(vmax / step) * step; v <= vmax; v += step) { ctx.beginPath(); ctx.moveTo(L, Y(v)); ctx.lineTo(w - R, Y(v)); ctx.stroke(); ctx.fillText(v.toFixed(0), L - 5, Y(v)); }
+      for (let v = 0; v <= vmax; v += step) { ctx.beginPath(); ctx.moveTo(L, Y(v)); ctx.lineTo(w - R, Y(v)); ctx.stroke(); ctx.fillText(v.toFixed(0), L - 5, Y(v)); }
       ctx.textAlign = 'center'; ctx.textBaseline = 'top';
       for (let t = Math.ceil(t0); t <= t1; t++) ctx.fillText(t.toFixed(0), X(t), h - B + 5);
       ctx.textBaseline = 'alphabetic';
       ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(L, h - B); ctx.moveTo(L, Y(0)); ctx.lineTo(w - R, Y(0)); ctx.stroke();
-      ctx.fillText('t (s)', w - 24, h - 2); ctx.save(); ctx.translate(12, T + ph / 2); ctx.rotate(-Math.PI / 2); ctx.fillText('v (m/s)', 0, 0); ctx.restore();
+      richText(ctx, '<i>t</i> (s)', w - 24, h - 2); ctx.save(); ctx.translate(12, T + ph / 2); ctx.rotate(-Math.PI / 2); richText(ctx, '<i>v</i> (m/s)', 0, 0); ctx.restore();
       ctx.strokeStyle = '#16a34a'; ctx.lineWidth = 2.5; ctx.beginPath();
       sim.hist.forEach((p, i) => { if (p.t < t0) return; const x = X(p.t), y = Y(p.v); if (i === 0 || sim.hist[i - 1].t < t0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
       ctx.stroke();
     }
 
     function updateReadout() {
-      const s = forces(sim.v);
-      el('massVal').textContent = `(${s.m} kg)`; el('fricVal').textContent = `(${s.f.toFixed(1)} N)`;
-      el('forceVal').textContent = `(${Math.abs(s.F).toFixed(1)} N${s.F > 0 ? ' right' : s.F < 0 ? ' left' : ''})`;
-      const z = v => (Math.abs(v) < 0.005 ? 0 : v);
-      el('net').textContent = `${z(s.net).toFixed(2)} N`; el('acc').textContent = `${z(s.a).toFixed(2)} m/s²`;
-      el('vel').textContent = `${z(sim.v).toFixed(2)} m/s`; el('fnow').textContent = `${Math.abs(s.fr).toFixed(1)} N${Math.abs(sim.v) < 1e-9 && Math.abs(s.fr) > 0 ? ' (matches the push)' : ''}`;
-      el('nval').textContent = `${s.N.toFixed(0)} N`;
-      el('netCard').classList.toggle('zero', Math.abs(s.net) < 0.005);
+      const s = forces();
+      el('massVal').textContent = `(${(+s.m).toFixed(1)} kg)`; el('fricVal').textContent = `(${s.f.toFixed(1)} N)`;
+      el('forceVal').textContent = `(${s.F.toFixed(1)} N)`; el('uVal').textContent = `(${(+el('u').value).toFixed(1)} m/s)`;
+      const z = v => (Math.abs(v) < 0.05 ? 0 : v);
+      const sign = t => t.replace('-', '−');
+      // once the block has stopped there is no sliding friction, so the force readouts have nothing to show
+      el('net').textContent = s.moving ? sign(`${z(s.net).toFixed(1)} N`) : '—'; el('acc').textContent = s.moving ? sign(`${z(s.a).toFixed(1)} m/s²`) : '—';
+      el('vel').textContent = `${d1(z(sim.v))} m/s`; el('fnow').textContent = s.moving ? `${s.f.toFixed(1)} N, to the left` : '—';
+      el('nval').textContent = `${s.N.toFixed(1)} N`;
+      el('netCard').classList.toggle('zero', s.moving && Math.abs(s.net) < 0.05);
       el('playBtn').textContent = sim.started && !sim.running && !done() ? 'Play' : 'Pause';
       el('playBtn').disabled = !sim.started || done();
       el('startBtn').disabled = sim.started && !done();
-      el('status').textContent = done() ? `The 10 s run has finished: v = ${z(sim.v).toFixed(2)} m/s, x = ${sim.x.toFixed(2)} m. Press Reset (or Start) to run again.`
+      el('status').innerHTML = sim.stopped ? `Friction stopped the block at <i>t</i> = ${d1(sim.t)} s, after <i>x</i> = ${d1(sim.x)} m. The run ends here. Press Reset (or Start) to run again.`
+        : done() ? `The 10 s run has finished: <i>v</i> = ${d1(z(sim.v))} m/s, <i>x</i> = ${d1(sim.x)} m. Press Reset (or Start) to run again.`
         : !sim.started ? 'Set up the forces, then press Start.' : sim.running ? '' : 'Paused.';
     }
 
@@ -322,8 +347,8 @@
       const p = pos(e);
       if (!drag) { sc.style.cursor = handle && Math.hypot(p.x - handle.x, p.y - handle.y) < 22 ? 'ew-resize' : 'default'; return; }
       const d = p.x - handle.bx, edge = handle.size / 2;
-      let F = Math.abs(d) <= edge ? 0 : (d - Math.sign(d) * edge) / PX_PER_N;
-      F = Math.max(-40, Math.min(40, Math.round(F * 5) / 5));
+      let F = d <= edge ? 0 : (d - edge) / PX_PER_N;
+      F = Math.max(0, Math.min(40, Math.round(F * 5) / 5));
       if (+el('force').value !== F) { el('force').value = F; toCustom(); }
     });
     const end = () => { drag = false; };
@@ -332,7 +357,8 @@
     const toCustom = () => { el('preset').value = 'custom'; el('question').textContent = ''; };
     el('preset').addEventListener('change', applyPreset);
     ['mass', 'fric', 'force'].forEach(id => el(id).addEventListener('input', toCustom));
-    const restart = () => { const p = PRESETS[el('preset').value]; reset(p ? p.v0 : sim.hist[0].v); };
+    el('u').addEventListener('input', () => { toCustom(); reset(); }); // a new starting velocity restarts the block
+    const restart = () => reset();
     el('startBtn').addEventListener('click', () => { if (done()) restart(); sim.started = true; sim.running = true; });
     el('playBtn').addEventListener('click', () => { if (sim.started && !done()) sim.running = !sim.running; });
     el('resetBtn').addEventListener('click', restart);

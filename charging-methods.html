@@ -9,7 +9,7 @@
     body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
     .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
     h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
-    .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 8px; }
+    .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 8px; }
     .tab { font-size: 0.92rem; font-weight: 700; padding: 9px 6px; border-radius: 9px; border: 2px solid #cbd5e1; background: white; color: #334155; cursor: pointer; }
     .tab.active { background: #2563eb; border-color: #2563eb; color: white; }
     .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
@@ -37,9 +37,31 @@
     .note { margin-top: 6px; font-size: 0.8rem; color: #475569; }
     .note p { margin: 4px 0; }
     .hidden { display: none !important; }
+    /* The readings and the steps sit beside the simulation on a wide screen, so everything is seen together. */
+    .sim { display: grid; grid-template-columns: 1fr; gap: 8px; }
+    .side .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 0; }
+    .side .steps { margin-top: 6px; }
+    @media (min-width: 900px) {
+      .sim { grid-template-columns: minmax(0, 1fr) 250px; }
+      .side .readout { grid-template-columns: 1fr; gap: 4px; }
+      .side .readout-card { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; text-align: left; padding: 5px 8px; }
+      .side .readout-card .title { margin: 0; }
+      .side .readout-card .value { font-size: 0.92rem; text-align: right; }
+    }
+    .summary table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    .summary th, .summary td { border: 1px solid #e2e8f0; padding: 7px 8px; text-align: left; vertical-align: top; }
+    .summary thead th { background: #2563eb; color: white; }
+    .summary tbody th { background: #f1f5f9; width: 18%; }
+    .summary ul { margin: 8px 0 0; padding-left: 18px; font-size: 0.86rem; color: #334155; }
+    .summary li { margin: 3px 0; }
+    .table-scroll { overflow-x: auto; }
     @media (max-width: 900px) {
-      .readout { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
       .tab { font-size: 0.8rem; }
+    }
+    @media (max-width: 600px) {
+      .tabs { grid-template-columns: repeat(2, 1fr); }
+      .summary table { font-size: 0.78rem; }
+      .summary th, .summary td { padding: 5px; }
     }
     /* Touch screens (phones, tablets; Samsung Internet reports hover: hover on a phone, so only pointer is tested):
        16 px form fields stop an iPhone zooming the page in when one is
@@ -59,9 +81,10 @@
       <button class="tab active" data-tab="friction" role="tab">Charging by friction</button>
       <button class="tab" data-tab="contact" role="tab">Charging by contact</button>
       <button class="tab" data-tab="induction" role="tab">Charging by induction</button>
+      <button class="tab" data-tab="summary" role="tab">Summary</button>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="controlPanel">
       <div class="controls">
         <div class="control-group wide">
           <label for="material" id="materialLabel">Rod and cloth</label>
@@ -75,20 +98,43 @@
         <div class="control-group" id="rechargeGroup"><button id="rechargeBtn" class="secondary">Charge the rod again</button></div>
         <div class="control-group"><button id="resetBtn" class="secondary">Start again</button></div>
       </div>
-
-      <div class="readout">
-        <div class="readout-card"><div class="title" id="rodTitle">Rod</div><div class="value" id="rodValue">Neutral</div></div>
-        <div class="readout-card" id="clothCard"><div class="title" id="clothTitle">Cloth</div><div class="value" id="clothValue">Neutral</div></div>
-        <div class="readout-card" id="sphereCard"><div class="title">Metal sphere</div><div class="value" id="sphereValue">Neutral</div></div>
-        <div class="readout-card" id="forceCard"><div class="title">Force of rod on sphere</div><div class="value" id="forceValue">None</div></div>
-      </div>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="simPanel">
       <div class="hint" id="hint"></div>
-      <canvas id="sceneCanvas"></canvas>
-      <ul class="steps" id="steps"></ul>
+      <div class="sim">
+        <canvas id="sceneCanvas"></canvas>
+        <div class="side">
+          <div class="readout">
+            <div class="readout-card"><div class="title" id="rodTitle">Rod</div><div class="value" id="rodValue">Neutral</div></div>
+            <div class="readout-card" id="clothCard"><div class="title" id="clothTitle">Cloth</div><div class="value" id="clothValue">Neutral</div></div>
+            <div class="readout-card" id="sphereCard"><div class="title">Metal sphere</div><div class="value" id="sphereValue">Neutral</div></div>
+            <div class="readout-card" id="forceCard"><div class="title">Force of rod on sphere</div><div class="value" id="forceValue">None</div></div>
+          </div>
+          <ul class="steps" id="steps"></ul>
+        </div>
+      </div>
       <div class="note" id="note"></div>
+    </div>
+
+    <div class="panel summary hidden" id="summaryPanel">
+      <b>How the three ways of charging compare</b>
+      <div class="table-scroll" style="margin-top:6px">
+        <table>
+          <thead><tr><th></th><th>Friction</th><th>Contact</th><th>Induction</th></tr></thead>
+          <tbody>
+            <tr><th>What gets charged</th><td>Two different insulators, rubbed against each other (amber rod and fur)</td><td>An uncharged conductor (the metal sphere)</td><td>An uncharged conductor (the metal sphere)</td></tr>
+            <tr><th>Do they touch?</th><td>Yes: they are rubbed together</td><td>Yes: the charged object touches the conductor</td><td>No: the charged object is only brought close</td></tr>
+            <tr><th>Which electrons move, and where</th><td>Electrons go from one insulator to the other</td><td>Free electrons go between the charged object and the conductor</td><td>Free electrons flow between the conductor and the Earth, through the earth wire</td></tr>
+            <tr><th>Earth wire needed?</th><td>No</td><td>No</td><td>Yes: connected, then removed while the charged object is still near</td></tr>
+            <tr><th>Charge gained</th><td>The two insulators gain equal and opposite charges</td><td>The <b>same</b> sign as the charged object</td><td>The <b>opposite</b> sign to the charged object</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul>
+        <li>In all three, only electrons move from one object to another.</li>
+        <li>Charge is not created or destroyed: an object becomes negative by gaining electrons, and positive by losing them.</li>
+      </ul>
     </div>
   </div>
 
@@ -622,8 +668,13 @@
     }
 
     document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => {
-      tab = b.dataset.tab;
       document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === b));
+      const summary = b.dataset.tab === 'summary';
+      el('summaryPanel').classList.toggle('hidden', !summary);
+      el('controlPanel').classList.toggle('hidden', summary);
+      el('simPanel').classList.toggle('hidden', summary);
+      if (summary) return; // the experiment underneath keeps its last tab
+      tab = b.dataset.tab;
       reset();
     }));
     el('earthBtn').addEventListener('click', () => { state.earthed = !state.earthed; });
