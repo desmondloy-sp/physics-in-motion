@@ -849,9 +849,9 @@
         ctx.lineTo(px, trackY + 10);
         ctx.stroke();
         ctx.textAlign = 'center';
-        // 52 css px below the track (scaled by the device pixel ratio), under the velocity arrow and its label
+        // 24 css px below the track (scaled by the device pixel ratio), above the velocity arrow and its label
         const kt = motionCanvas.width / (motionCanvas.getBoundingClientRect().width || 1);
-        ctx.fillText(tickVal.toFixed(1), px, Math.min(trackY + 52 * kt, h - 4 * kt));
+        ctx.fillText(tickVal.toFixed(1), px, trackY + 24 * kt);
       });
 
       // top-right: the Start/Pause/Reset buttons sit over the top-left corner and hid this label
@@ -915,7 +915,8 @@
       ctx.fillText('Cart', cartX, cartY - 18);
 
       const k = motionCanvas.width / (motionCanvas.getBoundingClientRect().width || 1);
-      const pxPerMs = 16 * k, vy = trackY + 18 * k, vTip = cartX + current.v * pxPerMs;
+      // below the position scale; on a short (phone) canvas it rises just enough to keep its label inside
+      const pxPerMs = 16 * k, vy = Math.min(trackY + 38 * k, h - 21 * k), vTip = cartX + current.v * pxPerMs;
       if (Math.abs(current.v) > 0.01) {
         const dir = Math.sign(current.v);
         ctx.strokeStyle = '#16a34a'; ctx.fillStyle = '#16a34a'; ctx.lineWidth = 3 * k;

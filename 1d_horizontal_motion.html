@@ -569,9 +569,9 @@
           ctx.stroke();
 
           ctx.textAlign = 'center';
-          // 42 css px below the track (scaled by the device pixel ratio), under the velocity arrow's label
+          // 24 css px below the track (scaled by the device pixel ratio), above the velocity arrow and its label
           const kt = motionCanvas.width / (motionCanvas.getBoundingClientRect().width || 1);
-          ctx.fillText(tickVal.toFixed(1), px, Math.min(trackY + 42 * kt, h - 4 * kt));
+          ctx.fillText(tickVal.toFixed(1), px, trackY + 24 * kt);
         }
       });
 
@@ -641,7 +641,7 @@
       // velocity arrow (green) from the cart, drawn to scale; its tip is a drag handle before the run starts
       const k = motionCanvas.width / (motionCanvas.getBoundingClientRect().width || 1);
       const pxPerMs = 16 * k;
-      const vy = trackY + 20 * k; // between the track and its scale, clear of the time markers above
+      const vy = Math.min(trackY + 40 * k, h - 10 * k); // below the position scale, clear of the time markers above
       const vTip = cartX + current.v * pxPerMs;
       if (Math.abs(current.v) > 0.01) {
         ctx.strokeStyle = '#16a34a'; ctx.fillStyle = '#16a34a'; ctx.lineWidth = 3 * k;
