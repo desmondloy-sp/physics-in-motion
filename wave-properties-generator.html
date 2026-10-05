@@ -245,7 +245,8 @@
             const xr = x + p.lam / 2;
             if (xr >= 0 && xr <= Math.min(WORLD, front) - 2) tag(ctx, 'R', x0 + xr * s, mid - 70, '#1d4ed8');
           }
-          tag(ctx, 'C = compression   R = rarefaction', x0 + 110, 22, '#334155');
+          // on a narrow canvas the key gets its own row, under "wave travels this way"
+          tag(ctx, 'C = compression   R = rarefaction', w < 600 ? w / 2 : x0 + 110, w < 600 ? 46 : 22, '#334155');
         }
       }
       // source handle

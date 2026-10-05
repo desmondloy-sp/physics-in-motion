@@ -41,6 +41,7 @@
       .controls .control-group:first-child { grid-column: 1 / -1; }
       .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
+    @media (max-width: 600px) { #rigCanvas { height: 360px; } } /* room for the short-circuit warning on two lines */
     /* Touch screens (phones, tablets; Samsung Internet reports hover: hover on a phone, so only pointer is tested):
        16 px form fields stop an iPhone zooming the page in when one is
        tapped, and buttons and tick boxes get a finger-sized target. */
@@ -185,7 +186,15 @@
       // L dimension
       ctx.strokeStyle = '#b45309'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x0, wireY + 58); ctx.lineTo(xc, wireY + 58); ctx.moveTo(x0, wireY + 52); ctx.lineTo(x0, wireY + 64); ctx.moveTo(xc, wireY + 52); ctx.lineTo(xc, wireY + 64); ctx.stroke();
       ctx.fillStyle = '#b45309'; ctx.font = 'bold 12px Arial'; ctx.fillText(`L = ${st.L.toFixed(2)} m`, (x0 + xc) / 2, wireY + 75);
-      if (I() > 10) { ctx.fillStyle = '#b91c1c'; ctx.font = 'bold 13px Arial'; ctx.fillText('Huge current: a low-resistivity wire like this is almost a short circuit — it would get very hot.', w / 2, h - 8); }
+      if (I() > 10) { // wrapped to the canvas width, last line at the bottom (the canvas is taller on a phone for this)
+        ctx.fillStyle = '#b91c1c'; ctx.font = 'bold 13px Arial';
+        const lines = [];
+        for (const word of 'Huge current: a low-resistivity wire like this is almost a short circuit — it would get very hot.'.split(' ')) {
+          const last = lines[lines.length - 1];
+          if (last !== undefined && ctx.measureText(last + ' ' + word).width <= w - 16) lines[lines.length - 1] = last + ' ' + word; else lines.push(word);
+        }
+        lines.forEach((l, i) => ctx.fillText(l, w / 2, h - 8 - (lines.length - 1 - i) * 16));
+      }
     }
 
     function fit(points, xs, ys) {

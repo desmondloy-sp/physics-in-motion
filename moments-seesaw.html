@@ -33,6 +33,8 @@
     .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
     .hint .q { display: block; color: #9a3412; margin-top: 2px; }
     .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    .note ul { margin: 2px 0 0; padding-left: 18px; }
+    .note li { margin: 2px 0; }
     @media (max-width: 900px) {
       .readout { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
     }
@@ -56,11 +58,9 @@
         <div class="control-group scen">
           <label for="preset">Scenarios</label>
           <select id="preset">
-            <option value="a3" selected>Tutorial A3: 30 kg and 40 kg</option>
+            <option value="two" selected>Two children on the seesaw</option>
+            <option value="three">Three children on the seesaw</option>
             <option value="equal">Equal masses at different distances</option>
-            <option value="three">Three children</option>
-            <option value="custom2">Custom: two children</option>
-            <option value="custom3">Custom: three children</option>
           </select>
         </div>
         <div class="control-group"><label for="m1">Mass A (kg)</label><input id="m1" type="number" min="1" max="100" step="1" value="30" /></div>
@@ -84,13 +84,17 @@
     </div>
 
     <div class="panel">
-      <div class="hint">Drag the children along the seesaw, or type their distances. Distances are measured from the pivot: negative = left of the pivot.<span class="q" id="a3Question">Tutorial A3: where must the 40 kg child B sit to balance the 30 kg child A?</span></div>
+      <div class="hint">Drag the children along the seesaw, or type their distances. Distances are measured from the pivot: negative = left of the pivot.</div>
       <canvas id="sceneCanvas"></canvas>
-      <div class="note">
-        Moment = force &times; perpendicular distance from the pivot to the line of action of the force. Here each force is a child's weight, <i>W</i> = <i>mg</i> with <i>g</i> = 10 m s<sup>-2</sup>. A weight on the <b>right</b> of the pivot turns the seesaw <b>clockwise</b>; on the <b>left</b>, <b>anticlockwise</b>. By the <b>principle of moments</b>, the seesaw balances only when the sum of clockwise moments equals the sum of anticlockwise moments.
-        The seesaw starts <b>locked level</b>, so each perpendicular distance is simply the distance along the plank, and the moments are worked out for that position. <b>Remove the lock</b> to see what the seesaw then does: if the moments are not equal, it turns until one end hits the ground. (Once it tilts, the perpendicular distances get shorter, so the moments are no longer shown; moving a child locks it level again.)
-        The seesaw is a light plank pivoted at its centre, so its own weight has no moment. (Tutorial A3 describes a 4.0 m seesaw with the 30 kg child at one end, 2.0 m from the pivot; the plank here is 6 m long so the other scenarios fit, and the answer is the same.)
-      </div>
+      <div class="note"><ul>
+        <li>Moment = force &times; perpendicular distance from the pivot to the line of action of the force.</li>
+        <li>Here each force is a child's weight, <i>W</i> = <i>mg</i>, with <i>g</i> = 10 m s<sup>-2</sup>.</li>
+        <li>A weight on the <b>right</b> of the pivot turns the seesaw <b>clockwise</b>. A weight on the <b>left</b> turns it <b>anticlockwise</b>.</li>
+        <li>By the <b>principle of moments</b>, the seesaw balances only when the sum of clockwise moments equals the sum of anticlockwise moments.</li>
+        <li>The seesaw starts <b>locked at the horizontal level</b>, so each perpendicular distance is simply the distance along the plank, and the moments are worked out for that position.</li>
+        <li>When we <b>remove the lock</b>, if the moments are not equal, it turns until one end hits the ground. (Once it tilts, the perpendicular distances get shorter, so the moments are no longer shown; moving a child locks it level again.)</li>
+        <li>The seesaw is a light plank pivoted at its centre, so its own weight has no moment.</li>
+      </ul></div>
     </div>
   </div>
 
@@ -110,34 +114,26 @@
     let tilt = 0, tiltVel = 0;
     let locked = true;
 
+    // Each scenario only sets the number of children and their starting places; the masses and distances
+    // can then be changed freely, so there is no separate custom case.
     const PRESETS = {
-      a3: { m: [30, 40, 20], x: [-2, 1, 1], c: false },
-      equal: { m: [30, 30, 20], x: [-2, 1, 1], c: false },
+      two: { m: [30, 40, 20], x: [-2, 1, 1], c: false },
       three: { m: [40, 20, 20], x: [-1.5, 1, 2], c: true },
-      custom2: { c: false },
-      custom3: { c: true }
+      equal: { m: [30, 30, 20], x: [-2, 1, 1], c: false }
     };
     const useC = () => PRESETS[presetEl.value].c;
     function applyPreset() {
       const p = PRESETS[presetEl.value];
-      if (p.m) kids.forEach((k, i) => { k.massEl.value = p.m[i]; k.x = p.x[i]; k.posEl.value = k.x.toFixed(2); });
+      kids.forEach((k, i) => { k.massEl.value = p.m[i]; k.x = p.x[i]; k.posEl.value = k.x.toFixed(2); });
       document.querySelectorAll('.cgroup').forEach(g => g.classList.toggle('hidden', !p.c));
-      el('a3Question').style.display = presetEl.value === 'a3' ? '' : 'none';
       setLocked(true);
-    }
-    // Changing a mass leaves the chosen scenario, so it moves to the custom scenario with the same number of children.
-    // (Moving a child does not: finding where to sit is the point of Tutorial A3.)
-    function toCustom() {
-      if (presetEl.value === 'custom2' || presetEl.value === 'custom3') return;
-      presetEl.value = useC() ? 'custom3' : 'custom2';
-      el('a3Question').style.display = 'none';
     }
 
     function setLocked(v) {
       locked = v;
       el('lockBtn').textContent = locked ? 'Remove the lock' : 'Lock it level again';
       el('lockBtn').className = locked ? '' : 'locked';
-      el('lockState').textContent = locked ? 'Locked level: the moments are calculated for this position.' : 'Free to turn.';
+      el('lockState').textContent = locked ? 'Locked at the horizontal level: the moments are calculated for this position.' : 'Free to turn.';
     }
 
     const active = () => kids.filter(k => k.id !== 'C' || useC());
@@ -217,49 +213,67 @@
 
       const kidsNow = active();
       const maxW = Math.max(...kidsNow.map(k => mass(k) * G));
-      const sizeOf = k => 26 + Math.sqrt(mass(k)) * 3.2;
+      const figH = k => 44 + Math.sqrt(mass(k)) * 3; // a heavier child is drawn a little taller
+      const maxFig = Math.max(...kidsNow.map(figH));
       const showDist = locked && Math.abs(tilt) < 0.01;
-      // pass 1: distances and weight arrows (drawn first so the blocks sit on top of them)
-      kidsNow.forEach((k, i) => {
-        const m = mass(k), W = m * G, size = sizeOf(k);
-        const narrow = w < 600; // on a phone the distances are shown in the position boxes instead
-        const row = 16 + i * 17;
-        const p0 = onBeam(0, -row), p1 = onBeam(k.x, -row);
-        const out = k.x >= 0 ? 1 : -1; // used by the weight label below as well
-        if (!narrow && showDist) {
+      const narrow = w < 600; // on a phone the distances are shown in the position boxes instead
+      // distances from the pivot: one row per child ABOVE the children, clear of the weight labels below the plank
+      if (!narrow && showDist) {
+        const topUp = 6 + maxFig + 26 + (kidsNow.length - 1) * 18 + 4;
+        // (onBeam's second argument is the height ABOVE the plank)
+        const g0 = onBeam(0, 6), g1 = onBeam(0, topUp);
+        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+        ctx.beginPath(); ctx.moveTo(g0.x, g0.y); ctx.lineTo(g1.x, g1.y); ctx.stroke(); ctx.setLineDash([]);
+        kidsNow.forEach((k, i) => {
+          const up = 6 + maxFig + 26 + i * 18;
+          const p0 = onBeam(0, up), p1 = onBeam(k.x, up);
           ctx.strokeStyle = k.color; ctx.lineWidth = 1.5;
           ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
-          ctx.fillStyle = k.color; ctx.beginPath(); ctx.arc(p1.x, p1.y, 2.5, 0, Math.PI * 2); ctx.fill();
-          // label under the middle of its own line, so rows never collide
-          const mid = onBeam(k.x / 2, -row - 8);
+          ctx.fillStyle = k.color;
+          [p0, p1].forEach(q => { ctx.beginPath(); ctx.moveTo(q.x, q.y - 4); ctx.lineTo(q.x, q.y + 4); ctx.stroke(); });
+          // label just above the middle of its own line, so rows never collide
+          const mid = onBeam(k.x / 2, up + 7);
           ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-          ctx.fillText(`${Math.abs(k.x).toFixed(2)} m`, mid.x, mid.y);
+          ctx.fillText(`${k.id}: ${Math.abs(k.x).toFixed(2)} m`, mid.x, mid.y);
           ctx.textBaseline = 'alphabetic';
-        }
-
-        const cg = onBeam(k.x, 6 + size / 2);
-        const len = Math.min(size / 2 + 26 + 50 * W / maxW, groundY - 8 - cg.y);
-        arrow(ctx, cg.x, cg.y, cg.x, cg.y + len, '#7c3aed', 3, 10);
-        const txt = narrow ? `${W.toFixed(0)} N` : `W = ${W.toFixed(0)} N`;
-        ctx.font = 'bold 12px Arial';
-        const tw = ctx.measureText(txt).width;
-        const lx = out > 0 ? cg.x - 8 - tw : cg.x + 8; // inner side of the arrow, clear of the distance label
-        ctx.fillStyle = 'rgba(248,251,255,0.9)'; ctx.fillRect(lx - 3, cg.y + len - 15, tw + 6, 16);
-        ctx.fillStyle = '#5b21b6'; ctx.textAlign = 'left'; ctx.fillText(txt, lx, cg.y + len - 3);
-      });
-      // pass 2: the children (blocks) standing on the plank
+        });
+      }
+      // pass 1: weight arrows from each child's centre of gravity (drawn first so the children sit on top of them)
       kidsNow.forEach(k => {
-        const m = mass(k), size = sizeOf(k);
+        const m = mass(k), W = m * G, H = figH(k);
+        const out = k.x >= 0 ? 1 : -1;
+        const cg = onBeam(k.x, 6 + H * 0.45);
+        const len = Math.min(H * 0.45 + 26 + 50 * W / maxW, groundY - 8 - cg.y);
+        arrow(ctx, cg.x, cg.y, cg.x, cg.y + len, '#7c3aed', 3, 10);
+        // "W = 300 N" with the symbol W in italics ("300 N" alone on a phone)
+        const sym = narrow ? '' : 'W', rest = narrow ? `${W.toFixed(0)} N` : ` = ${W.toFixed(0)} N`;
+        ctx.font = 'italic bold 12px Arial'; const sw = ctx.measureText(sym).width;
+        ctx.font = 'bold 12px Arial'; const tw = sw + ctx.measureText(rest).width;
+        const lx = out > 0 ? cg.x - 8 - tw : cg.x + 8; // inner side of the arrow
+        ctx.fillStyle = 'rgba(248,251,255,0.9)'; ctx.fillRect(lx - 3, cg.y + len - 15, tw + 6, 16);
+        ctx.fillStyle = '#5b21b6'; ctx.textAlign = 'left';
+        ctx.font = 'italic bold 12px Arial'; ctx.fillText(sym, lx, cg.y + len - 3);
+        ctx.font = 'bold 12px Arial'; ctx.fillText(rest, lx + sw, cg.y + len - 3);
+      });
+      // pass 2: the children, as stick figures standing on the plank, with name and mass above the head
+      kidsNow.forEach(k => {
+        const m = mass(k), H = figH(k);
         const base = onBeam(k.x, 6);
         ctx.save(); ctx.translate(base.x, base.y); ctx.rotate(tilt);
-        ctx.fillStyle = k.color; ctx.globalAlpha = drag && drag.k === k ? 0.85 : 1;
-        ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-size / 2, -size, size, size, 6) : ctx.rect(-size / 2, -size, size, size); ctx.fill();
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = 'white'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(k.id, 0, -size * 0.68); ctx.font = '11px Arial'; ctx.fillText(`${m} kg`, 0, -size * 0.3);
-        ctx.textBaseline = 'alphabetic';
+        ctx.globalAlpha = drag && drag.k === k ? 0.75 : 1;
+        ctx.strokeStyle = k.color; ctx.fillStyle = k.color; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        const hip = -H * 0.45, shoulder = -H * 0.74, headR = H * 0.12, headY = -H + headR;
+        ctx.beginPath();
+        ctx.moveTo(-H * 0.14, 0); ctx.lineTo(0, hip); ctx.lineTo(H * 0.14, 0);      // legs
+        ctx.moveTo(0, hip); ctx.lineTo(0, shoulder);                                // body
+        ctx.moveTo(-H * 0.2, -H * 0.5); ctx.lineTo(0, shoulder); ctx.lineTo(H * 0.2, -H * 0.5); // arms
+        ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, headY, headR, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1; ctx.lineCap = 'butt'; ctx.lineJoin = 'miter';
+        ctx.fillStyle = '#0f172a'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+        ctx.fillText(`${k.id} · ${m} kg`, 0, -H - 6);
         ctx.restore();
-        k.hit = { x: base.x + uy * size / 2, y: base.y - ux * size / 2, r: size * 0.75 };
+        k.hit = { x: base.x + uy * H / 2, y: base.y - ux * H / 2, r: H * 0.6 };
       });
 
       // what the seesaw does / will do
@@ -325,7 +339,7 @@
 
     el('lockBtn').addEventListener('click', () => setLocked(!locked));
     presetEl.addEventListener('change', applyPreset);
-    [el('m1'), el('m2'), el('m3')].forEach(x => x.addEventListener('input', () => { setLocked(true); toCustom(); }));
+    [el('m1'), el('m2'), el('m3')].forEach(x => x.addEventListener('input', () => { setLocked(true); }));
     kids.forEach(k => k.posEl.addEventListener('input', () => {
       const v = parseFloat(k.posEl.value);
       if (!isNaN(v)) { k.x = Math.max(-HALF + 0.15, Math.min(HALF - 0.15, v)); setLocked(true); }

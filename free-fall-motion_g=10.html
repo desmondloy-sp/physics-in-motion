@@ -255,6 +255,8 @@
     }
     #fallCanvas, .graph-canvas { touch-action: pan-y; }
     .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 4px 0; }
+    .landed { font-size: 0.82rem; color: #9a3412; font-weight: 600; margin-top: 4px; }
+    .landed:empty { display: none; }
     /* Touch screens (phones, tablets; Samsung Internet reports hover: hover on a phone, so only pointer is tested):
        16 px form fields stop an iPhone zooming the page in when one is
        tapped, and buttons and tick boxes get a finger-sized target. */
@@ -331,6 +333,7 @@
         </div>
         <div class="hint">Drag the ball to set the drop height; drag the green arrow to throw it up or down. Drag across a graph to replay any moment.</div>
         <canvas id="fallCanvas"></canvas>
+        <div class="landed" id="landedNote"></div>
         <div class="note">
           Object falls vertically toward the ground. Upward is positive, so free-fall acceleration is negative.
         </div>
@@ -348,7 +351,7 @@
             <div class="value" id="yValue">20.00 m</div>
           </div>
           <div class="readout-card">
-            <div class="title">Velocity <i>v</i></div>
+            <div class="title" id="vTitle">Velocity <i>v</i></div>
             <div class="value" id="vValue">0.00 m/s</div>
           </div>
           <div class="readout-card">
@@ -520,6 +523,16 @@
       yValue.textContent = `${displayY.toFixed(2)} m`;
       vValue.textContent = `${current.v.toFixed(2)} m/s`;
       aValue.textContent = `${current.a.toFixed(2)} m/s²`;
+      // once the ball is on the ground it has stopped: the velocity shown is the one just before it touched the ground
+      const landed = hasLanded();
+      document.getElementById('vTitle').innerHTML = landed ? 'Velocity <i>v</i> just before it hits the ground' : 'Velocity <i>v</i>';
+      document.getElementById('landedNote').textContent = landed
+        ? `The ball has landed and is now at rest. ${current.v.toFixed(2)} m/s is its velocity just before it touched the ground.`
+        : '';
+    }
+    function hasLanded() {
+      const tImpact = solveImpactTime(sim.y0, sim.v0, sim.g);
+      return isFinite(tImpact) && tImpact <= MAX_TIME && sim.t > 0 && sim.t >= tImpact - 1e-9;
     }
 
     function animationLoop(timestamp) {
@@ -703,7 +716,9 @@
       const k = fallCanvas.width / (fallCanvas.getBoundingClientRect().width || 1);
       const pxPerMs = 4 * k;
       const vTipY = ballY - current.v * pxPerMs;
-      if (Math.abs(current.v) > 0.05) {
+      // once the ball has landed it is at rest, so no velocity arrow is drawn; the readout and the note under the
+      // picture give the velocity it had just before it touched the ground
+      if (Math.abs(current.v) > 0.05 && !hasLanded()) {
         const dir = Math.sign(current.v); // + is up
         ctx.strokeStyle = '#16a34a'; ctx.fillStyle = '#16a34a'; ctx.lineWidth = 3 * k;
         ctx.beginPath(); ctx.moveTo(w * 0.5 - 26 * k, ballY); ctx.lineTo(w * 0.5 - 26 * k, vTipY); ctx.stroke();

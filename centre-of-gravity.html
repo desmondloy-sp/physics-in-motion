@@ -23,8 +23,12 @@
     .readout-card .value { font-size: 1rem; font-weight: bold; }
     .readout-card.balanced { background: #ecfdf5; }
     .readout-card.tipping { background: #fef2f2; }
-    .layout { display: grid; grid-template-columns: 1fr; gap: 8px; }
-    @media (min-width: 900px) { .layout { grid-template-columns: 2fr 1fr; } }
+    .tabs { display: flex; gap: 6px; margin: 0 0 8px; flex-wrap: wrap; }
+    .tab { background: #e2e8f0; color: #1f2937; font-weight: 600; }
+    .tab:hover { background: #cbd5e1; }
+    .tab.active { background: #2563eb; color: white; }
+    .tab-page[hidden] { display: none; }
+    #equilCanvas { max-width: 700px; margin: 0 auto; }
     canvas { display: block; width: 100%; border-radius: 10px; touch-action: pan-y; }
     #sceneCanvas { height: 340px; border: 1px solid #dbeafe; background: #f8fbff; cursor: grab; }
     #equilCanvas { height: 340px; border: 1px solid #e5e7eb; background: #fbfdff; cursor: grab; }
@@ -50,6 +54,12 @@
   <div class="container">
     <h1>Centre of Gravity, Stability and Types of Equilibrium</h1>
 
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab active" role="tab" id="tabStability" aria-selected="true" data-page="pageStability">Centre of gravity and stability</button>
+      <button type="button" class="tab" role="tab" id="tabEquil" aria-selected="false" data-page="pageEquil">Types of equilibrium</button>
+    </div>
+
+    <div class="tab-page" id="pageStability">
     <div class="panel">
       <div class="controls">
         <div class="control-group">
@@ -73,7 +83,7 @@
           <input id="loadOffset" type="range" min="-1" max="1" step="0.01" value="0.3" />
         </div>
         <div class="control-group">
-          <button id="resetBtn">Stand it upright</button>
+          <button id="resetBtn">Reset</button>
         </div>
       </div>
 
@@ -97,18 +107,21 @@
       </div>
     </div>
 
-    <div class="layout">
       <div class="panel">
         <div class="hint">Drag the blue box sideways to tilt it, then let go. Drag the red load to slide it along the top.</div>
         <canvas id="sceneCanvas"></canvas>
         <div class="note"><ul>
-          <li>The dashed purple line drops straight down from the combined centre of gravity: it is the line of action of the weight.</li>
+          <li>The red load is fixed to the top of the box, so it tilts with the box and cannot slide or fall off. You can move it along the top only while the box is upright.</li>
+          <li>The dashed black line drops straight down from the combined centre of gravity: it is the line of action of the weight.</li>
           <li>While that line passes <b>inside</b> the pivot edge, the weight's moment turns the box back, so it falls back onto its base.</li>
           <li>Once the centre of gravity passes <b>beyond</b> the pivot edge, the weight's moment turns the box the other way, so it topples.</li>
           <li>A <b>lower</b> centre of gravity or a <b>wider base</b> makes the toppling angle bigger, so the object is more stable (a coach's luggage bay, a racing car's wide track, a floor fan's heavy base).</li>
           <li>Try it: put a heavy load on top and watch the toppling angle shrink.</li>
         </ul></div>
       </div>
+    </div>
+
+    <div class="tab-page" id="pageEquil" hidden>
       <div class="panel">
         <div class="hint">Drag each ball a little way along its surface and let go.</div>
         <canvas id="equilCanvas"></canvas>
@@ -286,7 +299,8 @@
       const inside = tilted ? beyond < 0 : (cg.x >= baseL && cg.x <= baseR);
       const lineColor = inside ? '#16a34a' : '#dc2626';
 
-      ctx.setLineDash([6, 5]); ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 2;
+      // black, so the dashes stand out against the blue box
+      ctx.setLineDash([6, 5]); ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(cg.x, cg.y); ctx.lineTo(cg.x, g.floorY + 16); ctx.stroke();
       ctx.setLineDash([]);
       ctx.fillStyle = '#7c3aed'; ctx.beginPath(); ctx.arc(cg.x, cg.y, 6, 0, Math.PI * 2); ctx.fill();
@@ -297,11 +311,14 @@
       // Weight arrow from the CG
       const wLen = Math.min(70, 18 + p.M * 0.7);
       arrow(ctx, cg.x, cg.y, cg.x, cg.y + wLen, '#7c3aed', 3, 9);
-      ctx.fillStyle = '#5b21b6'; ctx.font = '12px Arial';
-      const wText = `W = ${(p.M * G).toFixed(0)} N`, wy = cg.y + wLen * 0.6;
-      const wtw = ctx.measureText(wText).width;
+      // "W = 350 N" with the symbol W in italics
+      const wRest = ` = ${(p.M * G).toFixed(0)} N`, wy = cg.y + wLen * 0.6;
+      ctx.font = 'italic 12px Arial'; const wsw = ctx.measureText('W').width;
+      ctx.font = '12px Arial'; const wtw = wsw + ctx.measureText(wRest).width;
       ctx.fillStyle = 'rgba(248,251,255,0.9)'; ctx.fillRect(cg.x + 10, wy - 11, wtw + 6, 15);
-      ctx.fillStyle = '#5b21b6'; ctx.fillText(wText, cg.x + 13, wy);
+      ctx.fillStyle = '#5b21b6'; ctx.textAlign = 'left';
+      ctx.font = 'italic 12px Arial'; ctx.fillText('W', cg.x + 13, wy);
+      ctx.font = '12px Arial'; ctx.fillText(wRest, cg.x + 13 + wsw, wy);
 
       if (tilted && Math.abs(t) < Math.PI / 2 - 1e-3) {
         // pivot edge marker
@@ -522,7 +539,17 @@
       if (Math.abs(sim.theta) > 1e-4 && Math.abs(sim.theta) < Math.PI / 2) sim.omega = sim.omega || 1e-6 * Math.sign(sim.theta);
       if (Math.abs(sim.theta) < 1e-4) sim.landedMsg = '';
     }));
-    el('resetBtn').addEventListener('click', () => { sim.theta = 0; sim.omega = 0; sim.landedMsg = ''; });
+    // Reset: the starting box and load, standing upright
+    const START = [[baseWidthEl, '1.0'], [boxHeightEl, '1.4'], [boxMassEl, '20'], [loadMassEl, '15'], [loadOffsetEl, '0.3']];
+    el('resetBtn').addEventListener('click', () => {
+      START.forEach(([input, v]) => { input.value = v; });
+      sim.theta = 0; sim.omega = 0; sim.landedMsg = ''; sim.dragging = null;
+    });
+
+    // two tabs, one simulation each
+    document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => { const on = t === tab; t.classList.toggle('active', on); t.setAttribute('aria-selected', on); el(t.dataset.page).hidden = !on; });
+    }));
 
     let last = null;
     function frame(ts) {

@@ -466,7 +466,7 @@
           <div class="stage-panel">
             <div id="stage1" class="stage-box">
               <div class="stage-title">
-                <div>Stage 1</div>
+                <div>Stage 1 (S1)</div>
                 <span class="motion-type-group" data-stage="1">
                   <button type="button" class="motion-type-btn active" data-motion="v">Constant&nbsp;<i>v</i></button>
                   <button type="button" class="motion-type-btn" data-motion="a">Constant&nbsp;<i>a</i></button>
@@ -486,7 +486,7 @@
 
             <div id="stage2" class="stage-box">
               <div class="stage-title">
-                <div>Stage 2</div>
+                <div>Stage 2 (S2)</div>
                 <span class="motion-type-group" data-stage="2">
                   <button type="button" class="motion-type-btn active" data-motion="v">Constant&nbsp;<i>v</i></button>
                   <button type="button" class="motion-type-btn" data-motion="a">Constant&nbsp;<i>a</i></button>
@@ -506,7 +506,7 @@
 
             <div id="stage3" class="stage-box">
               <div class="stage-title">
-                <div>Stage 3</div>
+                <div>Stage 3 (S3)</div>
                 <span class="motion-type-group" data-stage="3">
                   <button type="button" class="motion-type-btn active" data-motion="v">Constant&nbsp;<i>v</i></button>
                   <button type="button" class="motion-type-btn" data-motion="a">Constant&nbsp;<i>a</i></button>
@@ -552,7 +552,7 @@
               </div>
             </div>
             <canvas id="motionCanvas"></canvas>
-            <div class="hint">Drag the cart to set where it starts; drag the green arrow to set its starting velocity. Drag across any graph to replay a moment.</div>
+            <div class="hint">Drag the cart to set where it starts; drag the tip of the green arrow to set its starting velocity. Drag across any graph to replay a moment. On the graphs, a dotted line marks each change of stage.</div>
             <div class="note">
               The track's scale grows to fit the motion. All the stages run one after another as one continuous motion: each stage starts with the position and velocity the previous one ended with.
             </div>
@@ -803,7 +803,8 @@
 
       const marginLeft = 50;
       const marginRight = 30;
-      const trackY = h * 0.68;
+      // the track sits higher so the velocity label fits UNDER its arrow, above the position scale
+      const trackY = h * 0.62;
       const trackStart = marginLeft;
       const trackEnd = w - marginRight;
       const trackWidth = trackEnd - trackStart;
@@ -848,7 +849,9 @@
         ctx.lineTo(px, trackY + 10);
         ctx.stroke();
         ctx.textAlign = 'center';
-        ctx.fillText(tickVal.toFixed(1), px, trackY + 42);
+        // 52 css px below the track (scaled by the device pixel ratio), under the velocity arrow and its label
+        const kt = motionCanvas.width / (motionCanvas.getBoundingClientRect().width || 1);
+        ctx.fillText(tickVal.toFixed(1), px, Math.min(trackY + 52 * kt, h - 4 * kt));
       });
 
       // top-right: the Start/Pause/Reset buttons sit over the top-left corner and hid this label
@@ -886,7 +889,8 @@
           ctx.fillStyle = 'rgba(52, 73, 94, 0.4)';
           ctx.font = Math.max(11, h * 0.05) + 'px Arial';
           ctx.textAlign = 'center';
-          ctx.fillText(roundedTime + ' s', trailX, trailY - 40 - stackIndex * 18);
+          // (34 above the cart, not 40: the track sits higher now, and the labels must stay clear of the buttons)
+          ctx.fillText(roundedTime + ' s', trailX, trailY - 34 - stackIndex * 18);
         }
       });
 
@@ -911,19 +915,22 @@
       ctx.fillText('Cart', cartX, cartY - 18);
 
       const k = motionCanvas.width / (motionCanvas.getBoundingClientRect().width || 1);
-      const pxPerMs = 16 * k, vy = trackY + 20 * k, vTip = cartX + current.v * pxPerMs;
+      const pxPerMs = 16 * k, vy = trackY + 18 * k, vTip = cartX + current.v * pxPerMs;
       if (Math.abs(current.v) > 0.01) {
         const dir = Math.sign(current.v);
         ctx.strokeStyle = '#16a34a'; ctx.fillStyle = '#16a34a'; ctx.lineWidth = 3 * k;
         ctx.beginPath(); ctx.moveTo(cartX, vy); ctx.lineTo(vTip, vy); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(vTip + dir * 2 * k, vy); ctx.lineTo(vTip - dir * 10 * k, vy - 6 * k); ctx.lineTo(vTip - dir * 10 * k, vy + 6 * k); ctx.closePath(); ctx.fill();
       }
-      if (sim.t === 0 && !sim.running) {
-        ctx.fillStyle = '#16a34a'; ctx.beginPath(); ctx.arc(vTip, vy, 7 * k, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = 'white'; ctx.lineWidth = 2 * k; ctx.stroke();
-      }
-      ctx.fillStyle = '#15803d'; ctx.font = `bold ${12 * k}px Arial`; ctx.textAlign = current.v >= 0 ? 'left' : 'right';
-      ctx.fillText(`v = ${current.v.toFixed(1)} m/s`, vTip + (current.v >= 0 ? 12 : -12) * k, vy + 4 * k);
+      // the label sits UNDER the arrow, centred on it (kept inside the canvas), with v in italics
+      const vSym = 'v', vRest = ` = ${current.v.toFixed(1)} m/s`;
+      ctx.font = `italic bold ${12 * k}px Arial`; const symW = ctx.measureText(vSym).width;
+      ctx.font = `bold ${12 * k}px Arial`; const restW = ctx.measureText(vRest).width;
+      const vW = symW + restW;
+      const lx = Math.max(4 * k, Math.min(w - 4 * k - vW, (cartX + vTip) / 2 - vW / 2)), ly = vy + 17 * k;
+      ctx.fillStyle = '#15803d'; ctx.textAlign = 'left';
+      ctx.font = `italic bold ${12 * k}px Arial`; ctx.fillText(vSym, lx, ly);
+      ctx.font = `bold ${12 * k}px Arial`; ctx.fillText(vRest, lx + symW, ly);
       sceneMap = { k, cartX, cartY, vTip, vy, pxPerMs, trackStart, trackEnd, min: xTickInfo.min, max: xTickInfo.max };
     }
     let sceneMap = null;
@@ -1028,7 +1035,9 @@
       const h = canvas.height;
       ctx.clearRect(0, 0, w, h);
 
-      const margin = { left: 70, right: 16, top: 18, bottom: 50 };
+      // the top margin holds the stage labels S1, S2, S3 (in css px, so they fit on a phone too)
+      const kk = canvas.width / (canvas.getBoundingClientRect().width || 1);
+      const margin = { left: 70, right: 16, top: Math.max(18, 20 * kk), bottom: 50 };
       const plotW = w - margin.left - margin.right;
       const plotH = h - margin.top - margin.bottom;
 
@@ -1138,6 +1147,19 @@
         axisFontSize,
         -Math.PI / 2
       );
+
+      // where the motion changes: a dotted line at the end of each stage, and the stage's name over its segment
+      ctx.save();
+      ctx.strokeStyle = '#475569'; ctx.lineWidth = Math.max(1.5, 1.5 * kk); ctx.setLineDash([4 * kk, 4 * kk]);
+      sim.stages.slice(0, -1).forEach(s => {
+        const x = tx(s.tEnd);
+        ctx.beginPath(); ctx.moveTo(x, margin.top); ctx.lineTo(x, h - margin.bottom); ctx.stroke();
+      });
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#334155'; ctx.font = `bold ${Math.max(11, 12 * kk)}px Arial`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      sim.stages.forEach((s, i) => ctx.fillText(`S${i + 1}`, tx((s.tStart + Math.min(s.tEnd, tMax)) / 2), margin.top - 2 * kk));
+      ctx.restore();
 
       if (sim.points.length > 0) {
         ctx.strokeStyle = color;

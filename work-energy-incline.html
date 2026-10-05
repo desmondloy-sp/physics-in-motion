@@ -92,7 +92,7 @@
 
     <div class="layout">
       <div class="panel">
-        <div class="hint">Press Start: the block moves 5.0 m along the floor (or until it stops). Before you start, drag the red handle at the tip of the force arrow to change how hard, and in which direction, the force acts.</div>
+        <div class="hint">Press Start: the block moves 5.0 m along the floor (or until it stops). Before you start, drag the tip of the force arrow to change how hard, and in which direction, the force acts.</div>
         <canvas id="sceneCanvas"></canvas>
       </div>
       <div class="panel">
@@ -183,14 +183,21 @@
       ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - Math.cos(a) * hd * 0.8, y2 - Math.sin(a) * hd * 0.8); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - hd * Math.cos(a - 0.45), y2 - hd * Math.sin(a - 0.45)); ctx.lineTo(x2 - hd * Math.cos(a + 0.45), y2 - hd * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill();
     }
+    // A label on a white backing. Text between *stars* is drawn in italics (the symbols of physical quantities).
     function tag(ctx, t, x, y, color, align = 'center') {
-      ctx.font = 'bold 12px Arial'; ctx.textAlign = align; ctx.textBaseline = 'middle';
-      const tw = ctx.measureText(t).width, W = ctx.canvas.clientWidth;
+      const segs = t.split('*').map((s, i) => [s, i % 2 === 1]).filter(([s]) => s);
+      const font = it => `${it ? 'italic ' : ''}bold 12px Arial`;
+      const widths = segs.map(([s, it]) => { ctx.font = font(it); return ctx.measureText(s).width; });
+      const tw = widths.reduce((a, b) => a + b, 0), W = ctx.canvas.clientWidth;
+      ctx.textBaseline = 'middle';
       // keep every label inside the picture
       let x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
       x0 = Math.max(4, Math.min(W - tw - 4, x0));
       ctx.fillStyle = 'rgba(248,251,255,0.92)'; ctx.fillRect(x0 - 3, y - 8, tw + 6, 16);
-      ctx.textAlign = 'left'; ctx.fillStyle = color; ctx.fillText(t, x0, y); ctx.textBaseline = 'alphabetic';
+      ctx.textAlign = 'left'; ctx.fillStyle = color;
+      let cx = x0;
+      segs.forEach(([s, it], i) => { ctx.font = font(it); ctx.fillText(s, cx, y); cx += widths[i]; });
+      ctx.textBaseline = 'alphabetic';
     }
 
     let handle = null, geo = null;
@@ -216,17 +223,18 @@
         const y = floorY + 30;
         ctx.strokeStyle = '#0f766e'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x0, y - 4); ctx.lineTo(x0, y + 4); ctx.moveTo(x0, y); ctx.lineTo(bx, y); ctx.moveTo(bx, y - 4); ctx.lineTo(bx, y + 4); ctx.stroke();
       }
-      // block
-      ctx.fillStyle = '#2563eb'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(bx - bw / 2, floorY - bh, bw, bh, 6) : ctx.rect(bx - bw / 2, floorY - bh, bw, bh); ctx.fill();
-      ctx.fillStyle = 'white'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.fillText(`${p.m} kg`, bx, floorY - bh / 2 + 5);
+      // block: light green with a black label, so the force arrows stand out against it
+      ctx.fillStyle = '#bbf7d0'; ctx.strokeStyle = '#15803d'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.roundRect ? ctx.roundRect(bx - bw / 2, floorY - bh, bw, bh, 6) : ctx.rect(bx - bw / 2, floorY - bh, bw, bh); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#0f172a'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.fillText(`${p.m} kg`, bx, floorY - bh / 2 + 5);
       const cy = floorY - bh / 2;
       const k = narrow ? 2.6 : 4.2; // px per newton for the applied force and friction
       // weight and normal force (scaled down so they fit)
       const kv = 1.6;
       arrow(ctx, bx - 14, floorY - bh, bx - 14, floorY - bh - p.N * kv, '#0891b2', 3, 9);
-      tag(ctx, narrow ? 'N' : `N = ${p.N.toFixed(1)} N`, bx - 20, floorY - bh - p.N * kv * 0.6, '#0e7490', 'right');
+      tag(ctx, narrow ? '*N*' : `*N* = ${p.N.toFixed(1)} N`, bx - 20, floorY - bh - p.N * kv * 0.6, '#0e7490', 'right');
       arrow(ctx, bx + 14, cy, bx + 14, floorY + 12, '#7c3aed', 3, 9);
-      tag(ctx, narrow ? 'W' : `W = ${(p.m * G).toFixed(0)} N`, bx + bw / 2 + 6, floorY - 9, '#6d28d9', 'left');
+      tag(ctx, narrow ? '*W*' : `*W* = ${(p.m * G).toFixed(0)} N`, bx + bw / 2 + 6, floorY - 9, '#6d28d9', 'left');
       // friction at the floor, against the motion
       // (sliding friction f = muN while it moves; when the block is held still, static friction just matches F cos theta;
       // once it has stopped, nothing pushes it, so there is no friction)
@@ -234,7 +242,7 @@
       const fNow = sim.stuck ? Math.max(0, p.Fx) : stopped ? 0 : p.f;
       if (fNow > 0) {
         arrow(ctx, bx - bw / 2 + 4, floorY - 4, bx - bw / 2 + 4 - fNow * k, floorY - 4, '#ea580c', 4);
-        tag(ctx, sim.stuck ? `friction ${fNow.toFixed(1)} N (holds it still)` : narrow ? 'f' : `f = ${fNow.toFixed(1)} N`, bx - bw / 2 - fNow * k - 4, floorY - 4, '#c2410c', 'right');
+        tag(ctx, sim.stuck ? `friction ${fNow.toFixed(1)} N (holds it still)` : narrow ? '*f*' : `*f* = ${fNow.toFixed(1)} N`, bx - bw / 2 - fNow * k - 4, floorY - 4, '#c2410c', 'right');
       }
       // the applied force F, from the block's front face (or the back face when it pushes backwards)
       const ux = Math.cos(p.th), uy = -Math.sin(p.th);
@@ -242,29 +250,28 @@
       const forceOn = !(sim.done && sim.v === 0 && p.u > 0); // the push is taken away when the block stops
       if (p.F > 0 && forceOn) {
         arrow(ctx, sx, sy, sx + ux * p.F * k, sy + uy * p.F * k, '#dc2626', 5);
-        tag(ctx, narrow ? 'F' : `F = ${p.F.toFixed(1)} N`, sx + ux * p.F * k + (ux >= 0 ? 8 : -8), sy + uy * p.F * k - 14, '#b91c1c', ux >= -0.1 ? 'left' : 'right');
+        tag(ctx, narrow ? '*F*' : `*F* = ${p.F.toFixed(1)} N`, sx + ux * p.F * k + (ux >= 0 ? 8 : -8), sy + uy * p.F * k - 14, '#b91c1c', ux >= -0.1 ? 'left' : 'right');
         if (p.th > 0.01 && p.th < Math.PI - 0.01) {
           // angle arc between the force and the direction of motion
           ctx.strokeStyle = '#b91c1c'; ctx.lineWidth = 1.5; ctx.setLineDash([3, 3]);
           ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + 50, sy); ctx.stroke(); ctx.setLineDash([]);
           ctx.beginPath(); ctx.arc(sx, sy, 26, -p.th, 0); ctx.stroke();
           // label beyond the arc, half-way round the angle (clear of the arrow and its F label)
-          ctx.fillStyle = '#b91c1c'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'left';
-          ctx.fillText(`θ = ${(p.th * 180 / Math.PI).toFixed(0)}°`, sx + 52 * Math.cos(p.th / 2), sy - 52 * Math.sin(p.th / 2) + 4);
+          ctx.fillStyle = '#b91c1c'; ctx.textAlign = 'left';
+          const thX = sx + 52 * Math.cos(p.th / 2), thY = sy - 52 * Math.sin(p.th / 2) + 4;
+          ctx.font = 'italic bold 12px Arial'; ctx.fillText('θ', thX, thY);
+          const thW = ctx.measureText('θ').width;
+          ctx.font = 'bold 12px Arial'; ctx.fillText(` = ${(p.th * 180 / Math.PI).toFixed(0)}°`, thX + thW, thY);
         }
       }
       const tipX = sx + ux * p.F * k, tipY = sy + uy * p.F * k;
-      handle = { x: tipX, y: tipY, sx, sy, k };
-      if (!sim.running && sim.t === 0) {
-        ctx.fillStyle = '#dc2626'; ctx.strokeStyle = 'white'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(tipX, tipY, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      }
+      handle = { x: tipX, y: tipY, sx, sy, k }; // the tip of the force arrow is what the student drags (no separate handle)
       // velocity
       if (sim.v > 0.01) {
         const vy = floorY - bh - 44;
         arrow(ctx, bx - 10, vy, bx - 10 + Math.min(110, sim.v * 18, w - bx - 4), vy, '#16a34a', 3, 9);
       }
-      tag(ctx, `v = ${sim.v.toFixed(2)} m/s    d = ${sim.x.toFixed(2)} m    t = ${sim.t.toFixed(2)} s`, w / 2, 14, '#334155');
+      tag(ctx, `*v* = ${sim.v.toFixed(2)} m/s    *d* = ${sim.x.toFixed(2)} m    *t* = ${sim.t.toFixed(2)} s`, w / 2, 14, '#334155');
       tag(ctx, 'direction of motion →', 70, 36, '#15803d');
       geo = { floorY };
     }
@@ -279,7 +286,7 @@
       ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(6, mid); ctx.lineTo(w - 6, mid); ctx.stroke();
       ctx.fillStyle = '#64748b'; ctx.font = '11px Arial'; ctx.textAlign = 'left'; ctx.fillText('0 J', 8, mid - 4);
       const items = [
-        ['by F', wk.wF, '#dc2626'], ['by friction', wk.wf, '#ea580c'], ['by W and N', 0, '#7c3aed'],
+        ['by *F*', wk.wF, '#dc2626'], ['by friction', wk.wf, '#ea580c'], ['by *W* and *N*', 0, '#7c3aed'],
         ['Total work', wk.wT, '#0f172a'], ['Change in KE', wk.dKE, '#16a34a']
       ];
       const gap = w / items.length, bw = Math.min(40, gap * 0.55);
@@ -288,8 +295,12 @@
         ctx.fillStyle = col; ctx.fillRect(x, hh >= 0 ? mid - hh : mid, bw, Math.abs(hh));
         ctx.fillStyle = '#334155'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center';
         ctx.fillText(`${Math.abs(v) < 0.005 ? '0' : v.toFixed(1)} J`, x + bw / 2, hh >= 0 ? mid - hh - 5 : mid - hh + 13);
-        ctx.font = '11px Arial'; ctx.fillStyle = col;
-        ctx.fillText(name, x + bw / 2, h - 18 + (i % 2) * 12);
+        // the bar's name, centred, with the symbols (between *stars*) in italics
+        ctx.fillStyle = col; ctx.textAlign = 'left';
+        const segs = name.split('*').map((s, j) => [s, j % 2 === 1]).filter(([s]) => s);
+        const ws = segs.map(([s, it]) => { ctx.font = `${it ? 'italic ' : ''}11px Arial`; return ctx.measureText(s).width; });
+        let nx = x + bw / 2 - ws.reduce((a, b) => a + b, 0) / 2;
+        segs.forEach(([s, it], j) => { ctx.font = `${it ? 'italic ' : ''}11px Arial`; ctx.fillText(s, nx, h - 18 + (i % 2) * 12); nx += ws[j]; });
       });
       ctx.fillStyle = '#334155'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'left'; ctx.fillText('Work done (J)', 8, 16);
     }

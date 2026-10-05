@@ -163,7 +163,9 @@
       // normal
       ctx.strokeStyle = '#64748b'; ctx.setLineDash([6, 5]); ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.moveTo(P.x, P.y - L - 10); ctx.lineTo(P.x, P.y + L + 10); ctx.stroke(); ctx.setLineDash([]);
-      label(ctx, 'normal', P.x, P.y - L - 18 < 30 ? 44 : P.y - L - 18, '#475569');
+      // on a narrow screen the critical-angle key takes the row at y = 42, so "normal" goes one row lower
+      const normTop = W < 600 && s.hasCrit ? 66 : 44;
+      label(ctx, 'normal', P.x, P.y - L - 18 < normTop - 14 ? normTop : P.y - L - 18, '#475569');
 
       // critical angle guide
       if (s.hasCrit) {

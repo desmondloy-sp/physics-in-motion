@@ -38,6 +38,8 @@
     .legend span.dash::before { background: repeating-linear-gradient(90deg, var(--c) 0 4px, transparent 4px 7px); }
     .graph-title { font-weight: 700; margin: 0 0 4px; font-size: 0.88rem; }
     .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    .note ul { margin: 2px 0 0; padding-left: 18px; }
+    .note li { margin: 2px 0; }
     @media (max-width: 900px) {
       .controls { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
       .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -94,9 +96,12 @@
 
     <div class="panel">
       <div class="graph-title">Energy vs. time</div>
-      <div class="legend"><span style="--c:#16a34a">Kinetic energy</span><span style="--c:#2563eb">Gravitational PE</span><span style="--c:#7c3aed" class="dash">KE + GPE</span><span style="--c:#ea580c">Heat</span><span style="--c:#111827">Total</span></div>
+      <div class="legend"><span style="--c:#16a34a">Kinetic energy</span><span style="--c:#2563eb">Gravitational PE</span><span style="--c:#7c3aed" class="dash">KE + GPE</span><span style="--c:#db2777" id="fitLegend" hidden>Exponential decay of KE + GPE</span><span style="--c:#ea580c">Heat</span><span style="--c:#111827">Total</span></div>
       <canvas id="energyGraph"></canvas>
-      <div class="note">With air resistance on, KE + GPE falls in steps: energy is lost fastest at the bottom of each swing, where the bob moves fastest, and not at all at the ends, where it stops for an instant. The dots mark KE + GPE at the end of each swing: each one is the same fraction smaller than the one before, which is an exponential decay.</div>
+      <div class="note"><ul>
+        <li>With air resistance on, the <b>pink curve</b> shows the smooth exponential decay of KE + GPE. It passes through the dots, which mark KE + GPE at the end of each swing: each dot is the same fraction smaller than the one before.</li>
+        <li>The dashed KE + GPE line itself falls in small steps around that curve: energy is lost fastest at the bottom of each swing, where the bob moves fastest, and not at all at the ends, where it stops for an instant.</li>
+      </ul></div>
     </div>
   </div>
 
@@ -105,7 +110,7 @@
     const DT = 0.002;          // RK4 step (s): the total energy stays constant to better than 1e-6 J
     const SIM_DURATION = 20;
     const DAMPING = 0.2;       // air resistance, as a fraction of the bob's speed per second (1/s)
-    const COL = { ke: '#16a34a', gpe: '#2563eb', mech: '#7c3aed', heat: '#ea580c', total: '#111827' };
+    const COL = { ke: '#16a34a', gpe: '#2563eb', mech: '#7c3aed', heat: '#ea580c', total: '#111827', fit: '#db2777' };
 
     const el = id => document.getElementById(id);
     const massEl = el('mass'), lengthEl = el('length'), amplitudeEl = el('amplitude'), frictionEl = el('friction');
@@ -288,8 +293,24 @@
         ctx.beginPath(); sim.points.forEach((p, i) => { const x = tx(p.t), y = ty(p[key]); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }); ctx.stroke();
         ctx.setLineDash([]);
       };
-      line('ke', COL.ke, 1.5); line('gpe', COL.gpe, 1.5); line('heat', COL.heat, 2.5); line('mech', COL.mech, 2, [6, 4]); line('total', COL.total, 2.5);
+      // with air resistance the stepped KE + GPE line is drawn thinner, under the smooth decay curve
+      line('ke', COL.ke, 1.5); line('gpe', COL.gpe, 1.5); line('heat', COL.heat, 2.5); line('mech', COL.mech, frictionEl.checked ? 1.5 : 2, [6, 4]); line('total', COL.total, 2.5);
+      el('fitLegend').hidden = !frictionEl.checked;
       if (frictionEl.checked) {
+        // The smooth exponential decay: the curve E = E0 e^(-kt) that best fits the end-of-swing dots
+        // (least squares on ln E, through the first dot). KE + GPE itself falls in steps, because energy
+        // is lost only while the bob moves; the dots, and this curve, show the smooth decay underneath.
+        const pk = sim.peaks, E0 = pk[0] && pk[0].mech;
+        if (pk.length >= 3 && E0 > 0) {
+          let num = 0, den = 0;
+          pk.slice(1).forEach(p => { if (p.mech > 0) { num += p.t * Math.log(p.mech / E0); den += p.t * p.t; } });
+          const kfit = den > 0 ? -num / den : 0;
+          sim.decayK = kfit;
+          ctx.strokeStyle = COL.fit; ctx.lineWidth = 3; ctx.beginPath();
+          const tEnd = pk[pk.length - 1].t;
+          for (let i = 0; i <= 200; i++) { const t = tEnd * i / 200, x = tx(t), y = ty(E0 * Math.exp(-kfit * t)); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+          ctx.stroke();
+        } else sim.decayK = null;
         ctx.fillStyle = COL.mech;
         sim.peaks.forEach(p => { ctx.beginPath(); ctx.arc(tx(p.t), ty(p.mech), 3, 0, Math.PI * 2); ctx.fill(); });
       }

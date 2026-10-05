@@ -36,12 +36,26 @@
       margin-bottom: 8px;
     }
 
+    /* every label starts on the same top line: the groups align at the top, the subscripts in the labels do not
+       make their line taller, and every field and button is the same height */
     .controls {
       display: grid;
       grid-template-columns: 2fr 0.9fr 0.9fr 0.9fr 1.4fr;
       gap: 10px;
-      align-items: end;
+      align-items: start;
     }
+    .controls label { line-height: 1.2; }
+    .controls label sub { line-height: 0; }
+    .controls input, .controls select, .controls button { height: 34px; }
+
+    .scen-note { font-size: 0.82rem; color: #9a3412; font-weight: 600; margin-top: 6px; }
+    .scen-note:empty { display: none; }
+
+    .graph-options { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.78rem; margin: 0 0 4px; }
+    .graph-options label { font-size: 0.78rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+    .graph-extra { font-size: 0.78rem; color: #334155; margin-top: 4px; }
+    .graph-extra:empty { display: none; }
+    .graph-extra div { margin: 1px 0; }
 
     .control-group {
       display: flex;
@@ -225,6 +239,7 @@
       input:not([type=range]):not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
       button { min-height: 36px; }
       input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
+      .controls input, .controls select, .controls button { height: 36px; }
     }
   </style>
 </head>
@@ -271,6 +286,7 @@
           </div>
         </div>
       </div>
+      <div class="scen-note" id="scenNote"></div>
 
       <div class="readout">
         <div class="readout-card">
@@ -308,7 +324,12 @@
 
       <div class="graph-box">
         <div class="graph-title">Velocity–Time Graph, <i>v</i>–<i>t</i></div>
+        <div class="graph-options">
+          <label><input type="checkbox" id="showGradient" /> Show the gradient</label>
+          <label><input type="checkbox" id="showArea" /> Show the area under the graph</label>
+        </div>
         <canvas id="vGraph" class="graph-canvas"></canvas>
+        <div class="graph-extra" id="vExtra"></div>
       </div>
 
       <div class="graph-box">
@@ -407,7 +428,15 @@
       }
     };
 
+    // what happens in the scenarios where the motion is not obvious from the name
+    const SCEN_NOTES = {
+      slow_down_right: 'The cart slows down, stops for an instant, then turns around and speeds up to the left. The acceleration stays the same the whole time.',
+      slow_down_left: 'The cart slows down, stops for an instant, then turns around and speeds up to the right. The acceleration stays the same the whole time.'
+    };
+    function showScenNote() { document.getElementById('scenNote').textContent = SCEN_NOTES[presetEl.value] || ''; }
+
     function applyPreset() {
+      showScenNote();
       const preset = PRESETS[presetEl.value];
       if (!preset) return;
 
@@ -540,7 +569,9 @@
           ctx.stroke();
 
           ctx.textAlign = 'center';
-          ctx.fillText(tickVal.toFixed(1), px, trackY + 42);
+          // 42 css px below the track (scaled by the device pixel ratio), under the velocity arrow's label
+          const kt = motionCanvas.width / (motionCanvas.getBoundingClientRect().width || 1);
+          ctx.fillText(tickVal.toFixed(1), px, Math.min(trackY + 42 * kt, h - 4 * kt));
         }
       });
 
@@ -622,8 +653,13 @@
         ctx.fillStyle = '#16a34a'; ctx.beginPath(); ctx.arc(vTip, vy, 7 * k, 0, Math.PI * 2); ctx.fill();
         ctx.strokeStyle = 'white'; ctx.lineWidth = 2 * k; ctx.stroke();
       }
-      ctx.fillStyle = '#15803d'; ctx.font = `bold ${12 * k}px Arial`; ctx.textAlign = current.v >= 0 ? 'left' : 'right';
-      ctx.fillText(`v = ${current.v.toFixed(1)} m/s`, vTip + (current.v >= 0 ? 12 : -12) * k, vy + 4 * k);
+      // the label goes past the arrow's tip; if that runs off the canvas (a long arrow on a phone), it goes on the
+      // other side of the cart instead, where there is no arrow
+      ctx.fillStyle = '#15803d'; ctx.font = `bold ${12 * k}px Arial`;
+      const vText = `v = ${current.v.toFixed(1)} m/s`, vW = ctx.measureText(vText).width, fwd = current.v >= 0;
+      let vAtTip = fwd ? vTip + 12 * k + vW <= w - 4 * k : vTip - 12 * k - vW >= 4 * k;
+      ctx.textAlign = fwd === vAtTip ? 'left' : 'right';
+      ctx.fillText(vText, vAtTip ? vTip + (fwd ? 12 : -12) * k : cartX + (fwd ? -12 : 12) * k, vy + 4 * k);
       sceneMap = { xToPx, k, cartX, cartY, vTip, vy, pxPerMs, trackStart, trackEnd, min: xTickInfo.min, max: xTickInfo.max };
     }
     let sceneMap = null;
@@ -830,6 +866,45 @@
         -Math.PI / 2
       );
 
+      const kk = canvas.width / (canvas.getBoundingClientRect().width || 1);
+      const last = sim.points[sim.points.length - 1];
+      // v-t graph only: the area under the graph (= displacement) and the gradient (= acceleration), when ticked
+      if (key === 'v' && last && last.t > 1e-9 && document.getElementById('showArea').checked) {
+        const y0 = ty(0);
+        const poly = () => { ctx.beginPath(); ctx.moveTo(tx(0), y0); sim.points.forEach(p => ctx.lineTo(tx(p.t), ty(p.v))); ctx.lineTo(tx(last.t), y0); ctx.closePath(); };
+        [[0, y0, 'rgba(22,163,74,0.22)'], [y0, h, 'rgba(220,38,38,0.18)']].forEach(([top, bottom, fill]) => {
+          ctx.save(); ctx.beginPath(); ctx.rect(margin.left, top, plotW, bottom - top); ctx.clip();
+          poly(); ctx.fillStyle = fill; ctx.fill(); ctx.restore();
+        });
+      }
+      if (key === 'v' && last && last.t > 0.05 && document.getElementById('showGradient').checked) {
+        const first = sim.points[0];
+        const ax = tx(first.t), ay = ty(first.v), bx = tx(last.t), by = ty(last.v);
+        ctx.save();
+        ctx.strokeStyle = '#7c2d12'; ctx.lineWidth = 1.5 * kk; ctx.setLineDash([5 * kk, 3 * kk]);
+        ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, ay); ctx.lineTo(bx, by); ctx.stroke();
+        ctx.setLineDash([]);
+        const fs = Math.max(11, h * 0.075);
+        const rich = (parts, x, y, align) => {
+          const widths = parts.map(([s, it]) => { ctx.font = `${it ? 'italic ' : ''}bold ${fs}px Arial`; return ctx.measureText(s).width; });
+          let cx = align === 'center' ? x - widths.reduce((a, b) => a + b, 0) / 2 : x;
+          parts.forEach(([s, it], i) => { ctx.font = `${it ? 'italic ' : ''}bold ${fs}px Arial`; ctx.fillText(s, cx, y); cx += widths[i]; });
+        };
+        ctx.fillStyle = '#7c2d12'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        const up = by < ay; // the horizontal leg's label goes on the side away from the vertical leg
+        rich([['Δ', false], ['t', true]], (ax + bx) / 2, ay + (up ? 1 : -1) * fs * 0.9, 'center');
+        // Δv beside the vertical leg: outside the triangle, unless that runs past the graph's right edge
+        if (Math.abs(by - ay) > fs * 0.8) {
+          ctx.font = `bold ${fs}px Arial`; const lw = ctx.measureText('Δv').width;
+          const right = bx + 5 * kk + lw <= w - 2 * kk;
+          // up or down the leg, whichever spot is furthest from the time axis and its numbers (just under the axis)
+          const ax0 = ty(0) + fs * 0.7;
+          const ly = [0.5, 0.25, 0.75].map(f => ay + (by - ay) * f).sort((p, q) => Math.abs(q - ax0) - Math.abs(p - ax0))[0];
+          rich([['Δ', false], ['v', true]], right ? bx + 5 * kk : bx - 5 * kk - lw, ly, 'left');
+        }
+        ctx.restore();
+      }
+
       if (sim.points.length > 0) {
         ctx.strokeStyle = color;
         ctx.lineWidth = 2.5;
@@ -842,18 +917,36 @@
         });
         ctx.stroke();
 
-        const last = sim.points[sim.points.length - 1];
         ctx.fillStyle = color;
         ctx.beginPath();
         ctx.arc(tx(last.t), ty(last[key]), 4, 0, Math.PI * 2);
         ctx.fill();
       }
     }
+    // the numbers for the gradient and the area, written under the v-t graph (not on it, so the graph stays clear)
+    function updateGraphExtra() {
+      const box = document.getElementById('vExtra'), lines = [];
+      const f = n => (Math.abs(n) < 0.005 ? 0 : n).toFixed(2);
+      const t = sim.t, s0 = sampleState(0), s = sampleState(t);
+      const wantG = document.getElementById('showGradient').checked, wantA = document.getElementById('showArea').checked;
+      if ((wantG || wantA) && t < 0.05) lines.push('Press Start, or drag across a graph, to see the motion so far.');
+      else {
+        if (wantG) lines.push(`<b>Gradient</b> = Δ<i>v</i> ÷ Δ<i>t</i> = (${f(s.v)} − ${f(s0.v)}) m/s ÷ ${f(t)} s = <b>${f((s.v - s0.v) / t)} m/s²</b>, the acceleration <i>a</i>.`);
+        if (wantA) {
+          const turned = s0.v * s.v < 0;
+          lines.push(`<b>Area under the graph</b> from 0 to ${f(t)} s = <b>${f(s.x - s0.x)} m</b>, the displacement <i>x</i> − <i>x</i><sub>0</sub> = ${f(s.x)} − ${f(s0.x)} m.` +
+            (turned ? ' Area below the time axis (red) counts as negative.' : ''));
+        }
+      }
+      box.innerHTML = lines.map(l => `<div>${l}</div>`).join('');
+    }
+
     function redrawAll() {
       drawMotionScene();
       drawGraph(xGraphCanvas, 'x', '#2563eb', 'x (m)');
       drawGraph(vGraphCanvas, 'v', '#16a34a', 'v (m/s)');
       drawGraph(aGraphCanvas, 'a', '#dc2626', 'a (m/s²)');
+      updateGraphExtra();
     }
 
     function startSimulation() {
@@ -896,6 +989,7 @@
         v0El.value = (Math.round((p.x - m.cartX) / m.pxPerMs * 10) / 10).toFixed(1);
       }
       presetEl.value = 'custom';
+      showScenNote();
       resetSimulation();
     });
     const endDrag = () => { dragMode = null; };
@@ -921,7 +1015,8 @@
       c.addEventListener('pointercancel', () => { scrubbing = false; });
     });
 
-    [x0El, v0El, aEl].forEach(inp => inp.addEventListener('input', () => { presetEl.value = 'custom'; resetSimulation(); }));
+    [x0El, v0El, aEl].forEach(inp => inp.addEventListener('input', () => { presetEl.value = 'custom'; showScenNote(); resetSimulation(); }));
+    ['showGradient', 'showArea'].forEach(id => document.getElementById(id).addEventListener('change', redrawAll));
 
     presetEl.addEventListener('change', () => {
       applyPreset();

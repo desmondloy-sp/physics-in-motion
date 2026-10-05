@@ -108,8 +108,9 @@
         { kind: 'magnet', x: cx + BAR_L / 2 + gap / 2, y: cy, ang: 0, m: 1 }
       ];
       else objects = [
-        // as in the notes: the magnet's S-pole is brought near the bar
-        { kind: 'magnet', x: cx - BAR_L / 2 - gap / 2 - 60, y: cy, ang: Math.PI, m: 1 },
+        // as in the notes: the magnet's S-pole is brought near the bar. It starts up to 60 px further out,
+        // but never past 14 px from the left edge (a phone-width canvas has no room for the extra 60).
+        { kind: 'magnet', x: cx - BAR_L / 2 - gap / 2 - Math.max(0, Math.min(60, cx - BAR_L - gap / 2 - 14)), y: cy, ang: Math.PI, m: 1 },
         { kind: mode === 'iron' ? 'iron' : 'steel', x: cx + BAR_L / 2 + gap / 2, y: cy, ang: 0, m: 0 }
       ];
       selected = 0;

@@ -172,6 +172,19 @@
       ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fillRect(x0 - 3, y - 8, tw + 6, 16);
       ctx.fillStyle = color; ctx.fillText(t, x, y); ctx.textBaseline = 'alphabetic';
     }
+    // tag() on as many 16 px lines as it needs to stay maxW wide, centred on y; a centred tag is kept inside the canvas
+    function tagWrap(ctx, t, x, y, color, align, maxW, w) {
+      ctx.font = 'bold 12px Arial';
+      const lines = [];
+      for (const word of t.split(' ')) {
+        const last = lines[lines.length - 1];
+        if (last !== undefined && ctx.measureText(last + ' ' + word).width <= maxW) lines[lines.length - 1] = last + ' ' + word;
+        else lines.push(word);
+      }
+      const widest = Math.max(...lines.map(l => ctx.measureText(l).width));
+      if (align === 'center') x = Math.min(Math.max(x, widest / 2 + 6), w - widest / 2 - 6);
+      lines.forEach((l, i) => tag(ctx, l, x, y + (i - (lines.length - 1) / 2) * 17, color, align));
+    }
     // name on one line, mass under it, so the label fits even the narrow blocks used on a phone
     function box(ctx, x, y, w, h, fill, name, sub) {
       ctx.fillStyle = fill; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, 6) : ctx.rect(x, y, w, h); ctx.fill();
@@ -241,8 +254,10 @@
           ctx.beginPath(); ctx.moveTo(x - sz * 0.2, floorY - sz * 0.8); ctx.lineTo(x - sz * 0.25, floorY - 6); ctx.moveTo(x + sz * 0.2, floorY - sz * 0.8); ctx.lineTo(x + sz * 0.25, floorY - 6); ctx.stroke();
           ctx.strokeStyle = '#334155'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - sz * 0.45, floorY - 3); ctx.lineTo(x + sz * 0.45, floorY - 3); ctx.stroke();
           ctx.fillStyle = 'white'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center'; ctx.fillText(name, x, floorY - sz * 1.25);
-          tag(ctx, `${m} kg`, x, floorY + 18, '#334155');
-          tag(ctx, `v = ${Math.abs(sk.v).toFixed(2)} m/s`, x, floorY + 38, '#15803d');
+          // A's labels hang off to its left and B's to its right: the skaters start almost touching
+          const lx = name === 'A' ? x + 10 : x - 10, al = name === 'A' ? 'right' : 'left';
+          tag(ctx, `${m} kg`, lx, floorY + 18, '#334155', al);
+          tag(ctx, `v = ${Math.abs(sk.v).toFixed(2)} m/s`, lx, floorY + 38, '#15803d', al);
           return { x, sz };
         };
         const A = drawSkater(st.sA, '#2563eb', 'A', mA()), B = drawSkater(st.sB, '#16a34a', 'B', mB());
@@ -265,11 +280,14 @@
         ctx.fillStyle = '#365314'; ctx.fillText('the Earth (below)', 10, h - 9);
         ctx.fillStyle = '#111827'; ctx.beginPath(); ctx.ellipse(cx, iceY - 10, 44, 12, 0, 0, Math.PI * 2); ctx.fill(); ctx.fillRect(cx - 44, iceY - 22, 88, 12); ctx.beginPath(); ctx.ellipse(cx, iceY - 22, 44, 12, 0, 0, Math.PI * 2); ctx.fillStyle = '#374151'; ctx.fill();
         tag(ctx, 'puck', cx, iceY - 46, '#111827');
+        // On a phone the four arrows spread across the width and each label wraps onto two lines on the side with room.
+        const narrow = w < 600;
+        const xN = narrow ? w * 0.31 : cx - 70, xW = narrow ? w * 0.69 : cx + 70, xN2 = narrow ? w * 0.10 : cx - 140, xW2 = narrow ? w * 0.90 : cx + 170;
         const forcesList = [
-          { id: 'N', a: [cx - 70, iceY - 16], b: [cx - 70, iceY - 96], txt: 'N: ice pushes puck up', on: 'puck', partner: 'N2' },
-          { id: 'W', a: [cx + 70, iceY - 16], b: [cx + 70, iceY + 64], txt: 'W: Earth pulls puck down', on: 'puck', partner: 'W2' },
-          { id: 'N2', a: [cx - 140, iceY + 2], b: [cx - 140, iceY + 72], txt: 'puck pushes ice down', on: 'ice', partner: 'N' },
-          { id: 'W2', a: [cx + 170, h - 26], b: [cx + 170, h - 106], txt: 'puck pulls Earth up', on: 'Earth', partner: 'W' }
+          { id: 'N', a: [xN, iceY - 16], b: [xN, iceY - 96], txt: 'N: ice pushes puck up', on: 'puck', partner: 'N2', side: 'left' },
+          { id: 'W', a: [xW, iceY - 16], b: [xW, iceY + 64], txt: 'W: Earth pulls puck down', on: 'puck', partner: 'W2', side: 'right' },
+          { id: 'N2', a: [xN2, iceY + 2], b: [xN2, iceY + 72], txt: 'puck pushes ice down', on: 'ice', partner: 'N', side: narrow ? 'right' : 'left' },
+          { id: 'W2', a: [xW2, h - 26], b: [xW2, h - 106], txt: 'puck pulls Earth up', on: 'Earth', partner: 'W', side: narrow ? 'left' : 'right', ly: narrow ? h - 52 : null }
         ];
         // Every force is the same grey until one is tapped; then it and its partner share one colour.
         const PAIR_COL = { N: '#0891b2', N2: '#0891b2', W: '#7c3aed', W2: '#7c3aed' };
@@ -280,14 +298,15 @@
           f.col = col;
           ctx.globalAlpha = faded ? 0.18 : 1;
           arrow(ctx, f.a[0], f.a[1], f.b[0], f.b[1], col, isSel ? 6 : 4);
-          const right = f.a[0] > cx;
-          tag(ctx, f.txt, f.a[0] + (right ? 10 : -10), (f.a[1] + f.b[1]) / 2, col, right ? 'left' : 'right');
+          const right = f.side === 'right', ly = f.ly ?? (f.a[1] + f.b[1]) / 2;
+          if (narrow) tagWrap(ctx, f.txt, f.a[0] + (right ? 10 : -10), ly, col, right ? 'left' : 'right', 92, w);
+          else tag(ctx, f.txt, f.a[0] + (right ? 10 : -10), ly, col, right ? 'left' : 'right');
           ctx.globalAlpha = 1;
           hits.push({ id: f.id, x: (f.a[0] + f.b[0]) / 2, y: (f.a[1] + f.b[1]) / 2, r: 46 });
         });
         if (st.sel) {
           const f = forcesList.find(g => g.id === st.sel), p = forcesList.find(g => g.id === f.partner);
-          tag(ctx, `Third-law pair: "${f.txt}" and "${p.txt}" — on different objects (${f.on} / ${p.on}), same kind of force.`, w / 2, 18, '#0f172a');
+          tagWrap(ctx, `Third-law pair: "${f.txt}" and "${p.txt}" — on different objects (${f.on} / ${p.on}), same kind of force.`, w / 2, narrow ? 34 : 18, '#0f172a', 'center', w - 24, w);
         } else tag(ctx, 'Tap a force to find its third-law partner', w / 2, 18, '#1d4ed8');
       }
     }
