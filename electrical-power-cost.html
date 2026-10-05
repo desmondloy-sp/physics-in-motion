@@ -49,6 +49,14 @@
       .controls .control-group:first-child { grid-column: 1 / -1; }
       .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
+    /* Touch screens (phones, tablets; Samsung Internet reports hover: hover on a phone, so only pointer is tested):
+       16 px form fields stop an iPhone zooming the page in when one is
+       tapped, and buttons and tick boxes get a finger-sized target. */
+    @media (pointer: coarse) {
+      input:not([type=range]):not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
+      button { min-height: 36px; }
+      input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
+    }
   </style>
 </head>
 <body>
@@ -61,7 +69,7 @@
           <label for="preset">Scenarios</label>
           <select id="preset">
             <option value="ex13" selected>Example 13: a 2.0 kW kettle for a month</option>
-            <option value="ex12">Example 12: a 1500 W 240 V kettle at a lower voltage</option>
+            <option value="ex12">Example 12: kettle at a lower voltage</option>
             <option value="home">A typical flat</option>
             <option value="custom">Custom</option>
           </select>

@@ -31,7 +31,7 @@
     .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
     .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
     .readout-card .value { font-size: 1rem; font-weight: bold; }
-    canvas { display: block; width: 100%; border-radius: 10px; touch-action: none; }
+    canvas { display: block; width: 100%; border-radius: 10px; touch-action: pan-y; }
     #sceneCanvas { height: 300px; border: 1px solid #dbeafe; background: #fbfdff; }
     #graphCanvas { height: 170px; border: 1px solid #e5e7eb; background: #fff; }
     .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
@@ -40,6 +40,14 @@
       .groups { grid-template-columns: 1fr; }
       .controls { grid-template-columns: 1fr 1fr; }
       .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    /* Touch screens (phones, tablets; Samsung Internet reports hover: hover on a phone, so only pointer is tested):
+       16 px form fields stop an iPhone zooming the page in when one is
+       tapped, and buttons and tick boxes get a finger-sized target. */
+    @media (pointer: coarse) {
+      input:not([type=range]):not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
+      button { min-height: 36px; }
+      input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
     }
   </style>
 </head>
@@ -64,8 +72,8 @@
             <div class="control-group">
               <label for="waveType">Wave type</label>
               <select id="waveType">
-                <option value="transverse" selected>Transverse (rope)</option>
-                <option value="longitudinal">Longitudinal (sound)</option>
+                <option value="transverse" selected>Transverse</option>
+                <option value="longitudinal">Longitudinal</option>
               </select>
             </div>
             <div class="control-group">
@@ -343,6 +351,19 @@
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
+  </script>
+  <script>
+    // Phones: a swipe that starts on an empty part of a drawing scrolls the page (touch-action: pan-y),
+    // and a touch the page grabbed for a drag (its own setPointerCapture call) keeps the page still.
+    // (hasPointerCapture can't tell: a touch is always captured implicitly.)
+    // The kinematics graphs are left out: a sideways drag scrubs them and an up-down one scrolls.
+    document.querySelectorAll('canvas:not(.graph-canvas)').forEach(c => {
+      let grabbed = false;
+      const capture = c.setPointerCapture;
+      c.setPointerCapture = function (id) { grabbed = true; return capture.call(this, id); };
+      for (const t of ['pointerup', 'pointercancel', 'touchend', 'touchcancel']) c.addEventListener(t, () => { grabbed = false; });
+      c.addEventListener('touchmove', e => { if (grabbed && e.cancelable) e.preventDefault(); }, { passive: false });
+    });
   </script>
 </body>
 </html>
