@@ -117,7 +117,7 @@
             </div>
             <div class="control-group">
               <div class="label-row"><label for="field">Field <i>B</i> <span class="val" id="fieldVal"></span></label><button id="flipBtn" class="small">Swap poles</button></div>
-              <input id="field" type="range" min="0.01" max="0.5" step="0.01" value="0.2" />
+              <input id="field" type="range" min="0.05" max="0.5" step="0.01" value="0.2" />
             </div>
             <label class="toggle"><input type="checkbox" id="comm" checked /> <span>Split-ring commutator<br />(untick: complete rings)</span></label>
           </div>
@@ -146,6 +146,7 @@
       <div class="note"><ul>
         <li>The two long sides of the coil carry current in opposite directions (&odot; out of the page, &otimes; into it).</li>
         <li>Fleming's left-hand rule pushes one side up and the other down, with the <b>same-sized</b> force <i>F</i> = <i>BIL</i>, always at right angles to the field. The pair of forces turns the coil.</li>
+        <li>A stronger magnet (bigger <i>B</i>) is drawn with more field lines, closer together.</li>
         <li>The turning effect is biggest when the coil is horizontal, because the forces are then furthest from the axle (measured at right angles).</li>
         <li>It is <b>zero when the coil is vertical</b>, where both forces act in line with the axle.</li>
         <li>At the vertical position the gaps in the <b>split-ring commutator</b> X and Y are at the carbon brushes P and Q, so for a moment no current flows. The coil's <b>inertia</b> carries it past that point.</li>
@@ -271,7 +272,16 @@
       const [leftPole, rightPole] = poleNames();
       [[0, leftPole], [w - 50, rightPole]].forEach(([x, p]) => { ctx.fillStyle = POLE_COL[p]; ctx.fillRect(x, 30, 50, h - 60); ctx.fillStyle = 'white'; ctx.font = 'bold 22px Arial'; ctx.textAlign = 'center'; ctx.fillText(p, x + 25, h / 2 + 8); });
       const toRight = leftPole === 'N';
-      for (let i = 0; i < 7; i++) { const y = 46 + (h - 92) * i / 6; arrow(ctx, toRight ? 58 : w - 58, y, toRight ? w - 58 : 58, y, 'rgba(100,116,139,0.35)', 1.3, 8); }
+      // one field line per 0.02 T, as on the motor-effect page, so the spacing shows B (whole hundredths, so 0.15 T is 8);
+      // at most 8 arrowheads, spread evenly, so a strong field's heads don't stack into a column
+      const nLines = Math.max(1, Math.round(Math.round(P().B * 100) / 2)), nHeads = Math.min(nLines, 8);
+      const heads = new Set(Array.from({ length: nHeads }, (_, j) => Math.floor((j + 0.5) * nLines / nHeads)));
+      ctx.strokeStyle = 'rgba(100,116,139,0.35)'; ctx.lineWidth = 1.3;
+      for (let i = 0; i < nLines; i++) {
+        const y = 30 + (h - 60) * (i + 0.5) / nLines, a = toRight ? 58 : w - 58, b = toRight ? w - 58 : 58;
+        if (heads.has(i)) arrow(ctx, a, y, b, y, 'rgba(100,116,139,0.35)', 1.3, 8);
+        else { ctx.beginPath(); ctx.moveTo(a, y); ctx.lineTo(b, y); ctx.stroke(); }
+      }
       const cx = w / 2, cy = h / 2 - 6, r = Math.min(w * 0.26, h * 0.3);
       const A = { x: cx + r * Math.cos(sim.psi), y: cy + r * Math.sin(sim.psi) }, Bs = { x: cx - r * Math.cos(sim.psi), y: cy - r * Math.sin(sim.psi) };
       ctx.strokeStyle = '#b45309'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(Bs.x, Bs.y); ctx.stroke();
