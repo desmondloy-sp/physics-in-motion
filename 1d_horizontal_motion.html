@@ -248,7 +248,13 @@
     /* Predict first, key features, the words line */
     .words { margin-top: 8px; font-size: 0.86rem; font-weight: 600; color: #1e3a8a; background: #eef4ff; border-radius: 8px; padding: 6px 10px; }
     .words:empty { display: none; }
-    .learn { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+    .learn { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 8px; }
+    /* Predict first sits above the controls; its options go side by side wherever they fit. Once checked, the
+       options fold away and the question, the result and its explanation take their place. */
+    .predict-box { margin-bottom: 8px; }
+    #predictOpts { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    .predict-box.done #predictOpts { display: none; }
+    .predict-box.done .predict-q { margin-bottom: 0; }
     .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; }
     .box-title { font-weight: 700; font-size: 0.86rem; margin-bottom: 6px; }
     .predict-q { font-size: 0.86rem; margin-bottom: 6px; }
@@ -319,18 +325,11 @@
       .graphs.n2 { grid-template-columns: repeat(2, 1fr); }
     }
 
-    @media (max-width: 699px) {
-      .learn { grid-template-columns: 1fr; }
-    }
     /* 701-900 px (a Brightspace column): Start / Pause / Reset get their own row, or "Pause" and "Reset" are cut off */
     @media (min-width: 701px) and (max-width: 900px) {
       .controls:not(.walk-controls) { grid-template-columns: 2fr 1fr 1fr 1fr; }
       .controls.no-a:not(.walk-controls) { grid-template-columns: 2fr 1fr 1fr; }
       .controls:not(.walk-controls) .button-group { grid-column: 1 / -1; }
-    }
-    /* the four predictions as a 2 x 2 grid where there is room, so the page fits a Brightspace frame */
-    @media (min-width: 700px) {
-      #predictOpts { grid-template-columns: 1fr 1fr; }
     }
 
     @media (max-width: 700px) {
@@ -442,6 +441,15 @@
     </header>
 
     <div class="strip" id="strip"></div>
+
+    <!-- tabs 1 to 4: Predict first comes first, above the controls and the picture, so it is seen before the run -->
+    <div class="box predict-box" id="predictBox">
+      <div class="box-title">Predict first</div>
+      <div class="predict-q" id="predictQ"></div>
+      <div class="opts" id="predictOpts"></div>
+      <div class="feedback" id="predictFb"></div>
+      <div class="row-btns" id="predictBtns"><button id="predictCheck" type="button">Check my answer</button></div>
+    </div>
 
     <!-- Tab 1: position, distance and displacement -->
     <section class="tab-page" id="page1" hidden>
@@ -589,15 +597,8 @@
       </div>
     </section>
 
-    <!-- shared by tabs 1 to 4: predict first, key features, the notes' rule for signs -->
+    <!-- shared by tabs 1 to 4: key features, the notes' rule for signs -->
     <div class="learn" id="learn">
-      <div class="box predict-box" id="predictBox">
-        <div class="box-title">Predict first</div>
-        <div class="predict-q" id="predictQ"></div>
-        <div class="opts" id="predictOpts"></div>
-        <div class="row-btns"><button id="predictCheck" type="button">Check my answer</button></div>
-        <div class="feedback" id="predictFb"></div>
-      </div>
       <div class="box" id="featBox">
         <div class="box-title">Key features (tap one)</div>
         <div class="feats" id="feats"></div>
@@ -1655,15 +1656,15 @@
     const ALL_PRESETS = ['right_constant_v', 'right_faster', 'left_constant_v', 'stationary', 'speed_up_right_from_rest',
       'slow_down_right', 'speed_up_left_from_rest', 'slow_down_left', 'worked_example'];
     const TABS = {
-      1: { strip: 'Choose a walk and press Start, or drag the cart yourself. Compare the distance travelled with the displacement, then answer the prediction question.',
+      1: { strip: 'Answer Predict first, then choose a walk and press Start, or drag the cart yourself. Compare the distance travelled with the displacement.',
         key: [['#2563eb', 'Cart', 1], ['#ea580c', 'Path travelled'], ['#7c3aed', 'Displacement']] },
-      2: { strip: 'Press Start. The gradient of the x–t graph is the cart\'s velocity. Answer the prediction, then tap a key feature to check.',
+      2: { strip: 'Answer Predict first, then press Start. The gradient of the x–t graph is the cart\'s velocity. Tap a key feature to check.',
         presets: ['right_constant_v', 'right_faster', 'left_constant_v', 'stationary'], showA: false, graphs: ['x'],
         key: [['#2563eb', 'Cart', 1], ['#16a34a', 'Velocity v'], ['#2563eb', 'x–t graph'], ['#7c2d12', 'Gradient triangle']] },
-      3: { strip: 'Press Start, or drag across a graph. The gradient of the v–t graph is the acceleration, and the area under it is the displacement.',
+      3: { strip: 'Answer Predict first, then press Start, or drag across a graph. The gradient of the v–t graph is the acceleration, and the area under it is the displacement.',
         presets: ['speed_up_right_from_rest', 'slow_down_right', 'speed_up_left_from_rest', 'slow_down_left', 'right_constant_v', 'left_constant_v'], showA: true, graphs: ['x', 'v', 'a'],
         key: [['#2563eb', 'x–t'], ['#16a34a', 'v–t'], ['#dc2626', 'a–t'], ['#7c2d12', 'Gradient'], ['#86efac', 'Area', 1]] },
-      4: { strip: 'Compare the signs of v and a. Press Pause, then Next key moment, to stop where v = 0.',
+      4: { strip: 'Answer Predict first. Then compare the signs of v and a. Press Pause, then Next key moment, to stop where v = 0.',
         presets: ['slow_down_right', 'slow_down_left', 'speed_up_right_from_rest', 'speed_up_left_from_rest', 'worked_example'], showA: true, graphs: ['x', 'v'],
         key: [['#2563eb', 'x–t'], ['#16a34a', 'v–t'], ['#7c3aed', 'Where v = 0']] },
       5: { strip: 'Answer every question, then read the summary.', key: [] }
@@ -1749,7 +1750,7 @@
       const P = PREDICT[tab], box = document.getElementById('predictBox');
       predictPick = null;
       if (!P) { box.hidden = true; return; }
-      box.hidden = false;
+      box.hidden = false; box.classList.remove('done');
       document.getElementById('predictQ').innerHTML = sym(P.q);
       document.getElementById('predictFb').innerHTML = '';
       const opts = document.getElementById('predictOpts');
@@ -1773,7 +1774,10 @@
       opts.dataset.done = '1';
       const ok = predictPick === P.ans;
       opts.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === P.ans) x.classList.add('right'); else if (j === predictPick) x.classList.add('wrong'); });
-      fb.innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> <span class="why">${sym(P.why)}</span>`;
+      // the options fold away: the result line names the pick (and the right answer), then the explanation
+      document.getElementById('predictBox').classList.add('done');
+      fb.innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> Your prediction: ${sym(P.opts[predictPick])}.`
+        + (ok ? '' : ` The answer: <b>${sym(P.opts[P.ans])}</b>.`) + ` <span class="why">${sym(P.why)}</span>`;
       document.getElementById('predictCheck').textContent = 'Try again';
     });
 
