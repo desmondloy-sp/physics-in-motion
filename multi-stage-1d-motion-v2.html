@@ -17,416 +17,185 @@
     <meta name="twitter:description" content="An interactive physics simulation: Multi-Stage 1D Kinematics. Drag, slide and press Start to see it happen." />
   <!-- pim-meta:end -->
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
+    /* the hidden attribute must win over every display rule below */
+    [hidden] { display: none !important; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
+    h1 { margin: 0; font-size: 1.1rem; }
+    .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
 
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: #f4f7fb;
-      color: #1f2937;
-    }
+    /* controls: the scenario menu and Start / Pause / Reset; they wrap as the width shrinks */
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 110px; }
+    .control-group.scen-group { flex: 2.2 1 260px; }
+    .control-group.button-group { flex: 1.5 1 230px; }
+    .control-group select { width: 100%; max-width: 100%; }
+    .controls label, .builder label { line-height: 1.2; }
+    .controls label sub, .builder label sub { line-height: 0; }
+    .controls input, .controls select, .controls button { height: 34px; }
+    label { font-size: 0.82rem; font-weight: 600; }
+    input, select, button { font-size: 0.95rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; }
+    input[type=number] { width: 100%; max-width: 120px; }
+    input:disabled { background: #f1f5f9; color: #64748b; }
+    .buttons { display: flex; gap: 6px; flex-wrap: nowrap; }
+    button { cursor: pointer; background: #2563eb; color: white; border: none; min-width: 0; flex: 1; }
+    button:hover { background: #1d4ed8; }
+    button.secondary { background: #475569; }
+    button.secondary:hover { background: #334155; }
+    button.danger { background: #dc2626; }
+    button.danger:hover { background: #b91c1c; }
+    .scen-note { font-size: 0.82rem; color: #9a3412; font-weight: 600; margin-top: 6px; }
+    .scen-note:empty { display: none; }
+    .moments { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+    .moments button { flex: none; padding: 6px 12px; }
 
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 8px;
-    }
+    /* the stage builder: starting values, the number of stages, then one box per stage */
+    .builder { margin-top: 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; }
+    .b-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+    .b-row .control-group { flex: 0 1 auto; }
+    .pills { display: inline-flex; gap: 5px; flex-wrap: wrap; }
+    button.pill { flex: none; min-width: 40px; padding: 5px 11px; border-radius: 999px; border: 1px solid #cbd5e1; background: #e5e7eb; color: #111827; font-size: 0.86rem; }
+    button.pill:hover { background: #dbe2ea; }
+    button.pill.on, button.pill.on:hover { background: #2563eb; color: white; border-color: #1d4ed8; }
+    .stages { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; margin-top: 8px; }
+    .stage-box { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 7px; display: flex; flex-direction: column; gap: 6px; }
+    .stage-name { font-weight: 700; font-size: 0.86rem; }
+    .stage-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 600; }
+    .stage-row input { max-width: 90px; }
 
-    h1 {
-      margin: 0 0 6px;
-      font-size: 1.2rem;
-      text-align: center;
-    }
+    .readout { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card.hl { box-shadow: inset 0 0 0 2px #dc2626; }
+    .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
+    .readout-card .value { font-size: 1rem; font-weight: bold; }
+    .words { margin-top: 8px; font-size: 0.86rem; font-weight: 600; color: #1e3a8a; background: #eef4ff; border-radius: 8px; padding: 6px 10px; }
+    .words:empty { display: none; }
 
-    .panel {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-      padding: 8px;
-      margin-bottom: 8px;
-    }
+    .scene-wrap { margin-top: 8px; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 0 0 4px; }
+    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    canvas { display: block; width: 100%; border-radius: 10px; background: white; }
+    #motionCanvas { height: 190px; border: 1px solid #dbeafe; touch-action: pan-y; }
+    .graphs { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 8px; }
+    .graph-box { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px; }
+    .graph-title { font-weight: 700; margin: 0 0 4px; font-size: 0.88rem; }
+    .graph-canvas { height: 150px; touch-action: pan-y; }
+    .graphs.n1 .graph-canvas { height: 250px; }
+    .graph-options { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0 0 4px; }
+    .graph-options label { font-size: 0.78rem; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+    .graph-extra { font-size: 0.8rem; color: #334155; margin-top: 4px; }
+    .graph-extra:empty { display: none; }
 
-    .controls {
-      display: grid;
-      grid-template-columns: 1.4fr 1.4fr 1.4fr 1.4fr 1.4fr;
-      gap: 10px;
-      align-items: end;
-    }
+    /* ---- the step-by-step frame: header, numbered tabs, colour key, instruction strip ---- */
+    .app-head { background: #1e293b; color: #f8fafc; border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+    .head-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .head-row h1 { flex: 1 1 260px; }
+    .steps { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #cbd5e1; }
+    .step-bar { display: flex; gap: 3px; }
+    .step-bar i { display: block; width: 18px; height: 5px; border-radius: 3px; background: #475569; }
+    .step-bar i.on { background: #fbbf24; }
+    button.teacher-btn { flex: none; background: transparent; border: 1px solid #94a3b8; color: #f8fafc; font-size: 0.82rem; padding: 5px 10px; }
+    button.teacher-btn:hover { background: #334155; }
+    /* every tab always visible: equal columns, and a long name wraps onto a second line (never a sideways scroll) */
+    .tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; margin-top: 8px; }
+    button.tab { min-width: 0; background: #f1f5f9; color: #1e293b; font-size: 0.85rem; font-weight: 600; padding: 7px 8px; border-radius: 8px; line-height: 1.2; white-space: normal; text-align: center; }
+    button.tab:hover { background: #e2e8f0; }
+    button.tab.active, button.tab.active:hover { background: #2563eb; color: white; }
+    .tab .ts { display: none; }
+    .tab .nw { white-space: nowrap; } /* "v–t" never splits across the two lines */
+    .ckey { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 7px; font-size: 0.76rem; color: #e2e8f0; }
+    .ckey span { display: inline-flex; align-items: center; gap: 5px; }
+    .ckey b { display: inline-block; width: 14px; height: 4px; border-radius: 2px; }
+    .ckey b.dot { width: 10px; height: 10px; border-radius: 50%; }
+    .strip { background: #fef9c3; border-left: 4px solid #eab308; border-radius: 6px; padding: 7px 10px; font-size: 0.86rem; margin-bottom: 8px; }
 
-    .control-group {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
+    /* Predict first (above the controls), key features */
+    .learn { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 8px; }
+    .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; }
+    .box-title { font-weight: 700; font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-q { font-size: 0.86rem; margin-bottom: 6px; }
+    /* Predict first sits above the controls; its options go side by side wherever they fit. Once checked, the
+       options fold away and the question, the result and its explanation take their place. */
+    .predict-box { margin-bottom: 8px; }
+    .opts { display: grid; gap: 5px; }
+    #predictOpts { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    .predict-box.done #predictOpts { display: none; }
+    .predict-box.done .predict-q { margin-bottom: 0; }
+    button.opt { flex: none; width: 100%; text-align: left; background: white; color: #1f2937; border: 1px solid #cbd5e1; font-size: 0.86rem; padding: 7px 10px; }
+    button.opt:hover { background: #f1f5f9; }
+    button.opt.picked, button.opt.picked:hover { border-color: #2563eb; background: #eff6ff; box-shadow: inset 0 0 0 1px #2563eb; }
+    button.opt.right, button.opt.right:hover { border-color: #16a34a; background: #dcfce7; box-shadow: inset 0 0 0 1px #16a34a; }
+    button.opt.wrong, button.opt.wrong:hover { border-color: #dc2626; background: #fee2e2; box-shadow: inset 0 0 0 1px #dc2626; }
+    .row-btns { display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+    .row-btns button { flex: none; padding: 6px 12px; }
+    .feedback { font-size: 0.84rem; margin-top: 7px; }
+    .feedback:empty { display: none; }
+    .feedback .verdict { font-weight: 700; }
+    .feedback .verdict.ok { color: #15803d; }
+    .feedback .verdict.no { color: #b91c1c; }
+    .feats { display: flex; flex-wrap: wrap; gap: 6px; }
+    button.feat { flex: none; background: white; color: #1e293b; border: 1px solid #cbd5e1; font-size: 0.84rem; padding: 6px 11px; border-radius: 999px; }
+    button.feat:hover { background: #f1f5f9; }
+    button.feat.on, button.feat.on:hover { background: #1e293b; color: white; border-color: #1e293b; }
+    .feat-note { font-size: 0.82rem; color: #334155; margin-top: 6px; }
+    .feat-note:empty { display: none; }
 
-    .control-group.compact-input input {
-      max-width: 110px;
-    }
+    /* tab 4: the story to match */
+    .story { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; }
+    .story-top { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 0.8rem; font-weight: 700; color: #9a3412; }
+    .story-text { font-size: 0.95rem; font-weight: 600; margin: 6px 0 2px; }
+    .story-how { font-size: 0.84rem; margin-top: 6px; color: #334155; }
+    .story-how:empty { display: none; }
 
-    .control-group.button-group {
-      justify-content: flex-end;
-    }
+    /* Challenge */
+    .quiz { max-width: 760px; margin: 0 auto; }
+    .quiz-top { display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 700; margin-bottom: 4px; }
+    .quiz-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+    .quiz-bar i { display: block; height: 100%; background: #2563eb; width: 0; }
+    .quiz-q { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+    .quiz-src { font-size: 0.76rem; color: #475569; margin-bottom: 8px; }
+    .qpart { margin-top: 12px; }
+    .qpart + .qpart { border-top: 1px solid #e2e8f0; padding-top: 10px; }
+    .qpart-q { font-size: 0.92rem; font-weight: 600; margin-bottom: 6px; }
+    .quiz-sum ul { padding-left: 18px; font-size: 0.86rem; }
+    .quiz-sum li { margin: 4px 0; }
 
-    label {
-      font-size: 0.82rem;
-      font-weight: 600;
-    }
-
-    input, select, button {
-      font-size: 0.95rem;
-      padding: 6px 8px;
-      border-radius: 7px;
-      border: 1px solid #cbd5e1;
-    }
-
-    .buttons {
-      display: flex;
-      gap: 6px;
-      flex-wrap: nowrap;
-    }
-
-    button {
-      cursor: pointer;
-      background: #2563eb;
-      color: white;
-      border: none;
-      min-width: 0;
-      flex: 1;
-      display: inline-flex;      /* new */
-      align-items: center;       /* new: vertical centre */
-      justify-content: center;   /* new: horizontal centre */
-      line-height: 1;            /* new: avoid strange baseline spacing */
-    }
-
-    button:hover {
-      background: #1d4ed8;
-    }
-
-    button.secondary {
-      background: #475569;
-    }
-
-    button.secondary:hover {
-      background: #334155;
-    }
-
-    button.danger {
-      background: #dc2626;
-    }
-
-    button.danger:hover {
-      background: #b91c1c;
-    }
-
-    .how-to-details summary {
-      list-style: none;
-    }
-    .how-to-details summary::-webkit-details-marker {
-      display: none;
-    }
-    .how-to-details summary::before {
-      content: '\25B8 ';
-      color: #475569;
-    }
-    .how-to-details[open] summary::before {
-      content: '\25BE ';
-    }
-    .how-to {
-      display: flex;
-      flex-direction: column;   /* single column */
-      gap: 2px;                 /* small vertical spacing between lines */
-      font-size: 0.8rem;
-      margin: 6px 0;            /* space above and below the list (before the line) */
-    }
-
-    .how-to-item {
-      color: #475569;
-    }
-
-    .how-to-divider {
-      border: none;
-      border-top: 1px solid #e5e7eb;
-      margin: 4px 0 6px 0;  /* small space above and below the line */
-    }
-
-    .stage-count-group {
-      display: inline-flex;
-      gap: 6px;
-    }
-
-    .stage-count-btn {
-      min-width: 44px;
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid #cbd5e1;
-      background: #e5e7eb;
-      color: #111827;
-      cursor: pointer;
-    }
-
-    .stage-count-btn.active {
-      background: #2563eb;
-      color: #ffffff;
-      border-color: #1d4ed8;
-    }
-
-    .stage-count-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 6px;
-    }
-
-    .stage-count-label {
-      font-size: 0.82rem;
-      font-weight: 600;
-      white-space: nowrap;   /* prevents wrapping into multiple lines */
-      width: 120px;   /* same as .initial-label */
-      text-align: left;
-    }
-
-    .readout {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(120px, 1fr));
-      gap: 6px;
-      margin-top: 8px;
-    }
-
-    .readout-card {
-      background: #eef4ff;
-      border-radius: 8px;
-      padding: 6px 8px;
-      text-align: center;
-    }
-
-    .readout-card .title {
-      font-size: 0.78rem;
-      color: #475569;
-      margin-bottom: 2px;
-    }
-
-    .readout-card .value {
-      font-size: 1rem;
-      font-weight: bold;
-    }
-
-    .animation-wrap {
-      margin-top: 8px;
-      position: relative;
-    }
-    
-    .motion-controls-overlay {
-      position: absolute;
-      top: 8px;
-      left: 8px;
-      z-index: 10;
-    }
-
-    canvas {
-      display: block;
-      width: 100%;
-      border-radius: 10px;
-      background: white;
-    }
-
-    #motionCanvas {
-      height: 180px;
-      border: 1px solid #dbeafe;
-      background: linear-gradient(to bottom, #f8fbff 0%, #eef6ff 100%);
-    }
-
-    .graphs {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 8px;
-    }
-
-    .graph-box {
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      padding: 6px;
-    }
-
-    .graph-title {
-      font-weight: 700;
-      margin: 0 0 4px;
-      font-size: 0.88rem;
-    }
-
-    .graph-canvas {
-      height: 145px;
-    }
-
-    .note {
-      margin-top: 4px;
-      font-size: 0.8rem;
-      color: #475569;
-    }
-
-    /* 2-column layout: left = controls+motion, right = graphs */
-    .layout-two-column {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 10px;
-      align-items: flex-start;
-    }
-
-    .left-column {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .stage-panel {
-      margin-top: 8px;
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 8px;
-    }
-
-    .stage-box {
-      background: #f9fafb;
-      border-radius: 8px;
-      border: 1px solid #e5e7eb;
-      padding: 6px;
-      font-size: 0.82rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
-
-    .motion-type-group {
-      display: inline-flex;
-      gap: 4px;
-    }
-
-    .motion-type-btn {
-      font-size: 0.78rem;
-      padding: 3px 8px;
-      border-radius: 999px;
-      border: 1px solid #cbd5e1;
-      background: #e5e7eb;
-      color: #111827;
-      cursor: pointer;
-    }
-
-    .motion-type-btn.active {
-      background: #2563eb;
-      color: #ffffff;
-      border-color: #1d4ed8;
-    }
-
-    .stage-title {
-      font-weight: 700;
-      margin-bottom: 4px;      /* a bit more space to accommodate buttons */
-      display: flex;
-      flex-direction: column;  /* label on top, buttons below */
-      gap: 4px;
-    }
-
-    .stage-box label {
-      font-weight: 500;
-    }
-
-    .stage-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      align-items: center;
-      column-gap: 6px;
-      margin-bottom: 4px;
-    }
-
-    .stage-box input,
-    .stage-box select {
-      font-size: 0.85rem;
-      padding: 4px 6px;
-      max-width: 90px;
-    }
-
-    .initial-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap; /* allows wrapping nicely on small screens */
-      margin-bottom: 6px; 
-    }
-
-    .initial-label {
-      font-size: 0.82rem;
-      font-weight: 600;
-      white-space: nowrap;
-      width: 120px;         /* tune this value */
-      text-align: left;
-    }
-
-    .initial-field-label {
-      font-size: 0.8rem;
-      white-space: nowrap;
-    }
-
-    .initial-row input {
-      max-width: 60px;      /* you already wanted them narrower */
-      padding: 2px 4px;     /* smaller padding -> smaller height */
-      font-size: 0.8rem;    /* optional: slightly smaller text */
-    }
-
-    .global-stage-settings {
-      margin-top: 6px;
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      margin-top: 4px;
-      font-size: 0.82rem;
-    }
-
-    .global-stage-settings select {
-      width: auto;
-    }
+    /* Teacher mode */
+    .teacher { position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 92vw); background: white; box-shadow: -4px 0 18px rgba(0,0,0,0.18); padding: 12px; overflow-y: auto; z-index: 20; }
+    .teacher h2 { font-size: 1rem; margin: 0 0 8px; }
+    .teacher .tbtns { display: grid; gap: 6px; }
+    .teacher .tbtns button { background: white; color: #1e293b; border: 1px solid #cbd5e1; flex: none; }
+    .teacher .tbtns button:hover { background: #f1f5f9; }
+    .teacher .tbtns button.on { background: #1e293b; color: white; }
+    .teacher h3 { font-size: 0.9rem; margin: 14px 0 4px; }
+    .teacher ul { padding-left: 18px; margin: 0; font-size: 0.84rem; }
+    .teacher li { margin: 4px 0; }
+    body.no-explain .strip, body.no-explain .words, body.no-explain .scen-note, body.no-explain .feedback .why,
+    body.no-explain .feat-note, body.no-explain .graph-extra, body.no-explain .story-how { display: none; }
+    body.no-answers .readout-card .value, body.no-answers .graph-extra { filter: blur(6px); }
+    body.free-mode .predict-box { display: none; }
 
     @media (max-width: 900px) {
-      .layout-two-column {
-        grid-template-columns: 1fr;
-      }
+      .readout { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
-
     @media (max-width: 700px) {
-      .controls,
-      .readout {
-        grid-template-columns: repeat(2, minmax(140px, 1fr));
-      }
-
-      h1 {
-        font-size: 1.05rem;
-      }
-
-      #motionCanvas {
-        height: 150px;
-      }
-
-      .graph-canvas {
-        height: 130px;
-      }
-
-      .stage-panel {
-        grid-template-columns: 1fr;
-      }
+      h1 { font-size: 1rem; }
+      #motionCanvas { height: 165px; }
+      .graph-canvas { height: 135px; }
+      .graphs.n1 .graph-canvas { height: 180px; }
+      .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .tab .tl { display: none; }
+      .tab .ts { display: inline; }
+      /* phones: short names in rows that wrap, so all five tabs show without scrolling */
+      .tabs { display: flex; flex-wrap: wrap; }
+      button.tab { flex: 1 1 auto; white-space: nowrap; }
     }
-
     @media (max-width: 420px) {
-      .controls,
-      .readout {
-        grid-template-columns: 1fr;
-      }
-
-      button {
-        flex: 1 1 auto;
-      }
+      .readout { grid-template-columns: 1fr 1fr; }
+      button { flex: 1 1 auto; }
+      .stages { grid-template-columns: 1fr; }
     }
-    #motionCanvas, .graph-canvas { touch-action: pan-y; }
-    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 4px 0; }
     /* Touch screens (phones, tablets; Samsung Internet reports hover: hover on a phone, so only pointer is tested):
        16 px form fields stop an iPhone zooming the page in when one is
        tapped, and buttons and tick boxes get a finger-sized target. */
@@ -434,6 +203,7 @@
       input:not([type=range]):not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
       button { min-height: 36px; }
       input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
+      .controls input, .controls select, .controls button { height: 36px; }
     }
   </style>
   <!-- pim-nav-style:start (generated by scripts/pim-nav.ts) -->
@@ -462,935 +232,1003 @@
     <a class="pim-nav-btn pim-nav-next" href="force-vector-triangle.html" title="Next: Addition of Forces: Vector Triangle and Components (Chapter 3)" aria-label="Next: Addition of Forces: Vector Triangle and Components (Chapter 3)"><span class="pim-nav-text"><span class="pim-nav-kicker">Next<span class="pim-nav-ch"> &middot; Chapter 3</span></span><span class="pim-nav-name">Addition of Forces: Vector Triangle and Components</span></span><span class="pim-nav-arrow" aria-hidden="true">&rsaquo;</span></a>
   </nav>
   <!-- pim-nav:end -->
-    <h1>Multi-Stage 1D Kinematics</h1>
 
-    <div class="layout-two-column">
-      <!-- LEFT COLUMN: panel + motion canvas -->
-      <div class="left-column">
-        <div class="panel">
-          <details class="how-to-details">
-            <summary style="font-size: 0.82rem; font-weight: 600; cursor: pointer;">How to use</summary>
-            <div class="how-to">
-              <div class="how-to-item">
-                <strong>1.</strong> Choose 2 or 3 stages, and set initial position and velocity.
-              </div>
-              <div class="how-to-item">
-                <strong>2.</strong> For each stage, pick constant <i>v</i> or constant <i>a</i>, set duration and acceleration.
-              </div>
-              <div class="how-to-item">
-                <strong>3.</strong> Click Start to see the continuous motion and graphs; Pause or Reset as needed.
-              </div>
-            </div>
-          </details>
-
-          <hr class="how-to-divider" />
-
-          <div class="controls">
-            <div class="control-group">
-              <div class="stage-count-row">
-                <span class="stage-count-label">Number of stages</span>
-                <div class="stage-count-group" id="numStages">
-                  <button type="button" class="stage-count-btn active" data-stages="2">2</button>
-                  <button type="button" class="stage-count-btn" data-stages="3">3</button>
-                </div>
-              </div>
-            </div>        
-          </div>
-
-          <div class="control-group compact-input">
-            <div class="initial-row">
-              <span class="initial-label">Initial Conditions</span>
-              <span class="initial-field-label">Initial position,&nbsp;<i>x</i><sub>0</sub> (m)</span>
-              <input id="x0_stage1" type="number" value="0" step="0.1" style="max-width: 80px;" />
-              <span class="initial-field-label">Initial velocity,&nbsp;<i>v</i><sub>0</sub> (m/s)</span>
-              <input id="v0_stage1" type="number" value="2" step="0.1" style="max-width: 80px;" />
-            </div>
-          </div>
-
-          <div class="global-stage-settings">
-            <div><b>Stage configurations:</b></div>
-          </div>
-
-          <div class="stage-panel">
-            <div id="stage1" class="stage-box">
-              <div class="stage-title">
-                <div>Stage 1 (S1)</div>
-                <span class="motion-type-group" data-stage="1">
-                  <button type="button" class="motion-type-btn active" data-motion="v">Constant&nbsp;<i>v</i></button>
-                  <button type="button" class="motion-type-btn" data-motion="a">Constant&nbsp;<i>a</i></button>
-                </span>
-              </div>
-
-              <label class="stage-row">
-                <span>Duration Δ<i>t</i><sub>1</sub> (s)</span>
-                <input type="number" class="stageDuration" data-stage="1" value="3" step="0.1" min="0.1"/>
-              </label>
-
-              <label class="stage-row">
-                <span><i>a</i><sub>1</sub> (m/s²)</span>
-                <input type="number" class="stageA" data-stage="1" value="0" step="0.1"/>
-              </label>
-            </div>
-
-            <div id="stage2" class="stage-box">
-              <div class="stage-title">
-                <div>Stage 2 (S2)</div>
-                <span class="motion-type-group" data-stage="2">
-                  <button type="button" class="motion-type-btn active" data-motion="v">Constant&nbsp;<i>v</i></button>
-                  <button type="button" class="motion-type-btn" data-motion="a">Constant&nbsp;<i>a</i></button>
-                </span>
-              </div>
-
-              <label class="stage-row">
-                <span>Duration Δ<i>t</i><sub>2</sub> (s)</span>
-                <input type="number" class="stageDuration" data-stage="2" value="3" step="0.1" min="0.1"/>
-              </label>
-
-              <label class="stage-row">
-                <span><i>a</i><sub>2</sub> (m/s²)</span>
-                <input type="number" class="stageA" data-stage="2" value="0" step="0.1"/>
-              </label>
-            </div>
-
-            <div id="stage3" class="stage-box">
-              <div class="stage-title">
-                <div>Stage 3 (S3)</div>
-                <span class="motion-type-group" data-stage="3">
-                  <button type="button" class="motion-type-btn active" data-motion="v">Constant&nbsp;<i>v</i></button>
-                  <button type="button" class="motion-type-btn" data-motion="a">Constant&nbsp;<i>a</i></button>
-                </span>
-              </div>
-
-              <label class="stage-row">
-                <span>Duration Δ<i>t</i><sub>3</sub> (s)</span>
-                <input type="number" class="stageDuration" data-stage="3" value="4" step="0.1" min="0.1" />
-              </label>
-              <label class="stage-row">
-                <span><i>a</i><sub>3</sub> (m/s²)</span>
-                <input type="number" class="stageA" data-stage="3" value="0" step="0.1" />
-              </label>
-            </div>
-          </div>
-
-          <div class="readout">
-            <div class="readout-card">
-              <div class="title">Time <i>t</i></div>
-              <div class="value" id="timeValue">0.00 s</div>
-            </div>
-            <div class="readout-card">
-              <div class="title">Position <i>x</i></div>
-              <div class="value" id="xValue">0.00 m</div>
-            </div>
-            <div class="readout-card">
-              <div class="title">Velocity <i>v</i></div>
-              <div class="value" id="vValue">2.00 m/s</div>
-            </div>
-            <div class="readout-card">
-              <div class="title">Acceleration <i>a</i></div>
-              <div class="value" id="aValue">0.00 m/s²</div>
-            </div>
-          </div>
-
-          <div class="animation-wrap">
-            <div class="motion-controls-overlay">
-              <div class="buttons" style="max-width: 260px;">
-                <button id="startBtn">Start</button>
-                <button id="pauseBtn" class="secondary">Pause</button>
-                <button id="resetBtn" class="danger">Reset</button>
-              </div>
-            </div>
-            <canvas id="motionCanvas"></canvas>
-            <div class="hint">Drag the cart to set where it starts; drag the tip of the green arrow to set its starting velocity. Drag across any graph to replay a moment. On the graphs, a dotted line marks each change of stage.</div>
-            <div class="note">
-              The track's scale grows to fit the motion. All the stages run one after another as one continuous motion: each stage starts with the position and velocity the previous one ended with.
-            </div>
-          </div>
-        </div>
+    <header class="app-head">
+      <div class="head-row">
+        <h1>Multi-Stage 1D Kinematics</h1>
+        <div class="steps"><span id="stepLabel">Step 1 of 5</span><span class="step-bar" id="stepBar"><i></i><i></i><i></i><i></i><i></i></span></div>
+        <button class="teacher-btn" id="teacherBtn" type="button" hidden>Teacher mode</button>
       </div>
-
-      <!-- RIGHT COLUMN: original graph panel, stacked vertically -->
-      <div>
-        <div class="panel">
-          <div class="graphs">
-            <div class="graph-box">
-              <div class="graph-title">Position–Time Graph, <i>x</i>–<i>t</i></div>
-              <canvas id="xGraph" class="graph-canvas"></canvas>
-            </div>
-
-            <div class="graph-box">
-              <div class="graph-title">Velocity–Time Graph, <i>v</i>–<i>t</i></div>
-              <canvas id="vGraph" class="graph-canvas"></canvas>
-            </div>
-
-            <div class="graph-box">
-              <div class="graph-title">Acceleration–Time Graph, <i>a</i>–<i>t</i></div>
-              <canvas id="aGraph" class="graph-canvas"></canvas>
-            </div>
-          </div>
-        </div>
+      <div class="tabs" role="tablist" id="tabs">
+        <button class="tab" role="tab" data-tab="1" type="button"><span class="tl">1. Build a journey</span><span class="ts">1. Build</span></button>
+        <button class="tab" role="tab" data-tab="2" type="button"><span class="tl">2. Read the <span class="nw"><i>v</i>&ndash;<i>t</i></span> graph</span><span class="ts">2. Read <span class="nw"><i>v</i>&ndash;<i>t</i></span></span></button>
+        <button class="tab" role="tab" data-tab="3" type="button"><span class="tl">3. <span class="nw"><i>v</i>&ndash;<i>t</i></span> to <span class="nw"><i>x</i>&ndash;<i>t</i></span> and <span class="nw"><i>a</i>&ndash;<i>t</i></span></span><span class="ts">3. Three graphs</span></button>
+        <button class="tab" role="tab" data-tab="4" type="button"><span class="tl">4. Match the story</span><span class="ts">4. Match</span></button>
+        <button class="tab" role="tab" data-tab="5" type="button"><span class="tl">5. Challenge</span><span class="ts">5. Challenge</span></button>
       </div>
+      <div class="ckey" id="ckey"></div>
+    </header>
+
+    <div class="strip" id="strip"></div>
+
+    <!-- tabs 1 to 4: Predict first comes first, above the controls and the picture, so it is seen before the run -->
+    <div class="box predict-box" id="predictBox">
+      <div class="box-title">Predict first</div>
+      <div class="predict-q" id="predictQ"></div>
+      <div class="opts" id="predictOpts"></div>
+      <div class="feedback" id="predictFb"></div>
+      <div class="row-btns" id="predictBtns"><button id="predictCheck" type="button">Check my answer</button></div>
     </div>
+
+    <!-- Tabs 1 to 4 share one simulation -->
+    <section class="tab-page" id="pageSim">
+      <div class="panel sim-panel">
+        <!-- tab 4: the story to build -->
+        <div class="story" id="storyBox" hidden>
+          <div class="story-top"><span id="storyRound"></span><span id="storyScore"></span></div>
+          <div class="story-text" id="storyText"></div>
+          <div class="row-btns">
+            <button id="checkJourney" type="button">Check my journey</button>
+            <button id="showHow" class="secondary" type="button">Show me how</button>
+            <button id="nextRound" class="secondary" type="button">Next round &rsaquo;</button>
+          </div>
+          <div class="feedback" id="storyFb"></div>
+          <div class="story-how" id="storyHow"></div>
+        </div>
+
+        <div class="controls" id="simControls">
+          <div class="control-group scen-group" id="scenGroup">
+            <label for="preset">Scenarios</label>
+            <select id="preset"></select>
+          </div>
+          <div class="control-group button-group">
+            <label>Simulation controls</label>
+            <div class="buttons">
+              <button id="startBtn" type="button">Start</button>
+              <button id="pauseBtn" class="secondary" type="button">Pause</button>
+              <button id="resetBtn" class="danger" type="button">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="builder" id="builder">
+          <div class="b-row">
+            <div class="control-group">
+              <label for="x0">Starting position <i>x</i><sub>0</sub> (m)</label>
+              <input id="x0" type="number" value="0" step="0.1" />
+            </div>
+            <div class="control-group">
+              <label for="v0">Starting velocity <i>v</i><sub>0</sub> (m/s)</label>
+              <input id="v0" type="number" value="0" step="0.1" />
+            </div>
+            <div class="control-group">
+              <label>Number of stages</label>
+              <div class="pills" id="nStages"></div>
+            </div>
+          </div>
+          <div class="stages" id="stageBoxes"></div>
+        </div>
+
+        <div class="moments">
+          <button id="prevMoment" class="secondary" type="button">&lsaquo; Previous key moment</button>
+          <button id="nextMoment" class="secondary" type="button">Next key moment &rsaquo;</button>
+        </div>
+        <div class="scen-note" id="scenNote"></div>
+        <div class="readout" id="readout"></div>
+        <div class="words" id="words"></div>
+
+        <div class="scene-wrap">
+          <div class="hint" id="sceneHint"></div>
+          <canvas id="motionCanvas"></canvas>
+          <div class="note">Right is positive. The stages run one after another as one continuous motion: each stage starts with the position and velocity the previous one ended with. A dotted line on each graph marks a change of stage.</div>
+        </div>
+
+        <div class="graphs" id="graphs">
+          <div class="graph-box" id="xBox">
+            <div class="graph-title">Position&ndash;Time Graph, <i>x</i>&ndash;<i>t</i></div>
+            <canvas id="xGraph" class="graph-canvas"></canvas>
+          </div>
+          <div class="graph-box" id="vBox">
+            <div class="graph-title">Velocity&ndash;Time Graph, <i>v</i>&ndash;<i>t</i></div>
+            <div class="graph-options" id="vOptions">
+              <label><input type="checkbox" id="showGradient" /> Show the gradient</label>
+              <label><input type="checkbox" id="showArea" /> Show the area under the graph</label>
+            </div>
+            <canvas id="vGraph" class="graph-canvas"></canvas>
+            <div class="graph-extra" id="vExtra"></div>
+          </div>
+          <div class="graph-box" id="aBox">
+            <div class="graph-title">Acceleration&ndash;Time Graph, <i>a</i>&ndash;<i>t</i></div>
+            <canvas id="aGraph" class="graph-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="learn" id="learn">
+        <div class="box" id="featBox">
+          <div class="box-title">Key features (tap one)</div>
+          <div class="feats" id="feats"></div>
+          <div class="feat-note" id="featNote"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 5: Challenge -->
+    <section class="tab-page" id="page5" hidden>
+      <div class="panel">
+        <div class="quiz" id="quiz"></div>
+      </div>
+    </section>
   </div>
 
+  <aside class="teacher" id="teacher" hidden aria-label="Teacher mode">
+    <h2>Teacher mode</h2>
+    <div class="tbtns">
+      <button id="tExplain" type="button">Hide explanations</button>
+      <button id="tFree" type="button">Switch to free exploration</button>
+      <button id="tAnswers" type="button">Hide answer labels</button>
+      <button id="tFull" type="button">Full screen</button>
+      <button id="tReset" type="button">Reset whole applet</button>
+      <button id="tClose" type="button">Close</button>
+    </div>
+    <h3>Suggested prompts</h3>
+    <ul id="tPrompts"></ul>
+  </aside>
+
   <script>
-    const DT = 0.02;
-    const PLAYBACK_SPEED = 1.5;
+    const $ = id => document.getElementById(id);
+    const presetEl = $('preset'), x0El = $('x0'), v0El = $('v0');
+    const startBtn = $('startBtn'), pauseBtn = $('pauseBtn'), resetBtn = $('resetBtn');
+    const motionCanvas = $('motionCanvas');
+    const GRAPHS = { x: $('xGraph'), v: $('vGraph'), a: $('aGraph') };
+    const MAX_STAGES = 4;
+    let currentTab = 1, freeMode = false;
 
-    const x0Stage1El = document.getElementById('x0_stage1');
-    const v0Stage1El = document.getElementById('v0_stage1');
-    const aStage1El = document.getElementById('a_stage1');
+    // numbers: a true minus sign, and never "−0.00"
+    const fmt = (x, d = 2) => { const s = (Math.abs(x) < 0.5 * Math.pow(10, -d) ? 0 : x).toFixed(d); return s.replace('-', '−'); };
+    const sym = s => s
+      .replace(/(^|[\s(])([xvatu])(?=\s[=−÷+]|\)|–|₀|\sand\s|\sis\s|\shave\s)/g, '$1<i>$2</i>')
+      .replace(/–([xvaty])\b/g, '–<i>$1</i>');
 
-    const numStagesGroup = document.getElementById('numStages');
-    const startBtn = document.getElementById('startBtn');
-    const pauseBtn = document.getElementById('pauseBtn');
-    const resetBtn = document.getElementById('resetBtn');
-
-    const timeValue = document.getElementById('timeValue');
-    const xValue = document.getElementById('xValue');
-    const vValue = document.getElementById('vValue');
-    const aValue = document.getElementById('aValue');
-
-    const motionCanvas = document.getElementById('motionCanvas');
-    const xGraphCanvas = document.getElementById('xGraph');
-    const vGraphCanvas = document.getElementById('vGraph');
-    const aGraphCanvas = document.getElementById('aGraph');
-
-    let sim = {
-      running: false,
-      lastFrameTime: null,
-      accumulator: 0,
-      t: 0,
-      points: [],
-      stages: [],
-      totalDuration: 0
+    /* ---------------- scenarios (every number from the notes or Tutorial 2) ---------------- */
+    // a stage is [type, duration in s, acceleration in m/s²]: type 'v' = constant velocity, 'a' = constant acceleration
+    const PRESETS = {
+      p6: { name: 'Practice 6: start, cruise, stop', v0: 0, stages: [['a', 6, 2], ['v', 30, 0], ['a', 5, -2.4]],
+        note: 'Practice 6 (notes p. 2-34): a car starts from rest and accelerates uniformly at 2 m/s² for 6 s. It then maintains a constant velocity for half a minute before decelerating uniformly to rest in 5 s.' },
+      b3: { name: 'Tutorial B3: a train', v0: 0, stages: [['a', 20, 1.25], ['v', 30, 0], ['a', 10, -2.5]],
+        note: 'Tutorial 2, B3: a train on a straight track. Its velocity–time graph rises to 25 m/s in 20 s, stays at 25 m/s until t = 50 s, then falls to 0 at t = 60 s.' },
+      p7: { name: 'Practice 7: a man runs', v0: 0, stages: [['a', 4, 2.5], ['v', 4, 0]],
+        note: 'Practice 7 (notes p. 2-35): a man runs in a straight line in the same direction. His velocity–time graph rises in a straight line from 0 to 10 m/s in the first 4 s, then stays at 10 m/s until t = 8 s.' },
+      c4: { name: 'Tutorial C4: speed up, slow down', v0: 0, stages: [['a', 20, 1], ['a', 40, -0.5]],
+        note: 'Tutorial 2, C4: an object starts from rest and accelerates uniformly at 1.0 m/s² to the right for 20 s. It then decelerates uniformly in the same direction and comes to rest in another 40 s.' },
+      abcde: { name: 'Notes p. 2-32: stages AB to DE', v0: 0, stages: [['a', 5, 2], ['v', 4, 0], ['a', 4, 1], ['a', 2, -3]], labels: ['AB', 'BC', 'CD', 'DE'], points: ['A', 'B', 'C', 'D', 'E'],
+        note: 'The velocity–time graph on notes p. 2-32: AB constant acceleration, BC constant velocity, CD constant acceleration, DE constant deceleration. The notes draw it without numbers; these numbers only give it the same shape.' },
+      custom: { name: 'Build your own', note: 'Your own journey: set the stages, or drag the cart and the tip of its green arrow.' }
     };
+    const ALL_SCEN = ['p7', 'p6', 'b3', 'c4', 'abcde'];
 
-    function resizeCanvasToDisplaySize(canvas) {
-      const rect = canvas.getBoundingClientRect();
-      const ratio = window.devicePixelRatio || 1;
-      const width = Math.round(rect.width * ratio);
-      const height = Math.round(rect.height * ratio);
-
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-      }
+    /* ---------------- the stage builder (the one place the journey is set) ---------------- */
+    const DEF_STAGE = () => ({ type: 'v', dur: 5, a: 0 });
+    let B = { x0: 0, v0: 0, n: 2, st: [DEF_STAGE(), DEF_STAGE(), DEF_STAGE(), DEF_STAGE()], labels: null, points: null };
+    function modelFrom(spec) {
+      return { x0: spec.x0 || 0, v0: spec.v0 || 0, n: spec.stages.length, labels: spec.labels || null, points: spec.points || null,
+        st: [0, 1, 2, 3].map(i => spec.stages[i] ? { type: spec.stages[i][0], dur: spec.stages[i][1], a: spec.stages[i][0] === 'v' ? 0 : spec.stages[i][2] } : DEF_STAGE()) };
+    }
+    function makeBuilder() {
+      $('nStages').innerHTML = [1, 2, 3, 4].map(n => `<button type="button" class="pill" data-n="${n}">${n}</button>`).join('');
+      $('stageBoxes').innerHTML = [0, 1, 2, 3].map(i => `<div class="stage-box" data-i="${i}">
+          <div class="stage-name">Stage ${i + 1} (S${i + 1})</div>
+          <div class="pills"><button type="button" class="pill" data-type="v">Constant <i>v</i></button><button type="button" class="pill" data-type="a">Constant <i>a</i></button></div>
+          <label class="stage-row"><span>Duration &Delta;<i>t</i><sub>${i + 1}</sub> (s)</span><input type="number" class="sDur" min="0.1" step="0.1" /></label>
+          <label class="stage-row"><span><i>a</i><sub>${i + 1}</sub> (m/s²)</span><input type="number" class="sA" step="0.1" /></label>
+        </div>`).join('');
+      $('nStages').addEventListener('click', e => { const b = e.target.closest('.pill'); if (!b) return; B.n = +b.dataset.n; renderBuilder(); onEdit(); });
+      document.querySelectorAll('.stage-box').forEach(box => {
+        const i = +box.dataset.i;
+        box.querySelectorAll('.pill').forEach(b => b.addEventListener('click', () => { B.st[i].type = b.dataset.type; if (b.dataset.type === 'v') B.st[i].a = 0; renderBuilder(); onEdit(); }));
+        box.querySelector('.sDur').addEventListener('input', e => { B.st[i].dur = Math.max(0.1, parseFloat(e.target.value) || 0.1); onEdit(); });
+        box.querySelector('.sA').addEventListener('input', e => { B.st[i].a = parseFloat(e.target.value) || 0; onEdit(); });
+      });
+      x0El.addEventListener('input', () => { B.x0 = parseFloat(x0El.value) || 0; onEdit(); });
+      v0El.addEventListener('input', () => { B.v0 = parseFloat(v0El.value) || 0; onEdit(); });
+    }
+    const num = x => String(+x.toFixed(3));
+    function renderBuilder() {
+      x0El.value = num(B.x0); v0El.value = num(B.v0);
+      document.querySelectorAll('#nStages .pill').forEach(b => b.classList.toggle('on', +b.dataset.n === B.n));
+      document.querySelectorAll('.stage-box').forEach(box => {
+        const i = +box.dataset.i, s = B.st[i];
+        box.hidden = i >= B.n;
+        box.querySelectorAll('.pill').forEach(b => b.classList.toggle('on', b.dataset.type === s.type));
+        box.querySelector('.sDur').value = num(s.dur);
+        const a = box.querySelector('.sA'); a.value = num(s.type === 'v' ? 0 : s.a); a.disabled = s.type === 'v';
+      });
+    }
+    // any change in the builder: the journey is now the student's own
+    function onEdit() {
+      B.labels = null; B.points = null;
+      if ([...presetEl.options].some(o => o.value === 'custom') && currentTab !== 4) { presetEl.value = 'custom'; showScenNote(); }
+      resetSimulation();
     }
 
-    function resizeAllCanvases() {
-      resizeCanvasToDisplaySize(motionCanvas);
-      resizeCanvasToDisplaySize(xGraphCanvas);
-      resizeCanvasToDisplaySize(vGraphCanvas);
-      resizeCanvasToDisplaySize(aGraphCanvas);
-      redrawAll();
+    /* ---------------- the motion (exact formulas for each stage, no stepping) ---------------- */
+    // the one place position and velocity are worked out (stage ends and every moment in between)
+    const posAt = (x0, v0, a, t) => x0 + v0 * t + 0.5 * a * t * t;
+    const velAt = (v0, a, t) => v0 + a * t;
+    function buildJourney(m) {
+      const stages = []; let t = 0, x = m.x0, v = m.v0;
+      for (let i = 0; i < m.n; i++) {
+        const s = m.st[i], a = s.type === 'v' ? 0 : s.a, d = Math.max(0.1, s.dur);
+        const x1 = posAt(x, v, a, d), v1 = velAt(v, a, d);
+        stages.push({ type: s.type, a, dur: d, tStart: t, tEnd: t + d, x0: x, v0: v, x1, v1 });
+        t += d; x = x1; v = v1;
+      }
+      return { stages, total: t, x0: m.x0, v0: m.v0, labels: m.labels, points: m.points };
     }
-
-    function getSelectedStageCount() {
-      const activeBtn = numStagesGroup.querySelector('.stage-count-btn.active');
-      return activeBtn ? parseInt(activeBtn.getAttribute('data-stages'), 10) : 2;
+    // at a boundary the stage that starts there is the one in force (the last stage at the very end)
+    function stageIndex(J, t) { for (let i = 0; i < J.stages.length; i++) if (t < J.stages[i].tEnd - 1e-9) return i; return J.stages.length - 1; }
+    function stateOf(J, t) {
+      t = Math.max(0, Math.min(J.total, t));
+      const i = stageIndex(J, t), s = J.stages[i], lt = t - s.tStart;
+      return { x: posAt(s.x0, s.v0, s.a, lt), v: velAt(s.v0, s.a, lt), a: s.a, i };
     }
+    const lab = (J, i) => J.labels ? J.labels[i] : 'S' + (i + 1);
 
-    function buildStagesFromUI() {
-      const numStages = getSelectedStageCount();
-
-      const m1 = document
-        .querySelector('.motion-type-group[data-stage="1"] .motion-type-btn.active')
-        .getAttribute('data-motion');
-      const d1 = Math.max(parseFloat(document.querySelector('.stageDuration[data-stage="1"]').value) || 0, DT);
-      const a1 = m1 === 'v' ? 0 : parseFloat(document.querySelector('.stageA[data-stage="1"]').value) || 0;
-
-      const m2 = document
-        .querySelector('.motion-type-group[data-stage="2"] .motion-type-btn.active')
-        .getAttribute('data-motion');
-      const d2 = Math.max(parseFloat(document.querySelector('.stageDuration[data-stage="2"]').value) || 0, DT);
-      const a2 = m2 === 'v' ? 0 : parseFloat(document.querySelector('.stageA[data-stage="2"]').value) || 0;
-
-      const m3 = document
-        .querySelector('.motion-type-group[data-stage="3"] .motion-type-btn.active')
-        .getAttribute('data-motion');
-      const d3 = Math.max(parseFloat(document.querySelector('.stageDuration[data-stage="3"]').value) || 0, DT);
-      const a3 = m3 === 'v' ? 0 : parseFloat(document.querySelector('.stageA[data-stage="3"]').value) || 0;
-
-      // Stage 1 initial x0, v0 from UI
-      let x0 = parseFloat(x0Stage1El.value) || 0;
-      let v0 = parseFloat(v0Stage1El.value) || 0;
-
-      const stages = [];
-      let tStart = 0;
-
-      function pushStage(motionType, duration, aVal) {
-        stages.push({
-          tStart,
-          tEnd: tStart + duration,
-          motionType,
-          x0,
-          v0,
-          a: motionType === 'v' ? 0 : aVal
-        });
-
-        // compute end of this stage to feed the next
-        const dtStage = duration;
-        if (motionType === 'v') {
-          const xEnd = x0 + v0 * dtStage;
-          const vEnd = v0;
-          x0 = xEnd;
-          v0 = vEnd;
-        } else {
-          const xEnd = x0 + v0 * dtStage + 0.5 * aVal * dtStage * dtStage;
-          const vEnd = v0 + aVal * dtStage;
-          x0 = xEnd;
-          v0 = vEnd;
-        }
-        tStart += duration;
-      }
-
-      // Stage 1
-      pushStage(m1, d1, a1);
-
-      // Stage 2 (continuous)
-      if (numStages >= 2) {
-        pushStage(m2, d2, a2);
-      }
-
-      // Stage 3 (continuous)
-      if (numStages >= 3) {
-        pushStage(m3, d3, a3);
-      }
-
-      sim.stages = stages;
-      sim.totalDuration = stages.length ? stages[stages.length - 1].tEnd : 0;
-    }
-
-    function getStageAtTime(t) {
-      if (!sim.stages.length) return null;
-      for (const s of sim.stages) {
-        if (t >= s.tStart && t <= s.tEnd + 1e-9) return s;
-      }
-      return sim.stages[sim.stages.length - 1];
-    }
-
-    function sampleState(t) {
-      if (!sim.stages.length) {
-        buildStagesFromUI();
-      }
-      if (!sim.stages.length) {
-        return { t, x: 0, v: 0, a: 0 };
-      }
-      const s = getStageAtTime(t);
-      let localT = t - s.tStart;
-      if (localT < 0) localT = 0;
-      if (localT > s.tEnd - s.tStart) localT = s.tEnd - s.tStart;
-
-      let x, v, a;
-      if (s.motionType === 'v') {
-        x = s.x0 + s.v0 * localT;
-        v = s.v0;
-        a = 0;
-      } else {
-        x = s.x0 + s.v0 * localT + 0.5 * s.a * localT * localT;
-        v = s.v0 + s.a * localT;
-        a = s.a;
-      }
-      return { t, x, v, a };
-    }
-
-    function updatePhysicsStep() {
-      sim.t += DT;
-      if (sim.t > sim.totalDuration) {
-        sim.t = sim.totalDuration;
-      }
-      const state = sampleState(sim.t);
-      sim.points.push(state);
-
-      if (sim.t >= sim.totalDuration) {
-        sim.running = false;
-      }
-    }
-
-    function updateReadoutFromState() {
-      const current = sampleState(sim.t);
-      timeValue.textContent = current.t.toFixed(2) + ' s';
-      xValue.textContent = current.x.toFixed(2) + ' m';
-      vValue.textContent = current.v.toFixed(2) + ' m/s';
-      aValue.textContent = current.a.toFixed(2) + ' m/s²';
-    }
-
-    function animationLoop(timestamp) {
+    let sim = { running: false, last: null, t: 0, J: buildJourney(B), target: null };
+    function readInputs() { sim.J = buildJourney(B); }
+    function animationLoop(ts) {
       if (!sim.running) return;
-
-      if (sim.lastFrameTime == null) {
-        sim.lastFrameTime = timestamp;
-      }
-
-      let frameSeconds = (timestamp - sim.lastFrameTime) / 1000;
-      sim.lastFrameTime = timestamp;
-
-      frameSeconds = Math.min(frameSeconds, 0.05);
-      sim.accumulator += frameSeconds * PLAYBACK_SPEED;
-
-      while (sim.accumulator >= DT && sim.running) {
-        updatePhysicsStep();
-        sim.accumulator -= DT;
-      }
-
-      updateReadoutFromState();
-      redrawAll();
-
-      if (sim.running) {
-        requestAnimationFrame(animationLoop);
-      }
+      if (sim.last == null) sim.last = ts;
+      // a first rAF timestamp can be earlier than the one stored: never step backwards
+      const dt = Math.max(0, Math.min((ts - sim.last) / 1000, 0.05));
+      sim.last = ts;
+      // a long journey plays faster, so one run takes at most about 10 s
+      const speed = Math.max(1, sim.J.total / 10);
+      sim.t = Math.min(sim.J.total, sim.t + dt * speed);
+      if (sim.t >= sim.J.total) { sim.t = sim.J.total; sim.running = false; pauseBtn.textContent = 'Pause'; }
+      updateAll();
+      if (sim.running) requestAnimationFrame(animationLoop);
     }
-
-    // --- Drawing code (copied from original sim, unchanged in style) [file:1]
-    function drawMotionScene() {
-      const ctx = motionCanvas.getContext('2d');
-      const w = motionCanvas.width;
-      const h = motionCanvas.height;
-
-      ctx.clearRect(0, 0, w, h);
-
-      const marginLeft = 50;
-      const marginRight = 30;
-      // the track sits higher so the velocity label fits UNDER its arrow, above the position scale
-      const trackY = h * 0.62;
-      const trackStart = marginLeft;
-      const trackEnd = w - marginRight;
-      const trackWidth = trackEnd - trackStart;
-
-      const xs = sim.points.map(p => p.x);
-      let minX = Math.min(0, ...xs);
-      let maxX = Math.max(10, ...xs);
-      if (Math.abs(maxX - minX) < 1e-6) {
-        maxX = minX + 10;
-      }
-
-      const pad = 0.1 * (maxX - minX);
-      minX -= pad;
-      maxX += pad;
-
-      const xTickInfo = getNiceStepAndTicks(minX, maxX);
-
-      function xToPx(x) {
-        return trackStart + (x - xTickInfo.min) / (xTickInfo.max - xTickInfo.min) * trackWidth;
-      }
-
-      ctx.fillStyle = '#f8fbff';
-      ctx.fillRect(0, 0, w, h);
-
-      ctx.strokeStyle = '#64748b';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(trackStart, trackY);
-      ctx.lineTo(trackEnd, trackY);
-      ctx.stroke();
-
-      ctx.strokeStyle = '#94a3b8';
-      ctx.lineWidth = 1.2;
-      ctx.fillStyle = '#334155';
-      ctx.font = Math.max(12, h * 0.06) + 'px Arial';
-
-      xTickInfo.ticks.forEach(tickVal => {
-        if (tickVal <= xTickInfo.min || tickVal >= xTickInfo.max) return;
-        const px = xToPx(tickVal);
-        ctx.beginPath();
-        ctx.moveTo(px, trackY - 10);
-        ctx.lineTo(px, trackY + 10);
-        ctx.stroke();
-        ctx.textAlign = 'center';
-        // 24 css px below the track (scaled by the device pixel ratio), above the velocity arrow and its label
-        const kt = motionCanvas.width / (motionCanvas.getBoundingClientRect().width || 1);
-        ctx.fillText(tickVal.toFixed(1), px, trackY + 24 * kt);
-      });
-
-      // top-right: the Start/Pause/Reset buttons sit over the top-left corner and hid this label
-      ctx.textAlign = 'right';
-      ctx.fillText('Position (m)', w - 12, 24);
-      ctx.textAlign = 'left';
-
-      const drawnTimes = new Set();
-      const labelStacks = new Map();
-
-      sim.points.forEach(point => {
-        const roundedTime = Math.round(point.t);
-        if ((Math.abs(point.t - roundedTime) < 0.01 || point.t === 0) && !drawnTimes.has(roundedTime)) {
-          drawnTimes.add(roundedTime);
-
-          const trailX = xToPx(point.x);
-          const trailY = trackY - 24;
-          const cartW = 56;
-          const cartH = 26;
-
-          ctx.fillStyle = 'rgba(37, 99, 235, 0.15)';
-          roundRect(ctx, trailX - cartW / 2, trailY - cartH / 2, cartW, cartH, 8);
-          ctx.fill();
-
-          ctx.fillStyle = 'rgba(30, 64, 175, 0.15)';
-          ctx.beginPath();
-          ctx.arc(trailX - 16, trailY + 16, 7, 0, Math.PI * 2);
-          ctx.arc(trailX + 16, trailY + 16, 7, 0, Math.PI * 2);
-          ctx.fill();
-
-          const stackKey = Math.round(trailX / 12);
-          const stackIndex = labelStacks.get(stackKey) || 0;
-          labelStacks.set(stackKey, stackIndex + 1);
-
-          ctx.fillStyle = 'rgba(52, 73, 94, 0.4)';
-          ctx.font = Math.max(11, h * 0.05) + 'px Arial';
-          ctx.textAlign = 'center';
-          // (34 above the cart, not 40: the track sits higher now, and the labels must stay clear of the buttons)
-          ctx.fillText(roundedTime + ' s', trailX, trailY - 34 - stackIndex * 18);
-        }
-      });
-
-      const current = sampleState(sim.t);
-      const cartX = xToPx(current.x);
-      const cartY = trackY - 24;
-      const cartW = 56;
-      const cartH = 26;
-
-      ctx.fillStyle = '#2563eb';
-      roundRect(ctx, cartX - cartW / 2, cartY - cartH / 2, cartW, cartH, 8);
-      ctx.fill();
-
-      ctx.fillStyle = '#1e40af';
-      ctx.beginPath();
-      ctx.arc(cartX - 16, cartY + 16, 7, 0, Math.PI * 2);
-      ctx.arc(cartX + 16, cartY + 16, 7, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = '#0f172a';
-      ctx.textAlign = 'center';
-      ctx.fillText('Cart', cartX, cartY - 18);
-
-      const k = motionCanvas.width / (motionCanvas.getBoundingClientRect().width || 1);
-      // below the position scale; on a short (phone) canvas it rises just enough to keep its label inside
-      const pxPerMs = 16 * k, vy = Math.min(trackY + 38 * k, h - 21 * k), vTip = cartX + current.v * pxPerMs;
-      if (Math.abs(current.v) > 0.01) {
-        const dir = Math.sign(current.v);
-        ctx.strokeStyle = '#16a34a'; ctx.fillStyle = '#16a34a'; ctx.lineWidth = 3 * k;
-        ctx.beginPath(); ctx.moveTo(cartX, vy); ctx.lineTo(vTip, vy); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(vTip + dir * 2 * k, vy); ctx.lineTo(vTip - dir * 10 * k, vy - 6 * k); ctx.lineTo(vTip - dir * 10 * k, vy + 6 * k); ctx.closePath(); ctx.fill();
-      }
-      // the label sits UNDER the arrow, centred on it (kept inside the canvas), with v in italics
-      const vSym = 'v', vRest = ` = ${current.v.toFixed(1)} m/s`;
-      ctx.font = `italic bold ${12 * k}px Arial`; const symW = ctx.measureText(vSym).width;
-      ctx.font = `bold ${12 * k}px Arial`; const restW = ctx.measureText(vRest).width;
-      const vW = symW + restW;
-      const lx = Math.max(4 * k, Math.min(w - 4 * k - vW, (cartX + vTip) / 2 - vW / 2)), ly = vy + 17 * k;
-      ctx.fillStyle = '#15803d'; ctx.textAlign = 'left';
-      ctx.font = `italic bold ${12 * k}px Arial`; ctx.fillText(vSym, lx, ly);
-      ctx.font = `bold ${12 * k}px Arial`; ctx.fillText(vRest, lx + symW, ly);
-      sceneMap = { k, cartX, cartY, vTip, vy, pxPerMs, trackStart, trackEnd, min: xTickInfo.min, max: xTickInfo.max };
-    }
-    let sceneMap = null;
-
-    function roundRect(ctx, x, y, width, height, radius) {
-      ctx.beginPath();
-      ctx.moveTo(x + radius, y);
-      ctx.lineTo(x + width - radius, y);
-      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-      ctx.lineTo(x + width, y + height - radius);
-      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-      ctx.lineTo(x + radius, y + height);
-      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-      ctx.lineTo(x, y + radius);
-      ctx.quadraticCurveTo(x, y, x + radius, y);
-      ctx.closePath();
-    }
-
-    function getNiceStepAndTicks(min, max) {
-      const range = Math.abs(max - min);
-      if (range < 1e-9) {
-        return {
-          step: 1,
-          min: min - 1,
-          max: max + 1,
-          ticks: [min - 1, min, max, max + 1]
-        };
-      }
-
-      const magnitude = Math.pow(10, Math.floor(Math.log10(range)));
-      const normalized = range / magnitude;
-
-      let step;
-      if (normalized < 1.5) step = 0.2;
-      else if (normalized < 3) step = 0.5;
-      else if (normalized < 7) step = 1;
-      else step = 2;
-
-      step *= magnitude;
-
-      const tickMin = Math.floor(min / step) * step;
-      const tickMax = Math.ceil(max / step) * step;
-
-      const ticks = [];
-      for (let tick = tickMin; tick <= tickMax + 1e-9; tick += step) {
-        ticks.push(Math.round(tick * 1e10) / 1e10);
-      }
-
-      return {
-        step,
-        min: tickMin,
-        max: tickMax,
-        ticks
-      };
-    }
-
-    function getGraphRange(key) {
-      const vals = sim.points.map(p => p[key]);
-      let min = Math.min(...vals, 0);
-      let max = Math.max(...vals, 0);
-      min = Math.min(min, 0);
-      max = Math.max(max, 0);
-      if (Math.abs(max - min) < 1e-9) {
-        min -= 1;
-        max += 1;
-      }
-      const pad = 0.12 * (max - min);
-      return { min: min - pad, max: max + pad };
-    }
-
-    function drawMixedStyleLabel(ctx, text, x, y, fontSize, rotation = 0) {
-      const variable = text.charAt(0);
-      const rest = text.slice(1);
-
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(rotation);
-
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'alphabetic';
-
-      ctx.font = 'italic ' + fontSize + 'px Arial';
-      const variableWidth = ctx.measureText(variable).width;
-
-      ctx.font = fontSize + 'px Arial';
-      const restWidth = ctx.measureText(rest).width;
-
-      const startX = -(variableWidth + restWidth) / 2;
-
-      ctx.font = 'italic ' + fontSize + 'px Arial';
-      ctx.fillText(variable, startX, 0);
-
-      ctx.font = fontSize + 'px Arial';
-      ctx.fillText(rest, startX + variableWidth, 0);
-
-      ctx.restore();
-    }
-
-    function drawGraph(canvas, key, color, yLabel) {
-      const ctx = canvas.getContext('2d');
-      const w = canvas.width;
-      const h = canvas.height;
-      ctx.clearRect(0, 0, w, h);
-
-      // the top margin holds the stage labels S1, S2, S3 (in css px, so they fit on a phone too)
-      const kk = canvas.width / (canvas.getBoundingClientRect().width || 1);
-      const margin = { left: 70, right: 16, top: Math.max(18, 20 * kk), bottom: 50 };
-      const plotW = w - margin.left - margin.right;
-      const plotH = h - margin.top - margin.bottom;
-
-      const range = getGraphRange(key);
-      const yTickInfo = getNiceStepAndTicks(range.min, range.max);
-
-      const tMax = Math.max(sim.totalDuration, 1);
-      const tTickInfo = getNiceStepAndTicks(0, tMax);
-
-      function tx(t) {
-        return margin.left + (t / tMax) * plotW;
-      }
-
-      function ty(v) {
-        return margin.top + ((yTickInfo.max - v) / (yTickInfo.max - yTickInfo.min || 1)) * plotH;
-      }
-
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, w, h);
-
-      ctx.strokeStyle = '#cbd5e1';
-      ctx.lineWidth = 1;
-
-      // Horizontal grid lines for y-axis
-      yTickInfo.ticks.forEach(tickVal => {
-        if (tickVal < yTickInfo.min || tickVal > yTickInfo.max) return;
-        const y = ty(tickVal);
-        ctx.beginPath();
-        ctx.moveTo(margin.left, y);
-        ctx.lineTo(w - margin.right, y);
-        ctx.stroke();
-      });
-
-      // Vertical grid lines for time axis using tTickInfo
-      tTickInfo.ticks.forEach(tickVal => {
-        if (tickVal < 0 || tickVal > tMax) return;
-        const x = tx(tickVal);
-        ctx.beginPath();
-        ctx.moveTo(x, margin.top);
-        ctx.lineTo(x, h - margin.bottom);
-        ctx.stroke();
-      });
-
-      // Find where the horizontal axis should be: at y = 0 if visible
-      let timeAxisY;
-      if (yTickInfo.min <= 0 && yTickInfo.max >= 0) {
-        timeAxisY = ty(0);
-      } else if (yTickInfo.max < 0) {
-        timeAxisY = margin.top;            // all values negative
-      } else {
-        timeAxisY = h - margin.bottom;     // all values positive
-      }
-
-      // Axes
-      ctx.strokeStyle = '#334155';
-      ctx.lineWidth = 1.5;
-
-      // Vertical axis at t = 0
-      ctx.beginPath();
-      ctx.moveTo(margin.left, margin.top);
-      ctx.lineTo(margin.left, h - margin.bottom);
-      ctx.stroke();
-
-      // Horizontal time axis at value = 0 (or top/bottom if 0 out of range)
-      ctx.beginPath();
-      ctx.moveTo(margin.left, timeAxisY);
-      ctx.lineTo(w - margin.right, timeAxisY);
-      ctx.stroke();
-
-      ctx.fillStyle = '#334155';
-      ctx.font = `${Math.max(11, h * 0.075)}px Arial`;
-
-      // Time labels (x-axis) aligned with tTickInfo ticks
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      tTickInfo.ticks.forEach(tickVal => {
-        if (tickVal < 0 || tickVal > tMax) return;
-        const x = tx(tickVal);
-        if (tickVal === 0) { ctx.textAlign = 'left'; ctx.fillText('0', x + 4, timeAxisY + 6); ctx.textAlign = 'center'; }
-        else ctx.fillText(tickVal.toFixed(0), x, timeAxisY + 6);
-      });
-
-      // Y-axis labels
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'middle';
-      yTickInfo.ticks.forEach(tickVal => {
-        if (tickVal < yTickInfo.min || tickVal > yTickInfo.max) return;
-        const y = ty(tickVal);
-        ctx.fillText(tickVal.toFixed(1), margin.left - 6, y);
-      });
-
-      const axisFontSize = Math.max(11, h * 0.075);
-
-      drawMixedStyleLabel(
-        ctx,
-        't (s)',
-        margin.left + plotW / 2,
-        h - 8,
-        axisFontSize
-      );
-
-      drawMixedStyleLabel(
-        ctx,
-        yLabel,
-        14,
-        margin.top + plotH / 2,
-        axisFontSize,
-        -Math.PI / 2
-      );
-
-      // where the motion changes: a dotted line at the end of each stage, and the stage's name over its segment
-      ctx.save();
-      ctx.strokeStyle = '#475569'; ctx.lineWidth = Math.max(1.5, 1.5 * kk); ctx.setLineDash([4 * kk, 4 * kk]);
-      sim.stages.slice(0, -1).forEach(s => {
-        const x = tx(s.tEnd);
-        ctx.beginPath(); ctx.moveTo(x, margin.top); ctx.lineTo(x, h - margin.bottom); ctx.stroke();
-      });
-      ctx.setLineDash([]);
-      ctx.fillStyle = '#334155'; ctx.font = `bold ${Math.max(11, 12 * kk)}px Arial`;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-      sim.stages.forEach((s, i) => ctx.fillText(`S${i + 1}`, tx((s.tStart + Math.min(s.tEnd, tMax)) / 2), margin.top - 2 * kk));
-      ctx.restore();
-
-      if (sim.points.length > 0) {
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        sim.points.forEach((p, i) => {
-          const x = tx(p.t);
-          const y = ty(p[key]);
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-
-        const last = sim.points[sim.points.length - 1];
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(tx(last.t), ty(last[key]), 4, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-    function redrawAll() {
-      drawMotionScene();
-      drawGraph(xGraphCanvas, 'x', '#2563eb', 'x (m)');
-      drawGraph(vGraphCanvas, 'v', '#16a34a', 'v (m/s)');
-      drawGraph(aGraphCanvas, 'a', '#dc2626', 'a (m/s²)');
-    }
-
-    function resetSimulation() {
-      sim.running = false;
-      sim.lastFrameTime = null;
-      pauseBtn.textContent = 'Pause';
-      sim.accumulator = 0;
-      sim.t = 0;
-      sim.points = [];
-      buildStagesFromUI();
-      sim.points.push(sampleState(0));
-      updateReadoutFromState();
-      redrawAll();
-    }
-
     function startSimulation() {
-      if (sim.running) return;
-      buildStagesFromUI();
-      if (!sim.stages.length) return;
-
-      if (sim.points.length === 0 || sim.t >= sim.totalDuration) {
-        sim.t = 0;
-        sim.points = [sampleState(0)];
-      }
-
-      sim.running = true;
-      sim.lastFrameTime = null;
+      readInputs();
+      if (sim.running || sim.t >= sim.J.total) return;
+      sim.running = true; sim.last = null; pauseBtn.textContent = 'Pause';
       requestAnimationFrame(animationLoop);
     }
+    function resetSimulation() {
+      sim.running = false; sim.last = null; sim.t = 0; pauseBtn.textContent = 'Pause';
+      readInputs(); updateAll();
+    }
+    // jump to time t, paused there (key moments, graph scrubbing, key features)
+    function setTime(t) {
+      readInputs();
+      const T = sim.J.total;
+      sim.running = false; sim.last = null; sim.t = Math.max(0, Math.min(T, t));
+      pauseBtn.textContent = sim.t > 0 && sim.t < T ? 'Play' : 'Pause';
+      updateAll();
+    }
+    // the key moments: the start, every change of stage, any moment v = 0 inside a stage, and the end
+    function keyMoments() {
+      readInputs();
+      const J = sim.J, m = [0];
+      J.stages.forEach(s => {
+        m.push(s.tEnd);
+        if (s.type === 'a' && s.a !== 0 && s.v0 * s.v1 < 0) m.push(s.tStart - s.v0 / s.a);
+      });
+      return m.sort((p, q) => p - q).filter((x, i, a) => i === 0 || x - a[i - 1] > 1e-6);
+    }
+    $('nextMoment').addEventListener('click', () => { const n = keyMoments().find(m => m > sim.t + 1e-6); if (n !== undefined) setTime(n); });
+    $('prevMoment').addEventListener('click', () => { const p = keyMoments().filter(m => m < sim.t - 1e-6).pop(); if (p !== undefined) setTime(p); });
 
-    function updateStageAccelerationInput(stageIndex) {
-      const group = document.querySelector('.motion-type-group[data-stage="' + stageIndex + '"]');
-      if (!group) return;
-
-      const activeBtn = group.querySelector('.motion-type-btn.active');
-      if (!activeBtn) return;
-
-      const motion = activeBtn.getAttribute('data-motion'); // 'v' or 'a'
-      const aInput = document.querySelector('.stageA[data-stage="' + stageIndex + '"]');
-      if (!aInput) return;
-
-      if (motion === 'v') {
-        aInput.value = 0;
-        aInput.disabled = true;
-      } else {
-        aInput.disabled = false;
+    /* ---------------- readouts, the words line, the working under the v–t graph ---------------- */
+    let hl = {};
+    function updateReadout() {
+      const J = sim.J, S = stateOf(J, sim.t), s = J.stages[S.i];
+      const cards = [['rT', 'Time <i>t</i>', fmt(sim.t) + ' s'],
+        ['rS', 'Stage', `${lab(J, S.i)}, constant ${s.type === 'v' ? '<i>v</i>' : '<i>a</i>'}`],
+        ['rX', 'Position <i>x</i>', fmt(S.x) + ' m'],
+        ['rV', 'Velocity <i>v</i>', fmt(S.v) + ' m/s'],
+        ['rA', 'Acceleration <i>a</i>', fmt(S.a) + ' m/s²']];
+      $('readout').innerHTML = cards.map(([id, h, v]) => `<div class="readout-card${hl[id] ? ' hl' : ''}" id="${id}"><div class="title">${h}</div><div class="value">${v}</div></div>`).join('');
+    }
+    const descStage = s => s.type === 'v' ? `constant velocity for ${fmt(s.dur, 1)} s` : `constant acceleration a = ${fmt(s.a, 2)} m/s² for ${fmt(s.dur, 1)} s`;
+    // the state in words, true for the moment on screen
+    function updateWords() {
+      const el = $('words'), J = sim.J, t = sim.t, S = stateOf(J, t), s = J.stages[S.i], L = lab(J, S.i), n = J.stages.length;
+      const boundary = J.stages.findIndex((q, i) => i > 0 && Math.abs(q.tStart - t) < 1e-6);
+      let w;
+      if (t <= 1e-9) w = `Ready: the cart starts at x = ${fmt(J.x0, 1)} m with v = ${fmt(J.v0, 1)} m/s. ${L}: ${descStage(s)}.`;
+      else if (t >= J.total - 1e-9) w = `Finished at t = ${fmt(J.total, 1)} s: x = ${fmt(S.x, 1)} m and v = ${fmt(S.v, 1)} m/s.`;
+      else if (boundary > 0) w = `${lab(J, boundary - 1)} ends and ${L} begins at t = ${fmt(t, 1)} s: x = ${fmt(S.x, 1)} m and v = ${fmt(S.v, 1)} m/s. ${L} carries on from exactly these values.`;
+      else if (s.type === 'v') w = `${L} (stage ${S.i + 1} of ${n}): constant velocity, v = ${fmt(S.v, 1)} m/s and a = 0, so the cart covers ${fmt(Math.abs(S.v), 1)} m every second.`;
+      else if (Math.abs(S.v) < 0.05) w = `${L}: v = 0 for an instant, while a = ${fmt(s.a, 2)} m/s², so the cart turns around.`;
+      else if (Math.sign(S.v) === Math.sign(s.a)) w = `${L} (stage ${S.i + 1} of ${n}): v = ${fmt(S.v, 1)} m/s and a = ${fmt(s.a, 2)} m/s² have the same sign, so the cart speeds up by ${fmt(Math.abs(s.a), 2)} m/s every second.`;
+      else w = `${L} (stage ${S.i + 1} of ${n}): v = ${fmt(S.v, 1)} m/s and a = ${fmt(s.a, 2)} m/s² have opposite signs, so the cart slows down by ${fmt(Math.abs(s.a), 2)} m/s every second.`;
+      el.innerHTML = sym(w);
+    }
+    // under the velocity–time graph: each stage's gradient and area, worked out up to the moment shown
+    function updateExtra() {
+      const el = $('vExtra'), grad = $('showGradient').checked, area = $('showArea').checked, lines = [];
+      if ((grad || area) && !$('vOptions').hidden) {
+        const J = sim.J, t = sim.t;
+        if (t <= 1e-9) lines.push('Press Start, or Next key moment, to draw the line first.');
+        else {
+          let total = 0;
+          J.stages.forEach((s, i) => {
+            if (s.tStart >= t - 1e-9) return;
+            const te = Math.min(t, s.tEnd), dt = te - s.tStart, u = s.v0, w = stateOf(J, te).v, L = lab(J, i), f1 = x => fmt(x, 1);
+            if (grad) lines.push(s.type === 'v' ? `${L}: a flat line, so the gradient is 0 and a = 0.`
+              : `${L}: gradient = change in velocity ÷ time = (${f1(w)} − ${f1(u)}) ÷ ${f1(dt)} = <b>${fmt((w - u) / dt, 2)} m/s²</b> = a.`);
+            if (area) {
+              const A = 0.5 * (u + w) * dt; total += A;
+              const how = Math.abs(u - w) < 1e-9 ? `${f1(u)} × ${f1(dt)}` : Math.abs(u) < 1e-9 ? `½ × ${f1(dt)} × ${f1(w)}` : Math.abs(w) < 1e-9 ? `½ × ${f1(dt)} × ${f1(u)}` : `½ × (${f1(u)} + ${f1(w)}) × ${f1(dt)}`;
+              lines.push(`${L}: area = ${how} = <b>${f1(A)} m</b>` + (u * w < 0 ? ' (the part below the t-axis counts as negative)' : ''));
+            }
+          });
+          if (area) lines.push(`Total area = <b>${fmt(total, 1)} m</b> = displacement (${fmt(stateOf(J, t).x - J.x0, 1)} m).`);
+        }
       }
+      el.innerHTML = lines.map(l => `<div>${sym(l)}</div>`).join('');
     }
 
-    function toDevice(canvas, e) { const r = canvas.getBoundingClientRect(); const k = canvas.width / r.width; return { x: (e.clientX - r.left) * k, y: (e.clientY - r.top) * k }; }
+    /* ---------------- drawing ---------------- */
+    function resizeCanvasToDisplaySize(canvas) {
+      const rect = canvas.getBoundingClientRect(), ratio = window.devicePixelRatio || 1;
+      const w = Math.round(rect.width * ratio), h = Math.round(rect.height * ratio);
+      if (w && h && (canvas.width !== w || canvas.height !== h)) { canvas.width = w; canvas.height = h; }
+    }
+    function resizeAllCanvases() { [motionCanvas, ...Object.values(GRAPHS)].forEach(resizeCanvasToDisplaySize); redrawAll(); }
+    function niceTicks(min, max) {
+      const range = Math.abs(max - min) || 1, mag = Math.pow(10, Math.floor(Math.log10(range))), n = range / mag;
+      const step = (n <= 1.5 ? 0.2 : n <= 3 ? 0.5 : n <= 7 ? 1 : 2) * mag;
+      // the axis starts exactly at a tick that is a value (0 stays 0: no "−5" or "−0.5" beyond the data)
+      const lo = Math.floor(min / step + 1e-9) * step, hi = Math.ceil(max / step - 1e-9) * step, ticks = [];
+      for (let v = lo; v <= hi + step * 0.01; v += step) ticks.push(Math.round(v * 1e9) / 1e9);
+      return { step, min: lo, max: hi, ticks };
+    }
+    const tickText = (v, step) => fmt(v, step >= 1 ? 0 : step >= 0.1 ? 1 : 2);
+    const COLORS = { x: '#2563eb', v: '#16a34a', a: '#dc2626', target: '#ea580c' };
+    // every position the journey reaches (ends of stages and turning points), so the track's scale is fixed for the run
+    function xRange(J) {
+      const xs = [J.x0];
+      J.stages.forEach(s => { xs.push(s.x1); if (s.type === 'a' && s.a !== 0 && s.v0 * s.v1 < 0) { const lt = -s.v0 / s.a; xs.push(posAt(s.x0, s.v0, s.a, lt)); } });
+      let lo = Math.min(0, ...xs), hi = Math.max(10, ...xs); const pad = 0.08 * (hi - lo);
+      return [lo - pad, hi + pad];
+    }
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r); ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath();
+    }
+    let sceneMap = null, dragMap = null;
+    function drawMotionScene() {
+      const ctx = motionCanvas.getContext('2d'), w = motionCanvas.width, h = motionCanvas.height;
+      if (!w || !h) return;
+      const k = w / (motionCanvas.getBoundingClientRect().width || 1), J = sim.J;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = '#f8fbff'; ctx.fillRect(0, 0, w, h);
+      // while a drag is under way the scale stays where it was when the drag began
+      // the track covers the journey's own range (ticks outside it are not drawn)
+      const M = dragMap || (() => { const [lo, hi] = xRange(J); return { T: niceTicks(lo, hi), min: lo, max: hi }; })();
+      const trackStart = 40 * k, trackEnd = w - 24 * k, trackW = trackEnd - trackStart, trackY = h * 0.56;
+      const X = x => trackStart + (x - M.min) / (M.max - M.min) * trackW;
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 4 * k;
+      ctx.beginPath(); ctx.moveTo(trackStart, trackY); ctx.lineTo(trackEnd, trackY); ctx.stroke();
+      const fs = 11 * k;
+      ctx.font = `${fs}px Arial`; ctx.fillStyle = '#334155'; ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.2 * k; ctx.textAlign = 'center';
+      // tick labels at least 46 px apart, so long numbers like 400 never run together
+      const every = Math.max(1, Math.ceil((46 * k) / (trackW * M.T.step / (M.max - M.min))));
+      M.T.ticks.forEach(v => {
+        const px = X(v); if (px < trackStart - 1 || px > trackEnd + 1) return;
+        ctx.beginPath(); ctx.moveTo(px, trackY - 8 * k); ctx.lineTo(px, trackY + 8 * k); ctx.stroke();
+        if (Math.round(v / M.T.step) % every === 0) ctx.fillText(tickText(v, M.T.step), px, trackY + 22 * k);
+      });
+      // "Position x (m)" top left, the symbol in italics
+      ctx.textAlign = 'left'; ctx.font = `${fs}px Arial`; const pw = ctx.measureText('Position ').width;
+      ctx.fillText('Position ', 6 * k, 16 * k); ctx.font = `italic ${fs}px Arial`; ctx.fillText('x', 6 * k + pw, 16 * k);
+      const xw = ctx.measureText('x').width; ctx.font = `${fs}px Arial`; ctx.fillText(' (m)', 6 * k + pw + xw, 16 * k);
+      // where the cart was at each change of stage: a faint cart and the time, labels in two rows if they would touch
+      const cartW = 46 * k, cartH = 22 * k, cy = trackY - 20 * k, rows = [];
+      J.stages.slice(0, -1).forEach(s => {
+        if (sim.t < s.tEnd - 1e-9) return;
+        const px = X(s.x1);
+        ctx.fillStyle = 'rgba(37,99,235,0.18)'; roundRect(ctx, px - cartW / 2, cy - cartH / 2, cartW, cartH, 6 * k); ctx.fill();
+        ctx.beginPath(); ctx.arc(px - 13 * k, cy + 13 * k, 6 * k, 0, Math.PI * 2); ctx.arc(px + 13 * k, cy + 13 * k, 6 * k, 0, Math.PI * 2); ctx.fill();
+        const text = `t = ${fmt(s.tEnd, s.tEnd % 1 ? 1 : 0)} s`; ctx.font = `${fs}px Arial`; const tw = ctx.measureText(text).width;
+        let row = 0; while (rows.some(r => r.row === row && Math.abs(r.x - px) < (r.w + tw) / 2 + 6 * k)) row++;
+        rows.push({ x: px, w: tw, row });
+        ctx.fillStyle = '#1e3a8a'; ctx.textAlign = 'center';
+        ctx.fillText(text, Math.max(tw / 2 + 2 * k, Math.min(w - tw / 2 - 2 * k, px)), cy - cartH / 2 - 6 * k - row * 14 * k);
+      });
+      // the cart, with its name inside it (a name above it would sit on the time labels)
+      const S = stateOf(J, sim.t), cx = X(S.x);
+      ctx.fillStyle = '#2563eb'; roundRect(ctx, cx - cartW / 2, cy - cartH / 2, cartW, cartH, 6 * k); ctx.fill();
+      ctx.fillStyle = '#1e40af'; ctx.beginPath(); ctx.arc(cx - 13 * k, cy + 13 * k, 6 * k, 0, Math.PI * 2); ctx.arc(cx + 13 * k, cy + 13 * k, 6 * k, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'white'; ctx.font = `bold ${10 * k}px Arial`; ctx.textAlign = 'center'; ctx.fillText('Cart', cx, cy + 3.5 * k);
+      // the velocity arrow under the position scale; its scale is fixed for the run (and while a drag is under way)
+      const maxV = Math.max(1, Math.abs(J.v0), ...J.stages.map(s => Math.abs(s.v1)));
+      // short enough that the arrow stays on the canvas wherever a stage starts or ends (a cart at the track's end on a phone)
+      let pxPerMs = Math.min(16 * k, trackW * 0.25 / maxV);
+      J.stages.forEach(s => [[s.x0, s.v0], [s.x1, s.v1]].forEach(([x, v]) => {
+        if (Math.abs(v) > 1e-9) pxPerMs = Math.min(pxPerMs, Math.max(3 * k, (v > 0 ? w - 8 * k - X(x) : X(x) - 8 * k) / Math.abs(v)));
+      }));
+      if (dragMap) pxPerMs = dragMap.pxPerMs;
+      const vy = Math.min(trackY + 40 * k, h - 22 * k), tip = cx + S.v * pxPerMs;
+      if (Math.abs(S.v) > 0.01) {
+        const dir = Math.sign(S.v);
+        ctx.strokeStyle = '#16a34a'; ctx.fillStyle = '#16a34a'; ctx.lineWidth = 3 * k;
+        ctx.beginPath(); ctx.moveTo(cx, vy); ctx.lineTo(tip - dir * 6 * k, vy); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(tip, vy); ctx.lineTo(tip - dir * 10 * k, vy - 6 * k); ctx.lineTo(tip - dir * 10 * k, vy + 6 * k); ctx.closePath(); ctx.fill();
+      }
+      // "v = 12.0 m/s" under the arrow, the symbol in italics, kept inside the canvas
+      const rest = ` = ${fmt(S.v, 1)} m/s`; ctx.font = `bold ${12 * k}px Arial`; const rw = ctx.measureText(rest).width;
+      ctx.font = `italic bold ${12 * k}px Arial`; const vw = ctx.measureText('v').width;
+      const lx = Math.max(4 * k, Math.min(w - 4 * k - vw - rw, (cx + tip) / 2 - (vw + rw) / 2)), ly = vy + 17 * k;
+      ctx.fillStyle = '#15803d'; ctx.textAlign = 'left'; ctx.fillText('v', lx, ly); ctx.font = `bold ${12 * k}px Arial`; ctx.fillText(rest, lx + vw, ly);
+      // the handle on the arrow's tip shows where to drag (before the run only)
+      if (sim.t === 0 && !sim.running && canDrag()) {
+        ctx.fillStyle = '#16a34a'; ctx.beginPath(); ctx.arc(tip, vy, 6 * k, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = 'white'; ctx.lineWidth = 2 * k; ctx.stroke();
+      }
+      sceneMap = { k, cartX: cx, cartY: cy, tip, vy, pxPerMs, trackStart, trackEnd, min: M.min, max: M.max, T: M.T };
+    }
+
+    // a graph of one quantity against time; the axes cover the whole run, so they do not jump while it plays
+    const YLABEL = { x: ['x', ' (m)'], v: ['v', ' (m/s)'], a: ['a', ' (m/s²)'] };
+    function drawGraph(key) {
+      const canvas = GRAPHS[key], ctx = canvas.getContext('2d'), w = canvas.width, h = canvas.height;
+      if (!w || !h) return;
+      const J = sim.J, tgt = key === 'v' ? sim.target : null;
+      const k = w / (canvas.getBoundingClientRect().width || 1), fs = 11 * k;
+      const m = { l: 50 * k, r: 14 * k, t: 20 * k, b: 34 * k }, pw = w - m.l - m.r, ph = h - m.t - m.b;
+      const T = Math.max(J.total, tgt ? tgt.total : 0, 0.5);
+      const val = (Jx, t) => stateOf(Jx, t)[key];
+      let lo = 0, hi = 0;
+      [J, tgt].filter(Boolean).forEach(Jx => { for (let i = 0; i <= 240; i++) { const v = val(Jx, Jx.total * i / 240); lo = Math.min(lo, v); hi = Math.max(hi, v); } Jx.stages.forEach(s => { lo = Math.min(lo, s.a * (key === 'a')); hi = Math.max(hi, s.a * (key === 'a')); }); });
+      if (hi - lo < 1e-9) { hi = lo + 1; }
+      // headroom, so the highest point (and its letter) never sits on the stage names
+      const span = hi - lo; if (hi > 0) hi += 0.08 * span; if (lo < 0) lo -= 0.08 * span;
+      const YT = niceTicks(lo, hi), XT = niceTicks(0, T);
+      const tx = t => m.l + t / T * pw, ty = v => m.t + (YT.max - v) / (YT.max - YT.min) * ph;
+      canvas._map = { l: m.l, pw, T };
+      ctx.clearRect(0, 0, w, h); ctx.fillStyle = 'white'; ctx.fillRect(0, 0, w, h);
+      // a key feature can light up one stage on every graph
+      if (hl.stage !== undefined && J.stages[hl.stage]) { const s = J.stages[hl.stage]; ctx.fillStyle = 'rgba(250,204,21,0.25)'; ctx.fillRect(tx(s.tStart), m.t, tx(s.tEnd) - tx(s.tStart), ph); }
+      ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+      YT.ticks.forEach(v => { ctx.beginPath(); ctx.moveTo(m.l, ty(v)); ctx.lineTo(w - m.r, ty(v)); ctx.stroke(); });
+      XT.ticks.filter(t => t <= T + 1e-9).forEach(t => { ctx.beginPath(); ctx.moveTo(tx(t), m.t); ctx.lineTo(tx(t), m.t + ph); ctx.stroke(); });
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5 * k;
+      ctx.beginPath(); ctx.moveTo(m.l, m.t); ctx.lineTo(m.l, m.t + ph); ctx.moveTo(m.l, ty(0)); ctx.lineTo(w - m.r, ty(0)); ctx.stroke();
+      ctx.fillStyle = '#334155'; ctx.font = `${fs}px Arial`; ctx.textAlign = 'right';
+      YT.ticks.forEach(v => ctx.fillText(tickText(v, YT.step), m.l - 5 * k, ty(v) + 4 * k));
+      ctx.textAlign = 'center';
+      const xt = XT.ticks.filter(t => t <= T + 1e-9), xEvery = Math.max(1, Math.ceil((30 * k) / (pw / Math.max(1, xt.length - 1))));
+      xt.forEach((t, j) => { if (j % xEvery === 0) ctx.fillText(tickText(t, XT.step), tx(t), m.t + ph + 14 * k); });
+      // axis titles: the symbol in italics
+      const [sy, unit] = YLABEL[key];
+      ctx.font = `italic ${fs}px Arial`; ctx.fillText('t', m.l + pw / 2 - 12 * k, h - 4 * k); ctx.font = `${fs}px Arial`; ctx.textAlign = 'left'; ctx.fillText(' (s)', m.l + pw / 2 - 9 * k, h - 4 * k);
+      ctx.save(); ctx.translate(12 * k, m.t + ph / 2); ctx.rotate(-Math.PI / 2);
+      ctx.font = `italic ${fs}px Arial`; const sw = ctx.measureText(sy).width; ctx.font = `${fs}px Arial`; const uw = ctx.measureText(unit).width;
+      ctx.font = `italic ${fs}px Arial`; ctx.textAlign = 'left'; ctx.fillText(sy, -(sw + uw) / 2, 0); ctx.font = `${fs}px Arial`; ctx.fillText(unit, -(sw + uw) / 2 + sw, 0);
+      ctx.restore();
+      // a dotted line at each change of stage, and each stage's name over its part of the graph
+      ctx.save(); ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.5 * k; ctx.setLineDash([4 * k, 4 * k]);
+      J.stages.slice(0, -1).forEach(s => { ctx.beginPath(); ctx.moveTo(tx(s.tEnd), m.t); ctx.lineTo(tx(s.tEnd), m.t + ph); ctx.stroke(); });
+      ctx.setLineDash([]); ctx.fillStyle = '#334155'; ctx.font = `bold ${fs}px Arial`; ctx.textAlign = 'center';
+      J.stages.forEach((s, i) => { const L = lab(J, i), cx = tx((s.tStart + s.tEnd) / 2); if (tx(s.tEnd) - tx(s.tStart) > ctx.measureText(L).width + 4 * k) ctx.fillText(L, cx, m.t - 6 * k); });
+      ctx.restore();
+      const t1 = sim.t;
+      if (key === 'v') {
+        // tab 2: each stage's area, up to the moment shown, in alternating colours, with its value
+        if ($('showArea').checked && !$('vOptions').hidden) J.stages.forEach((s, i) => {
+          if (s.tStart >= t1 - 1e-9) return;
+          const te = Math.min(t1, s.tEnd), w1 = val(J, te);
+          ctx.fillStyle = i % 2 ? 'rgba(147,197,253,0.55)' : 'rgba(134,239,172,0.55)';
+          ctx.beginPath(); ctx.moveTo(tx(s.tStart), ty(0)); ctx.lineTo(tx(s.tStart), ty(s.v0)); ctx.lineTo(tx(te), ty(w1)); ctx.lineTo(tx(te), ty(0)); ctx.closePath(); ctx.fill();
+          const A = 0.5 * (s.v0 + w1) * (te - s.tStart), text = `${fmt(A, 1)} m`;
+          ctx.font = `bold ${fs}px Arial`;
+          if (tx(te) - tx(s.tStart) > ctx.measureText(text).width + 6 * k && Math.abs(ty(0) - ty((s.v0 + w1) / 2)) > 16 * k) {
+            ctx.fillStyle = '#14532d'; ctx.textAlign = 'center'; ctx.fillText(text, tx((s.tStart + te) / 2), (ty(0) + ty((s.v0 + w1) / 4)) / 2 + 4 * k);
+          }
+        });
+        // and each sloping stage's gradient triangle
+        if ($('showGradient').checked && !$('vOptions').hidden) J.stages.forEach(s => {
+          if (s.type !== 'a' || s.tStart >= t1 - 1e-9) return;
+          const te = Math.min(t1, s.tEnd), w1 = val(J, te);
+          ctx.strokeStyle = '#7c2d12'; ctx.lineWidth = 2 * k; ctx.setLineDash([5 * k, 4 * k]);
+          ctx.beginPath(); ctx.moveTo(tx(s.tStart), ty(s.v0)); ctx.lineTo(tx(te), ty(s.v0)); ctx.lineTo(tx(te), ty(w1)); ctx.stroke(); ctx.setLineDash([]);
+        });
+        // tab 4, after a check: the story's own velocity–time line, dashed
+        if (tgt) {
+          ctx.strokeStyle = COLORS.target; ctx.lineWidth = 2.5 * k; ctx.setLineDash([7 * k, 5 * k]); ctx.beginPath();
+          for (let j = 0; j <= 300; j++) { const t = tgt.total * j / 300, X = tx(t), Yp = ty(val(tgt, t)); if (j) ctx.lineTo(X, Yp); else ctx.moveTo(X, Yp); }
+          ctx.stroke(); ctx.setLineDash([]);
+        }
+        // the notes' letters A to E at the corners of their graph
+        if (J.points) {
+          // each letter sits above-left of its corner, or below-left where the line falls into it, clear of the line
+          ctx.fillStyle = '#c2410c'; ctx.font = `bold ${fs}px Arial`;
+          J.points.forEach((P, i) => {
+            const tt = i === 0 ? 0 : J.stages[i - 1].tEnd, vv = i === 0 ? J.v0 : J.stages[i - 1].v1;
+            const falls = i > 0 && vv < J.stages[i - 1].v0 - 1e-9;
+            ctx.textAlign = i === 0 ? 'left' : 'right';
+            ctx.fillText(P, tx(tt) + (i === 0 ? 6 : -6) * k, ty(vv) + (falls ? 15 : -6) * k);
+          });
+        }
+      }
+      // the line itself, up to the moment shown
+      ctx.strokeStyle = COLORS[key]; ctx.lineWidth = 2.5 * k;
+      if (key === 'a') {
+        // one flat step per stage (the jumps between steps are left open)
+        J.stages.forEach(s => { if (s.tStart > t1 + 1e-9) return; ctx.beginPath(); ctx.moveTo(tx(s.tStart), ty(s.a)); ctx.lineTo(tx(Math.min(t1, s.tEnd)), ty(s.a)); ctx.stroke(); });
+      } else {
+        ctx.beginPath();
+        for (let j = 0; j <= 300; j++) { const t = t1 * j / 300, X = tx(t), Yp = ty(val(J, t)); if (j) ctx.lineTo(X, Yp); else ctx.moveTo(X, Yp); }
+        ctx.stroke();
+      }
+      ctx.fillStyle = COLORS[key]; ctx.beginPath(); ctx.arc(tx(t1), ty(val(J, t1)), 4 * k, 0, Math.PI * 2); ctx.fill();
+    }
+    function redrawAll() { drawMotionScene(); Object.keys(GRAPHS).forEach(key => { if (!$(key + 'Box').hidden) drawGraph(key); }); }
+    function updateAll() { updateReadout(); updateWords(); updateExtra(); redrawAll(); }
+
+    /* ---------------- dragging the cart and its arrow; scrubbing the graphs ---------------- */
+    function toDevice(canvas, e) { const r = canvas.getBoundingClientRect(), k = canvas.width / r.width; return { x: (e.clientX - r.left) * k, y: (e.clientY - r.top) * k }; }
+    const canDrag = () => !$('builder').hidden;
     let dragMode = null;
+    function hit(p) {
+      const m = sceneMap; if (!m || !canDrag()) return null;
+      if (sim.t === 0 && Math.hypot(p.x - m.tip, p.y - m.vy) < 18 * m.k) return 'v';
+      if (Math.abs(p.x - m.cartX) < 30 * m.k && Math.abs(p.y - m.cartY) < 24 * m.k) return 'x';
+      return null;
+    }
     motionCanvas.addEventListener('pointerdown', e => {
-      if (!sceneMap || sim.running) return;
-      const p = toDevice(motionCanvas, e), m = sceneMap;
-      if (sim.t === 0 && Math.hypot(p.x - m.vTip, p.y - m.vy) < 18 * m.k) dragMode = 'v';
-      else if (Math.abs(p.x - m.cartX) < 34 * m.k && Math.abs(p.y - m.cartY) < 30 * m.k) dragMode = 'x';
-      else return;
+      if (sim.running) return;
+      const mode = hit(toDevice(motionCanvas, e)); if (!mode) return;
+      dragMode = mode;
       if (sim.t !== 0) resetSimulation();
+      // the scale is frozen for the drag: a scale that followed the value being dragged would run away with it
+      dragMap = { T: sceneMap.T, min: sceneMap.min, max: sceneMap.max, pxPerMs: sceneMap.pxPerMs };
       motionCanvas.setPointerCapture(e.pointerId); e.preventDefault();
     });
     motionCanvas.addEventListener('pointermove', e => {
       const p = toDevice(motionCanvas, e), m = sceneMap;
-      if (!dragMode) {
-        if (m && !sim.running) motionCanvas.style.cursor = (sim.t === 0 && Math.hypot(p.x - m.vTip, p.y - m.vy) < 18 * m.k) || (Math.abs(p.x - m.cartX) < 34 * m.k && Math.abs(p.y - m.cartY) < 30 * m.k) ? 'grab' : 'default';
-        return;
-      }
-      if (dragMode === 'x') x0Stage1El.value = (Math.round((m.min + (p.x - m.trackStart) / (m.trackEnd - m.trackStart) * (m.max - m.min)) * 10) / 10).toFixed(1);
-      else v0Stage1El.value = (Math.round((p.x - m.cartX) / m.pxPerMs * 10) / 10).toFixed(1);
-      resetSimulation();
+      if (!dragMode) { if (m && !sim.running) motionCanvas.style.cursor = hit(p) ? 'grab' : 'default'; return; }
+      if (dragMode === 'x') B.x0 = Math.round((dragMap.min + (p.x - m.trackStart) / (m.trackEnd - m.trackStart) * (dragMap.max - dragMap.min)) * 10) / 10;
+      else B.v0 = Math.max(-60, Math.min(60, Math.round((p.x - m.cartX) / dragMap.pxPerMs * 10) / 10));
+      renderBuilder(); onEdit();
     });
-    const endDrag = () => { dragMode = null; };
+    const endDrag = () => { if (dragMode) { dragMode = null; dragMap = null; redrawAll(); } };
     motionCanvas.addEventListener('pointerup', endDrag);
     motionCanvas.addEventListener('pointercancel', endDrag);
-
-    [xGraphCanvas, vGraphCanvas, aGraphCanvas].forEach(c => {
+    Object.values(GRAPHS).forEach(c => {
       let scrubbing = false;
-      const scrub = e => {
-        const p = toDevice(c, e), left = 70, right = 16;
-        buildStagesFromUI();
-        const tMax = Math.max(sim.totalDuration, 1);
-        const t = Math.max(0, Math.min(sim.totalDuration, (p.x - left) / (c.width - left - right) * tMax));
-        sim.running = false; sim.lastFrameTime = null;
-        sim.points = [];
-        for (let tt = 0; tt < t; tt += DT) sim.points.push(sampleState(tt));
-        sim.t = t; sim.points.push(sampleState(t));
-        updateReadoutFromState(); redrawAll();
-      };
+      const scrub = e => { const p = toDevice(c, e), M = c._map; if (M) setTime(Math.min(sim.J.total, (p.x - M.l) / M.pw * M.T)); };
       c.addEventListener('pointerdown', e => { scrubbing = true; c.setPointerCapture(e.pointerId); scrub(e); e.preventDefault(); });
       c.addEventListener('pointermove', e => { c.style.cursor = 'ew-resize'; if (scrubbing) scrub(e); });
       c.addEventListener('pointerup', () => { scrubbing = false; });
       c.addEventListener('pointercancel', () => { scrubbing = false; });
     });
-
-    // editing any stage value restarts from t = 0 so the graphs always match the settings shown
-    document.addEventListener('input', e => { if (e.target.matches('input') && !sim.running) resetSimulation(); });
-
-    startBtn.addEventListener('click', () => { startSimulation(); pauseBtn.textContent = 'Pause'; });
+    ['showGradient', 'showArea'].forEach(id => $(id).addEventListener('change', () => { feat[id === 'showGradient' ? 'grad' : 'area'] = $(id).checked; syncFeatButtons(); updateAll(); }));
+    function applyPreset() {
+      const P = PRESETS[presetEl.value];
+      if (!P || !P.stages) return;
+      B = modelFrom(P); renderBuilder();
+    }
+    function showScenNote() { $('scenNote').textContent = (PRESETS[presetEl.value] || {}).note || ''; }
+    presetEl.addEventListener('change', () => { applyPreset(); showScenNote(); hl = {}; feat = {}; syncFeatButtons(); $('featNote').textContent = ''; resetSimulation(); });
+    startBtn.addEventListener('click', startSimulation);
     // Pause toggles to Play, which carries on from where the run was paused
     pauseBtn.addEventListener('click', () => {
-      if (sim.running) {
-        sim.running = false;
-        sim.lastFrameTime = null;
-        pauseBtn.textContent = 'Play';
-      } else if (sim.t > 0 && sim.t < sim.totalDuration) {
-        startSimulation();
-        pauseBtn.textContent = 'Pause';
+      if (sim.running) { sim.running = false; sim.last = null; pauseBtn.textContent = 'Play'; }
+      else if (sim.t > 0) startSimulation();
+    });
+    resetBtn.addEventListener('click', resetSimulation);
+
+    /* ---------------- tab 4: match the story ---------------- */
+    // each story is the notes' own words, or a tutorial graph put into words
+    const ROUNDS = [
+      { src: 'Practice 6, notes p. 2-34', story: 'A car starts from rest and accelerates uniformly at 2 m/s² for 6 s. It then maintains a constant velocity for half a minute before decelerating uniformly to rest in 5 s.',
+        spec: { v0: 0, stages: [['a', 6, 2], ['v', 30, 0], ['a', 5, -2.4]] },
+        how: 'Starting velocity 0. S1: constant a = 2 m/s² for 6 s (it reaches 12 m/s). S2: constant v for 30 s (half a minute). S3: constant a = (0 − 12) ÷ 5 = −2.4 m/s² for 5 s.' },
+      { src: 'Tutorial 2, B3 (its graph in words)', story: 'A train starts from rest and speeds up uniformly to 25 m/s in 20 s. It travels at 25 m/s until t = 50 s, then slows down uniformly and stops at t = 60 s.',
+        spec: { v0: 0, stages: [['a', 20, 1.25], ['v', 30, 0], ['a', 10, -2.5]] },
+        how: 'Starting velocity 0. S1: constant a = 25 ÷ 20 = 1.25 m/s² for 20 s. S2: constant v for 50 − 20 = 30 s. S3: constant a = (0 − 25) ÷ 10 = −2.5 m/s² for 10 s.' },
+      { src: 'Tutorial 2, C3, car A (its graph in words)', story: 'Car A travels at 20 m/s for 30 s. It then slows down uniformly and comes to rest at t = 60 s.',
+        spec: { v0: 20, stages: [['v', 30, 0], ['a', 30, -2 / 3]] },
+        how: 'Starting velocity 20 m/s. S1: constant v for 30 s. S2: constant a = (0 − 20) ÷ 30 = −0.67 m/s² for 60 − 30 = 30 s.' },
+      { src: 'Tutorial 2, C4', story: 'An object starts from rest and accelerates uniformly at 1.0 m/s² to the right for 20 s. It then decelerates uniformly in the same direction and comes to rest in another 40 s.',
+        spec: { v0: 0, stages: [['a', 20, 1], ['a', 40, -0.5]] },
+        how: 'Starting velocity 0. S1: constant a = 1.0 m/s² for 20 s (it reaches 20 m/s). S2: constant a = (0 − 20) ÷ 40 = −0.5 m/s² for 40 s.' }
+    ];
+    let game = { r: 0, matched: ROUNDS.map(() => false) };
+    function startRound(r) {
+      game.r = r; sim.target = null;
+      B = modelFrom({ v0: 0, stages: [['v', 5, 0], ['v', 5, 0]] }); renderBuilder();
+      $('storyRound').textContent = `Round ${r + 1} of ${ROUNDS.length} · ${ROUNDS[r].src}`;
+      $('storyText').innerHTML = sym(ROUNDS[r].story);
+      $('storyFb').innerHTML = ''; $('storyHow').innerHTML = '';
+      $('nextRound').textContent = r + 1 < ROUNDS.length ? 'Next round ›' : 'Back to round 1';
+      updateScore(); resetSimulation();
+    }
+    function updateScore() { $('storyScore').textContent = `Rounds matched: ${game.matched.filter(Boolean).length} of ${ROUNDS.length}`; }
+    // the journeys match when they last as long and their velocities agree at every moment
+    function compareJourneys(mine, story) {
+      if (Math.abs(mine.total - story.total) > 0.05) return { ok: false, why: `Your journey lasts ${fmt(mine.total, 1)} s; the story's lasts ${fmt(story.total, 1)} s.` };
+      const tol = Math.max(0.15, 0.01 * Math.max(1, ...story.stages.map(s => Math.abs(s.v1)), Math.abs(story.v0)));
+      for (let j = 0; j <= 600; j++) {
+        const t = story.total * j / 600, a = stateOf(mine, t).v, b = stateOf(story, t).v;
+        if (Math.abs(a - b) > tol) return { ok: false, why: `At t = ${fmt(t, 1)} s your velocity is ${fmt(a, 1)} m/s, but the story's is ${fmt(b, 1)} m/s.` };
       }
+      return { ok: true };
+    }
+    $('checkJourney').addEventListener('click', () => {
+      readInputs();
+      const story = buildJourney(modelFrom(ROUNDS[game.r].spec)), res = compareJourneys(sim.J, story);
+      sim.target = story;
+      if (res.ok) { game.matched[game.r] = true; updateScore(); }
+      $('storyFb').innerHTML = res.ok ? '<span class="verdict ok">Matched!</span> Your journey has the same velocity as the story at every moment. The dashed orange line is the story\'s velocity–time graph.'
+        : `<span class="verdict no">Not yet.</span> <span class="why">${sym(res.why)} The dashed orange line on the graph is the story's velocity–time graph.</span>`;
+      setTime(sim.J.total);
     });
-    resetBtn.addEventListener('click', () => { resetSimulation(); pauseBtn.textContent = 'Pause'; });
+    $('showHow').addEventListener('click', () => { $('storyHow').innerHTML = sym(ROUNDS[game.r].how); });
+    $('nextRound').addEventListener('click', () => startRound((game.r + 1) % ROUNDS.length));
 
-    document.addEventListener('click', (e) => {
-      const btn = e.target.closest('.stage-count-btn');
-      if (!btn) return;
+    /* ---------------- the tabs ---------------- */
+    const TABS = {
+      1: { strip: 'Answer Predict first, then press Start. Each stage starts with the position and velocity the previous stage ended with.',
+        presets: ['p6', 'b3'], custom: true, builder: true, graphs: ['v'], hint: 'Drag the cart to set where it starts; drag the tip of the green arrow to set its starting velocity. Drag across the graph to replay any moment.',
+        key: [['#2563eb', 'Cart', 1], ['#16a34a', 'Velocity v'], ['#16a34a', 'v–t graph']] },
+      2: { strip: 'Answer Predict first, then choose a scenario and press Start. The gradient of the velocity–time graph is the acceleration; the area under it is the displacement.',
+        presets: ['p7', 'p6', 'c4'], builder: false, graphs: ['v'], options: true, hint: 'Drag across the graph to replay any moment. Tick the boxes to see each stage\'s gradient and area.',
+        key: [['#16a34a', 'v–t graph'], ['#7c2d12', 'Gradient'], ['#86efac', 'Area', 1]] },
+      3: { strip: 'Answer Predict first, then press Start. The same moment lines up on all three graphs: compare them stage by stage.',
+        presets: ['abcde', 'c4', 'b3'], builder: false, graphs: ['x', 'v', 'a'], hint: 'Drag across any graph to replay a moment on all three.',
+        key: [['#2563eb', 'x–t'], ['#16a34a', 'v–t'], ['#dc2626', 'a–t']] },
+      4: { strip: 'Answer Predict first. Then read the story, build it with the stages below and press Check my journey.',
+        presets: [], builder: true, graphs: ['v'], hint: 'Drag the cart or the tip of its green arrow, or type the values. Press Start to watch your journey.',
+        key: [['#2563eb', 'Cart', 1], ['#16a34a', 'Your v–t graph'], ['#ea580c', 'The story\'s v–t graph']] },
+      5: { strip: 'Answer every question, then read the summary.', key: [] }
+    };
 
-      numStagesGroup.querySelectorAll('.stage-count-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+    const PREDICT = {
+      1: { q: 'Practice 6 (notes p. 2-34): a car starts from rest and accelerates uniformly at 2 m/s² for 6 s. What is its velocity at the start of Stage 2?',
+        opts: ['2 m/s', '6 m/s', '12 m/s', '36 m/s'], ans: 2,
+        why: 'It gains 2 m/s every second for 6 s: v = 0 + 2 × 6 = 12 m/s. Stage 2 starts with the velocity Stage 1 ended with, so the car cruises at 12 m/s. (36 m is how far it went in Stage 1, not its velocity.) Press Start to check.' },
+      2: { q: 'Practice 7 (notes p. 2-35): the man\'s velocity rises in a straight line from 0 to 10 m/s in the first 4 s, then stays at 10 m/s until t = 8 s. How far does he run in the 8 s?',
+        opts: ['20 m', '40 m', '60 m', '80 m'], ans: 2,
+        why: 'Distance = area under the velocity–time graph: ½ × 4 × 10 = 20 m in the first 4 s, then 4 × 10 = 40 m in the last 4 s, 60 m in all. Not 10 × 8 = 80 m: he was not running at 10 m/s the whole time. Tick "Show the area under the graph" to check.' },
+      3: { q: 'Notes p. 2-33: during BC the object moves at constant velocity. What does the acceleration–time graph look like during BC?',
+        opts: ['A flat line on the <i>t</i>-axis (a = 0)', 'A flat line above the <i>t</i>-axis', 'A line sloping upwards', 'The same shape as the velocity–time graph'], ans: 0,
+        why: 'The gradient of the velocity–time graph gives the acceleration. BC is flat, so its gradient is 0 and a = 0: the acceleration–time graph sits on the t-axis there. Each constant-acceleration stage (AB, CD, DE) is a flat line at its own a.' },
+      4: { q: 'Practice 6 says the car keeps a constant velocity "for half a minute". What do you set for that stage?',
+        opts: ['Constant <i>v</i> for 30 s', 'Constant <i>v</i> for 0.5 s', 'Constant a = 0.5 m/s²', 'Constant <i>v</i> for 50 s'], ans: 0,
+        why: 'Half a minute is 30 s, and a constant velocity means a = 0: a constant-v stage lasting 30 s. Times in a story must be turned into seconds before they go into the stages.' }
+    };
 
-      const num = getSelectedStageCount();
-      document.getElementById('stage2').style.display = num >= 2 ? 'block' : 'none';
-      document.getElementById('stage3').style.display = num >= 3 ? 'block' : 'none';
-      resetSimulation();
+    const FEATS = {
+      1: [['carry', 'Each stage starts where the last ended'], ['cruise', 'Constant velocity: a = 0'], ['stop', 'Slowing to rest: a = (0 − u) ÷ Δt']],
+      2: [['grad', 'Gradient = acceleration'], ['area', 'Area = displacement'], ['flat', 'Flat line: a = 0']],
+      3: [['acc', 'Constant acceleration'], ['vel', 'Constant velocity'], ['step', 'a–t: one flat step per stage']],
+      4: [['rest', '"Starts from rest"'], ['units', 'Times in seconds'], ['decel', '"Comes to rest in Δt"']]
+    };
+    const PROMPTS = {
+      1: ['Why can the velocity not jump from one stage to the next in this applet?', 'Which stage covers the most ground, and how can you tell without the readout?', 'What would change if Stage 3 lasted 10 s instead of 5 s?'],
+      2: ['How do you find the total distance from a velocity–time graph with three stages?', 'Why is the gradient of a flat part zero?', 'In Tutorial C4, why is the area of the second stage larger even though the car slows down?'],
+      3: ['Why does the position–time graph curve during a constant-acceleration stage?', 'What does the position–time graph look like while the velocity is constant?', 'How would you sketch the acceleration–time graph straight from the velocity–time graph?'],
+      4: ['Which words in a story tell you the starting velocity?', 'How do you work out an acceleration when a story only says "comes to rest in 5 s"?', 'Which round was hardest, and why?'],
+      5: ['Which question did most of the class get wrong, and why?', 'Pick one wrong option: what mistake would lead a student to choose it?']
+    };
+
+    let feat = {}, predictPick = null;
+    function syncFeatButtons() { document.querySelectorAll('#feats .feat').forEach(b => b.classList.toggle('on', !!feat[b.dataset.f])); }
+    // each key feature: what it shows, worked out for the journey on screen
+    function tapFeat(id) {
+      const on = !feat[id];
+      if (['acc', 'vel', 'step'].includes(id)) feat = { [id]: on }; else feat[id] = on;
+      let note = '';
+      readInputs();
+      const J = sim.J, f1 = x => fmt(x, 1);
+      if (id === 'grad') $('showGradient').checked = on;
+      if (id === 'area') $('showArea').checked = on;
+      hl = {};
+      if (on) {
+        if (id === 'carry') {
+          const s = J.stages[0];
+          if (J.stages.length < 2) note = 'This journey has only one stage. Add a stage to see where one ends and the next begins.';
+          else { setTime(s.tEnd); hl = { rX: true, rV: true }; note = `At t = ${f1(s.tEnd)} s, ${lab(J, 0)} ends with x = ${f1(s.x1)} m and v = ${f1(s.v1)} m/s. ${lab(J, 1)} starts with exactly these values: the motion is continuous, so the velocity–time graph has no gaps.`; }
+        }
+        if (id === 'cruise' || id === 'flat') {
+          const i = J.stages.findIndex(s => s.type === 'v');
+          if (i < 0) note = 'This journey has no constant-velocity stage.';
+          else { const s = J.stages[i]; setTime((s.tStart + s.tEnd) / 2); hl = { rA: true }; note = `During ${lab(J, i)} the velocity stays at ${f1(s.v0)} m/s, so a = 0 and the cart covers ${f1(Math.abs(s.v0))} m every second. On the velocity–time graph ${lab(J, i)} is flat: its gradient is 0.`; }
+        }
+        if (id === 'stop') {
+          const i = J.stages.findIndex(s => s.type === 'a' && Math.abs(s.v1) < 1e-6 && Math.abs(s.v0) > 1e-6);
+          if (i < 0) note = 'In this journey no stage ends at rest. Choose Practice 6 or Tutorial B3.';
+          else { const s = J.stages[i]; setTime(s.tEnd); hl = { rA: true }; note = `${lab(J, i)} ends at rest: a = (v − u) ÷ t = (0 − ${f1(s.v0)}) ÷ ${f1(s.dur)} = ${fmt(s.a, 2)} m/s². The minus sign means the acceleration points the other way to the velocity, so the cart slows down (notes p. 2-31).`; }
+        }
+        if (id === 'grad') { setTime(J.total); note = 'The gradient of a velocity–time graph gives the acceleration (notes p. 2-32). Each sloping stage has a dashed triangle; the working is under the graph.'; }
+        if (id === 'area') { setTime(J.total); note = 'The area under a velocity–time graph gives the displacement (notes p. 2-32). Each stage\'s area is shaded and worked out under the graph; added up, they give the displacement.'; }
+        if (id === 'acc') {
+          const i = J.stages.findIndex(s => s.type === 'a');
+          if (i < 0) note = 'This journey has no constant-acceleration stage.';
+          else { const s = J.stages[i]; hl = { stage: i }; setTime(s.tEnd);
+            note = `${lab(J, i)} has constant acceleration (a = ${fmt(s.a, 2)} m/s²). Velocity–time: a straight sloping line. Position–time: a curve, because the cart covers ${s.a * s.v0 >= 0 ? 'more' : 'less'} ground every second. Acceleration–time: a flat line at ${fmt(s.a, 2)} m/s².`; }
+        }
+        if (id === 'vel') {
+          const i = J.stages.findIndex(s => s.type === 'v');
+          if (i < 0) note = 'This journey has no constant-velocity stage.';
+          else { const s = J.stages[i]; hl = { stage: i }; setTime(s.tEnd);
+            note = `${lab(J, i)} has constant velocity (v = ${fmt(s.v0, 1)} m/s). Velocity–time: a flat line. Position–time: a straight line whose gradient is the velocity (notes: the gradient of a position–time graph gives the velocity). Acceleration–time: on the t-axis, a = 0.`; }
+        }
+        if (id === 'step') {
+          setTime(J.total);
+          note = 'The acceleration–time graph is one flat step per stage, at that stage\'s gradient on the velocity–time graph: ' + J.stages.map((s, i) => `${lab(J, i)} a = ${fmt(s.a, 2)} m/s²`).join(', ') + '.';
+        }
+        if (id === 'rest') note = '"Starts from rest" means the starting velocity is 0. If a story gives a speed at the start instead (car A travels at 20 m/s), set that as the starting velocity.';
+        if (id === 'units') note = 'Every duration goes in as seconds: half a minute = 30 s, 2.0 minutes = 120 s. A time on the graph (t = 50 s) is not a duration: the stage lasts from where the last one ended, e.g. 50 − 20 = 30 s.';
+        if (id === 'decel') note = 'For a stage that "comes to rest in Δt", use a = (v − u) ÷ t with v = 0: from 12 m/s to rest in 5 s, a = (0 − 12) ÷ 5 = −2.4 m/s² (notes p. 2-31: deceleration is a negative acceleration).';
+      }
+      $('featNote').innerHTML = sym(note);
+      syncFeatButtons(); updateAll();
+    }
+
+    function renderPredict(tab) {
+      const P = PREDICT[tab], box = $('predictBox');
+      predictPick = null;
+      if (!P) { box.hidden = true; return; }
+      box.hidden = false; box.classList.remove('done');
+      $('predictQ').innerHTML = sym(P.q);
+      $('predictFb').innerHTML = '';
+      const opts = $('predictOpts');
+      opts.innerHTML = '';
+      P.opts.forEach((o, i) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.innerHTML = sym(o);
+        b.addEventListener('click', () => {
+          if (opts.dataset.done) return;
+          predictPick = i; opts.querySelectorAll('.opt').forEach((x, j) => x.classList.toggle('picked', j === i));
+        });
+        opts.appendChild(b);
+      });
+      delete opts.dataset.done;
+      $('predictCheck').textContent = 'Check my answer';
+    }
+    $('predictCheck').addEventListener('click', () => {
+      const P = PREDICT[currentTab], opts = $('predictOpts'), fb = $('predictFb');
+      if (!P) return;
+      if (opts.dataset.done) { renderPredict(currentTab); return; }
+      if (predictPick === null) { fb.innerHTML = '<span class="verdict no">Pick an answer first.</span>'; return; }
+      opts.dataset.done = '1';
+      const ok = predictPick === P.ans;
+      opts.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === P.ans) x.classList.add('right'); else if (j === predictPick) x.classList.add('wrong'); });
+      // the options fold away: the result line names the pick (and the right answer), then the explanation
+      $('predictBox').classList.add('done');
+      fb.innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> Your prediction: ${sym(P.opts[predictPick])}.`
+        + (ok ? '' : ` The answer: <b>${sym(P.opts[P.ans])}</b>.`) + ` <span class="why">${sym(P.why)}</span>`;
+      $('predictCheck').textContent = 'Try again';
     });
 
+    function renderFeats(tab) {
+      const list = FEATS[tab] || [], el = $('feats');
+      $('featBox').hidden = !list.length;
+      el.innerHTML = '';
+      list.forEach(([id, label]) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'feat'; b.dataset.f = id;
+        b.innerHTML = sym(label).replace('Δt', 'Δ<i>t</i>');
+        b.addEventListener('click', () => tapFeat(id));
+        el.appendChild(b);
+      });
+      $('featNote').textContent = '';
+      syncFeatButtons();
+    }
+    function renderKey(tab) {
+      $('ckey').innerHTML = (TABS[tab].key || []).map(([c, label, dot]) =>
+        `<span><b class="${dot ? 'dot' : ''}" style="background:${c}"></b>${label.replace(/\b([xvaty])\b/g, '<i>$1</i>')}</span>`).join('');
+    }
+    function fillPresets(list, custom) {
+      presetEl.innerHTML = '';
+      [...list, ...(custom ? ['custom'] : [])].forEach(id => { const o = document.createElement('option'); o.value = id; o.textContent = PRESETS[id].name; presetEl.appendChild(o); });
+      presetEl.value = list[0];
+    }
+
+    function showTab(tab) {
+      currentTab = tab;
+      sim.running = false; sim.target = null;
+      document.querySelectorAll('#tabs .tab').forEach(b => { const on = +b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+      $('stepLabel').textContent = `Step ${tab} of 5`;
+      document.querySelectorAll('#stepBar i').forEach((i, n) => i.classList.toggle('on', n < tab));
+      $('strip').innerHTML = sym(TABS[tab].strip);
+      renderKey(tab);
+      $('pageSim').hidden = tab === 5;
+      $('page5').hidden = tab !== 5;
+      // every key feature starts off on a new tab
+      feat = {}; hl = {};
+      $('showGradient').checked = false; $('showArea').checked = false;
+      if (tab <= 4) {
+        const T = TABS[tab], game4 = tab === 4;
+        $('storyBox').hidden = !game4;
+        $('scenGroup').hidden = game4;
+        $('builder').hidden = !(T.builder || freeMode);
+        const graphs = freeMode && !game4 ? ['x', 'v', 'a'] : T.graphs;
+        ['x', 'v', 'a'].forEach(g => { $(g + 'Box').hidden = !graphs.includes(g); });
+        const gEl = $('graphs'); gEl.classList.remove('n1', 'n2', 'n3'); gEl.classList.add('n' + graphs.length);
+        $('vOptions').hidden = !(T.options || (freeMode && !game4));
+        $('sceneHint').textContent = T.hint;
+        if (game4) { $('scenNote').textContent = ''; startRound(game.r); }
+        else { fillPresets(freeMode ? ALL_SCEN : T.presets, T.custom || freeMode); applyPreset(); showScenNote(); resetSimulation(); }
+      }
+      if (tab === 5) renderQuiz();
+      renderPredict(tab);
+      renderFeats(tab);
+      $('tPrompts').innerHTML = PROMPTS[tab].map(p => `<li>${sym(p)}</li>`).join('');
+      // canvases that were hidden have no size until now
+      requestAnimationFrame(resizeAllCanvases);
+    }
+    document.querySelectorAll('#tabs .tab').forEach(b => b.addEventListener('click', () => showTab(+b.dataset.tab)));
+
+    /* ---------------- Tab 5: Challenge ---------------- */
+    // every answer checked against the notes or Tutorial 2's answer key (recomputed)
+    // A question whose parts share one situation is one screen: the situation once, then its parts
+    const QUIZ = [
+      { src: 'Notes p. 2-32', stem: 'The velocity–time graph of an object moving in a straight line.', parts: [
+        { q: 'The gradient of a velocity–time graph gives the…', opts: ['displacement', 'velocity', 'acceleration', 'distance'], ans: 2,
+          why: 'Gradient = change in velocity ÷ time, which is the acceleration.' },
+        { q: 'The area under a velocity–time graph gives the…', opts: ['displacement', 'acceleration', 'time', 'speed'], ans: 0,
+          why: 'Area = velocity × time, which is the displacement.' }] },
+      { src: 'Notes p. 2-32 and 2-33', stem: 'The notes\' velocity–time graph: AB constant acceleration, BC constant velocity, CD constant acceleration, DE constant deceleration.', parts: [
+        { q: 'During BC, the acceleration–time graph is…', opts: ['a flat line on the <i>t</i>-axis (a = 0)', 'a flat line above the <i>t</i>-axis', 'a line sloping upwards', 'a vertical line'], ans: 0,
+          why: 'BC is flat on the velocity–time graph: its gradient is 0, so a = 0.' },
+        { q: 'During DE, the acceleration–time graph is…', opts: ['a flat line above the <i>t</i>-axis', 'a flat line below the <i>t</i>-axis', 'a line sloping downwards', 'a flat line on the <i>t</i>-axis'], ans: 1,
+          why: 'DE slopes down in a straight line: its gradient is negative and constant, so a is one negative value, a flat line below the t-axis.' }] },
+      { src: 'Practice 6, notes p. 2-34', stem: 'A car starts from rest and accelerates uniformly at 2 m/s² for 6 s. It then maintains a constant velocity for half a minute before decelerating uniformly to rest in 5 s.', parts: [
+        { lab: '(b)', q: 'Calculate the maximum speed reached.', opts: ['2 m/s', '6 m/s', '12 m/s', '24 m/s'], ans: 2,
+          why: 'It gains 2 m/s every second for 6 s: 2 × 6 = 12 m/s, kept for the half minute.' },
+        { lab: '(c)', q: 'Calculate the total distance covered.', opts: ['360 m', '396 m', '426 m', '492 m'], ans: 2,
+          why: 'Area under the speed–time graph: ½ × 6 × 12 = 36 m, then 30 × 12 = 360 m (half a minute = 30 s), then ½ × 5 × 12 = 30 m. Total 36 + 360 + 30 = 426 m.' }] },
+      { src: 'Practice 7, notes p. 2-35', stem: 'A man runs in a straight line in the same direction. His velocity–time graph rises in a straight line from 0 to 10 m/s in the first 4 s, then stays at 10 m/s until t = 8 s.', parts: [
+        { lab: '(a)(i)', q: 'Find the distance covered by the man in 4 s.', opts: ['10 m', '20 m', '40 m', '2.5 m'], ans: 1, why: 'Area of the triangle: ½ × 4 × 10 = 20 m.' },
+        { lab: '(a)(ii)', q: 'Find the distance covered by the man in 8 s.', opts: ['40 m', '60 m', '80 m', '20 m'], ans: 1, why: '20 m in the first 4 s, then the rectangle 4 × 10 = 40 m: 60 m in all.' },
+        { lab: '(b)(i)', q: 'Find the man\'s acceleration during the first 4 s.', opts: ['2.5 m/s²', '10 m/s²', '0.4 m/s²', '40 m/s²'], ans: 0, why: 'Gradient = (10 − 0) ÷ 4 = 2.5 m/s².' },
+        { lab: '(b)(ii)', q: 'Find the man\'s acceleration during the last 4 s.', opts: ['0 m/s²', '2.5 m/s²', '10 m/s²', '1.25 m/s²'], ans: 0, why: 'The line is flat: the velocity does not change, so a = 0.' }] },
+      { src: 'Tutorial 2, C4', stem: 'An object starts from rest and accelerates uniformly at 1.0 m/s² to the right for 20 s. It then decelerates uniformly in the same direction and comes to rest in another 40 s.', parts: [
+        { lab: '(a)', q: 'What is its velocity at t = 30 s?', opts: ['10 m/s', '15 m/s', '20 m/s', '30 m/s'], ans: 1,
+          why: 'It reaches 20 m/s at 20 s, then loses 20 ÷ 40 = 0.5 m/s every second: 20 − 0.5 × 10 = 15 m/s.' },
+        { lab: '(a)', q: 'What is its displacement at t = 30 s?', opts: ['300 m', '375 m', '400 m', '450 m'], ans: 1,
+          why: 'Area: ½ × 20 × 20 = 200 m for the first 20 s, then ½ × (20 + 15) × 10 = 175 m. 200 + 175 = 375 m.' },
+        { lab: '(c)', q: 'What is the maximum speed of the object?', opts: ['1 m/s', '20 m/s', '40 m/s', '60 m/s'], ans: 1, why: '1.0 m/s gained every second for 20 s: 20 m/s.' },
+        { lab: '(d)', q: 'What is the magnitude of the average velocity between 0 s and 40 s?', opts: ['10 m/s', '12.5 m/s', '15 m/s', '20 m/s'], ans: 1,
+          why: 'Displacement at 40 s = 200 + ½ × (20 + 10) × 20 = 500 m. Average velocity = 500 ÷ 40 = 12.5 m/s.' },
+        { lab: '(e)', q: 'What is the magnitude of the average acceleration between 0 s and 40 s?', opts: ['0.25 m/s²', '0.5 m/s²', '1.0 m/s²', '0.75 m/s²'], ans: 0,
+          why: 'Average acceleration = change in velocity ÷ time = (10 − 0) ÷ 40 = 0.25 m/s² (the velocity at 40 s is 10 m/s).' }] },
+      { src: 'Tutorial 2, B3', stem: 'The velocity–time graph of a train moving along a straight track rises in a straight line from 0 to 25 m/s in the first 20 s, stays at 25 m/s until t = 50 s, then falls in a straight line to 0 at t = 60 s.', parts: [
+        { lab: '(b)', q: 'Find the distance travelled by the train when it is moving at constant velocity.', opts: ['500 m', '750 m', '1000 m', '1250 m'], ans: 1,
+          why: 'Constant velocity from 20 s to 50 s: the rectangle 25 × 30 = 750 m.' },
+        { lab: '(c)', q: 'Find the total time that the train is travelling with a velocity greater than 20 m/s.', opts: ['30 s', '34 s', '36 s', '40 s'], ans: 2,
+          why: 'Speeding up at 1.25 m/s every second, it passes 20 m/s at 20 ÷ 1.25 = 16 s. Slowing down at 2.5 m/s every second, it drops below 20 m/s at 50 + 5 ÷ 2.5 = 52 s. 52 − 16 = 36 s.' }] },
+      { src: 'Tutorial 2, C3', stem: 'Cars A and B move along a straight road in the same direction. A travels at 20 m/s until t = 30 s, then slows down uniformly to rest at t = 60 s. B starts from rest and speeds up uniformly to 20 m/s at t = 60 s.', parts: [
+        { lab: '(b)', q: 'Write down the time when both cars have the same velocity.', opts: ['30 s', '40 s', '45 s', '60 s'], ans: 1,
+          why: 'B gains 20 ÷ 60 = 1/3 m/s every second; after 30 s, A loses 20 ÷ 30 = 2/3 m/s every second. At t = 40 s both are at 13.3 m/s.' },
+        { lab: '(c)', q: 'Find the magnitude of the acceleration of car B.', opts: ['0.333 m/s²', '0.667 m/s²', '3 m/s²', '20 m/s²'], ans: 0, why: 'Gradient = 20 ÷ 60 = 0.333 m/s².' },
+        { lab: '(d)', q: 'Calculate the difference in the speed of the cars at t = 22 s.', opts: ['7.3 m/s', '12.7 m/s', '20.0 m/s', '2.0 m/s'], ans: 1,
+          why: 'At 22 s, A is still at 20 m/s and B is at 22 ÷ 3 = 7.33 m/s. 20 − 7.33 = 12.7 m/s.' }] },
+      { src: 'Tutorial 2, B1', stem: 'A boy travels along a straight road at 2.5 m/s for 2.0 minutes, stops for 1 minute and continues in the same direction at 5.0 m/s for 3.0 minutes.', parts: [
+        { lab: '(c)', q: 'Find his average velocity for the whole journey.', opts: ['2.50 m/s', '3.33 m/s', '3.75 m/s', '4.00 m/s'], ans: 1,
+          why: 'Displacement = 2.5 × 120 + 0 + 5.0 × 180 = 300 + 900 = 1200 m in 6 minutes = 360 s: 1200 ÷ 360 = 3.33 m/s. The minute he stands still still counts (leaving it out gives 4.00 m/s).' }] }
+    ];
+    const QUIZ_MARKS = QUIZ.reduce((n, Q) => n + Q.parts.length, 0);
+    const partLabel = (Q, k) => Q.parts[k].lab ? Q.parts[k].lab + ' ' : Q.parts.length > 1 ? `(${'abcdefgh'[k]}) ` : '';
+    let quiz = { i: 0, score: 0, picks: [], done: false, missed: [] };
+    function resetQuiz() { quiz = { i: 0, score: 0, picks: [], done: false, missed: [] }; renderQuiz(); }
+    function renderQuiz() {
+      const el = $('quiz'), N = QUIZ.length;
+      if (quiz.i >= N) {
+        const list = quiz.missed.length
+          ? `<p>Go back over these:</p><ul>${quiz.missed.map(([n, k]) => { const Q = QUIZ[n];
+              return `<li>Question ${n + 1}${partLabel(Q, k).trim()} (${Q.src}): ${sym((Q.stem ? Q.stem + ' ' : '') + Q.parts[k].q)}</li>`; }).join('')}</ul>`
+          : '<p>Every answer right. Well done.</p>';
+        el.innerHTML = `<div class="quiz-top"><span>Summary</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div><div class="quiz-bar"><i style="width:100%"></i></div>
+          <div class="quiz-sum"><div class="quiz-q">You scored ${quiz.score} out of ${QUIZ_MARKS}.</div>${list}</div>
+          <div class="row-btns"><button type="button" id="qAgain">Try the quiz again</button></div>`;
+        $('qAgain').addEventListener('click', resetQuiz);
+        return;
+      }
+      const Q = QUIZ[quiz.i], many = Q.parts.length > 1;
+      quiz.picks = Q.parts.map(() => null);
+      el.innerHTML = `<div class="quiz-top"><span>Question ${quiz.i + 1} of ${N}</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div>
+        <div class="quiz-bar"><i style="width:${(quiz.i / N) * 100}%"></i></div>
+        ${Q.stem ? `<div class="quiz-q" id="qStem">${sym(Q.stem)}</div>` : ''}<div class="quiz-src">${Q.src}${many ? ` · ${Q.parts.length} parts, answer them all` : ''}</div>
+        ${Q.parts.map((P, k) => `<div class="qpart" data-k="${k}">
+          <div class="${Q.stem ? 'qpart-q' : 'quiz-q'}">${partLabel(Q, k)}${sym(P.q)}</div>
+          <div class="opts">${P.opts.map((o, j) => `<button type="button" class="opt" data-j="${j}">${sym(o)}</button>`).join('')}</div>
+          <div class="feedback"></div></div>`).join('')}
+        <div class="row-btns"><button type="button" id="qSubmit">${many ? 'Submit answers' : 'Submit answer'}</button><button type="button" class="secondary" id="qReset">Reset quiz</button></div>
+        <div class="feedback" id="qFb"></div>`;
+      el.querySelectorAll('.qpart').forEach(part => {
+        const k = +part.dataset.k;
+        part.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+          if (quiz.done) return;
+          quiz.picks[k] = +b.dataset.j; part.querySelectorAll('.opt').forEach(x => x.classList.toggle('picked', x === b));
+        }));
+      });
+      $('qReset').addEventListener('click', resetQuiz);
+      $('qSubmit').addEventListener('click', () => {
+        const fb = $('qFb');
+        if (quiz.done) { quiz.i++; quiz.done = false; renderQuiz(); return; }
+        const left = quiz.picks.map((p, k) => p === null ? partLabel(Q, k).trim() || `part ${k + 1}` : null).filter(x => x !== null);
+        if (left.length) { fb.innerHTML = `<span class="verdict no">${many ? `Pick an answer for every part first (still to do: ${left.join(', ')}).` : 'Pick an answer first.'}</span>`; return; }
+        quiz.done = true; fb.innerHTML = '';
+        el.querySelectorAll('.qpart').forEach(part => {
+          const k = +part.dataset.k, P = Q.parts[k], ok = quiz.picks[k] === P.ans;
+          if (ok) quiz.score++; else quiz.missed.push([quiz.i, k]);
+          part.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === P.ans) x.classList.add('right'); else if (j === quiz.picks[k]) x.classList.add('wrong'); });
+          part.querySelector('.feedback').innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> <span class="why">${sym(P.why)}</span>`;
+        });
+        el.querySelector('.quiz-top span:last-child').textContent = `Score: ${quiz.score} of ${QUIZ_MARKS}`;
+        $('qSubmit').textContent = quiz.i + 1 < N ? 'Next question' : 'See the summary';
+      });
+    }
+
+    /* ---------------- Teacher mode ---------------- */
+    // Only the teacher link (this page's address + ?teacher) shows the button; students and the
+    // Brightspace embed use the plain address. Not a lock: the panel only changes this screen.
+    const teacher = $('teacher');
+    if (new URLSearchParams(location.search).has('teacher')) $('teacherBtn').hidden = false;
+    $('teacherBtn').addEventListener('click', () => { teacher.hidden = !teacher.hidden; });
+    $('tClose').addEventListener('click', () => { teacher.hidden = true; });
+    $('tExplain').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-explain');
+      e.target.textContent = on ? 'Show explanations' : 'Hide explanations'; e.target.classList.toggle('on', on);
+    });
+    $('tAnswers').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-answers');
+      e.target.textContent = on ? 'Show answer labels' : 'Hide answer labels'; e.target.classList.toggle('on', on);
+    });
+    $('tFree').addEventListener('click', e => {
+      freeMode = !freeMode; document.body.classList.toggle('free-mode', freeMode);
+      e.target.textContent = freeMode ? 'Back to the guided steps' : 'Switch to free exploration'; e.target.classList.toggle('on', freeMode);
+      showTab(currentTab);
+    });
+    const fullBtn = $('tFull');
+    if (!document.fullscreenEnabled) fullBtn.hidden = true;
+    fullBtn.addEventListener('click', () => {
+      if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {});
+    });
+    document.addEventListener('fullscreenchange', () => { fullBtn.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
+    $('tReset').addEventListener('click', () => { game = { r: 0, matched: ROUNDS.map(() => false) }; resetQuiz(); showTab(1); });
+
+    makeBuilder();
     window.addEventListener('resize', resizeAllCanvases);
-
-    window.addEventListener('load', () => {
-      const num = getSelectedStageCount();
-      document.getElementById('stage2').style.display = num >= 2 ? 'block' : 'none';
-      document.getElementById('stage3').style.display = num >= 3 ? 'block' : 'none';
-      resizeAllCanvases();
-      resetSimulation();
-      updateStageAccelerationInput(1);
-      updateStageAccelerationInput(2);
-      updateStageAccelerationInput(3);
-    });
-
-    // motion type button toggles
-    document.addEventListener('click', (e) => {
-      const btn = e.target.closest('.motion-type-btn');
-      if (!btn) return;
-
-      const group = btn.closest('.motion-type-group');
-      if (!group) return;
-
-      group.querySelectorAll('.motion-type-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      const stageIndex = group.getAttribute('data-stage');
-      updateStageAccelerationInput(stageIndex);
-      resetSimulation();
-    });
+    showTab(1);
+  </script>
+  <script>
+    // Embedded (Brightspace): tell the page around the frame how tall this page is, so a resize script in the
+    // embed code can fit the frame to it (no blank space, no inner scrollbar). Measured from the content, not
+    // scrollHeight, which never drops below the frame's own height and so could never shrink it.
+    (function () {
+      if (window.parent === window) return;
+      let last = 0;
+      function height() {
+        const c = document.querySelector('.container'), cs = getComputedStyle(document.body);
+        return Math.ceil(c.getBoundingClientRect().bottom + window.scrollY + parseFloat(cs.paddingBottom) + parseFloat(cs.marginBottom) + 4);
+      }
+      function send(force) {
+        const h = height();
+        if (!force && Math.abs(h - last) < 2) return;
+        last = h;
+        window.parent.postMessage({ type: 'pim-height', page: location.pathname.split('/').pop(), height: h }, '*');
+      }
+      new ResizeObserver(() => send(false)).observe(document.querySelector('.container'));
+      window.addEventListener('load', () => send(true));
+      // the embed's script asks once it is listening, in case this page loaded first
+      window.addEventListener('message', e => { if (e.data && e.data.type === 'pim-height?') send(true); });
+      send(true);
+    })();
   </script>
   <script>
     // Phones: a swipe that starts on an empty part of a drawing scrolls the page (touch-action: pan-y),
     // and a touch the page grabbed for a drag (its own setPointerCapture call) keeps the page still.
     // (hasPointerCapture can't tell: a touch is always captured implicitly.)
-    // The kinematics graphs are left out: a sideways drag scrubs them and an up-down one scrolls.
+    // The graphs are left out: a sideways drag scrubs them and an up-down one scrolls.
     document.querySelectorAll('canvas:not(.graph-canvas)').forEach(c => {
       let grabbed = false;
       const capture = c.setPointerCapture;
