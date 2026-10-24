@@ -237,6 +237,7 @@
     button.tab:hover { background: #e2e8f0; }
     button.tab.active, button.tab.active:hover { background: #2563eb; color: white; }
     .tab .ts { display: none; }
+    .tab .nw { white-space: nowrap; } /* "x–t" and "v–t" never split across the two lines */
     .ckey { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 7px; font-size: 0.76rem; color: #e2e8f0; }
     .ckey span { display: inline-flex; align-items: center; gap: 5px; }
     .ckey b { display: inline-block; width: 14px; height: 4px; border-radius: 2px; }
@@ -432,8 +433,8 @@
       </div>
       <div class="tabs" role="tablist" id="tabs">
         <button class="tab" role="tab" data-tab="1" type="button"><span class="tl">1. Position and displacement</span><span class="ts">1. Position</span></button>
-        <button class="tab" role="tab" data-tab="2" type="button"><span class="tl">2. Velocity and the <i>x</i>&ndash;<i>t</i> graph</span><span class="ts">2. Velocity</span></button>
-        <button class="tab" role="tab" data-tab="3" type="button"><span class="tl">3. Acceleration and the <i>v</i>&ndash;<i>t</i> graph</span><span class="ts">3. Acceleration</span></button>
+        <button class="tab" role="tab" data-tab="2" type="button"><span class="tl">2. Velocity and the <span class="nw"><i>x</i>&ndash;<i>t</i></span> graph</span><span class="ts">2. Velocity</span></button>
+        <button class="tab" role="tab" data-tab="3" type="button"><span class="tl">3. Acceleration and the <span class="nw"><i>v</i>&ndash;<i>t</i></span> graph</span><span class="ts">3. Acceleration</span></button>
         <button class="tab" role="tab" data-tab="4" type="button"><span class="tl">4. Speeding up or slowing down</span><span class="ts">4. Speed up / slow down</span></button>
         <button class="tab" role="tab" data-tab="5" type="button"><span class="tl">5. Challenge</span><span class="ts">5. Challenge</span></button>
       </div>
