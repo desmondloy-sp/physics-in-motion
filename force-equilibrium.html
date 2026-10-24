@@ -18,36 +18,183 @@
   <!-- pim-meta:end -->
   <style>
     * { box-sizing: border-box; }
+    /* the hidden attribute must win over every display rule below */
+    [hidden] { display: none !important; }
     body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
     .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
-    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    h1 { margin: 0; font-size: 1.1rem; }
     .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
-    .controls { display: grid; grid-template-columns: 1.5fr repeat(6, 0.6fr) auto; gap: 8px; align-items: end; }
-    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-    label { font-size: 0.8rem; font-weight: 600; }
-    input, select { font-size: 0.9rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
-    button { font-size: 0.86rem; padding: 7px 10px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; }
-    button:hover { background: #334155; }
+
+    /* controls: the scenario menu and the steps; then the forces themselves */
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 110px; }
+    .control-group.scen-group { flex: 2.2 1 260px; }
+    .control-group.button-group { flex: 2 1 300px; }
+    .control-group select { width: 100%; max-width: 100%; }
+    .controls input, .controls select, .controls button { height: 34px; }
+    label { font-size: 0.82rem; font-weight: 600; line-height: 1.2; }
+    label sub { line-height: 0; }
+    input, select, button { font-size: 0.95rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; }
+    input[type=number] { width: 100%; max-width: 110px; }
+    input[type=range] { width: 100%; padding: 0; }
+    .buttons { display: flex; gap: 6px; flex-wrap: nowrap; }
+    button { cursor: pointer; background: #2563eb; color: white; border: none; min-width: 0; flex: 1; }
+    button:hover { background: #1d4ed8; }
+    button:disabled { background: #94a3b8; cursor: default; }
+    button.secondary { background: #475569; }
+    button.secondary:hover { background: #334155; }
+    button.secondary:disabled { background: #cbd5e1; color: #475569; }
+    button.danger { background: #dc2626; }
+    button.danger:hover { background: #b91c1c; }
+    .group-title { font-size: 0.78rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.03em; margin: 10px 0 4px; }
+    .forces { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: flex-end; }
+    .fgroup { display: flex; gap: 6px; align-items: flex-end; padding: 6px 8px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; }
+    .fgroup.wide { flex: 1 1 320px; }
+    .fgroup .control-group { flex: 0 1 auto; }
+    .fgroup.wide .control-group { flex: 1 1 auto; }
+    .fgroup .swatch { width: 10px; align-self: stretch; border-radius: 3px; }
+    .label-row label { white-space: nowrap; }
+    .question { margin-top: 8px; font-size: 0.84rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 6px 10px; color: #7c2d12; }
+    .question:empty { display: none; }
+    .step-text { margin-top: 8px; font-size: 0.9rem; font-weight: 700; color: #1e293b; }
+    .step-text .n { display: inline-block; background: #1e293b; color: white; border-radius: 999px; padding: 1px 8px; margin-right: 6px; font-size: 0.78rem; }
+
     .readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
-    .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
-    .readout-card .value { font-size: 1rem; font-weight: bold; }
+    .readout-card.hl { box-shadow: inset 0 0 0 2px #dc2626; }
     .readout-card.ok { background: #ecfdf5; }
     .readout-card.bad { background: #fef2f2; }
-    canvas { display: block; width: 100%; border-radius: 10px; touch-action: pan-y; }
-    #sceneCanvas { height: 440px; border: 1px solid #dbeafe; background: #ffffff; }
-    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
-    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
+    .readout-card .value { font-size: 1rem; font-weight: bold; }
+    .words { margin-top: 8px; font-size: 0.86rem; font-weight: 600; color: #1e3a8a; background: #eef4ff; border-radius: 8px; padding: 6px 10px; }
+    .words:empty { display: none; }
+
+    .scene-wrap { margin-top: 8px; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 0 0 4px; }
+    .note { margin-top: 6px; font-size: 0.8rem; color: #475569; }
     .note ul { margin: 2px 0 0; padding-left: 18px; }
     .note li { margin: 2px 0; }
-    .note-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .note-cols b { color: #334155; }
-    @media (max-width: 700px) { .note-cols { grid-template-columns: 1fr; gap: 4px; } }
+    canvas { display: block; width: 100%; border-radius: 10px; background: white; }
+    #scene { height: 430px; border: 1px solid #dbeafe; touch-action: pan-y; }
+    #scene.short { height: 300px; }
+
+    /* the working, set like the notes: italic symbols, stacked fractions, a root sign with a bar */
+    .work { margin-top: 8px; }
+    .work:empty { display: none; }
+    .work table { width: 100%; max-width: 560px; border-collapse: collapse; font-size: 0.88rem; margin-bottom: 6px; }
+    .work th, .work td { border: 1px solid #e2e8f0; padding: 5px 6px; text-align: center; }
+    .work th { background: #f1f5f9; }
+    .work tr.total td { background: #fef9c3; font-weight: bold; }
+    .work tr.lit td { background: #dbeafe; }
+    .work tr.unk td { background: #fff7ed; }
+    .math { font-family: 'Times New Roman', Times, serif; font-size: 1.06rem; color: #1f2937; }
+    /* a block line, not flex: inside flex every <sub> would become its own item and lose its drop */
+    .math .eq { display: block; margin: 4px 0; line-height: 2.3; }
+    .math .frac { display: inline-flex; flex-direction: column; text-align: center; vertical-align: middle; line-height: 1.15; }
+    .math .frac > span:first-child { border-bottom: 1px solid currentColor; padding: 0 3px; }
+    .math .frac > span:last-child { padding: 0 3px; }
+    .math .root { display: inline-flex; align-items: flex-end; line-height: 1.25; vertical-align: middle; }
+    .math .root > i.rs { font-style: normal; font-size: 1.3em; line-height: 1; }
+    .math .root > span { border-top: 1px solid currentColor; padding: 1px 2px 0; }
+    .math b { font-family: Arial, Helvetica, sans-serif; }
+
+    /* ---- the step-by-step frame: header, numbered tabs, colour key, instruction strip ---- */
+    .app-head { background: #1e293b; color: #f8fafc; border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+    .head-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .head-row h1 { flex: 1 1 260px; }
+    .steps { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #cbd5e1; }
+    .step-bar { display: flex; gap: 3px; }
+    .step-bar i { display: block; width: 18px; height: 5px; border-radius: 3px; background: #475569; }
+    .step-bar i.on { background: #fbbf24; }
+    button.teacher-btn { flex: none; background: transparent; border: 1px solid #94a3b8; color: #f8fafc; font-size: 0.82rem; padding: 5px 10px; }
+    button.teacher-btn:hover { background: #334155; }
+    /* every tab always visible: equal columns, and a long name wraps onto a second line (never a sideways scroll) */
+    .tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; margin-top: 8px; }
+    button.tab { min-width: 0; background: #f1f5f9; color: #1e293b; font-size: 0.85rem; font-weight: 600; padding: 7px 8px; border-radius: 8px; line-height: 1.2; white-space: normal; text-align: center; }
+    button.tab:hover { background: #e2e8f0; }
+    button.tab.active, button.tab.active:hover { background: #2563eb; color: white; }
+    .tab .ts { display: none; }
+    .ckey { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 7px; font-size: 0.76rem; color: #e2e8f0; }
+    .ckey > span { display: inline-flex; align-items: center; gap: 5px; }
+    .ckey b { display: inline-block; width: 14px; height: 4px; border-radius: 2px; }
+    .ckey b.dash { background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 7px) !important; }
+    .strip { background: #fef9c3; border-left: 4px solid #eab308; border-radius: 6px; padding: 7px 10px; font-size: 0.86rem; margin-bottom: 8px; }
+
+    /* Predict first (above the controls), key features */
+    .learn { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 8px; }
+    .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; }
+    .box-title { font-weight: 700; font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-q { font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-box { margin-bottom: 8px; }
+    .opts { display: grid; gap: 5px; }
+    #predictOpts { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    .predict-box.done #predictOpts { display: none; }
+    .predict-box.done .predict-q { margin-bottom: 0; }
+    button.opt { flex: none; width: 100%; text-align: left; background: white; color: #1f2937; border: 1px solid #cbd5e1; font-size: 0.86rem; padding: 7px 10px; }
+    button.opt:hover { background: #f1f5f9; }
+    button.opt.picked, button.opt.picked:hover { border-color: #2563eb; background: #eff6ff; box-shadow: inset 0 0 0 1px #2563eb; }
+    button.opt.right, button.opt.right:hover { border-color: #16a34a; background: #dcfce7; box-shadow: inset 0 0 0 1px #16a34a; }
+    button.opt.wrong, button.opt.wrong:hover { border-color: #dc2626; background: #fee2e2; box-shadow: inset 0 0 0 1px #dc2626; }
+    .row-btns { display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+    .row-btns button { flex: none; padding: 6px 12px; }
+    .feedback { font-size: 0.84rem; margin-top: 7px; }
+    .feedback:empty { display: none; }
+    .feedback .verdict { font-weight: 700; }
+    .feedback .verdict.ok { color: #15803d; }
+    .feedback .verdict.no { color: #b91c1c; }
+    .feats { display: flex; flex-wrap: wrap; gap: 6px; }
+    button.feat { flex: none; background: white; color: #1e293b; border: 1px solid #cbd5e1; font-size: 0.84rem; padding: 6px 11px; border-radius: 999px; }
+    button.feat:hover { background: #f1f5f9; }
+    button.feat.on, button.feat.on:hover { background: #1e293b; color: white; border-color: #1e293b; }
+    .feat-note { font-size: 0.82rem; color: #334155; margin-top: 6px; }
+    .feat-note:empty { display: none; }
+
+    /* Challenge */
+    .quiz { max-width: 760px; margin: 0 auto; }
+    .quiz-top { display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 700; margin-bottom: 4px; }
+    .quiz-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+    .quiz-bar i { display: block; height: 100%; background: #2563eb; width: 0; }
+    .quiz-q { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+    .quiz-src { font-size: 0.76rem; color: #475569; margin-bottom: 8px; }
+    .qpart { margin-top: 12px; }
+    .qpart + .qpart { border-top: 1px solid #e2e8f0; padding-top: 10px; }
+    .qpart-q { font-size: 0.92rem; font-weight: 600; margin-bottom: 6px; }
+    .quiz-sum ul { padding-left: 18px; font-size: 0.86rem; }
+    .quiz-sum li { margin: 4px 0; }
+
+    /* Teacher mode */
+    .teacher { position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 92vw); background: white; box-shadow: -4px 0 18px rgba(0,0,0,0.18); padding: 12px; overflow-y: auto; z-index: 20; }
+    .teacher h2 { font-size: 1rem; margin: 0 0 8px; }
+    .teacher .tbtns { display: grid; gap: 6px; }
+    .teacher .tbtns button { background: white; color: #1e293b; border: 1px solid #cbd5e1; flex: none; }
+    .teacher .tbtns button:hover { background: #f1f5f9; }
+    .teacher .tbtns button.on { background: #1e293b; color: white; }
+    .teacher h3 { font-size: 0.9rem; margin: 14px 0 4px; }
+    .teacher ul { padding-left: 18px; margin: 0; font-size: 0.84rem; }
+    .teacher li { margin: 4px 0; }
+    body.no-explain .strip, body.no-explain .words, body.no-explain .feedback .why, body.no-explain .feat-note { display: none; }
+    body.no-answers .readout-card .value, body.no-answers .work { filter: blur(6px); }
+    body.free-mode .predict-box { display: none; }
+
     @media (max-width: 900px) {
-      .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .controls .control-group:first-child, .controls button { grid-column: 1 / -1; }
       .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      #sceneCanvas { height: 520px; }
+    }
+    @media (max-width: 700px) {
+      h1 { font-size: 1rem; }
+      #scene { height: 380px; }
+      #scene.short { height: 290px; }
+      #scene.tall { height: 560px; }
+      .readout.n3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .tab .tl { display: none; }
+      .tab .ts { display: inline; }
+      /* phones: short names in rows that wrap, so all five tabs show without scrolling */
+      .tabs { display: flex; flex-wrap: wrap; }
+      button.tab { flex: 1 1 auto; white-space: nowrap; }
+    }
+    @media (max-width: 420px) {
+      button { flex: 1 1 auto; }
+      .fgroup { flex: 1 1 100%; }
     }
     /* Touch screens (phones, tablets; Samsung Internet reports hover: hover on a phone, so only pointer is tested):
        16 px form fields stop an iPhone zooming the page in when one is
@@ -56,6 +203,7 @@
       input:not([type=range]):not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
       button { min-height: 36px; }
       input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
+      .controls input, .controls select, .controls button { height: 36px; }
     }
   </style>
   <!-- pim-nav-style:start (generated by scripts/pim-nav.ts) -->
@@ -84,73 +232,315 @@
     <a class="pim-nav-btn pim-nav-next" href="newtons-second-law-friction.html" title="Next: Newton's Second Law with Friction (Chapter 3)" aria-label="Next: Newton's Second Law with Friction (Chapter 3)"><span class="pim-nav-text"><span class="pim-nav-kicker">Next<span class="pim-nav-ch"> &middot; Chapter 3</span></span><span class="pim-nav-name">Newton's Second Law with Friction</span></span><span class="pim-nav-arrow" aria-hidden="true">&rsaquo;</span></a>
   </nav>
   <!-- pim-nav:end -->
-    <h1>Balanced Forces and Equilibrium</h1>
 
-    <div class="panel">
-      <div class="controls">
-        <div class="control-group">
-          <label for="preset">Scenarios</label>
-          <select id="preset">
-            <option value="balanced" selected>Three forces in equilibrium</option>
-            <option value="unbalanced">Not balanced</option>
-            <option value="custom">Custom</option>
-          </select>
+    <header class="app-head">
+      <div class="head-row">
+        <h1>Balanced Forces and Equilibrium</h1>
+        <div class="steps"><span id="stepLabel">Step 1 of 5</span><span class="step-bar" id="stepBar"><i></i><i></i><i></i><i></i><i></i></span></div>
+        <button class="teacher-btn" id="teacherBtn" type="button" hidden>Teacher mode</button>
+      </div>
+      <div class="tabs" role="tablist" id="tabs">
+        <button class="tab" role="tab" data-tab="1" type="button"><span class="tl">1. Forces on a line</span><span class="ts">1. On a line</span></button>
+        <button class="tab" role="tab" data-tab="2" type="button"><span class="tl">2. Close the shape</span><span class="ts">2. Close it</span></button>
+        <button class="tab" role="tab" data-tab="3" type="button"><span class="tl">3. Check by components</span><span class="ts">3. Components</span></button>
+        <button class="tab" role="tab" data-tab="4" type="button"><span class="tl">4. Tension in two strings</span><span class="ts">4. Two strings</span></button>
+        <button class="tab" role="tab" data-tab="5" type="button"><span class="tl">5. Challenge</span><span class="ts">5. Challenge</span></button>
+      </div>
+      <div class="ckey" id="ckey"></div>
+    </header>
+
+    <div class="strip" id="strip"></div>
+
+    <!-- tabs 1 to 4: Predict first comes first, above the controls and the picture -->
+    <div class="box predict-box" id="predictBox">
+      <div class="box-title">Predict first</div>
+      <div class="predict-q" id="predictQ"></div>
+      <div class="opts" id="predictOpts"></div>
+      <div class="feedback" id="predictFb"></div>
+      <div class="row-btns" id="predictBtns"><button id="predictCheck" type="button">Check my answer</button></div>
+    </div>
+
+    <!-- Tabs 1 to 4 share one drawing -->
+    <section class="tab-page" id="pageSim">
+      <div class="panel">
+        <div class="controls">
+          <div class="control-group scen-group">
+            <label for="preset">Scenarios</label>
+            <select id="preset"></select>
+          </div>
+          <div class="control-group button-group">
+            <label id="stepsLabel">Steps</label>
+            <div class="buttons">
+              <button id="prevStep" class="secondary" type="button">&lsaquo; Previous step</button>
+              <button id="nextStep" type="button">Next step &rsaquo;</button>
+              <button id="resetBtn" class="danger" type="button">Reset</button>
+            </div>
+          </div>
         </div>
-        <div class="control-group"><label for="f1"><i>F</i><sub>1</sub> (N)</label><input id="f1" type="number" min="0" max="60" step="0.1" /></div>
-        <div class="control-group"><label for="a1"><i>&theta;</i><sub>1</sub> (&deg;)</label><input id="a1" type="number" step="0.1" /></div>
-        <div class="control-group"><label for="f2"><i>F</i><sub>2</sub> (N)</label><input id="f2" type="number" min="0" max="60" step="0.1" /></div>
-        <div class="control-group"><label for="a2"><i>&theta;</i><sub>2</sub> (&deg;)</label><input id="a2" type="number" step="0.1" /></div>
-        <div class="control-group"><label for="f3"><i>F</i><sub>3</sub> (N)</label><input id="f3" type="number" min="0" max="60" step="0.1" /></div>
-        <div class="control-group"><label for="a3"><i>&theta;</i><sub>3</sub> (&deg;)</label><input id="a3" type="number" step="0.1" /></div>
-        <button id="balanceBtn" title="Try it yourself first">Show the answer: make <i>F</i><sub>3</sub> balance <i>F</i><sub>1</sub> + <i>F</i><sub>2</sub></button>
-      </div>
-      <div class="readout">
-        <div class="readout-card" id="netCard"><div class="title">Net force &Sigma;<i>F</i></div><div class="value" id="net">&mdash;</div></div>
-        <div class="readout-card"><div class="title">&Sigma;<i>F<sub>x</sub></i></div><div class="value" id="sx">&mdash;</div></div>
-        <div class="readout-card"><div class="title">&Sigma;<i>F<sub>y</sub></i></div><div class="value" id="sy">&mdash;</div></div>
-        <div class="readout-card" id="eqCard"><div class="title">In equilibrium?</div><div class="value" id="eq">&mdash;</div></div>
-      </div>
-    </div>
+        <div class="question" id="question"></div>
+        <div class="group-title">Experimental controls</div>
+        <div class="forces" id="forceInputs"></div>
 
-    <div class="panel">
-      <div class="hint">Drag the arrowheads of <i>F</i><sub>1</sub>, <i>F</i><sub>2</sub> and <i>F</i><sub>3</sub>. Can you make the connecting arrows on the right close into a triangle? Try it yourself before you press <b>Show the answer</b>.</div>
-      <canvas id="sceneCanvas"></canvas>
-      <div class="note note-cols">
-        <div><b>When the net force is zero</b><ul>
-          <li>&Sigma;<i>F<sub>x</sub></i> = 0 and &Sigma;<i>F<sub>y</sub></i> = 0, so the connecting arrows (the forces drawn tip to tail) close into a triangle.</li>
-          <li>The object is in equilibrium: it stays at rest, or keeps moving at constant velocity (Newton's first law).</li>
-        </ul></div>
-        <div><b>When the net force is not zero</b><ul>
-          <li>The connecting arrows do not close. The red arrow from the start to the end represents the net force.</li>
-          <li>The balancing force that would restore equilibrium is equal in size and opposite in direction to that net force.</li>
-        </ul></div>
+        <div class="step-text" id="stepText"></div>
+
+        <!-- the readouts go under the drawing: nothing above the canvas may change height while a finger drags -->
+        <div class="scene-wrap">
+          <div class="hint" id="sceneHint"></div>
+          <canvas id="scene"></canvas>
+          <div class="readout" id="readout"></div>
+          <div class="words" id="words"></div>
+          <div class="work" id="work"></div>
+          <div class="note" id="notes"></div>
+        </div>
       </div>
-    </div>
+
+      <div class="learn">
+        <div class="box" id="featBox">
+          <div class="box-title">Key features (tap one)</div>
+          <div class="feats" id="feats"></div>
+          <div class="feat-note" id="featNote"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 5: Challenge -->
+    <section class="tab-page" id="page5" hidden>
+      <div class="panel">
+        <div class="quiz" id="quiz"></div>
+      </div>
+    </section>
   </div>
 
+  <aside class="teacher" id="teacher" hidden aria-label="Teacher mode">
+    <h2>Teacher mode</h2>
+    <div class="tbtns">
+      <button id="tExplain" type="button">Hide explanations</button>
+      <button id="tFree" type="button">Switch to free exploration</button>
+      <button id="tAnswers" type="button">Hide answer labels</button>
+      <button id="tFull" type="button">Full screen</button>
+      <button id="tReset" type="button">Reset whole applet</button>
+      <button id="tClose" type="button">Close</button>
+    </div>
+    <h3>Suggested prompts</h3>
+    <ul id="tPrompts"></ul>
+  </aside>
+
   <script>
-    const el = id => document.getElementById(id);
-    const canvas = el('sceneCanvas');
-    const PRESETS = { balanced: [20, 90, 20, 210, 20, 330], unbalanced: [25, 90, 20, 210, 20, 330] };
-    const ids = ['f1', 'a1', 'f2', 'a2', 'f3', 'a3'];
-    const COLORS = ['#2563eb', '#16a34a', '#d97706'];
+    const $ = id => document.getElementById(id);
+    const canvas = $('scene'), presetEl = $('preset');
+    let currentTab = 1, freeMode = false;
+
+    /* ---------------- numbers and symbols ---------------- */
+    const G = 10; // g = 10 m s^-2, as Tutorial 3 takes it
     const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
+    const norm = a => ((a % 360) + 360) % 360;
     const clean = v => (Math.abs(v) < 0.05 ? 0 : v);
-    // Equilibrium to the precision of the inputs (0.1 N, 0.1°): a net force under 0.1 N reads as zero.
-    const EQ_TOL = 0.1;
+    const f1 = v => clean(v).toFixed(1).replace('-', '−'); // one decimal place, a true minus sign, never "−0.0"
+    const sg = v => (clean(v) > 0 ? '+' : '') + f1(v);      // with its sign, as the sign convention asks
+    const plain = v => String(+(+v).toFixed(1)).replace('-', '−'); // a typed value as typed: 10, 14.1
+    const LAB = { F1: '<i>F</i><sub>1</sub>', F2: '<i>F</i><sub>2</sub>', F3: '<i>F</i><sub>3</sub>', F4: '<i>F</i><sub>4</sub>' };
+    const COL = { F1: '#2563eb', F2: '#16a34a', F3: '#0891b2', F4: '#db2777', U: '#d97706', M: '#7c3aed', R: '#dc2626', W: '#7c3aed' };
+    const SF = 'Σ<i>F</i>', FX = '<i>F</i><sub><i>x</i></sub>', FY = '<i>F</i><sub><i>y</i></sub>';
+    const SFX = 'Σ' + FX, SFY = 'Σ' + FY;
+    // the closing tolerance on step 2: a scale drawing is read to the nearest 0.5 N
+    const CLOSE_TOL = 0.5;
+
+    /* ---------------- scenarios (every number from the notes or Tutorial 3) ---------------- */
+    // line forces: [key, magnitude in N, direction in degrees (0 right, 180 left, 90 up, 270 down), name, fixed direction?]
+    // other forces: [key, magnitude in N, direction in degrees anticlockwise from +x, the axis its angle is given from]
+    const PRESETS = {
+      p313: { tab: 1, kind: 'line', axis: 'h', name: '2 N and 3 N against 5 N', npb: 1,
+        forces: [['F1', 2, 180, ''], ['F2', 3, 180, ''], ['F3', 5, 0, '']], unk: null,
+        q: 'Notes p. 3-13: a 2 N force and a 3 N force act to the left on an object, and a 5 N force acts to the right. Is the object in equilibrium?' },
+      a3: { tab: 1, kind: 'line', axis: 'h', name: 'Box pushed at constant velocity', npb: 5, v: 1.0,
+        forces: [['F1', 30, 0, 'Push']], unk: { name: 'Frictional force', sym: '<i>f</i>' },
+        q: 'Tutorial 3, A3: A 2.0 kg box is being pushed horizontally along a rough surface by a 30 N force at a constant velocity of 1.0 m s<sup>−1</sup>. (a) What is the net force acting on the box? (b) What is the frictional force between the box and the surface?' },
+      b5: { tab: 1, kind: 'line', axis: 'v', name: '20 kg object hung from a string', npb: 20,
+        forces: [['F1', 200, 270, 'Weight <i>W</i>', true]], unk: { name: 'Tension', sym: '<i>T</i>' },
+        q: 'Tutorial 3, B5: An object of 20 kg is hung from the ceiling by a light string. (a) Find the weight of the object. (b) Find the tension <i>T</i> in the string.' },
+
+      ex3: { tab: 2, kind: 'close', name: 'Two forces of the same size', npb: 2, user: [10, 90], lock: 10, ulab: LAB.F2, ref: 0,
+        forces: [['F1', 10, 0]],
+        q: 'Example 3 (notes p. 3-14): Two forces ' + LAB.F1 + ' and ' + LAB.F2 + ' of the same magnitude act on an object. How many ways can ' + LAB.F2 + ' act so that two forces are balanced? Drag the tip of ' + LAB.F2 + ' round.' },
+      ex4: { tab: 2, kind: 'close', name: 'Fill in the missing force', npb: 10, user: [20, 135], ulab: 'Your force',
+        forces: [['F1', 70, 0], ['F2', 50, 180], ['F3', 40, 90], ['F4', 40, 270]],
+        q: 'Example 4 (notes p. 3-15): The object below is in equilibrium. Fill in the missing force. (70 N along +<i>x</i>, 50 N along −<i>x</i>, 40 N along +<i>y</i> and 40 N along −<i>y</i>.)' },
+      b1: { tab: 2, kind: 'close', name: '30 N and 40 N, 60° apart', npb: 10, user: [30, 90], ulab: 'Your force', ref: 1,
+        forces: [['F1', 30, 30], ['F2', 40, 330]],
+        q: 'Tutorial 3, B1: Find, by scale drawing, the additional force so that Σ<i>F</i> = 0 for the object shown. The 30 N force is 30° above the horizontal and the 40 N force is 30° below it (60° apart).' },
+
+      c2: { tab: 3, kind: 'comp', name: 'Pole with four cables', npb: 10, unk: { sym: '<i>E</i>' },
+        forces: [['F1', 40, 115, 'y'], ['F2', 60, 220, 'x'], ['F3', 35, 270, 'y']],
+        q: 'Tutorial 3, C2: A pole which is acted upon by 4 tension cables is in equilibrium. By resolving all the forces in the <i>x</i> and <i>y</i> directions, calculate the magnitude of force <i>E</i> and its angle <i>θ</i> with respect to the positive <i>x</i>-axis. (40 N at 25° to the left of the +<i>y</i>-axis, 60 N at 40° below the −<i>x</i>-axis, 35 N along the −<i>y</i>-axis.)' },
+      ex4c: { tab: 3, kind: 'comp', name: 'Fill in the missing force', npb: 10, unk: { sym: null },
+        forces: [['F1', 70, 0, 'x'], ['F2', 50, 180, 'x'], ['F3', 40, 90, 'y'], ['F4', 40, 270, 'y']],
+        q: 'Example 4 again (notes p. 3-15), this time by components: the object is in equilibrium. Fill in the missing force.' },
+      b1c: { tab: 3, kind: 'comp', name: '30 N and 40 N, 60° apart', npb: 10, unk: { sym: null }, ref: 1,
+        forces: [['F1', 30, 30, 'x'], ['F2', 40, 330, 'x']],
+        q: 'Tutorial 3, B1 again, this time by components: find the additional force so that Σ<i>F</i> = 0. Compare the answer with your scale drawing on step 2.' },
+
+      s1: { tab: 4, kind: 'strings', name: 'Scenario 1: strings vertical', theta: 0,
+        q: 'Notes p. 3-20, Scenario 1: A 1 kg mass is suspended by 2 strings vertically. What is the tension in each string?' },
+      s2: { tab: 4, kind: 'strings', name: 'Scenario 2: strings at an angle', theta: 60,
+        q: 'Notes p. 3-20, Scenario 2: The same 1 kg mass is suspended by 2 strings at an angle <i>θ</i> to each other. Is the tension in each string in scenario 2 <i>greater than</i>, <i>less than</i>, or <i>equal to</i> the tension in each string in scenario 1?' },
+      custom: { name: 'Your own forces' }
+    };
+
+    /* ---------------- the state ---------------- */
+    let S = { scen: 'p313', kind: 'line', forces: [], step: 1, npb: 5 };
+    const STEPS = { line: 4, close: 4, comp: 6 };
+    const KEY_ANGLES = [0, 60, 90, 120, 150];
+    const mkForce = ([k, m, a, x, fix]) => ({ k, m, a: norm(a), ref: typeof x === 'string' && (x === 'x' || x === 'y') ? x : 'x', name: typeof x === 'string' && x !== 'x' && x !== 'y' ? x : '', fix: !!fix });
+    function loadScenario(id) {
+      const P = PRESETS[id];
+      S.scen = id;
+      if (id !== 'custom') {
+        Object.assign(S, { kind: P.kind, axis: P.axis, forces: (P.forces || []).map(mkForce), npb: P.npb || 5, base: id,
+          unk: P.unk || null, v: P.v || 0, lock: P.lock || 0, ulab: P.ulab || 'Your force', ref: P.ref === undefined ? -1 : P.ref });
+        if (P.user) S.user = { m: P.user[0], a: P.user[1] };
+        if (P.kind === 'strings') S.theta = P.theta;
+      }
+      S.step = freeMode ? (STEPS[S.kind] || 1) : 1;
+      S.showComp = false; S.showRes = false;
+      if (id !== 'custom') { $('question').style.minHeight = ''; $('question').innerHTML = P.q; }
+      else $('question').innerHTML = customText();
+      view = null;
+    }
+    const customText = () => S.kind === 'strings' ? 'Your own angle. Choose a scenario from the menu to go back to the notes.' : 'Your own forces. Choose a scenario from the menu to go back to an example from the notes.';
+    const vec = f => ({ x: f.m * Math.cos(rad(f.a)), y: f.m * Math.sin(rad(f.a)) });
+    const sum = list => list.reduce((s, v) => ({ x: s.x + v.x, y: s.y + v.y }), { x: 0, y: 0 });
+    const polar = v => ({ x: v.x, y: v.y, m: Math.hypot(v.x, v.y), a: norm(deg(Math.atan2(v.y, v.x))) });
+    // the force that balances the given ones: equal in size and opposite in direction to their resultant
+    function missing() { const s = sum(S.forces.map(vec)); return polar({ x: Math.abs(s.x) < 1e-9 ? 0 : -s.x, y: Math.abs(s.y) < 1e-9 ? 0 : -s.y }); }
+    // the order the forces are drawn one after another on step 2: by direction, which keeps the path from crossing itself
+    const chainOrder = () => S.forces.map((f, i) => i).sort((i, j) => S.forces[i].a - S.forces[j].a);
+    // line forces are signed: + right or up, − left or down
+    const signed = f => (S.axis === 'v' ? (Math.sin(rad(f.a)) < 0 ? -f.m : f.m) : (Math.cos(rad(f.a)) < 0 ? -f.m : f.m));
+    const lineSum = () => S.forces.reduce((s, f) => s + signed(f), 0);
+    const userVec = () => vec(S.user);
+    function netClose() { return polar(sum([...S.forces.map(vec), userVec()])); }
+    const tension = th => (G * 1) / (2 * Math.cos(rad(th / 2))); // 1 kg: W = 10 N
+
+    // a direction in the words the notes use: "20° below the −x-axis", "along the +y-axis"
+    function dirWords(x, y) {
+      x = clean(x); y = clean(y);
+      if (!x && !y) return 'no direction';
+      if (!y) return x > 0 ? 'along the +<i>x</i>-axis (to the right)' : 'along the −<i>x</i>-axis (to the left)';
+      if (!x) return y > 0 ? 'along the +<i>y</i>-axis (upward)' : 'along the −<i>y</i>-axis (downward)';
+      const al = deg(Math.atan2(Math.abs(y), Math.abs(x)));
+      return `${al.toFixed(1)}° ${y > 0 ? 'above' : 'below'} the ${x > 0 ? '+' : '−'}<i>x</i>-axis`;
+    }
+    // a direction measured from one of the given forces, as Tutorial 3's answers give it
+    function relWords(U) {
+      if (S.ref < 0 || !S.forces[S.ref] || U.m < 0.05) return '';
+      const F = S.forces[S.ref];
+      let d = norm(U.a - F.a); if (d > 180) d -= 360;
+      const name = S.scen === 'ex3' || S.base === 'ex3' ? LAB.F1 : `the ${plain(F.m)} N force`;
+      if (Math.abs(Math.abs(d) - 180) < 0.05) return `exactly opposite to ${name}`;
+      return `${f1(Math.abs(d))}° ${d > 0 ? 'anticlockwise' : 'clockwise'} from ${name}`;
+    }
+    function givenOf(f) {
+      const a = norm(f.a), c = Math.cos(rad(a)), s = Math.sin(rad(a));
+      const axis = f.ref === 'y' ? (s >= -1e-9 ? 90 : 270) : (c >= -1e-9 ? 0 : 180);
+      let d = norm(a - axis); if (d > 180) d = 360 - d;
+      return { axis, ang: d, onAxis: Math.abs(a % 90) < 1e-9 };
+    }
+    // one component worked out as on paper: "Fx = −40 sin 25° = −16.9 N"
+    function compWork(f, which) {
+      const v = vec(f), val = which === 'x' ? v.x : v.y, Gv = givenOf(f);
+      const lab = LAB[f.k].replace(/<sub>(\d)<\/sub>/, `<sub>$1<i>${which}</i></sub>`);
+      if (Gv.onAxis) return `${lab} = ${clean(val) ? sg(val) : '0'} N`;
+      const trig = (f.ref === 'y') === (which === 'x') ? 'sin' : 'cos';
+      return `${lab} = ${clean(val) < 0 ? '−' : '+'}${plain(f.m)} ${trig} ${plain(Gv.ang)}° = ${sg(val)} N`;
+    }
+    // the unknown's name, and its components, on step 3
+    const uName = () => (S.unk && S.unk.sym) || 'the missing force';
+    const uComp = c => S.unk && S.unk.sym ? `${S.unk.sym}<sub><i>${c}</i></sub>` : `its <i>${c}</i>-component`;
+
+    /* ---------------- the view ---------------- */
+    let view = null, dragging = null;
+    const LADDER = [1, 2, 5, 10, 20, 50, 100];
+    const bbox = pts => ({ lx: Math.min(...pts.map(p => p.x)), hx: Math.max(...pts.map(p => p.x)), ly: Math.min(...pts.map(p => p.y)), hy: Math.max(...pts.map(p => p.y)) });
+    // several panes share one scale (1 box = a whole number of newtons); each pane centres its own drawing
+    function fitPanes(panes, npbMin) {
+      let npb = npbMin, px = 30;
+      for (const n of LADDER.filter(n => n >= npbMin)) {
+        npb = n; px = 56;
+        for (const P of panes) {
+          const b = bbox(P.pts);
+          px = Math.min(px, (P.r.w - 2 * P.mx) / Math.max((b.hx - b.lx) / n, 3), (P.r.h - 2 * P.my) / Math.max((b.hy - b.ly) / n, 3));
+        }
+        if (px >= 12) break;
+      }
+      const s = px / npb;
+      return { s, npb, box: px, O: panes.map(P => { const b = bbox(P.pts); return { ox: Math.round(P.r.x + P.r.w / 2 - ((b.lx + b.hx) / 2) * s), oy: Math.round(P.r.y + P.r.h / 2 + ((b.ly + b.hy) / 2) * s), r: P.r }; }) };
+    }
+    const panes2 = (W, H) => W >= 600
+      ? [{ x: 0, y: 26, w: W / 2, h: H - 26 }, { x: W / 2, y: 26, w: W / 2, h: H - 26 }]
+      : [{ x: 0, y: 24, w: W, h: H / 2 - 24 }, { x: 0, y: H / 2 + 24, w: W, h: H / 2 - 24 }];
+    function fitLine(W, H) {
+      const vals = S.forces.map(signed), u = S.unk ? -lineSum() : null;
+      const all = u === null ? vals : [...vals, u];
+      const pos = Math.max(0, ...all.filter(v => v > 0)), neg = Math.max(0, ...all.filter(v => v < 0).map(v => -v));
+      const cum = [0]; all.forEach(v => cum.push(cum[cum.length - 1] + v));
+      const lo = Math.min(...cum), hi = Math.max(...cum);
+      const half = S.axis === 'v' ? 28 : 26;
+      let s;
+      if (S.axis === 'v') s = Math.min((H / 2 - half - 34) / Math.max(pos, neg, 1), (H - 90) / Math.max(hi - lo, 1), 40);
+      else s = Math.min((W / 2 - half - 80) / Math.max(pos, neg, 1), (W - 140) / Math.max(hi - lo, 1), (W * 0.25) / Math.max(pos, neg, 1));
+      let npb = S.npb;
+      for (const n of LADDER.filter(n => n >= S.npb)) { npb = n; if (s * n >= 16) break; }
+      return { s, npb, box: s * npb, half, lo, hi };
+    }
+    function setup() {
+      const r = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+      const cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
+      if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
+      const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const W = r.width, H = r.height;
+      // the scale holds still while a finger drags, then refits
+      if (!dragging || !view || view.W !== W || view.H !== H) view = Object.assign(fitView(W, H), { W, H });
+      // a canvas measured at no size gives a zero or negative box: floor it, so no grid loop can run for ever
+      if (!(view.box >= 4) || !Number.isFinite(view.s) || view.s <= 0) { view.box = Math.max(4, view.box || 0); view.s = view.box / view.npb; }
+      return { ctx, W, H };
+    }
+    function fitView(W, H) {
+      if (S.kind === 'line') return fitLine(W, H);
+      if (S.kind === 'close') {
+        const P = panes2(W, H), known = S.forces.map(vec), u = userVec(), M = missing();
+        const N = netClose(), ptsL = [{ x: 0, y: 0 }, ...known, u, M, N]; // the red net force too, or it runs out of its pane
+        const chain = [{ x: 0, y: 0 }]; chainOrder().forEach(i => chain.push({ x: chain[chain.length - 1].x + known[i].x, y: chain[chain.length - 1].y + known[i].y }));
+        const end = chain[chain.length - 1];
+        const ptsR = [...chain, { x: end.x + u.x, y: end.y + u.y }];
+        // the scale holds while a finger drags (setup) and refits on release
+        return fitPanes([{ r: P[0], pts: ptsL, mx: 40, my: 26 }, { r: P[1], pts: ptsR, mx: 40, my: 26 }], S.npb);
+      }
+      if (S.kind === 'comp') {
+        const M = missing(), pts = [{ x: 0, y: 0 }, M, { x: M.x, y: 0 }];
+        S.forces.forEach(f => { const v = vec(f); pts.push(v, { x: v.x, y: 0 }, { x: 0, y: v.y }); });
+        const v = fitPanes([{ r: { x: 0, y: 0, w: W, h: H }, pts, mx: W < 500 ? 36 : 60, my: 34 }], S.npb);
+        return v;
+      }
+      // strings: a fixed scale, chosen for the widest angle on the slider, so the arrows grow as T grows
+      const P = panes2(W, H), Tm = tension(150), hx = Tm * Math.sin(rad(75));
+      const s = Math.min((P[0].w - 70) / (2 * hx), (P[0].h - 70) / (G + 4), (P[1].w - 70) / (hx + 2), (P[1].h - 50) / (G + 2), 16);
+      return { s, npb: 1, box: s, panes: P };
+    }
+    const at = (o, x, y) => ({ x: o.ox + x * view.s, y: o.oy - y * view.s });
+
+    /* ---------------- drawing helpers ---------------- */
     // Canvas text with <i>, <sub> and <sup> runs, so symbols of physical quantities are italic, as in the notes.
-    // Honours ctx.textAlign; returns the width. measureOnly = true draws nothing.
     function richText(ctx, s, x, y, measureOnly) {
       const base = ctx.font, m = base.match(/([\d.]+)px/), size = m ? +m[1] : 12;
-      const runs = []; let it = false, sub = 0;
+      const runs = []; let it = false, sb = 0;
       for (const tok of String(s).split(/(<\/?(?:i|sub|sup)>)/)) {
         if (tok === '<i>') it = true; else if (tok === '</i>') it = false;
-        else if (tok === '<sub>') sub = 1; else if (tok === '<sup>') sub = -1;
-        else if (tok === '</sub>' || tok === '</sup>') sub = 0;
+        else if (tok === '<sub>') sb = 1; else if (tok === '<sup>') sb = -1;
+        else if (tok === '</sub>' || tok === '</sup>') sb = 0;
         else if (tok) {
-          let f = sub ? base.replace(/[\d.]+px/, (size * 0.75).toFixed(1) + 'px') : base;
+          let f = sb ? base.replace(/[\d.]+px/, (size * 0.75).toFixed(1) + 'px') : base;
           if (it) f = 'italic ' + f;
-          ctx.font = f; runs.push({ t: tok, f, sub, w: ctx.measureText(tok).width });
+          ctx.font = f; runs.push({ t: tok, f, sb, w: ctx.measureText(tok).width });
         }
       }
       ctx.font = base;
@@ -159,153 +549,911 @@
       const align = ctx.textAlign;
       let cx = align === 'center' ? x - w / 2 : (align === 'right' || align === 'end') ? x - w : x;
       ctx.textAlign = 'left';
-      for (const r of runs) { ctx.font = r.f; ctx.fillText(r.t, cx, y + (r.sub === 1 ? size * 0.3 : r.sub === -1 ? -size * 0.4 : 0)); cx += r.w; }
+      for (const r of runs) { ctx.font = r.f; ctx.fillText(r.t, cx, y + (r.sb === 1 ? size * 0.3 : r.sb === -1 ? -size * 0.4 : 0)); cx += r.w; }
       ctx.textAlign = align; ctx.font = base;
       return w;
     }
-
-
-    function applyPreset() { const p = PRESETS[el('preset').value]; if (p) ids.forEach((id, i) => el(id).value = p[i].toFixed(1)); }
-    function forces() {
-      return [0, 1, 2].map(i => {
-        const m = Math.max(0, +el('f' + (i + 1)).value || 0), a = +el('a' + (i + 1)).value || 0;
-        return { m, a, x: m * Math.cos(rad(a)), y: m * Math.sin(rad(a)) };
-      });
-    }
-    function net() { const F = forces(); const x = F.reduce((s, f) => s + f.x, 0), y = F.reduce((s, f) => s + f.y, 0); return { x, y, m: Math.hypot(x, y) }; }
-
-    let view = null, handles = [], dragScale = null;
-    function setup() {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      const cw = Math.round(rect.width * dpr), ch = Math.round(rect.height * dpr);
-      if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
-      const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const W = rect.width, H = rect.height;
-      const stacked = W < 600;
-      const pane = stacked ? { w: W, h: H / 2 } : { w: W / 2, h: H };
-      // px per N: 30 N reaches ~0.36 of the pane, and a bigger force (up to 60 N) shrinks the scale so its
-      // arrow and label stay inside. The scale is held while a finger drags a handle and refits on release.
-      const m = Math.min(pane.w, pane.h), maxF = Math.max(1, ...forces().map(f => f.m));
-      const s = dragScale || Math.min(m * 0.36 / 30, (m / 2 - 60) / maxF); // 60 px: the tip's label sits 24 px past it
-      const O = stacked ? { x: W / 2, y: H * 0.25 } : { x: W * 0.25, y: H * 0.5 };
-      const C = stacked ? { x: W / 2, y: H * 0.75 } : { x: W * 0.75, y: H * 0.5 };
-      view = { ctx, W, H, s, O, C, stacked };
-      return view;
-    }
-    function arrow(ctx, a, b, color, lw = 4) {
+    let ends = []; // every arrow's two ends with the pane it belongs to, for the checks (window.sceneMap)
+    function arrow(ctx, a, b, color, lw = 4, dash = null) {
+      const A = area || { x: 0, y: 0, w: view.W, h: view.H };
+      ends.push({ a: { x: a.x, y: a.y }, b: { x: b.x, y: b.y }, r: { x: A.x, y: A.y, w: A.w, h: A.h }, color });
       const ang = Math.atan2(b.y - a.y, b.x - a.x), len = Math.hypot(b.x - a.x, b.y - a.y);
       if (len < 2) return;
-      const head = Math.min(13, len * 0.45);
+      const head = Math.min(14, len * 0.45);
       ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
+      if (dash) ctx.setLineDash(dash);
       ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x - Math.cos(ang) * head * 0.8, b.y - Math.sin(ang) * head * 0.8); ctx.stroke();
+      ctx.setLineDash([]);
       ctx.beginPath(); ctx.moveTo(b.x, b.y);
       ctx.lineTo(b.x - head * Math.cos(ang - 0.42), b.y - head * Math.sin(ang - 0.42));
       ctx.lineTo(b.x - head * Math.cos(ang + 0.42), b.y - head * Math.sin(ang + 0.42));
       ctx.closePath(); ctx.fill();
     }
-    function textAt(ctx, t, x, y, color) {
-      ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      const tw = richText(ctx, t, 0, 0, true);
-      ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(x - tw / 2 - 3, y - 9, tw + 6, 18);
-      ctx.fillStyle = color; richText(ctx, t, x, y); ctx.textBaseline = 'alphabetic';
+    function dashed(ctx, a, b, color, lw = 1.5) {
+      ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.setLineDash([]);
     }
-
-    function draw() {
-      const { ctx, W, H, s, O, C, stacked } = setup();
-      ctx.clearRect(0, 0, W, H);
-      ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
-      if (stacked) { ctx.beginPath(); ctx.moveTo(10, H / 2); ctx.lineTo(W - 10, H / 2); ctx.stroke(); }
-      else { ctx.beginPath(); ctx.moveTo(W / 2, 10); ctx.lineTo(W / 2, H - 10); ctx.stroke(); }
-      ctx.fillStyle = '#64748b'; ctx.font = '12px Arial'; ctx.textAlign = 'center';
-      ctx.fillText('Forces acting at one point', O.x, stacked ? 16 : 18);
-      ctx.fillText('The same forces, tip to tail', C.x, stacked ? H / 2 + 16 : 18);
-
-      const F = forces(), N = net();
-      // left: the object and its forces
-      ctx.strokeStyle = '#e2e8f0'; ctx.beginPath(); ctx.moveTo(O.x - 120, O.y); ctx.lineTo(O.x + 120, O.y); ctx.moveTo(O.x, O.y - 120); ctx.lineTo(O.x, O.y + 120); ctx.stroke();
-      ctx.fillStyle = '#cbd5e1'; ctx.beginPath(); ctx.arc(O.x, O.y, 16, 0, Math.PI * 2); ctx.fill();
-      handles = F.map((f, i) => {
-        const tip = { x: O.x + f.x * s, y: O.y - f.y * s };
-        arrow(ctx, O, tip, COLORS[i]);
-        const ux = Math.cos(rad(f.a)), uy = -Math.sin(rad(f.a));
-        ctx.font = 'bold 13px Arial';
-        const lab = `<i>F</i><sub>${i + 1}</sub> = ${f.m.toFixed(1)} N`, tw = richText(ctx, lab, 0, 0, true);
-        // kept inside this panel and below its title (while a finger drags, the scale is held, so a tip can get close)
-        const lo = { x: 4 + tw / 2 + 3, y: (stacked ? 16 : 18) + 18 }, hi = { x: (stacked ? W : W / 2) - 4 - tw / 2 - 3, y: (stacked ? H / 2 : H) - 12 };
-        const lx = Math.min(hi.x, Math.max(lo.x, tip.x + ux * (20 + tw / 2))), ly = Math.min(hi.y, Math.max(lo.y, tip.y + uy * 24));
-        textAt(ctx, lab, lx, ly, COLORS[i]); // no handle circle: the hint says to drag the arrowheads
-        return tip;
-      });
-      if (N.m >= EQ_TOL) arrow(ctx, O, { x: O.x + N.x * s, y: O.y - N.y * s }, 'rgba(220,38,38,0.7)', 3);
-
-      // right: tip-to-tail chain, centred on its own bounding box
-      const pts = [{ x: 0, y: 0 }];
-      F.forEach(f => pts.push({ x: pts[pts.length - 1].x + f.x, y: pts[pts.length - 1].y + f.y }));
-      const minx = Math.min(...pts.map(p => p.x)), maxx = Math.max(...pts.map(p => p.x)), miny = Math.min(...pts.map(p => p.y)), maxy = Math.max(...pts.map(p => p.y));
-      const cxw = (minx + maxx) / 2, cyw = (miny + maxy) / 2;
-      const P = pts.map(p => ({ x: C.x + (p.x - cxw) * s, y: C.y - (p.y - cyw) * s }));
-      F.forEach((f, i) => arrow(ctx, P[i], P[i + 1], COLORS[i]));
-      if (N.m >= EQ_TOL) {
-        arrow(ctx, P[0], P[3], '#dc2626', 3);
-        const dx = P[3].x - P[0].x, dy = P[3].y - P[0].y, dl = Math.hypot(dx, dy) || 1;
-        const nl = `net force Σ<i>F</i> = ${N.m.toFixed(1)} N`; ctx.font = 'bold 13px Arial';
-        const off = richText(ctx, nl, 0, 0, true) / 2 + 14; // clear of the red arrow whichever way it points
-        textAt(ctx, nl, (P[0].x + P[3].x) / 2 + dy / dl * off, (P[0].y + P[3].y) / 2 - dx / dl * 22, '#b91c1c');
-      } else {
-        textAt(ctx, 'Closed triangle: Σ<i>F</i> = 0', C.x, stacked ? H - 16 : H - 24, '#15803d');
+    function dot(ctx, p, r = 4, color = '#0f172a') { ctx.fillStyle = color; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill(); }
+    // a label on a white card; every label is kept whole inside its area and steps aside from labels already drawn
+    let labels = [], pending = [], area = null;
+    const hits = (a, b) => a.x < b.x + b.w + 4 && b.x < a.x + a.w + 4 && a.y < b.y + b.h + 2 && b.y < a.y + a.h + 2;
+    function card(ctx, text, x, y, color, align = 'center', size = 13) {
+      const A = area || { x: 0, y: 0, w: view.W, h: view.H };
+      ctx.font = `bold ${size}px Arial`; ctx.textBaseline = 'middle';
+      const tw = richText(ctx, text, 0, 0, true);
+      let x0 = align === 'left' ? x : align === 'right' ? x - tw : x - tw / 2;
+      x0 = Math.max(A.x + 4, Math.min(A.x + A.w - tw - 4, x0));
+      const clampY = v => Math.max(A.y + 11, Math.min(A.y + A.h - 11, v));
+      y = clampY(y);
+      for (const dy of [0, -20, 20, -40, 40, -60, 60]) {
+        const r = { x: x0, y: clampY(y + dy) - 9, w: tw, h: 18 };
+        if (!labels.some(l => hits(l, r))) { y = clampY(y + dy); break; }
       }
-      ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(P[0].x, P[0].y, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fillRect(x0 - 3, y - 9, tw + 6, 18);
+      ctx.fillStyle = color; ctx.textAlign = 'left'; richText(ctx, text, x0, y); ctx.textBaseline = 'alphabetic';
+      labels.push({ text, x: x0, y: y - 9, w: tw, h: 18 });
+    }
+    // a label beside the middle of an arrow, pushed off it to one side
+    function tag(ctx, text, a, b, color, side = 1) {
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, L = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+      const nx = -(b.y - a.y) / L * side, ny = (b.x - a.x) / L * side;
+      ctx.font = 'bold 13px Arial'; const tw = richText(ctx, text, 0, 0, true);
+      card(ctx, text, mx + nx * (14 + tw * 0.5 * Math.abs(nx)), my + ny * 16, color);
+    }
+    // an angle mark from direction a0 to a1 (degrees anticlockwise from +x), labelled last so it steps aside
+    function arc(ctx, c, r, a0, a1, text, color) {
+      const d = a1 - a0; if (Math.abs(d) < 0.5) return;
+      ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(c.x, c.y, r, -rad(a0), -rad(a1), d > 0); ctx.stroke();
+      const m = rad((a0 + a1) / 2), A = area;
+      pending.push(() => { const keep = area; area = A; card(ctx, text, c.x + Math.cos(m) * (r + 16), c.y - Math.sin(m) * (r + 16), color, 'center', 12); area = keep; });
+    }
+    // grid lines through a pane, aligned to that pane's origin
+    function grid(ctx, r, o, axes) {
+      const { box } = view;
+      ctx.save(); ctx.beginPath(); ctx.rect(r.x, r.y, r.w, r.h); ctx.clip();
+      ctx.strokeStyle = '#eef2f7'; ctx.lineWidth = 1;
+      for (let x = r.x + (((o.ox - r.x) % box) + box) % box, n = 0; x < r.x + r.w && n < 400; x += box, n++) { ctx.beginPath(); ctx.moveTo(x, r.y); ctx.lineTo(x, r.y + r.h); ctx.stroke(); }
+      for (let y = r.y + (((o.oy - r.y) % box) + box) % box, n = 0; y < r.y + r.h && n < 400; y += box, n++) { ctx.beginPath(); ctx.moveTo(r.x, y); ctx.lineTo(r.x + r.w, y); ctx.stroke(); }
+      if (axes) {
+        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(r.x, o.oy); ctx.lineTo(r.x + r.w, o.oy); ctx.moveTo(o.ox, r.y); ctx.lineTo(o.ox, r.y + r.h); ctx.stroke();
+        ctx.fillStyle = '#64748b'; ctx.font = '12px Arial'; ctx.textBaseline = 'alphabetic';
+        ctx.textAlign = 'right'; richText(ctx, '+<i>x</i>', r.x + r.w - 6, o.oy - 6);
+        ctx.textAlign = 'left'; richText(ctx, '+<i>y</i>', o.ox + 6, r.y + 14);
+      }
+      ctx.restore();
+    }
+    function scaleNote(ctx, x, y) { ctx.fillStyle = '#334155'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'left'; ctx.fillText(`1 box = ${view.npb} N`, x, y); }
+    // a pane's title, recorded with the labels so the checks see it whole (or cut off) like any other label
+    function paneTitle(ctx, r, text) {
+      ctx.fillStyle = '#475569'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center'; ctx.fillText(text, r.x + r.w / 2, r.y - 8);
+      const w = ctx.measureText(text).width; labels.push({ text, x: r.x + r.w / 2 - w / 2, y: r.y - 20, w, h: 14 });
     }
 
-    function updateReadout() {
-      const N = net();
-      const ok = N.m < EQ_TOL;
-      const show = v => (ok ? 0 : clean(v)).toFixed(1).replace('-', '−');
-      el('net').textContent = `${show(N.m)} N`;
-      el('sx').textContent = `${show(N.x)} N`;
-      el('sy').textContent = `${show(N.y)} N`;
-      el('eq').textContent = ok ? 'Yes' : 'No';
-      ['netCard', 'eqCard'].forEach(id => { el(id).classList.toggle('ok', ok); el(id).classList.toggle('bad', !ok); });
+    /* ---------------- drawing, one function per kind of scene ---------------- */
+    let handles = [];
+    function draw() {
+      const box = canvas.getBoundingClientRect();
+      if (box.width < 20 || box.height < 20) return; // hidden (the Challenge tab): nothing to draw
+      const { ctx, W, H } = setup();
+      ctx.clearRect(0, 0, W, H); labels = []; handles = []; pending = []; ends = []; area = null;
+      ({ line: drawLine, close: drawClose, comp: drawComp, strings: drawStrings })[S.kind](ctx, W, H);
+      pending.forEach(f => f());
+      area = null;
+      window.sceneMap = { handles: handles.map(h => ({ k: h.k, x: h.x, y: h.y })), labels, ends, W, H };
     }
 
-    let drag = -1;
+    // Tab 1: the forces on a line, then added tip to tail along the line
+    function drawLine(ctx, W, H) {
+      const { s, half } = view, V = S.axis === 'v';
+      const vals = S.forces.map(signed), u = S.unk ? -lineSum() : null, st = S.step;
+      const cols = S.forces.map(f => COL[f.k]);
+      // the grid, aligned to the object's centre
+      const C = V ? { ox: Math.round(W * 0.3), oy: Math.round(H / 2) } : { ox: Math.round(W / 2), oy: Math.round(Math.min(92, H * 0.3)) };
+      grid(ctx, { x: 0, y: 0, w: W, h: H }, C, false);
+      scaleNote(ctx, 6, H - 8);
+      // the object (and, hung from the ceiling, its string)
+      if (V) {
+        ctx.strokeStyle = '#334155'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(C.ox - 50, 12); ctx.lineTo(C.ox + 50, 12); ctx.stroke();
+        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(C.ox - 14, 12); ctx.lineTo(C.ox - 14, C.oy - half); ctx.stroke();
+      }
+      const bw = V ? 2 * half + 20 : 2 * half, bh = V ? 2 * half : 56;
+      ctx.fillStyle = '#86efac'; ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5;
+      ctx.fillRect(C.ox - bw / 2, C.oy - bh / 2, bw, bh); ctx.strokeRect(C.ox - bw / 2, C.oy - bh / 2, bw, bh);
+      if (V) { ctx.fillStyle = '#1e293b'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(`${plain(-vals[0] / G)} kg`, C.ox, C.oy); ctx.textBaseline = 'alphabetic'; }
+      if (S.v && !V) {
+        arrow(ctx, { x: C.ox - 24, y: C.oy - bh / 2 - 16 }, { x: C.ox + 24, y: C.oy - bh / 2 - 16 }, '#0f172a', 2);
+        area = null; card(ctx, `<i>v</i> = ${f1(S.v)} m s<sup>−1</sup> (constant)`, C.ox + 32, C.oy - bh / 2 - 16, '#0f172a', 'left', 12);
+      }
+      // each force from the edge it points away from; forces on the same side sit apart
+      const items = vals.map((v, i) => ({ v, col: cols[i], f: S.forces[i], i }));
+      if (u !== null && st >= 4 && Math.abs(u) > 0.05) items.push({ v: u, col: COL.U, f: null, i: -1 });
+      const sides = {};
+      items.forEach(it => { const k = it.v < 0 ? 'n' : 'p'; (sides[k] = sides[k] || []).push(it); });
+      Object.values(sides).forEach(list => list.forEach((it, j) => { it.off = (j - (list.length - 1) / 2) * (V ? 26 : 22); }));
+      items.forEach(it => {
+        const dir = it.v < 0 ? -1 : 1;
+        let a, b;
+        if (V) { a = { x: C.ox + it.off + (it.f ? 0 : 14), y: C.oy - dir * bh / 2 }; b = { x: a.x, y: a.y - it.v * s }; }
+        else { a = { x: C.ox + dir * bw / 2, y: C.oy + it.off }; b = { x: a.x + it.v * s, y: a.y }; }
+        if (V && !it.f) a.x = C.ox - 14, b.x = C.ox - 14; // the tension acts along the string
+        arrow(ctx, a, b, it.col, 4);
+        const nm = it.f ? it.f.name : `${S.unk.name} ${S.unk.sym}`;
+        const val = st >= 2 || !it.f ? `${sg(it.v)} N` : `${plain(Math.abs(it.v))} N`;
+        const text = nm ? `${nm} = ${val}` : val;
+        if (V) card(ctx, text, b.x + 12, b.y + (dir > 0 ? 10 : -10), it.col, 'left', 12);
+        else card(ctx, text, b.x + dir * 8, it.off < 0 ? b.y - 13 : it.off > 0 ? b.y + 13 : b.y - 13, it.col, dir > 0 ? 'left' : 'right', 12);
+        if (it.f) handles.push({ k: it.i, x: b.x, y: b.y });
+      });
+      if (u !== null && st < 4) card(ctx, `${S.unk.name} ${S.unk.sym} = ?`, V ? C.ox + bw / 2 + 12 : C.ox, V ? C.oy - bh / 2 - 30 : C.oy + bh / 2 + 14, COL.U, V ? 'left' : 'center', 12);
+      // the sum: each force starts at the tip of the one before
+      if (st >= 3) {
+        const row = [...vals]; if (u !== null && st >= 4) row.push(u);
+        const rcols = [...cols, COL.U];
+        const cum = [0]; row.forEach(v => cum.push(cum[cum.length - 1] + v));
+        const lo = Math.min(...cum), hi = Math.max(...cum);
+        ctx.fillStyle = '#334155'; ctx.font = '12px Arial'; ctx.textAlign = 'left';
+        if (V) {
+          const x0 = Math.round(W * 0.66), y0 = Math.round(H / 2 + ((lo + hi) / 2) * s), Y = n => y0 - n * s;
+          ctx.fillText('Add them along the line:', x0 - 40, 16);
+          row.forEach((v, i) => { const x = x0 + i * 18; arrow(ctx, { x, y: Y(cum[i]) }, { x, y: Y(cum[i + 1]) }, rcols[i], 3); if (i) dashed(ctx, { x: x - 18, y: Y(cum[i]) }, { x, y: Y(cum[i]) }, '#94a3b8'); });
+          dot(ctx, { x: x0, y: Y(0) }, 3.5);
+          const tot = cum[cum.length - 1], x3 = x0 + row.length * 18 + 22;
+          if (Math.abs(tot) > 0.05) arrow(ctx, { x: x3, y: Y(0) }, { x: x3, y: Y(tot) }, COL.R, 4);
+          card(ctx, Math.abs(tot) > 0.05 ? `${SF} = ${sg(tot)} N` : `${SF} = 0`, x3 + 8, Y(tot / 2), COL.R, 'left', 13);
+        } else {
+          const x0 = Math.round(W / 2 - ((lo + hi) / 2) * s), X = n => x0 + n * s, yb = C.oy + bh / 2 + 34;
+          ctx.fillText('Add them along the line:', 8, yb - 6);
+          row.forEach((v, i) => { const y = yb + 10 + i * 16; arrow(ctx, { x: X(cum[i]), y }, { x: X(cum[i + 1]), y }, rcols[i], 3); if (i) dashed(ctx, { x: X(cum[i]), y: y - 16 }, { x: X(cum[i]), y }, '#94a3b8'); });
+          dot(ctx, { x: X(0), y: yb + 10 }, 3.5);
+          const tot = cum[cum.length - 1], y3 = yb + 10 + row.length * 16 + 14;
+          if (Math.abs(tot) > 0.05) arrow(ctx, { x: X(0), y: y3 }, { x: X(tot), y: y3 }, COL.R, 4);
+          card(ctx, Math.abs(tot) > 0.05 ? `${SF} = ${sg(tot)} N` : `${SF} = 0: the arrows end where they started`, Math.abs(tot) > 0.05 ? X(tot) + (tot < 0 ? -8 : 8) : X(0) + 10, y3 + (Math.abs(tot) > 0.05 ? 0 : 0), COL.R, Math.abs(tot) > 0.05 ? (tot < 0 ? 'right' : 'left') : 'left', 13);
+        }
+      }
+    }
+
+    // Tab 2: the forces at one point, and the same forces tip to tail; the user's force closes the shape
+    function drawClose(ctx, W, H) {
+      const [L, R] = view.O, st = S.step, known = S.forces.map(vec), u = userVec(), N = netClose(), M = missing();
+      const closed = N.m < CLOSE_TOL;
+      paneTitle(ctx, L.r, 'Forces acting at one point');
+      paneTitle(ctx, R.r, 'The same forces, one after another');
+      grid(ctx, L.r, L, true); grid(ctx, R.r, R, false);
+      ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1;
+      if (W >= 600) { ctx.beginPath(); ctx.moveTo(W / 2, 6); ctx.lineTo(W / 2, H - 6); ctx.stroke(); }
+      else { ctx.beginPath(); ctx.moveTo(6, H / 2); ctx.lineTo(W - 6, H / 2); ctx.stroke(); }
+      scaleNote(ctx, L.r.x + 6, L.r.y + L.r.h - 8);
+      // left: the forces at one point
+      area = L.r;
+      const O = at(L, 0, 0);
+      ctx.fillStyle = '#cbd5e1'; ctx.beginPath(); ctx.arc(O.x, O.y, 12, 0, Math.PI * 2); ctx.fill();
+      S.forces.forEach((f, i) => { const T = at(L, known[i].x, known[i].y); arrow(ctx, O, T, COL[f.k]); tag(ctx, `${LAB[f.k]} = ${plain(f.m)} N`, O, T, COL[f.k], 1); });
+      if (st >= 4 && M.m > 0.05) { const T = at(L, M.x, M.y); arrow(ctx, O, T, COL.M, 3, [7, 5]); }
+      const UT = at(L, u.x, u.y);
+      if (S.user.m > 0.05) { arrow(ctx, O, UT, COL.U, 4); tag(ctx, `${S.ulab} = ${f1(S.user.m)} N`, O, UT, COL.U, -1); }
+      else card(ctx, `${S.ulab}: drag from here`, O.x + 16, O.y + 20, COL.U, 'left', 12);
+      handles.push({ k: 'uL', x: S.user.m > 0.05 ? UT.x : O.x, y: S.user.m > 0.05 ? UT.y : O.y });
+      if (!closed) arrow(ctx, O, at(L, N.x, N.y), 'rgba(220,38,38,0.75)', 2.5);
+      dot(ctx, O, 3.5);
+      // right: tip to tail
+      area = R.r;
+      if (st < 2) {
+        ctx.fillStyle = '#64748b'; ctx.font = '13px Arial'; ctx.textAlign = 'center';
+        ctx.fillText('Press Next step to draw them', R.r.x + R.r.w / 2, R.r.y + R.r.h / 2 - 8);
+        ctx.fillText('one after another.', R.r.x + R.r.w / 2, R.r.y + R.r.h / 2 + 10);
+      } else {
+        // drawn in order of direction, so forces along one line (Example 4) never lie on top of each other
+        const ord = chainOrder();
+        const pts = [{ x: 0, y: 0 }]; ord.forEach(i => pts.push({ x: pts[pts.length - 1].x + known[i].x, y: pts[pts.length - 1].y + known[i].y }));
+        const P = pts.map(p => at(R, p.x, p.y)), end = pts[pts.length - 1], E = P[P.length - 1];
+        const cross = (a, b) => a.x * b.y - a.y * b.x;
+        const UE = at(R, end.x + u.x, end.y + u.y), side = cross({ x: -end.x, y: -end.y }, end) >= 0 ? 1 : -1;
+        // every arrow first, then every label, so no arrow is drawn across a label
+        ord.forEach((i, j) => arrow(ctx, P[j], P[j + 1], COL[S.forces[i].k]));
+        if (st >= 3 && M.m > 0.05) dashed(ctx, E, P[0], '#64748b', 2);
+        if (st >= 4 && M.m > 0.05) arrow(ctx, E, P[0], COL.M, 3, [7, 5]);
+        if (S.showRes && M.m > 0.05) arrow(ctx, P[0], E, '#475569', 2, [3, 4]);
+        if (S.user.m > 0.05) arrow(ctx, E, UE, COL.U, 4);
+        // with no force of yours yet the net force is the gap reversed, drawn already: no red arrow on top of it
+        if (!closed && S.user.m > 0.05) arrow(ctx, P[0], UE, 'rgba(220,38,38,0.75)', 2.5);
+        dot(ctx, P[0], 4);
+        ord.forEach((i, j) => tag(ctx, `${LAB[S.forces[i].k]}`, P[j], P[j + 1], COL[S.forces[i].k], 1));
+        if (st === 3 && M.m > 0.05) card(ctx, 'gap: the missing force must fill it', (E.x + P[0].x) / 2, (E.y + P[0].y) / 2 + 16 * side, '#475569', 'center', 12);
+        if (st >= 4 && M.m > 0.05) tag(ctx, `missing force = ${f1(M.m)} N`, E, P[0], COL.M, side);
+        if (S.showRes && M.m > 0.05) tag(ctx, `resultant of the given forces = ${f1(M.m)} N`, P[0], E, '#475569', side);
+        if (S.user.m > 0.05) tag(ctx, S.ulab, E, UE, COL.U, -1);
+        handles.push({ k: 'uR', x: S.user.m > 0.05 ? UE.x : E.x, y: S.user.m > 0.05 ? UE.y : E.y });
+        if (closed) card(ctx, `Closed: ${SF} = 0, in equilibrium`, R.r.x + R.r.w / 2, R.r.y + R.r.h - 14, '#15803d');
+        else card(ctx, `Not closed: ${SF} = ${f1(N.m)} N`, R.r.x + R.r.w / 2, R.r.y + R.r.h - 14, '#b91c1c');
+      }
+    }
+
+    // Tab 3: the given forces, then the unknown built from its components
+    function drawComp(ctx, W, H) {
+      const o = view.O[0], st = S.step, M = missing(), O = at(o, 0, 0);
+      grid(ctx, o.r, o, true); scaleNote(ctx, 6, H - 8);
+      S.forces.forEach((f, i) => {
+        const v = vec(f), T = at(o, v.x, v.y), Gv = givenOf(f), c = COL[f.k];
+        if (st <= 2 && !Gv.onAxis) arc(ctx, O, 26 + 12 * i, Gv.axis, Gv.axis + (norm(f.a - Gv.axis) > 180 ? -Gv.ang : Gv.ang), `${plain(Gv.ang)}°`, c);
+        ctx.globalAlpha = st >= 3 ? 0.35 : 1;
+        if (st === 2 && Math.abs(v.y) > 0.05 && Math.abs(v.x) > 0.05) { dashed(ctx, T, at(o, v.x, 0), c); dashed(ctx, T, at(o, 0, v.y), c); }
+        arrow(ctx, O, T, c);
+        ctx.globalAlpha = 1;
+        if (st <= 2) tag(ctx, `${LAB[f.k]} = ${plain(f.m)} N`, O, T, c, v.x * v.y >= 0 ? -1 : 1);
+        handles.push({ k: i, ...T });
+      });
+      const Xt = at(o, M.x, 0), Mt = at(o, M.x, M.y), c = COL.M, nm = S.unk.sym || 'missing force';
+      if (st >= 3 && Math.abs(M.x) > 0.05) { arrow(ctx, O, Xt, c, 3, [7, 4]); card(ctx, `${uComp('x').replace('its ', '')} = ${sg(M.x)} N`, (O.x + Xt.x) / 2, O.y + (M.y >= 0 ? 18 : -18), c, 'center', 12); }
+      if (st >= 4 && Math.abs(M.y) > 0.05) { arrow(ctx, Xt, Mt, c, 3, [7, 4]); card(ctx, `${uComp('y').replace('its ', '')} = ${sg(M.y)} N`, Xt.x + (M.x >= 0 ? 10 : -10), (Xt.y + Mt.y) / 2, c, M.x >= 0 ? 'left' : 'right', 12); }
+      if (st >= 5 && M.m > 0.05) { arrow(ctx, O, Mt, c, 4); card(ctx, `${nm} = ${f1(M.m)} N`, Mt.x + (M.x >= 0 ? 10 : -10), Mt.y + (M.y >= 0 ? -12 : 12), c, M.x >= 0 ? 'left' : 'right'); }
+      if (st >= 6 && Math.abs(M.x) > 0.05 && Math.abs(M.y) > 0.05) {
+        const axis = M.x > 0 ? 0 : 180, al = deg(Math.atan2(Math.abs(M.y), Math.abs(M.x))), sgn = (M.x > 0) === (M.y > 0) ? 1 : -1;
+        arc(ctx, O, 48, axis, axis + sgn * al, `<i>θ</i> = ${f1(al)}°`, c);
+      }
+      dot(ctx, O, 4);
+    }
+
+    // Tab 4: the block on two strings, and its three forces drawn tip to tail (a closed triangle)
+    function drawStrings(ctx, W, H) {
+      const [L, R] = view.panes, s = view.s, th = S.theta, T = tension(th), half = rad(th / 2);
+      paneTitle(ctx, L, 'The 1 kg block and the forces on it');
+      paneTitle(ctx, R, 'The three forces, one after another');
+      ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1;
+      if (W >= 600) { ctx.beginPath(); ctx.moveTo(W / 2, 6); ctx.lineTo(W / 2, H - 6); ctx.stroke(); }
+      else { ctx.beginPath(); ctx.moveTo(6, H / 2); ctx.lineTo(W - 6, H / 2); ctx.stroke(); }
+      // left: the block; each tension along its string, the weight down from the block
+      area = L;
+      const bw = 60, bh = 34, Wlen = G * s;
+      // place the block so the tensions above it and the weight below it both fit
+      const top = L.y + 8 + T * Math.cos(half) * s + 6, bottom = L.y + L.h - Wlen - bh - 6;
+      const k = { x: L.x + L.w / 2, y: Math.max(top, Math.min(bottom, L.y + (L.h - bh - Wlen + T * Math.cos(half) * s) / 2)) };
+      ctx.fillStyle = '#94a3b8'; ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5;
+      ctx.fillRect(k.x - bw / 2, k.y, bw, bh); ctx.strokeRect(k.x - bw / 2, k.y, bw, bh);
+      ctx.fillStyle = 'white'; ctx.font = 'bold 14px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('1 kg', k.x, k.y + bh / 2); ctx.textBaseline = 'alphabetic';
+      const gap = th < 0.5 ? 7 : 0; // vertical strings sit side by side, as the notes draw them
+      const aL = { x: k.x - gap, y: k.y }, aR = { x: k.x + gap, y: k.y };
+      const tL = { x: aL.x - T * Math.sin(half) * s, y: aL.y - T * Math.cos(half) * s }, tR = { x: aR.x + T * Math.sin(half) * s, y: aR.y - T * Math.cos(half) * s };
+      if (S.showComp && th >= 0.5) {
+        const v = T * Math.cos(half) * s, hz = T * Math.sin(half) * s;
+        [[aL, -1], [aR, 1]].forEach(([a, d]) => {
+          dashed(ctx, a, { x: a.x, y: a.y - v }, '#0f766e', 2); dashed(ctx, { x: a.x, y: a.y - v }, { x: a.x + d * hz, y: a.y - v }, '#ea580c', 2);
+        });
+        card(ctx, `vertical part ${f1(T * Math.cos(half))} N`, k.x + 8, k.y - v / 2, '#0f766e', 'left', 12);
+        card(ctx, `horizontal parts ${f1(T * Math.sin(half))} N each way`, k.x, k.y - T * Math.cos(half) * s - 14, '#ea580c', 'center', 12);
+      }
+      arrow(ctx, aL, tL, COL.F1, 4); arrow(ctx, aR, tR, COL.F2, 4);
+      if (th >= 0.5) arc(ctx, k, 26, 90 + th / 2, 90 - th / 2, `<i>θ</i> = ${plain(th)}°`, '#475569');
+      // each tension's label beyond its own arrowhead, on its own side: at mid-arrow the two crowded each other
+      card(ctx, `<i>T</i> = ${f1(T)} N`, tL.x - 6, tL.y - 12, COL.F1, 'right'); card(ctx, `<i>T</i> = ${f1(T)} N`, tR.x + 6, tR.y - 12, COL.F2, 'left');
+      const wa = { x: k.x, y: k.y + bh }, wb = { x: k.x, y: k.y + bh + Wlen };
+      arrow(ctx, wa, wb, COL.W, 4); card(ctx, `<i>W</i> = ${f1(G)} N`, k.x + 10, (wa.y + wb.y) / 2, COL.W, 'left');
+      handles.push({ k: 'tL', ...tL }, { k: 'tR', ...tR });
+      // right: T, T and W, tail to tip, end where they started
+      area = R;
+      const hx = T * Math.sin(half), w3 = th < 0.5 ? 16 : 0;
+      const A = { x: R.x + R.w / 2 + (hx * s) / 2 - w3 / 2, y: R.y + R.h / 2 + (G * s) / 2 };
+      const B = { x: A.x - hx * s, y: A.y - T * Math.cos(half) * s }, Cc = { x: A.x, y: A.y - G * s };
+      if (th < 0.5) {
+        // all three on one line: drawn side by side so each can be seen
+        arrow(ctx, A, B, COL.F1, 4); arrow(ctx, { x: B.x + 8, y: B.y }, { x: Cc.x + 8, y: Cc.y }, COL.F2, 4);
+        dashed(ctx, { x: Cc.x + 8, y: Cc.y }, { x: Cc.x + 8 + w3, y: Cc.y }, '#94a3b8'); arrow(ctx, { x: Cc.x + 8 + w3, y: Cc.y }, { x: A.x + 8 + w3, y: A.y }, COL.W, 4);
+        card(ctx, '<i>T</i>', A.x - 12, (A.y + B.y) / 2, COL.F1, 'right'); card(ctx, '<i>T</i>', B.x + 20, (B.y + Cc.y) / 2 - 14, COL.F2, 'left'); card(ctx, '<i>W</i>', A.x + 34 + w3, (Cc.y + A.y) / 2 + 20, COL.W, 'left');
+      } else {
+        arrow(ctx, A, B, COL.F1, 4); arrow(ctx, B, Cc, COL.F2, 4); arrow(ctx, Cc, A, COL.W, 4);
+        tag(ctx, '<i>T</i>', A, B, COL.F1, -1); tag(ctx, '<i>T</i>', B, Cc, COL.F2, -1); tag(ctx, `<i>W</i> = ${f1(G)} N`, Cc, A, COL.W, -1);
+      }
+      dot(ctx, A, 4);
+      card(ctx, `The arrows end where they started: ${SF} = 0`, R.x + R.w / 2, R.y + R.h - 14, '#15803d', 'center', 12);
+    }
+
+    /* ---------------- the controls (typed values) ---------------- */
+    function forceInputs() {
+      const box = $('forceInputs'), K = S.kind;
+      const field = (id, lab, v, step = 0.1, dis = false) => `<div class="control-group"><label for="${id}">${lab}</label><input id="${id}" type="number" step="${step}" value="${v}"${dis ? ' disabled' : ''} /></div>`;
+      let h = '';
+      if (K === 'line') S.forces.forEach((f, i) => {
+        const lab = f.fix ? `${f.name || LAB[f.k]} (N)` : `${f.name || LAB[f.k]} (N, ${S.axis === 'v' ? 'up' : 'right'} +)`;
+        h += `<div class="fgroup"><span class="swatch" style="background:${COL[f.k]}"></span>${field('v' + i, lab, (f.fix ? f.m : signed(f)).toFixed(1), 0.5)}</div>`;
+      });
+      else if (K === 'close' || K === 'comp') {
+        S.forces.forEach((f, i) => { h += `<div class="fgroup"><span class="swatch" style="background:${COL[f.k]}"></span>${field('m' + i, `${LAB[f.k]} (N)`, f.m.toFixed(1))}${field('a' + i, 'Direction from +<i>x</i> (°)', f.a.toFixed(1), 1)}</div>`; });
+        if (K === 'close') h += `<div class="fgroup"><span class="swatch" style="background:${COL.U}"></span>${field('um', `${S.ulab} (N)`, S.user.m.toFixed(1), 0.5, !!S.lock)}${field('ua', 'Direction from +<i>x</i> (°)', S.user.a.toFixed(1), 1)}</div>`;
+      } else if (K === 'strings') {
+        h += `<div class="fgroup wide"><span class="swatch" style="background:${COL.F1}"></span><div class="control-group label-row"><label for="th" id="thLab">Angle <i>θ</i> between the strings (${plain(S.theta)}°)</label><input id="th" type="range" min="0" max="150" step="1" value="${S.theta}" /></div></div>`;
+      }
+      box.innerHTML = h;
+      box.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => { readInputs(inp.id); toCustom(); update(); }));
+    }
+    // a typed value goes into the forces; the field being typed in is never rewritten
+    function readInputs(id) {
+      const num = (i, d = 0) => { const v = parseFloat($(i).value); return Number.isFinite(v) ? v : d; };
+      if (S.kind === 'line') S.forces.forEach((f, i) => {
+        const v = num('v' + i);
+        if (f.fix) { f.m = Math.min(1000, Math.abs(v)); return; }
+        f.m = Math.min(1000, Math.abs(v));
+        f.a = S.axis === 'v' ? (v < 0 ? 270 : 90) : (v < 0 ? 180 : 0);
+      });
+      else if (S.kind === 'close' || S.kind === 'comp') {
+        S.forces.forEach((f, i) => { f.m = Math.min(200, Math.max(0, num('m' + i))); if (id === 'a' + i) { f.a = norm(num('a' + i)); f.ref = 'x'; } });
+        if (S.kind === 'close') { if (!S.lock) S.user.m = Math.min(200, Math.max(0, num('um'))); if (id === 'ua') S.user.a = norm(num('ua')); }
+      } else if (S.kind === 'strings') S.theta = Math.max(0, Math.min(150, num('th')));
+    }
+    function syncInputs() {
+      const set = (id, v) => { const e = $(id); if (e && document.activeElement !== e) e.value = v; };
+      if (S.kind === 'line') S.forces.forEach((f, i) => set('v' + i, (f.fix ? f.m : signed(f)).toFixed(1)));
+      else if (S.kind === 'close' || S.kind === 'comp') {
+        S.forces.forEach((f, i) => { set('m' + i, f.m.toFixed(1)); set('a' + i, f.a.toFixed(1)); });
+        if (S.kind === 'close') { set('um', S.user.m.toFixed(1)); set('ua', S.user.a.toFixed(1)); }
+      } else if (S.kind === 'strings') { set('th', S.theta); const l = $('thLab'); if (l) l.innerHTML = `Angle <i>θ</i> between the strings (${plain(S.theta)}°)`; }
+    }
+    // The example's question no longer applies to your own values. The box keeps its height, so the drawing and the
+    // fields under it never jump while a finger drags or a value is typed; choosing a scenario frees it again.
+    function toCustom() {
+      if (S.scen === 'custom') return;
+      S.scen = 'custom'; presetEl.value = 'custom';
+      const q = $('question'), h = q.getBoundingClientRect().height;
+      if (h) q.style.minHeight = h + 'px';
+      q.innerHTML = customText();
+    }
+
+    /* ---------------- the step line, the readouts, the words and the working ---------------- */
+    function stepText() {
+      const st = S.step;
+      if (S.kind === 'line') return S.unk
+        ? ['The forces on the object. One force is unknown.', 'Give each force its sign: right and up are +, left and down are −.', 'In equilibrium the net force is zero: the forces add to 0.', `So the unknown force is the sum of the others with its sign reversed.`][st - 1]
+        : ['The forces on the object.', 'Give each force its sign: right and up are +, left and down are −.', 'Add them along the line: each force starts at the tip of the one before.', 'The resultant joins the start to the last tip.'][st - 1];
+      if (S.kind === 'close') return ['The forces act at one point. The object is in equilibrium, so one force is missing.', 'Draw them one after another: the tail of each force at the tip of the one before.', 'The gap: a dashed line from the last tip back to the start. The missing force must fill it.', 'The missing force joins the last tip to the start. Measure it: count the boxes and measure its angle.'][st - 1];
+      return ['Draw the forces and a table: Force, ' + FX + ', ' + FY + '.', 'For each force, find ' + FX + ' and ' + FY + '.', `In equilibrium ${SFX} = 0: find ${uComp('x')}.`, `In equilibrium ${SFY} = 0: find ${uComp('y')}.`, `Find ${uName()} using Pythagoras’ theorem.`, 'Find the angle it makes with the horizontal using tan <i>θ</i>.'][st - 1];
+    }
+    function cardsFor() {
+      if (S.kind === 'line') return S.unk
+        ? [['rSum', 'Sum of the given forces'], ['rUnk', `${S.unk.name} ${S.unk.sym}`], ['rDir', 'Its direction'], ['rEq', 'In equilibrium?']]
+        : [['rSum', 'Net force ' + SF], ['rDir', 'Direction'], ['rEq', 'In equilibrium?']];
+      if (S.kind === 'close') return [['rUser', S.ulab], ['rNet', 'Net force ' + SF], ['rMiss', 'Missing force'], ['rDir', 'Its direction']];
+      if (S.kind === 'comp') return [['rSx', SFX + ' of the given forces'], ['rSy', SFY + ' of the given forces'], ['rU', S.unk.sym ? S.unk.sym : 'Missing force'], ['rDir', 'Its direction']];
+      return [['rW', 'Weight <i>W</i> = <i>mg</i>'], ['rTh', 'Angle <i>θ</i> between the strings'], ['rT', 'Tension <i>T</i> in each string'], ['rV', 'Vertical part of each <i>T</i>']];
+    }
+    let hl = {};
+    function buildCards() {
+      const c = cardsFor(), el = $('readout');
+      el.className = 'readout' + (c.length === 3 ? ' n3' : '');
+      el.innerHTML = c.map(([id, t]) => `<div class="readout-card" id="${id}"><div class="title">${t}</div><div class="value">—</div></div>`).join('');
+    }
+    function setCard(id, html, cls) {
+      const c = $(id); if (!c) return;
+      const e = c.querySelector('.value'); if (e.innerHTML !== html) e.innerHTML = html;
+      c.classList.toggle('ok', cls === 'ok'); c.classList.toggle('bad', cls === 'bad');
+    }
+    function readouts() {
+      if (!view) return;
+      const st = S.step, n = STEPS[S.kind];
+      document.querySelectorAll('#readout .readout-card').forEach(c => c.classList.toggle('hl', !!hl[c.id]));
+      let words = '';
+      if (S.kind === 'strings') {
+        const th = S.theta, i = KEY_ANGLES.indexOf(th);
+        $('stepText').innerHTML = `<span class="n">θ = ${plain(th)}°</span>` + ({ 0: 'Scenario 1: both strings vertical.', 60: 'Scenario 2: the strings 60° apart.', 90: 'The strings at right angles.', 120: 'At 120° each tension equals the whole weight.', 150: 'Very wide: each string pulls mostly sideways.' }[th] || 'Your own angle.');
+        $('prevStep').disabled = th <= KEY_ANGLES[0]; $('nextStep').disabled = th >= KEY_ANGLES[KEY_ANGLES.length - 1];
+        const T = tension(th);
+        setCard('rW', '10.0 N'); setCard('rTh', `${plain(th)}°`); setCard('rT', `${f1(T)} N`); setCard('rV', `${f1(T * Math.cos(rad(th / 2)))} N`);
+        words = th < 0.5 ? 'Both strings pull straight up and share the weight equally: <i>T</i> + <i>T</i> = 10 N, so <i>T</i> = 5.0 N.'
+          : `Each string pulls ${plain(th / 2)}° from the vertical, so only part of its tension holds the block up. <i>T</i> = ${f1(T)} N: ${T > 5.05 ? `greater than` : 'the same as'} the 5.0 N in scenario 1.`;
+      } else {
+        $('stepText').innerHTML = `<span class="n">Step ${st} of ${n}</span>${stepText()}`;
+        $('prevStep').disabled = st <= 1; $('nextStep').disabled = st >= n;
+      }
+      if (S.kind === 'line') {
+        const vals = S.forces.map(signed), tot = lineSum(), u = -tot, V = S.axis === 'v';
+        const dirOf = v => (V ? (v > 0 ? 'upward' : 'downward') : (v > 0 ? 'to the right' : 'to the left'));
+        const terms = vals.map(v => `(${sg(v)})`).join(' + ');
+        const pre = V ? `<i>W</i> = <i>mg</i> = ${plain(-vals[0] / G)} kg × 10 m s<sup>−2</sup> = ${f1(-vals[0])} N. ` : '';
+        if (S.unk) {
+          setCard('rSum', st >= 3 ? `${sg(tot)} N` : '?');
+          setCard('rUnk', st >= 4 ? `${f1(Math.abs(u))} N` : '?');
+          setCard('rDir', st >= 4 ? (Math.abs(u) < 0.05 ? '—' : dirOf(u)) : '?');
+          setCard('rEq', 'Yes: the object is in equilibrium', 'ok');
+          const sym = S.unk.sym;
+          words = pre + (st >= 3 ? `In equilibrium ${SF} = 0: ${terms} + ${sym} = 0` : '') + (st >= 4 ? `, so ${sym} = ${sg(u)} N: ${f1(Math.abs(u))} N ${dirOf(u)}.` : st >= 3 ? '.' : '')
+            + (st >= 4 && S.v ? ' The box moves at constant velocity, so its acceleration is zero and the net force on it is zero.' : '')
+            + (st >= 4 && V ? ` The tension equals the weight: <i>T</i> = ${f1(Math.abs(u))} N.` : '');
+        } else {
+          const ok = Math.abs(tot) < 0.05;
+          setCard('rSum', st >= 4 ? `${sg(tot)} N` : '?');
+          setCard('rDir', st >= 4 ? (ok ? 'none' : dirOf(tot)) : '?');
+          setCard('rEq', st >= 4 ? (ok ? 'Yes' : 'No') : '?', st >= 4 ? (ok ? 'ok' : 'bad') : '');
+          if (st >= 3) words = `${SF} = ${terms}` + (st >= 4 ? ` = ${sg(tot)} N` + (ok ? ': no net force acting on the object, so it is in equilibrium.' : `: a net force of ${f1(Math.abs(tot))} N ${dirOf(tot)}, so it is not in equilibrium.`) : ' = ?');
+        }
+      }
+      if (S.kind === 'close') {
+        const N = netClose(), M = missing(), closed = N.m < CLOSE_TOL;
+        setCard('rUser', S.user.m > 0.05 ? `${f1(S.user.m)} N, ${f1(S.user.a)}° from +<i>x</i>` : '0 N');
+        setCard('rNet', `${f1(N.m)} N`, closed ? 'ok' : 'bad');
+        setCard('rMiss', st >= 4 ? `${f1(M.m)} N` : '?');
+        const rel = relWords(M);
+        setCard('rDir', st >= 4 ? (M.m < 0.05 ? '—' : rel || dirWords(M.x, M.y)) : '?');
+        words = closed ? `Closed: the arrows join up, so ${SF} = 0 (within ${CLOSE_TOL} N). The object is in equilibrium.` : `Not closed yet: ${SF} = ${f1(N.m)} N. Drag the tip of your force (orange) until the arrows end where they started.`;
+        if (st >= 4) words += M.m < 0.05 ? ' The given forces already balance: nothing is missing.' : ` The missing force: ${f1(M.m)} N, ${dirWords(M.x, M.y)}${rel ? ` (${rel})` : ''}.`;
+      }
+      if (S.kind === 'comp') {
+        const s = sum(S.forces.map(vec)), M = missing();
+        setCard('rSx', st >= 3 ? `${sg(s.x)} N` : '?'); setCard('rSy', st >= 4 ? `${sg(s.y)} N` : '?');
+        setCard('rU', st >= 5 ? `${f1(M.m)} N` : '?'); setCard('rDir', st >= 6 ? dirWords(M.x, M.y) : '?');
+        if (st >= 6) words = M.m < 0.05 ? 'The given forces already balance: nothing is missing.' : `${S.unk.sym ? S.unk.sym : 'The missing force'} = ${f1(M.m)} N, ${dirWords(M.x, M.y)}${relWords(M) ? ' (' + relWords(M) + ')' : ''}.`;
+      }
+      if ($('words').innerHTML !== words) $('words').innerHTML = words;
+      const w = work(); if (w !== lastWork) { $('work').innerHTML = w; lastWork = w; }
+    }
+    // the working under the drawing, written out as on paper
+    let lastWork = '';
+    const num = v => { const t = f1(v); return t.startsWith('−') ? '(' + t + ')' : t; };
+    const frac = (a, b) => `<span class="frac"><span>${a}</span><span>${b}</span></span>`;
+    function work() {
+      const st = S.step;
+      if (S.kind === 'strings') {
+        const th = S.theta, T = tension(th), h = plain(th / 2);
+        if (th < 0.5) return `<div class="math"><div class="eq">Vertical: <i>T</i> + <i>T</i> = <i>W</i>, so 2<i>T</i> = 10 N and <i>T</i> = ${frac('10', '2')} = <b>5.0 N</b></div></div>`;
+        return `<div class="math"><div class="eq">Each string makes ${frac('<i>θ</i>', '2')} = ${h}° with the vertical.</div>`
+          + `<div class="eq">Vertical: <i>T</i> cos ${h}° + <i>T</i> cos ${h}° = <i>W</i>, so 2<i>T</i> cos ${h}° = 10 N and <i>T</i> = ${frac('10', `2 × cos ${h}°`)} = <b>${f1(T)} N</b></div>`
+          + `<div class="eq">Horizontal: −<i>T</i> sin ${h}° + <i>T</i> sin ${h}° = 0: the horizontal parts cancel.</div></div>`;
+      }
+      if (S.kind !== 'comp') return '';
+      const fs = S.forces, s = sum(fs.map(vec)), M = missing();
+      const cell = v => (st >= 2 ? `${sg(v)} N` : '');
+      let h = '<table><thead><tr><th>Force</th><th>' + FX + '</th><th>' + FY + '</th></tr></thead><tbody>';
+      fs.forEach(f => { const v = vec(f); h += `<tr${st === 2 ? ' class="lit"' : ''}><td>${LAB[f.k]} = ${plain(f.m)} N</td><td>${cell(v.x)}</td><td>${cell(v.y)}</td></tr>`; });
+      h += `<tr class="unk"><td>${S.unk.sym ? S.unk.sym : 'Missing force'}${st >= 5 ? ' = ' + f1(M.m) + ' N' : ''}</td><td>${st >= 3 ? sg(M.x) + ' N' : '?'}</td><td>${st >= 4 ? sg(M.y) + ' N' : '?'}</td></tr>`;
+      h += `<tr class="total"><td>Sum (in equilibrium)</td><td>${st >= 3 ? '0 N' : ''}</td><td>${st >= 4 ? '0 N' : ''}</td></tr></tbody></table>`;
+      h += '<div class="math">';
+      if (st >= 2) fs.forEach(f => { h += `<div class="eq">${compWork(f, 'x')},&nbsp;&nbsp; ${compWork(f, 'y')}</div>`; });
+      if (st >= 3) h += `<div class="eq">${SFX} = 0: ${fs.map(f => num(vec(f).x)).join(' + ')} + ${uComp('x')} = 0, so ${uComp('x')} = <b>${sg(M.x)} N</b></div>`;
+      if (st >= 4) h += `<div class="eq">${SFY} = 0: ${fs.map(f => num(vec(f).y)).join(' + ')} + ${uComp('y')} = 0, so ${uComp('y')} = <b>${sg(M.y)} N</b></div>`;
+      if (st >= 5) h += `<div class="eq">${S.unk.sym || 'Missing force'} = <span class="root"><i class="rs">&radic;</i><span>${num(M.x)}<sup>2</sup> + ${num(M.y)}<sup>2</sup></span></span> = <b>${f1(M.m)} N</b></div>`;
+      if (st >= 6) {
+        if (M.m < 0.05) h += '<div class="eq">The given forces already balance: there is no missing force.</div>';
+        else if (!clean(M.x) || !clean(M.y)) h += `<div class="eq">It points <b>${dirWords(M.x, M.y)}</b>.</div>`;
+        else {
+          const al = deg(Math.atan2(Math.abs(M.y), Math.abs(M.x)));
+          h += `<div class="eq">tan <i>θ</i> = ${frac(f1(Math.abs(M.y)), f1(Math.abs(M.x)))}, so <i>θ</i> = <b>${f1(al)}°</b></div>`;
+          h += `<div class="eq">Its <i>x</i>-component is ${M.x > 0 ? 'positive (right)' : 'negative (left)'} and its <i>y</i>-component is ${M.y > 0 ? 'positive (up)' : 'negative (down)'}, so it points <b>${dirWords(M.x, M.y)}</b>.</div>`;
+        }
+      }
+      return h + '</div>';
+    }
+    function update() { draw(); readouts(); syncInputs(); }
+
+    /* ---------------- steps and the scenario menu ---------------- */
+    function setStep(n) { S.step = Math.max(1, Math.min(STEPS[S.kind], n)); clearFeat(); update(); }
+    function stepAngle(d) {
+      const th = S.theta, next = d > 0 ? KEY_ANGLES.find(a => a > th + 1e-9) : [...KEY_ANGLES].reverse().find(a => a < th - 1e-9);
+      if (next === undefined) return;
+      S.theta = next; clearFeat();
+      const id = next === 0 ? 's1' : next === 60 ? 's2' : null;
+      if (id && S.scen !== id && (S.scen === 'custom' || S.scen === 's1' || S.scen === 's2')) { S.scen = id; presetEl.value = id; $('question').style.minHeight = ''; $('question').innerHTML = PRESETS[id].q; }
+      else if (!id) toCustom();
+      update();
+    }
+    $('prevStep').addEventListener('click', () => (S.kind === 'strings' ? stepAngle(-1) : setStep(S.step - 1)));
+    $('nextStep').addEventListener('click', () => (S.kind === 'strings' ? stepAngle(1) : setStep(S.step + 1)));
+    // Reset: back to step 1 of the scenario last chosen from the menu, with its own values
+    $('resetBtn').addEventListener('click', () => { const id = S.base || TABS[currentTab].presets[0]; presetEl.value = id; chooseScenario(id); });
+    presetEl.addEventListener('change', () => chooseScenario(presetEl.value));
+    function stepButtons() {
+      const str = S.kind === 'strings';
+      $('stepsLabel').textContent = str ? 'Key angles' : 'Steps';
+      $('prevStep').innerHTML = str ? '&lsaquo; Smaller angle' : '&lsaquo; Previous step';
+      $('nextStep').innerHTML = str ? 'Larger angle &rsaquo;' : 'Next step &rsaquo;';
+    }
+    function chooseScenario(id) {
+      loadScenario(id);
+      const sc = $('scene');
+      sc.classList.toggle('short', S.kind === 'line' && S.axis === 'h');
+      sc.classList.toggle('tall', S.kind === 'close' || S.kind === 'strings');
+      buildCards(); forceInputs(); clearFeat(); stepButtons();
+      update(); // at once: a step line or scale left stale for a frame is wrong for whatever reads it next
+    }
+
+    /* ---------------- dragging the arrowheads ---------------- */
     function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
-    function pick(p) { let best = -1, bd = 22; handles.forEach((h, i) => { const d = Math.hypot(p.x - h.x, p.y - h.y); if (d < bd) { bd = d; best = i; } }); return best; }
-    canvas.addEventListener('pointerdown', e => { const k = pick(pos(e)); if (k < 0) return; drag = k; dragScale = view.s; canvas.setPointerCapture(e.pointerId); e.preventDefault(); });
+    function pick(p) {
+      let best = null, bd = 24;
+      for (const h of handles) { const d = Math.hypot(p.x - h.x, p.y - h.y); if (d < bd) { bd = d; best = h.k; } }
+      return best;
+    }
+    canvas.addEventListener('pointerdown', e => {
+      const k = pick(pos(e)); if (k === null) return;
+      dragging = { k }; canvas.setPointerCapture(e.pointerId); e.preventDefault();
+    });
     canvas.addEventListener('pointermove', e => {
       const p = pos(e);
-      if (drag < 0) { canvas.style.cursor = pick(p) >= 0 ? 'grab' : 'default'; return; }
-      const { O, s } = view;
-      const x = (p.x - O.x) / s, y = (O.y - p.y) / s;
-      el('f' + (drag + 1)).value = (Math.min(60, Math.round(Math.hypot(x, y) * 2) / 2)).toFixed(1);
-      let a = Math.round(deg(Math.atan2(y, x))); if (a < 0) a += 360;
-      el('a' + (drag + 1)).value = a.toFixed(1);
-      el('preset').value = 'custom';
+      if (!dragging) { canvas.style.cursor = pick(p) !== null ? 'grab' : 'default'; return; }
+      canvas.style.cursor = 'grabbing';
+      const q = { x: Math.max(4, Math.min(view.W - 4, p.x)), y: Math.max(4, Math.min(view.H - 4, p.y)) };
+      const k = dragging.k;
+      if (S.kind === 'line') {
+        const f = S.forces[k], V = S.axis === 'v', h = handles.find(x => x.k === k);
+        if (!h) return;
+        const C = V ? { ox: Math.round(view.W * 0.3), oy: Math.round(view.H / 2) } : { ox: Math.round(view.W / 2), oy: Math.round(Math.min(92, view.H * 0.3)) };
+        const edge = V ? view.half : view.half;
+        const d = V ? C.oy - q.y : q.x - C.ox;
+        const out = Math.max(0, Math.abs(d) - edge) / view.s;
+        f.m = Math.min(1000, Math.round(out * 2) / 2);
+        if (!f.fix) f.a = V ? (d < 0 ? 270 : 90) : (d < 0 ? 180 : 0);
+      } else if (S.kind === 'close') {
+        const [L, R] = view.O;
+        let wx, wy;
+        if (k === 'uL') { wx = (q.x - L.ox) / view.s; wy = (L.oy - q.y) / view.s; }
+        else { const e2 = sum(S.forces.map(vec)); wx = (q.x - R.ox) / view.s - e2.x; wy = (R.oy - q.y) / view.s - e2.y; }
+        if (!S.lock) S.user.m = Math.min(200, Math.round(Math.hypot(wx, wy) * 2) / 2);
+        if (Math.hypot(wx, wy) > 0.2) S.user.a = norm(Math.round(deg(Math.atan2(wy, wx))));
+      } else if (S.kind === 'comp') {
+        const o = view.O[0], f = S.forces[k], wx = (q.x - o.ox) / view.s, wy = (o.oy - q.y) / view.s;
+        f.m = Math.min(200, Math.round(Math.hypot(wx, wy) * 2) / 2);
+        if (f.m > 0) f.a = norm(Math.round(deg(Math.atan2(wy, wx))));
+        f.ref = 'x';
+      } else if (S.kind === 'strings') {
+        // the angle from the vertical is half the angle between the strings
+        const L = view.panes[0], cx = L.x + L.w / 2, h = handles.find(x => x.k === k);
+        const base = h ? { x: cx, y: h.y + tension(S.theta) * Math.cos(rad(S.theta / 2)) * view.s } : { x: cx, y: q.y + 40 };
+        const dx = Math.abs(q.x - base.x), dy = Math.max(1, base.y - q.y);
+        S.theta = Math.max(0, Math.min(150, Math.round(2 * deg(Math.atan2(dx, dy)))));
+        dragging.base = base;
+      }
+      toCustom(); update();
     });
-    const end = () => { drag = -1; dragScale = null; };
-    canvas.addEventListener('pointerup', end);
-    canvas.addEventListener('pointercancel', end);
+    const endDrag = () => { if (dragging) { dragging = null; update(); } };
+    canvas.addEventListener('pointerup', endDrag);
+    canvas.addEventListener('pointercancel', endDrag);
 
-    el('balanceBtn').addEventListener('click', () => {
-      const F = forces();
-      const x = -(F[0].x + F[1].x), y = -(F[0].y + F[1].y);
-      el('f3').value = Math.hypot(x, y).toFixed(1);
-      let a = deg(Math.atan2(y, x)); if (a < 0) a += 360;
-      el('a3').value = a.toFixed(1);
-      el('preset').value = 'custom';
+    /* ---------------- the tabs ---------------- */
+    const TABS = {
+      1: { strip: 'Answer Predict first. Then press Next step to add the forces along the line, one step at a time, or drag an arrowhead to change a force.',
+        presets: ['p313', 'a3', 'b5'], hint: 'Drag an arrowhead to change a force. Drag it past the object to turn it round.',
+        key: [['#2563eb', 'Given forces'], ['#d97706', 'Unknown force'], ['#dc2626', 'Net force ΣF']],
+        notes: ['When the net force acting on an object is zero, we say the object is in equilibrium (notes p. 3-13).', 'Right and up are positive; left and down are negative (p. 3-57).', 'An object in equilibrium is either at rest or moving at constant velocity (p. 3-19).'] },
+      2: { strip: 'Answer Predict first. Then drag the tip of your force (orange) until the arrows close up, and press Next step to see the method.',
+        presets: ['ex3', 'ex4', 'b1'], hint: 'Drag the orange arrowhead in either drawing, or type its value.',
+        key: [['#2563eb', 'Given forces'], ['#d97706', 'Your force'], ['#dc2626', 'Net force ΣF'], ['#7c3aed', 'Missing force (the answer)']],
+        notes: ['Forces added one after another, the tail of each at the tip of the one before, give the resultant from the start to the last tip (notes p. 3-24).', 'When the forces are balanced the last tip lands back on the start: the shape closes and Σ<i>F</i> = 0.', 'So the missing force is the arrow from the last tip back to the start: equal in size and opposite in direction to the resultant of the others.'] },
+      3: { strip: 'Answer Predict first. Then press Next step to find the missing force by the component method, one step at a time.',
+        presets: ['c2', 'ex4c', 'b1c'], hint: 'Drag any arrowhead, or type the values: the missing force, the table and the working follow.',
+        key: [['#2563eb', 'Given forces'], ['#7c3aed', 'Missing force']],
+        notes: ['In equilibrium the net force is zero, so Σ' + FX + ' = 0 and Σ' + FY + ' = 0.', 'The missing force’s components are the given forces’ sums with their signs reversed.', 'Angles in the direction column are measured anticlockwise from the +<i>x</i>-axis.'] },
+      4: { strip: 'Answer Predict first. Then press Larger angle, or drag a tension arrowhead or the slider, and watch the tension.',
+        presets: ['s1', 's2'], hint: 'Drag the tip of either tension arrow sideways, or use the slider.',
+        key: [['#2563eb', 'Tension T (left string)'], ['#16a34a', 'Tension T (right string)'], ['#7c3aed', 'Weight W']],
+        notes: ['Scenario 1: the two strings share the weight, so each tension is half of it (notes p. 3-20).', 'Scenario 2: each string pulls at <i>θ</i>/2 from the vertical; only its vertical part holds the block up, so each tension is larger.', 'The magnitude of the resultant force is not the algebraic sum of the two forces; it depends on the angle between them (p. 3-22).'] },
+      5: { strip: 'Answer every question, then read the summary.', key: [] }
+    };
+
+    const PREDICT = {
+      1: { q: 'Tutorial 3, A3: a box is pushed along a rough surface by a 30 N force at a constant velocity. What is the frictional force on it?',
+        opts: ['0 N: the box is moving', 'Less than 30 N, or the box would not move', '30 N', 'More than 30 N'], ans: 2,
+        why: 'Constant velocity means the acceleration is zero, so the net force is zero (notes p. 3-47): the forces are balanced. The frictional force must be 30 N, opposite to the push. Choose the box scenario and press Next step to check.' },
+      2: { q: 'Example 3 (notes p. 3-14): two forces ' + LAB.F1 + ' and ' + LAB.F2 + ' of the same magnitude act on an object. How many ways can ' + LAB.F2 + ' act so that the two forces are balanced?',
+        opts: ['One: directly opposite to ' + LAB.F1, 'Two: opposite to ' + LAB.F1 + ', or at right angles to it', 'Any direction, as they are the same size', 'None: two forces can never balance'], ans: 0,
+        why: LAB.F2 + ' must act directly opposite to ' + LAB.F1 + '. Hence there is only 1 way. Drawn one after the other, the arrows then end back at the start; any other direction leaves a gap. Drag ' + LAB.F2 + ' round to check.' },
+      3: { q: 'Tutorial 3, C2: the other three cables pull 40 N up and to the left, 60 N down and to the left, and 35 N straight down. Which way must <i>E</i> point for the pole to be in equilibrium?',
+        opts: ['Right and up', 'Left and up', 'Left and down', 'Right and down'], ans: 0,
+        why: 'The other three add to Σ' + FX + ' = −62.9 N (left) and Σ' + FY + ' = −37.3 N (down). For Σ<i>F</i> = 0, <i>E</i> must cancel both: 62.9 N to the right and 37.3 N up. Press Next step to work it out.' },
+      4: { q: 'Notes p. 3-20: is the tension in each string in scenario 2 (strings at an angle) greater than, less than, or equal to the tension in scenario 1 (strings vertical)?',
+        opts: ['Greater than', 'Less than', 'Equal to'], ans: 0,
+        why: 'Greater than. In scenario 1 each string holds half the weight: 5 N. At an angle only the vertical part of each tension holds the block up, so each tension must be larger. Press Larger angle to watch <i>T</i> grow.' }
+    };
+
+    const FEATS = {
+      1: [['sign', 'Right and up are +'], ['zero', 'Balanced: ΣF = 0'], ['motion', 'Moving at constant velocity'], ['weight', 'Tension = weight']],
+      2: [['chain', 'One after another'], ['gap', 'The gap'], ['closed', 'A closed shape: ΣF = 0'], ['opposite', 'Opposite to the resultant']],
+      3: [['table', 'The table'], ['sumzero', 'ΣFx = 0 and ΣFy = 0'], ['pyth', 'Size by Pythagoras'], ['tan', 'Direction from tan θ']],
+      4: [['vertical', 'Strings vertical: T = W ÷ 2'], ['vparts', 'Vertical parts hold W'], ['hparts', 'Horizontal parts cancel'], ['wide', 'Wider angle, larger T']]
+    };
+    const PROMPTS = {
+      1: ['A box slides at constant velocity. Why is the net force on it zero?', 'If the object hung from the string were 30 kg, what would the tension be?', 'Change the 5 N force to 6 N. What happens to the object now?'],
+      2: ['Why does a closed shape mean the forces are balanced?', 'Example 3: why is there only one way for ' + LAB.F2 + ' to act?', 'How does the missing force compare with the resultant of the given forces?'],
+      3: ['Why must ' + SFX + ' and ' + SFY + ' both be zero?', 'How do the signs of the components tell you where the missing force points?', 'Compare the component answer for B1 with your scale drawing on step 2.'],
+      4: ['At what angle does each tension equal the whole weight?', 'Why can the two strings never be horizontal while they hold the block?', 'The block sits on a table with the strings as in scenario 2: which way is the resultant of the two tensions?'],
+      5: ['Which question did most of the class get wrong, and why?', 'Pick one wrong option: what mistake would lead a student to choose it?']
+    };
+
+    let feat = {}, predictPick = null;
+    function clearFeat() { feat = {}; hl = {}; S.showComp = false; S.showRes = false; syncFeatButtons(); $('featNote').textContent = ''; }
+    function syncFeatButtons() { document.querySelectorAll('#feats .feat').forEach(b => b.classList.toggle('on', !!feat[b.dataset.f])); }
+    // a key feature shows itself on the drawing: it picks the scenario (if needed) and the step that show it
+    function tapFeat(id) {
+      const on = !feat[id];
+      const want = scen => { if (S.base === scen && S.scen === scen) return; presetEl.value = scen; chooseScenario(scen); };
+      clearFeat();
+      if (on) {
+        ({
+          sign: () => { want('p313'); S.step = 2; },
+          zero: () => { want('p313'); S.step = 4; hl = { rSum: true, rEq: true }; },
+          motion: () => { want('a3'); S.step = 4; hl = { rUnk: true }; },
+          weight: () => { want('b5'); S.step = 4; hl = { rUnk: true }; },
+          chain: () => { want('ex4'); S.step = 2; },
+          gap: () => { want('ex4'); S.step = 3; },
+          closed: () => { want('ex4'); const M = missing(); S.user.m = M.m; S.user.a = M.a; S.step = 4; hl = { rNet: true }; },
+          opposite: () => { want('b1'); S.step = 4; S.showRes = true; hl = { rMiss: true, rDir: true }; },
+          table: () => { want('c2'); S.step = 2; },
+          sumzero: () => { want('c2'); S.step = 4; hl = { rSx: true, rSy: true }; },
+          pyth: () => { want('c2'); S.step = 5; hl = { rU: true }; },
+          tan: () => { want('c2'); S.step = 6; hl = { rDir: true }; },
+          vertical: () => { want('s1'); S.theta = 0; hl = { rT: true }; },
+          vparts: () => { want('s2'); S.showComp = true; hl = { rV: true }; },
+          hparts: () => { want('s2'); S.showComp = true; },
+          wide: () => { want('s2'); S.theta = 120; toCustom(); hl = { rT: true }; }
+        })[id]();
+      }
+      feat = on ? { [id]: true } : {};
+      syncFeatButtons(); update();
+      $('featNote').innerHTML = on ? featNote(id) : '';
+    }
+    function featNote(id) {
+      const M = missing();
+      switch (id) {
+        case 'sign': return 'A force acting to the right or upward is positive; a force acting to the left or downward is negative. The magnitude itself is always positive: the sign only gives the direction (notes p. 3-57).';
+        case 'zero': { const v = S.forces.map(signed), t = lineSum(); return `Resultant force = ${v.map(x => '(' + sg(x) + ')').join(' + ')} = ${sg(t)} N. ` + (Math.abs(t) < 0.05 ? 'No net force acting on the object: the forces are balanced and the object is in equilibrium (notes p. 3-13).' : 'Not zero, so these forces are not balanced.'); }
+        case 'motion': return 'The box moves, yet the net force on it is zero. When an object is at rest or moving at constant velocity, the acceleration is zero, the net force is zero and the forces are balanced (notes p. 3-47). So the frictional force equals the 30 N push.';
+        case 'weight': { const W = S.forces[0].m; return `The object hangs at rest, so the forces on it are balanced: the tension up equals the weight down. <i>W</i> = <i>mg</i> = ${plain(W / G)} × 10 = ${f1(W)} N, so <i>T</i> = ${f1(W)} N.`; }
+        case 'chain': return 'The given forces drawn one after another: the tail of each force at the tip of the one before (notes p. 3-24). Each force keeps its length and its direction; it has only moved.';
+        case 'gap': return 'If the forces were balanced, the last tip would land back on the start. It does not, so there is a gap. The missing force must fill it: it runs from the last tip back to the start.';
+        case 'closed': return `Your force is now ${f1(S.user.m)} N, ${dirWords(userVec().x, userVec().y)}. The arrows end where they started, so Σ<i>F</i> = 0 and the object is in equilibrium.`;
+        case 'opposite': return `The resultant of the 30 N and 40 N forces (grey, from the start to the last tip) is ${f1(M.m)} N. The missing force (purple) is equal in size and opposite in direction: ${f1(M.m)} N, ${relWords(M)}.`;
+        case 'table': return 'Steps 1 and 2: a table with a row for each force, each broken into ' + FX + ' and ' + FY + ' with its sign. The missing force has a row too; its cells are still unknown.';
+        case 'sumzero': { const s = sum(S.forces.map(vec)); return `The pole is in equilibrium, so each column of the table adds to zero. The given forces add to ${SFX} = ${sg(s.x)} N and ${SFY} = ${sg(s.y)} N, so ${uComp('x')} = ${sg(M.x)} N and ${uComp('y')} = ${sg(M.y)} N.`; }
+        case 'pyth': return `Its two components are at right angles, so ${uName()} = √(${num(M.x)}² + ${num(M.y)}²) = ${f1(M.m)} N (Pythagoras’ theorem).`;
+        case 'tan': return `tan <i>θ</i> = ${f1(Math.abs(M.y))} ÷ ${f1(Math.abs(M.x))} gives the angle with the horizontal. Then read the direction from the signs of the components: it points ${dirWords(M.x, M.y)}.`;
+        case 'vertical': return 'Scenario 1: the 1 kg block has a weight of <i>mg</i> = 1 × 10 = 10 N. Both strings pull straight up and share it equally, so each tension is 5 N.';
+        case 'vparts': { const T = tension(S.theta); return `Resolve each tension. Its vertical part is <i>T</i> cos ${plain(S.theta / 2)}° = ${f1(T * Math.cos(rad(S.theta / 2)))} N, and the two vertical parts add to the 10 N weight. So each <i>T</i> (${f1(T)} N) is larger than 5 N.`; }
+        case 'hparts': { const T = tension(S.theta); return `The horizontal parts, <i>T</i> sin ${plain(S.theta / 2)}° = ${f1(T * Math.sin(rad(S.theta / 2)))} N each, point in opposite directions and cancel. They hold nothing up, which is why the tension must be larger than in scenario 1.`; }
+        case 'wide': return `At ${plain(S.theta)}° each tension is ${f1(tension(S.theta))} N: as large as the whole weight. At 150° it is ${f1(tension(150))} N. The wider the angle, the smaller the vertical part of each tension, so the larger each tension must be.`;
+      }
+      return '';
+    }
+
+    function renderPredict(tab) {
+      const P = PREDICT[tab], box = $('predictBox');
+      predictPick = null;
+      if (!P) { box.hidden = true; return; }
+      box.hidden = false; box.classList.remove('done');
+      $('predictQ').innerHTML = P.q;
+      $('predictFb').innerHTML = '';
+      const opts = $('predictOpts');
+      opts.innerHTML = '';
+      P.opts.forEach((o, i) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.innerHTML = o;
+        b.addEventListener('click', () => {
+          if (opts.dataset.done) return;
+          predictPick = i; opts.querySelectorAll('.opt').forEach((x, j) => x.classList.toggle('picked', j === i));
+        });
+        opts.appendChild(b);
+      });
+      delete opts.dataset.done;
+      $('predictCheck').textContent = 'Check my answer';
+    }
+    $('predictCheck').addEventListener('click', () => {
+      const P = PREDICT[currentTab], opts = $('predictOpts'), fb = $('predictFb');
+      if (!P) return;
+      if (opts.dataset.done) { renderPredict(currentTab); return; }
+      if (predictPick === null) { fb.innerHTML = '<span class="verdict no">Pick an answer first.</span>'; return; }
+      opts.dataset.done = '1';
+      const ok = predictPick === P.ans;
+      opts.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === P.ans) x.classList.add('right'); else if (j === predictPick) x.classList.add('wrong'); });
+      // the options fold away: the result line names the pick (and the right answer), then the explanation
+      $('predictBox').classList.add('done');
+      fb.innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> Your prediction: ${P.opts[predictPick]}.`
+        + (ok ? '' : ` The answer: <b>${P.opts[P.ans]}</b>.`) + ` <span class="why">${P.why}</span>`;
+      $('predictCheck').textContent = 'Try again';
     });
-    el('preset').addEventListener('change', applyPreset);
-    ids.forEach(id => el(id).addEventListener('input', () => { el('preset').value = 'custom'; }));
-    applyPreset();
-    function frame() { draw(); updateReadout(); requestAnimationFrame(frame); }
-    requestAnimationFrame(frame);
+
+    // symbols in a plain label made italic in one pass: Fx, Fy, a single F, T, W, θ
+    const italic = s => s.replace(/\bF([xy])\b|\b([FTW])\b|θ/g, (m, c, l) => c ? `<i>F</i><sub><i>${c}</i></sub>` : l ? `<i>${l}</i>` : '<i>θ</i>');
+    function renderFeats(tab) {
+      const list = FEATS[tab] || [], el = $('feats');
+      $('featBox').hidden = !list.length;
+      el.innerHTML = '';
+      list.forEach(([id, label]) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'feat'; b.dataset.f = id;
+        b.innerHTML = italic(label);
+        b.addEventListener('click', () => tapFeat(id));
+        el.appendChild(b);
+      });
+      $('featNote').textContent = '';
+      syncFeatButtons();
+    }
+    function renderKey(tab) {
+      // the label sits in its own span: as direct children of the inline-flex entry, <i> and <sub> would each
+      // become a flex item (a gap after Σ, a subscript that does not drop)
+      $('ckey').innerHTML = (TABS[tab].key || []).map(([c, label]) => `<span><b style="background:${c}"></b><span>${italic(label)}</span></span>`).join('');
+    }
+    function fillPresets(list) {
+      presetEl.innerHTML = '';
+      [...list, 'custom'].forEach(id => { const o = document.createElement('option'); o.value = id; o.textContent = id === 'custom' ? (list[0] === 's1' ? 'Your own angle' : 'Your own forces') : PRESETS[id].name; presetEl.appendChild(o); });
+      presetEl.value = list[0];
+    }
+
+    function showTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('#tabs .tab').forEach(b => { const on = +b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+      $('stepLabel').textContent = `Step ${tab} of 5`;
+      document.querySelectorAll('#stepBar i').forEach((i, n) => i.classList.toggle('on', n < tab));
+      $('strip').innerHTML = TABS[tab].strip;
+      renderKey(tab);
+      $('pageSim').hidden = tab === 5;
+      $('page5').hidden = tab !== 5;
+      if (tab <= 4) {
+        const T = TABS[tab];
+        $('sceneHint').textContent = T.hint;
+        $('notes').innerHTML = '<ul>' + T.notes.map(n => `<li>${n}</li>`).join('') + '</ul>';
+        fillPresets(T.presets);
+        chooseScenario(T.presets[0]);
+      }
+      if (tab === 5) renderQuiz();
+      renderPredict(tab);
+      renderFeats(tab);
+      $('tPrompts').innerHTML = PROMPTS[tab].map(p => `<li>${p}</li>`).join('');
+    }
+    document.querySelectorAll('#tabs .tab').forEach(b => b.addEventListener('click', () => showTab(+b.dataset.tab)));
+
+    /* ---------------- Tab 5: Challenge ---------------- */
+    // every answer recomputed and matched to the notes, the lecturer's copy or Tutorial 3's answer key
+    // A question whose parts share one situation is one screen: the situation once, then its parts
+    const QUIZ = [
+      { src: 'Notes p. 3-13', stem: 'A 2 N force and a 3 N force act to the left on an object, and a 5 N force acts to the right.', parts: [
+        { q: 'What is the resultant force on the object?', opts: ['10 N to the right', '0 N', '5 N to the left', '4 N to the right'], ans: 1,
+          why: 'Right is positive: 5 N + (−2 N) + (−3 N) = 0 N. No net force acts on the object.' },
+        { q: 'What can you say about the object?', opts: ['It is in equilibrium', 'It must be at rest', 'It speeds up to the right', 'It speeds up to the left'], ans: 0,
+          why: 'The net force is zero, so the object is in equilibrium (p. 3-13). It may be at rest or moving at constant velocity (p. 3-19), so "it must be at rest" goes too far.' }] },
+      { src: 'Example 3, notes p. 3-14', stem: 'Two forces ' + LAB.F1 + ' and ' + LAB.F2 + ' of the same magnitude act on an object.', parts: [
+        { q: 'How many ways can ' + LAB.F2 + ' act so that the two forces are balanced?', opts: ['One: directly opposite to ' + LAB.F1, 'Two: opposite to ' + LAB.F1 + ', or at right angles to it', 'Any direction, as they are the same size', 'None: two forces can never balance'], ans: 0,
+          why: LAB.F2 + ' must act directly opposite to ' + LAB.F1 + '. Hence there is only 1 way.' }] },
+      { src: 'Tutorial 3, A3', stem: 'A 2.0 kg box is being pushed horizontally along a rough surface by a 30 N force at a constant velocity of 1.0 m s<sup>−1</sup>.', parts: [
+        { lab: '(a)', q: 'What is the net force acting on the box?', opts: ['30 N', '2.0 N', '0 N', '15 N'], ans: 2,
+          why: 'Constant velocity: the acceleration is zero, so the net force is zero (notes p. 3-47).' },
+        { lab: '(b)', q: 'What is the frictional force between the box and the surface?', opts: ['0 N', '28 N', '30 N', '32 N'], ans: 2,
+          why: 'The net force is zero, so friction balances the push: 30 N, opposite to it. (28 N is the answer to B4, where the box accelerates at 1.0 m s<sup>−2</sup>.)' }] },
+      { src: 'Tutorial 3, B5', stem: 'An object of 20 kg is hung from the ceiling by a light string. (Take <i>g</i> = 10 m s<sup>−2</sup>.)', parts: [
+        { lab: '(a)', q: 'Find the weight of the object.', opts: ['20 N', '2.0 N', '200 N', '196 N'], ans: 2,
+          why: '<i>W</i> = <i>mg</i> = 20 × 10 = 200 N. (196 N uses <i>g</i> = 9.81; the tutorial takes 10.)' },
+        { lab: '(b)', q: 'Find the tension <i>T</i> in the string.', opts: ['0 N', '100 N', '200 N', '400 N'], ans: 2,
+          why: 'The object hangs at rest, so the forces on it are balanced: <i>T</i> = <i>W</i> = 200 N.' }] },
+      { src: 'Example 4, notes p. 3-15', stem: 'An object is in equilibrium. Four of the forces on it are 70 N along +<i>x</i>, 50 N along −<i>x</i>, 40 N along +<i>y</i> and 40 N along −<i>y</i>.', parts: [
+        { q: 'Fill in the missing force.', opts: ['20 N along +<i>x</i> (to the right)', '20 N along −<i>x</i> (to the left)', '120 N along −<i>x</i> (to the left)', '0 N: nothing is missing'], ans: 1,
+          why: 'The 40 N forces cancel. Along <i>x</i>: 70 + (−50) = +20 N, so the missing force is 20 N along −<i>x</i>, making Σ<i>F</i> = 0.' }] },
+      { src: 'Tutorial 3, B1', stem: 'A 30 N force acts 30° above the horizontal and a 40 N force acts 30° below it (60° apart). Find, by scale drawing, the additional force so that Σ<i>F</i> = 0.', parts: [
+        { q: 'Its magnitude:', opts: ['70.0 N', '60.8 N', '36.1 N', '10.0 N'], ans: 1,
+          why: 'The 30 N and 40 N forces add to 60.8 N (components +60.6 N and −5.0 N). The additional force is equal in size: 60.8 N.' },
+        { q: 'Its direction:', opts: ['154.7° clockwise from the 40 N force', '25.3° anticlockwise from the 40 N force', '154.7° anticlockwise from the 40 N force', '25.3° clockwise from the 40 N force'], ans: 0,
+          why: 'The resultant of the two forces is 25.3° anticlockwise from the 40 N force. The additional force points the opposite way: 180° − 25.3° = 154.7° clockwise from the 40 N force.' }] },
+      { src: 'Tutorial 3, C2', stem: 'A pole is in equilibrium under 4 tension cables: 40 N at 25° to the left of the +<i>y</i>-axis, 60 N at 40° below the −<i>x</i>-axis, 35 N along the −<i>y</i>-axis, and <i>E</i> at an angle <i>θ</i> with respect to the positive <i>x</i>-axis.', parts: [
+        { q: 'The magnitude of <i>E</i>:', opts: ['73.1 N', '135.0 N', '62.9 N', '37.3 N'], ans: 0,
+          why: 'The other three give Σ' + FX + ' = −62.9 N and Σ' + FY + ' = −37.3 N. So <i>E</i> has components +62.9 N and +37.3 N: <i>E</i> = √(62.9² + 37.3²) = 73.1 N.' },
+        { q: 'Its angle <i>θ</i>:', opts: ['30.7°', '59.3°', '36.9°', '149.3°'], ans: 0,
+          why: 'tan <i>θ</i> = 37.3 ÷ 62.9, so <i>θ</i> = 30.7° above the +<i>x</i>-axis. (59.3° comes from dividing the wrong way round.)' }] },
+      { src: 'Notes p. 3-20', stem: 'Scenario 1: a 1 kg mass is suspended by 2 strings vertically. Scenario 2: the same 1 kg mass is suspended by 2 strings at an angle <i>θ</i> to each other. (Take <i>g</i> = 10 m s<sup>−2</sup>.)', parts: [
+        { lab: '(a)', q: 'What is the tension in each string in scenario 1?', opts: ['10 N', '5 N', '1 N', '20 N'], ans: 1,
+          why: 'The weight is 1 × 10 = 10 N, shared by the two strings: 5 N each.' },
+        { lab: '(b)', q: 'The tension in each string in scenario 2 is …', opts: ['greater than in scenario 1', 'less than in scenario 1', 'equal to that in scenario 1'], ans: 0,
+          why: 'Greater than: only the vertical part of each tension holds the block up.' }] },
+      { src: 'Notes p. 3-21', stem: 'The same 1 kg block is placed on a table, with the two tensions acting as in scenario 2 (strings at an angle <i>θ</i>, both pulling up).', parts: [
+        { q: 'Which of the following statement is correct for scenario 2?', opts: ['The direction of the resultant force is to the left.', 'The direction of the resultant force is to the right.', 'The direction of the resultant force is between the two tensions.'], ans: 2,
+          why: 'The horizontal parts of the two tensions cancel, so their resultant points upwards: between the two tensions (notes p. 3-22).' }] },
+      { src: 'Notes p. 3-19', stem: 'The net force acting on an object is zero.', parts: [
+        { q: 'Which statement is correct?', opts: ['The object must be at rest', 'The object is either at rest or moving at constant velocity', 'The object must be slowing down', 'The object must be speeding up'], ans: 1,
+          why: 'There are two possible scenarios: the object is either at rest or moving at constant velocity. A zero net force does not mean that the speed of the object is zero.' }] }
+    ];
+    const QUIZ_MARKS = QUIZ.reduce((n, Q) => n + Q.parts.length, 0);
+    const partLabel = (Q, k) => Q.parts[k].lab ? Q.parts[k].lab + ' ' : Q.parts.length > 1 ? `(${'abcdefgh'[k]}) ` : '';
+    let quiz = { i: 0, score: 0, picks: [], done: false, missed: [] };
+    function resetQuiz() { quiz = { i: 0, score: 0, picks: [], done: false, missed: [] }; renderQuiz(); }
+    function renderQuiz() {
+      const el = $('quiz'), N = QUIZ.length;
+      if (quiz.i >= N) {
+        const list = quiz.missed.length
+          ? `<p>Go back over these:</p><ul>${quiz.missed.map(([n, k]) => { const Q = QUIZ[n];
+              return `<li>Question ${n + 1}${partLabel(Q, k).trim()} (${Q.src}): ${(Q.stem ? Q.stem + ' ' : '') + Q.parts[k].q}</li>`; }).join('')}</ul>`
+          : '<p>Every answer right. Well done.</p>';
+        el.innerHTML = `<div class="quiz-top"><span>Summary</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div><div class="quiz-bar"><i style="width:100%"></i></div>
+          <div class="quiz-sum"><div class="quiz-q">You scored ${quiz.score} out of ${QUIZ_MARKS}.</div>${list}</div>
+          <div class="row-btns"><button type="button" id="qAgain">Try the quiz again</button></div>`;
+        $('qAgain').addEventListener('click', resetQuiz);
+        return;
+      }
+      const Q = QUIZ[quiz.i], many = Q.parts.length > 1;
+      quiz.picks = Q.parts.map(() => null);
+      el.innerHTML = `<div class="quiz-top"><span>Question ${quiz.i + 1} of ${N}</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div>
+        <div class="quiz-bar"><i style="width:${(quiz.i / N) * 100}%"></i></div>
+        ${Q.stem ? `<div class="quiz-q" id="qStem">${Q.stem}</div>` : ''}<div class="quiz-src">${Q.src}${many ? ` · ${Q.parts.length} parts, answer them all` : ''}</div>
+        ${Q.parts.map((P, k) => `<div class="qpart" data-k="${k}">
+          <div class="${Q.stem ? 'qpart-q' : 'quiz-q'}">${partLabel(Q, k)}${P.q}</div>
+          <div class="opts">${P.opts.map((o, j) => `<button type="button" class="opt" data-j="${j}">${o}</button>`).join('')}</div>
+          <div class="feedback"></div></div>`).join('')}
+        <div class="row-btns"><button type="button" id="qSubmit">${many ? 'Submit answers' : 'Submit answer'}</button><button type="button" class="secondary" id="qReset">Reset quiz</button></div>
+        <div class="feedback" id="qFb"></div>`;
+      el.querySelectorAll('.qpart').forEach(part => {
+        const k = +part.dataset.k;
+        part.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+          if (quiz.done) return;
+          quiz.picks[k] = +b.dataset.j; part.querySelectorAll('.opt').forEach(x => x.classList.toggle('picked', x === b));
+        }));
+      });
+      $('qReset').addEventListener('click', resetQuiz);
+      $('qSubmit').addEventListener('click', () => {
+        const fb = $('qFb');
+        if (quiz.done) { quiz.i++; quiz.done = false; renderQuiz(); return; }
+        const left = quiz.picks.map((p, k) => p === null ? partLabel(Q, k).trim() || `part ${k + 1}` : null).filter(x => x !== null);
+        if (left.length) { fb.innerHTML = `<span class="verdict no">${many ? `Pick an answer for every part first (still to do: ${left.join(', ')}).` : 'Pick an answer first.'}</span>`; return; }
+        quiz.done = true; fb.innerHTML = '';
+        el.querySelectorAll('.qpart').forEach(part => {
+          const k = +part.dataset.k, P = Q.parts[k], ok = quiz.picks[k] === P.ans;
+          if (ok) quiz.score++; else quiz.missed.push([quiz.i, k]);
+          part.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === P.ans) x.classList.add('right'); else if (j === quiz.picks[k]) x.classList.add('wrong'); });
+          part.querySelector('.feedback').innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> <span class="why">${P.why}</span>`;
+        });
+        el.querySelector('.quiz-top span:last-child').textContent = `Score: ${quiz.score} of ${QUIZ_MARKS}`;
+        $('qSubmit').textContent = quiz.i + 1 < N ? 'Next question' : 'See the summary';
+      });
+    }
+
+    /* ---------------- Teacher mode ---------------- */
+    // Only the teacher link (this page's address + ?teacher) shows the button; students and the
+    // Brightspace embed use the plain address. Not a lock: the panel only changes this screen.
+    const teacher = $('teacher');
+    if (new URLSearchParams(location.search).has('teacher')) $('teacherBtn').hidden = false;
+    $('teacherBtn').addEventListener('click', () => { teacher.hidden = !teacher.hidden; });
+    $('tClose').addEventListener('click', () => { teacher.hidden = true; });
+    $('tExplain').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-explain');
+      e.target.textContent = on ? 'Show explanations' : 'Hide explanations'; e.target.classList.toggle('on', on);
+    });
+    $('tAnswers').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-answers');
+      e.target.textContent = on ? 'Show answer labels' : 'Hide answer labels'; e.target.classList.toggle('on', on);
+    });
+    // free exploration: every step shown at once, no Predict first
+    $('tFree').addEventListener('click', e => {
+      freeMode = !freeMode; document.body.classList.toggle('free-mode', freeMode);
+      e.target.textContent = freeMode ? 'Back to the guided steps' : 'Switch to free exploration'; e.target.classList.toggle('on', freeMode);
+      showTab(currentTab);
+    });
+    const fullBtn = $('tFull');
+    if (!document.fullscreenEnabled) fullBtn.hidden = true;
+    fullBtn.addEventListener('click', () => {
+      if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {});
+    });
+    document.addEventListener('fullscreenchange', () => { fullBtn.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
+    $('tReset').addEventListener('click', () => { resetQuiz(); showTab(1); });
+
+    window.addEventListener('resize', () => { if (currentTab <= 4) { view = null; update(); } });
+    showTab(1);
+  </script>
+  <script>
+    // Embedded (Brightspace): tell the page around the frame how tall this page is, so a resize script in the
+    // embed code can fit the frame to it (no blank space, no inner scrollbar). Measured from the content, not
+    // scrollHeight, which never drops below the frame's own height and so could never shrink it.
+    (function () {
+      if (window.parent === window) return;
+      let last = 0;
+      function height() {
+        const c = document.querySelector('.container'), cs = getComputedStyle(document.body);
+        return Math.ceil(c.getBoundingClientRect().bottom + window.scrollY + parseFloat(cs.paddingBottom) + parseFloat(cs.marginBottom) + 4);
+      }
+      function send(force) {
+        const h = height();
+        if (!force && Math.abs(h - last) < 2) return;
+        last = h;
+        window.parent.postMessage({ type: 'pim-height', page: location.pathname.split('/').pop(), height: h }, '*');
+      }
+      new ResizeObserver(() => send(false)).observe(document.querySelector('.container'));
+      window.addEventListener('load', () => send(true));
+      // the embed's script asks once it is listening, in case this page loaded first
+      window.addEventListener('message', e => { if (e.data && e.data.type === 'pim-height?') send(true); });
+      send(true);
+    })();
   </script>
   <script>
     // Phones: a swipe that starts on an empty part of a drawing scrolls the page (touch-action: pan-y),
     // and a touch the page grabbed for a drag (its own setPointerCapture call) keeps the page still.
     // (hasPointerCapture can't tell: a touch is always captured implicitly.)
-    // The kinematics graphs are left out: a sideways drag scrubs them and an up-down one scrolls.
     document.querySelectorAll('canvas:not(.graph-canvas)').forEach(c => {
       let grabbed = false;
       const capture = c.setPointerCapture;
