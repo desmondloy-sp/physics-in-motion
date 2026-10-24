@@ -230,8 +230,10 @@
     .step-bar i.on { background: #fbbf24; }
     button.teacher-btn { flex: none; background: transparent; border: 1px solid #94a3b8; color: #f8fafc; font-size: 0.82rem; padding: 5px 10px; }
     button.teacher-btn:hover { background: #334155; }
-    .tabs { display: flex; gap: 6px; margin-top: 8px; overflow-x: auto; scrollbar-width: thin; padding-bottom: 2px; }
-    button.tab { flex: 1 0 auto; background: #f1f5f9; color: #1e293b; font-size: 0.85rem; font-weight: 600; padding: 7px 10px; border-radius: 8px; line-height: 1.2; white-space: nowrap; }
+    /* every tab always visible: equal columns, and a long name wraps onto a second line (never a sideways scroll,
+       which hid tabs 4 and 5 in Brightspace's ~820 px column) */
+    .tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; margin-top: 8px; }
+    button.tab { min-width: 0; background: #f1f5f9; color: #1e293b; font-size: 0.85rem; font-weight: 600; padding: 7px 8px; border-radius: 8px; line-height: 1.2; white-space: normal; text-align: center; }
     button.tab:hover { background: #e2e8f0; }
     button.tab.active, button.tab.active:hover { background: #2563eb; color: white; }
     .tab .ts { display: none; }
@@ -367,6 +369,9 @@
       }
       .tab .tl { display: none; }
       .tab .ts { display: inline; }
+      /* phones: short names in rows that wrap, so all five tabs show without scrolling */
+      .tabs { display: flex; flex-wrap: wrap; }
+      button.tab { flex: 1 1 auto; white-space: nowrap; }
       /* tab 1's two control groups: one above the other, so the whole scenario name and all three buttons fit */
       .controls.walk-controls { grid-template-columns: 1fr; }
     }
