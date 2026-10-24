@@ -313,8 +313,14 @@
       .graphs.n2 { grid-template-columns: repeat(2, 1fr); }
     }
 
-    @media (max-width: 760px) {
+    @media (max-width: 699px) {
       .learn { grid-template-columns: 1fr; }
+    }
+    /* 701-900 px (a Brightspace column): Start / Pause / Reset get their own row, or "Pause" and "Reset" are cut off */
+    @media (min-width: 701px) and (max-width: 900px) {
+      .controls:not(.walk-controls) { grid-template-columns: 2fr 1fr 1fr 1fr; }
+      .controls.no-a:not(.walk-controls) { grid-template-columns: 2fr 1fr 1fr; }
+      .controls:not(.walk-controls) .button-group { grid-column: 1 / -1; }
     }
     /* the four predictions as a 2 x 2 grid where there is room, so the page fits a Brightspace frame */
     @media (min-width: 700px) {
