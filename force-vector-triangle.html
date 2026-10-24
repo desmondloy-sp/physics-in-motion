@@ -331,8 +331,15 @@
     const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
     const norm = a => ((a % 360) + 360) % 360;
     const clean = v => (Math.abs(v) < 0.05 ? 0 : v);
-    const f1 = v => clean(v).toFixed(1).replace('-', '−'); // one decimal place, a true minus sign, never "−0.0"
-    const sg = v => (clean(v) > 0 ? '+' : '') + f1(v);      // with its sign, as the sign convention asks
+    // 3 significant figures, as the lecturer copy gives them (6.34 N, 4.70 N, 56.8°); a whole number stays whole
+    // (50 N, 0 N). The nudge rounds a binary half up (toPrecision rounds 4.705 down); 100 and over print no exponent.
+    const f3 = v => {
+      const x = clean(v);
+      if (Math.abs(x - Math.round(x)) < 1e-9) return String(Math.round(x)).replace('-', '−');
+      const t = (x * (1 + 1e-12)).toPrecision(3);
+      return (Math.abs(x) >= 100 ? String(+t) : t).replace('-', '−');
+    };
+    const sg = v => (clean(v) > 0 ? '+' : '') + f3(v);      // with its sign, as the sign convention asks
     const plain = v => String(+(+v).toFixed(1)).replace('-', '−'); // a typed value as typed: 10, 14.1
     const LAB = { P: '<i>P</i>', Q: '<i>Q</i>', F: '<i>F</i>', F1: '<i>F</i><sub>1</sub>', F2: '<i>F</i><sub>2</sub>', F3: '<i>F</i><sub>3</sub>' };
     const COL = { P: '#2563eb', Q: '#16a34a', F: '#1d4ed8', F1: '#2563eb', F2: '#16a34a', F3: '#d97706', R: '#dc2626', X: '#ea580c', Y: '#7c3aed' };
@@ -414,7 +421,7 @@
       if (!y) return x > 0 ? 'along the +<i>x</i>-axis (to the right)' : 'along the −<i>x</i>-axis (to the left)';
       if (!x) return y > 0 ? 'along the +<i>y</i>-axis (upward)' : 'along the −<i>y</i>-axis (downward)';
       const al = deg(Math.atan2(Math.abs(y), Math.abs(x)));
-      return `${al.toFixed(1)}° ${y > 0 ? 'above' : 'below'} the ${x > 0 ? '+' : '−'}<i>x</i>-axis`;
+      return `${f3(al)}° ${y > 0 ? 'above' : 'below'} the ${x > 0 ? '+' : '−'}<i>x</i>-axis`;
     }
     // the angle a force's diagram gives: measured from the x half-axis or the y half-axis it lies nearest
     function givenOf(f) {
@@ -425,7 +432,7 @@
       const side = f.ref === 'y' ? (c > 1e-9 ? 'to the right of' : 'to the left of') : (s > 1e-9 ? 'above' : 'below');
       return { axis, ang: d, onAxis: Math.abs(a % 90) < 1e-9, text: d < 1e-9 ? `along the ${name}-axis` : `${plain(d)}° ${side} the ${name}-axis` };
     }
-    // one component worked out as on paper: "Fx = −10 cos 20° = −9.4 N"
+    // one component worked out as on paper: "Fx = −10 cos 20° = −9.40 N"
     function compWork(f, which) {
       const v = vec(f), val = which === 'x' ? v.x : v.y, G = givenOf(f);
       const lab = which === 'x' ? sub(f.k, 'x') : sub(f.k, 'y');
@@ -598,7 +605,7 @@
       if (S.step >= 3 && f.m > 0.05) arc(ctx, O, 34, 0, f.a > 180 ? f.a - 360 : f.a, `<i>θ</i> = ${plain(f.a > 180 ? 360 - f.a : f.a)}°`, '#475569');
       arrow(ctx, O, T, COL.F);
       const boxes = f.m / view.npb;
-      tag(ctx, S.step >= 2 ? `<i>F</i> = ${f1(f.m)} N (${f1(boxes)} boxes)` : '<i>F</i>', O, T, COL.F, 1);
+      tag(ctx, S.step >= 2 ? `<i>F</i> = ${f3(f.m)} N (${f3(boxes)} boxes)` : '<i>F</i>', O, T, COL.F, 1);
       handles.push({ k: 0, ...T });
     }
     function drawLine(ctx, W, H) {
@@ -612,7 +619,7 @@
       v.forEach((val, i) => {
         const y = oy + (i ? 12 : -12), dir = val < 0 ? -1 : 1, a = { x: ox + dir * half, y }, b = { x: a.x + val * s, y };
         arrow(ctx, a, b, cols[i], 4);
-        const text = S.step >= 2 ? `${LAB['F' + (i + 1)]} = ${sg(val)} N` : `${f1(Math.abs(val))} N`;
+        const text = S.step >= 2 ? `${LAB['F' + (i + 1)]} = ${sg(val)} N` : `${f3(Math.abs(val))} N`;
         card(ctx, text, b.x + dir * 8, y + (i ? 14 : -14), cols[i], dir > 0 ? 'left' : 'right', 12);
         handles.push({ k: i, x: b.x, y });
       });
@@ -653,13 +660,13 @@
       if (S.step >= 3 && R.m > 0.05) arrow(ctx, O, Qt, COL.R, 4);
       if (S.step >= 4 && R.m > 0.05) {
         let d = norm(R.a - Pf.a); if (d > 180) d -= 360;
-        arc(ctx, O, 40, Pf.a, Pf.a + d, `${f1(Math.abs(d))}°`, COL.R);
+        arc(ctx, O, 40, Pf.a, Pf.a + d, `${f3(Math.abs(d))}°`, COL.R);
       }
       arrow(ctx, O, Pt, COL.P); arrow(ctx, Pt, Qt, COL.Q);
       const cross = (Pt.x - O.x) * (Qt.y - O.y) - (Pt.y - O.y) * (Qt.x - O.x), out = cross > 0 ? -1 : 1;
       tag(ctx, `<i>P</i> = ${plain(Pf.m)} N`, O, Pt, COL.P, out);
       tag(ctx, `<i>Q</i> = ${plain(Qf.m)} N`, Pt, Qt, COL.Q, out);
-      if (S.step >= 3) tag(ctx, S.step >= 4 ? `${SF} = ${f1(R.m)} N` : `${SF} = ?`, O, Qt, COL.R, -out);
+      if (S.step >= 3) tag(ctx, S.step >= 4 ? `${SF} = ${f3(R.m)} N` : `${SF} = ?`, O, Qt, COL.R, -out);
       handles.push({ k: 0, ...Pt }, { k: 1, ...Qt });
     }
     function drawResolve(ctx) {
@@ -702,12 +709,12 @@
       }
       if (S.step >= 5 && R.m > 0.05) {
         arrow(ctx, O, Rt, COL.R, 4);
-        card(ctx, `<i>R</i> = ${f1(R.m)} N`, Rt.x + (R.x >= 0 ? 10 : -10), Rt.y + (R.y >= 0 ? -12 : 12), COL.R, R.x >= 0 ? 'left' : 'right');
+        card(ctx, `<i>R</i> = ${f3(R.m)} N`, Rt.x + (R.x >= 0 ? 10 : -10), Rt.y + (R.y >= 0 ? -12 : 12), COL.R, R.x >= 0 ? 'left' : 'right');
       }
       if (S.step >= 6 && Math.abs(R.x) > 0.05 && Math.abs(R.y) > 0.05) {
         const axis = R.x > 0 ? 0 : 180, al = deg(Math.atan2(Math.abs(R.y), Math.abs(R.x)));
         const sgn = (R.x > 0) === (R.y > 0) ? 1 : -1;
-        arc(ctx, O, 48, axis, axis + sgn * al, `<i>θ</i> = ${f1(al)}°`, COL.R);
+        arc(ctx, O, 48, axis, axis + sgn * al, `<i>θ</i> = ${f3(al)}°`, COL.R);
       }
     }
 
@@ -783,43 +790,43 @@
       let words = '';
       if (S.kind === 'single') {
         const f = S.forces[0];
-        setCard('rLen', st >= 2 ? `${f1(f.m / view.npb)} boxes` : '?');
-        setCard('rMag', st >= 2 ? `${f1(f.m)} N` : '?');
+        setCard('rLen', st >= 2 ? `${f3(f.m / view.npb)} boxes` : '?');
+        setCard('rMag', st >= 2 ? `${f3(f.m)} N` : '?');
         setCard('rDir', st >= 3 ? (f.m > 0.05 ? dirWords(vec(f).x, vec(f).y) : '—') : '?');
-        words = st >= 3 ? `${f1(f.m)} N, ${dirWords(vec(f).x, vec(f).y)}.` : st >= 2 ? `${f1(f.m / view.npb)} boxes × ${view.npb} N = ${f1(f.m)} N.` : '';
+        words = st >= 3 ? `${f3(f.m)} N, ${dirWords(vec(f).x, vec(f).y)}.` : st >= 2 ? `${f3(f.m / view.npb)} boxes × ${view.npb} N = ${f3(f.m)} N.` : '';
       }
       if (S.kind === 'line') {
         const v = S.forces.map(signed), sum = v[0] + v[1];
-        v.forEach((x, i) => setCard('rF' + (i + 1), st >= 2 ? `${sg(x)} N` : `${f1(Math.abs(x))} N ${x < 0 ? 'left' : 'right'}`));
+        v.forEach((x, i) => setCard('rF' + (i + 1), st >= 2 ? `${sg(x)} N` : `${f3(Math.abs(x))} N ${x < 0 ? 'left' : 'right'}`));
         setCard('rSum', st >= 4 ? `${sg(sum)} N` : '?');
         setCard('rDir', st >= 4 ? (Math.abs(sum) < 0.05 ? 'none: balanced' : sum > 0 ? 'to the right' : 'to the left') : '?');
-        if (st >= 3) words = `${SF} = (${sg(v[0])}) + (${sg(v[1])})` + (st >= 4 ? ` = ${sg(sum)} N` + (Math.abs(sum) < 0.05 ? ': no resultant force, the forces are balanced.' : `: ${f1(Math.abs(sum))} N to the ${sum > 0 ? 'right' : 'left'}.`) : ' = ?');
+        if (st >= 3) words = `${SF} = (${sg(v[0])}) + (${sg(v[1])})` + (st >= 4 ? ` = ${sg(sum)} N` + (Math.abs(sum) < 0.05 ? ': no resultant force, the forces are balanced.' : `: ${f3(Math.abs(sum))} N to the ${sum > 0 ? 'right' : 'left'}.`) : ' = ?');
       }
       if (S.kind === 'triangle') {
         const [Pf, Qf] = S.forces, d = norm(Qf.a - Pf.a);
         let dr = norm(R.a - Pf.a); if (dr > 180) dr -= 360;
-        setCard('rP', `${f1(Pf.m)} N`); setCard('rQ', `${f1(Qf.m)} N`); setCard('rAng', `${f1(d)}°`);
-        setCard('rSum', st >= 4 ? `${f1(R.m)} N` : '?');
-        setCard('rDir', st >= 4 ? (R.m < 0.05 ? '—' : Math.abs(dr) < 0.05 ? 'along <i>P</i>' : `${f1(Math.abs(dr))}° ${dr > 0 ? 'anticlockwise' : 'clockwise'} from <i>P</i>`) : '?');
-        if (st >= 4) words = R.m < 0.05 ? `${SF} = 0 N: the two forces cancel.` : `${SF} = ${f1(R.m)} N (${f1(R.m / view.npb)} boxes), ${f1(Math.abs(dr))}° ${dr > 0 ? 'anticlockwise' : 'clockwise'} from <i>P</i>; that is ${dirWords(R.x, R.y)}. <i>P</i> + <i>Q</i> = ${f1(Pf.m + Qf.m)} N, but Σ<i>F</i> is not the algebraic sum.`;
+        setCard('rP', `${f3(Pf.m)} N`); setCard('rQ', `${f3(Qf.m)} N`); setCard('rAng', `${f3(d)}°`);
+        setCard('rSum', st >= 4 ? `${f3(R.m)} N` : '?');
+        setCard('rDir', st >= 4 ? (R.m < 0.05 ? '—' : Math.abs(dr) < 0.05 ? 'along <i>P</i>' : `${f3(Math.abs(dr))}° ${dr > 0 ? 'anticlockwise' : 'clockwise'} from <i>P</i>`) : '?');
+        if (st >= 4) words = R.m < 0.05 ? `${SF} = 0 N: the two forces cancel.` : `${SF} = ${f3(R.m)} N (${f3(R.m / view.npb)} boxes), ${f3(Math.abs(dr))}° ${dr > 0 ? 'anticlockwise' : 'clockwise'} from <i>P</i>; that is ${dirWords(R.x, R.y)}. <i>P</i> + <i>Q</i> = ${f3(Pf.m + Qf.m)} N, but Σ<i>F</i> is not the algebraic sum.`;
       }
       if (S.kind === 'resolve') {
         const f = S.forces[0], v = vec(f), G = givenOf(f);
-        setCard('rF', `${f1(f.m)} N`); setCard('rGiven', G.text);
+        setCard('rF', `${f3(f.m)} N`); setCard('rGiven', G.text);
         setCard('rFx', st >= 4 ? `${sg(v.x)} N` : '?'); setCard('rFy', st >= 4 ? `${sg(v.y)} N` : '?');
         if (st >= 4) words = `${FX} = ${sg(v.x)} N (${clean(v.x) ? (v.x > 0 ? 'it points right' : 'it points left') : 'no sideways part'}), ${FY} = ${sg(v.y)} N (${clean(v.y) ? (v.y > 0 ? 'it points up' : 'it points down') : 'no up or down part'}).`;
       }
       if (S.kind === 'components') {
         setCard('rRx', st >= 3 ? `${sg(R.x)} N` : '?'); setCard('rRy', st >= 4 ? `${sg(R.y)} N` : '?');
-        setCard('rR', st >= 5 ? `${f1(R.m)} N` : '?'); setCard('rDir', st >= 6 ? dirWords(R.x, R.y) : '?');
-        if (st >= 6) words = R.m < 0.05 ? 'The forces cancel: no resultant force.' : `<i>R</i> = ${f1(R.m)} N, ${dirWords(R.x, R.y)} (${f1(R.a)}° anticlockwise from the +<i>x</i>-axis).`;
+        setCard('rR', st >= 5 ? `${f3(R.m)} N` : '?'); setCard('rDir', st >= 6 ? dirWords(R.x, R.y) : '?');
+        if (st >= 6) words = R.m < 0.05 ? 'The forces cancel: no resultant force.' : `<i>R</i> = ${f3(R.m)} N, ${dirWords(R.x, R.y)} (${f3(R.a)}° anticlockwise from the +<i>x</i>-axis).`;
       }
       if ($('words').innerHTML !== words) $('words').innerHTML = words;
       const w = work(); if (w !== lastWork) { $('work').innerHTML = w; lastWork = w; }
     }
     // the working under the drawing, written out as on paper (notes p. 3-32)
     let lastWork = '';
-    const num = v => { const t = f1(v); return t.startsWith('−') ? '(' + t + ')' : t; };
+    const num = v => { const t = f3(v); return t.startsWith('−') ? '(' + t + ')' : t; };
     const frac = (a, b) => `<span class="frac"><span>${a}</span><span>${b}</span></span>`;
     function work() {
       const st = S.step;
@@ -837,13 +844,13 @@
       if (st >= 2) fs.forEach(f => { h += `<div class="eq">${compWork(f, 'x')},&nbsp;&nbsp; ${compWork(f, 'y')}</div>`; });
       if (st >= 3) h += `<div class="eq">${RX} = ${fs.map(f => num(vec(f).x)).join(' + ')} = <b>${sg(R.x)} N</b></div>`;
       if (st >= 4) h += `<div class="eq">${RY} = ${fs.map(f => num(vec(f).y)).join(' + ')} = <b>${sg(R.y)} N</b></div>`;
-      if (st >= 5) h += `<div class="eq"><i>R</i> = <span class="root"><i class="rs">&radic;</i><span>${RX}<sup>2</sup> + ${RY}<sup>2</sup></span></span> = <span class="root"><i class="rs">&radic;</i><span>${num(R.x)}<sup>2</sup> + ${num(R.y)}<sup>2</sup></span></span> = <b>${f1(R.m)} N</b></div>`;
+      if (st >= 5) h += `<div class="eq"><i>R</i> = <span class="root"><i class="rs">&radic;</i><span>${RX}<sup>2</sup> + ${RY}<sup>2</sup></span></span> = <span class="root"><i class="rs">&radic;</i><span>${num(R.x)}<sup>2</sup> + ${num(R.y)}<sup>2</sup></span></span> = <b>${f3(R.m)} N</b></div>`;
       if (st >= 6) {
         if (R.m < 0.05) h += '<div class="eq">The forces cancel: there is no resultant, so no direction.</div>';
         else if (!clean(R.x) || !clean(R.y)) h += `<div class="eq"><i>R</i> points ${dirWords(R.x, R.y)}.</div>`;
         else {
           const al = deg(Math.atan2(Math.abs(R.y), Math.abs(R.x)));
-          h += `<div class="eq">tan <i>θ</i> = ${frac('|' + RY + '|', '|' + RX + '|')} = ${frac(f1(Math.abs(R.y)), f1(Math.abs(R.x)))}, so <i>θ</i> = <b>${f1(al)}°</b></div>`;
+          h += `<div class="eq">tan <i>θ</i> = ${frac('|' + RY + '|', '|' + RX + '|')} = ${frac(f3(Math.abs(R.y)), f3(Math.abs(R.x)))}, so <i>θ</i> = <b>${f3(al)}°</b></div>`;
           h += `<div class="eq">${RX} is ${R.x > 0 ? 'positive (right)' : 'negative (left)'} and ${RY} is ${R.y > 0 ? 'positive (up)' : 'negative (down)'}, so <i>R</i> points <b>${dirWords(R.x, R.y)}</b>.</div>`;
         }
       }
@@ -933,11 +940,11 @@
         opts: ['70 N', '50 N', '10 N', '35 N'], ans: 1,
         why: 'The tail of the 40 N force goes at the tip of the 30 N force; the resultant closes a right-angled triangle: √(30² + 40²) = 50 N. It is not 30 + 40 = 70 N: the forces do not point the same way. Press Next step to check.' },
       3: { q: 'Example 8 (notes p. 3-30): the 8 N force points 60° below the +<i>x</i>-axis. What is its <i>y</i>-component ' + FY + '?',
-        opts: ['+6.9 N', '−6.9 N', '+4.0 N', '−4.0 N'], ans: 1,
-        why: FY + ' = −8 sin 60° = −6.9 N. Measured from the <i>x</i>-axis, the <i>y</i>-component uses sin; it is negative because the force points down. Choose the 8 N scenario and press Next step to check.' },
+        opts: ['+6.93 N', '−6.93 N', '+4 N', '−4 N'], ans: 1,
+        why: FY + ' = −8 sin 60° = −6.93 N. Measured from the <i>x</i>-axis, the <i>y</i>-component uses sin; it is negative because the force points down. Choose the 8 N scenario and press Next step to check.' },
       4: { q: 'Example 9 (notes p. 3-33): ' + LAB.F1 + ' = 20 N at 80° above the −<i>x</i>-axis and ' + LAB.F2 + ' = 25 N straight down. Which way does their resultant point?',
         opts: ['Right and up', 'Left and up', 'Left and down', 'Right and down'], ans: 2,
-        why: RX + ' = −20 cos 80° + 0 = −3.5 N (left) and ' + RY + ' = +20 sin 80° − 25 = −5.3 N (down): the 25 N downward pull beats the 19.7 N upward part of ' + LAB.F1 + '. So <i>R</i> points left and down.' }
+        why: RX + ' = −20 cos 80° + 0 = −3.47 N (left) and ' + RY + ' = +20 sin 80° − 25 = −5.30 N (down): the 25 N downward pull beats the 19.7 N upward part of ' + LAB.F1 + '. So <i>R</i> points left and down.' }
     };
 
     const FEATS = {
@@ -994,22 +1001,22 @@
     function featNote(id) {
       const R = resultant(), f = S.forces[0], v = vec(f);
       switch (id) {
-        case 'scale': return `This arrow is ${f1(f.m / view.npb)} boxes long, and 1 box = ${view.npb} N, so <i>F</i> = ${f1(f.m / view.npb)} × ${view.npb} = ${f1(f.m)} N. The length of the arrow indicates the magnitude of the force (notes p. 3-8).`;
+        case 'scale': return `This arrow is ${f3(f.m / view.npb)} boxes long, and 1 box = ${view.npb} N, so <i>F</i> = ${f3(f.m / view.npb)} × ${view.npb} = ${f3(f.m)} N. The length of the arrow indicates the magnitude of the force (notes p. 3-8).`;
         case 'sign': return 'A force acting to the right or upward is positive; a force acting to the left or downward is negative (notes p. 3-10). The magnitude itself is always positive: the sign only gives the direction.';
         case 'line': { const s = S.forces.map(signed); return `Along one line, add the forces with their signs: Σ<i>F</i> = (${sg(s[0])}) + (${sg(s[1])}) = ${sg(s[0] + s[1])} N. The resultant force has the same effect on the object as all the forces acting together (notes p. 3-7).`; }
         case 'tail': return 'In the vector triangle method, the tail of <i>Q</i> is placed at the tip of <i>P</i> (notes p. 3-24). <i>Q</i> keeps its length and its direction: it has only moved (its old place is the faint dashed arrow).';
         case 'other': return 'The dashed arrows add them the other way round: the tail of <i>P</i> at the tip of <i>Q</i>. They end at the same point, so Σ<i>F</i> is the same (notes p. 3-24).';
         case 'notsum': { const [P, Q] = S.forces;
-          if (Math.abs(R.m - (P.m + Q.m)) < 0.05) return `Here <i>P</i> and <i>Q</i> point the same way, so Σ<i>F</i> = <i>P</i> + <i>Q</i> = ${f1(R.m)} N: the only case where the resultant is the algebraic sum. Change the angle from <i>P</i> to <i>Q</i> to see it fall.`;
-          return `<i>P</i> + <i>Q</i> = ${f1(P.m + Q.m)} N, but Σ<i>F</i> = ${f1(R.m)} N. The magnitude of the resultant force is not the algebraic sum: it depends on the angle between the forces (notes p. 3-22). Example 2: 50 N and 70 N give at most 120 N (same direction) and at least 20 N (opposite directions).`; }
+          if (Math.abs(R.m - (P.m + Q.m)) < 0.05) return `Here <i>P</i> and <i>Q</i> point the same way, so Σ<i>F</i> = <i>P</i> + <i>Q</i> = ${f3(R.m)} N: the only case where the resultant is the algebraic sum. Change the angle from <i>P</i> to <i>Q</i> to see it fall.`;
+          return `<i>P</i> + <i>Q</i> = ${f3(P.m + Q.m)} N, but Σ<i>F</i> = ${f3(R.m)} N. The magnitude of the resultant force is not the algebraic sum: it depends on the angle between the forces (notes p. 3-22). Example 2: 50 N and 70 N give at most 120 N (same direction) and at least 20 N (opposite directions).`; }
         case 'between': return 'Σ<i>F</i> points between <i>P</i> and <i>Q</i>, nearer the larger force (notes p. 3-22: the direction of the resultant force is between that of ' + LAB.F1 + ' and ' + LAB.F2 + ').';
         case 'cos': return `With <i>θ</i> measured from the <i>x</i>-axis, ${FX} = <i>F</i> cos <i>θ</i>: here ${compWork(f, 'x')}. The <i>x</i>-component lies along the side next to the angle.`;
         case 'sin': return `With <i>θ</i> measured from the <i>x</i>-axis, ${FY} = <i>F</i> sin <i>θ</i>: here ${compWork(f, 'y')}. The <i>y</i>-component lies along the side opposite the angle.`;
         case 'signs': return `This force points ${clean(v.x) < 0 ? 'left' : 'right'} and ${clean(v.y) < 0 ? 'down' : 'up'}: ${compWork(f, 'x')} and ${compWork(f, 'y')}. Work out each size with cos or sin, then give it the sign from the direction: right and up +, left and down −.`;
         case 'yaxis': return `This angle is measured from the <i>y</i>-axis, so the roles swap: ${compWork(f, 'x')} and ${compWork(f, 'y')}. The component along the side next to the angle uses cos; the one opposite it uses sin.`;
         case 'table': return 'Steps 1 and 2 of the component method: a table with a row for each force, and each force broken into ' + FX + ' and ' + FY + ' with its sign (notes p. 3-32).';
-        case 'pyth': return `${RX} and ${RY} are at right angles, so <i>R</i> = √(${RX}² + ${RY}²) = √(${num(R.x)}² + ${num(R.y)}²) = ${f1(R.m)} N (Pythagoras’ theorem, notes p. 3-32).`;
-        case 'tan': return `tan <i>θ</i> = ${RY} ÷ ${RX} gives the angle with the horizontal. Use the sizes (${f1(Math.abs(R.y))} ÷ ${f1(Math.abs(R.x))}), then read the direction from the signs: ${RX} ${R.x < 0 ? 'negative, left' : 'positive, right'}; ${RY} ${R.y < 0 ? 'negative, down' : 'positive, up'}. So <i>R</i> points ${dirWords(R.x, R.y)}.`;
+        case 'pyth': return `${RX} and ${RY} are at right angles, so <i>R</i> = √(${RX}² + ${RY}²) = √(${num(R.x)}² + ${num(R.y)}²) = ${f3(R.m)} N (Pythagoras’ theorem, notes p. 3-32).`;
+        case 'tan': return `tan <i>θ</i> = ${RY} ÷ ${RX} gives the angle with the horizontal. Use the sizes (${f3(Math.abs(R.y))} ÷ ${f3(Math.abs(R.x))}), then read the direction from the signs: ${RX} ${R.x < 0 ? 'negative, left' : 'positive, right'}; ${RY} ${R.y < 0 ? 'negative, down' : 'positive, up'}. So <i>R</i> points ${dirWords(R.x, R.y)}.`;
       }
       return '';
     }
@@ -1123,29 +1130,29 @@
       { src: 'Tutorial 3, A2(a)', stem: 'A 15 N force acts to the left and a 20 N force acts downwards on the same object, 90° apart. Find, by scale drawing, the resultant force.', parts: [
         { q: 'Its magnitude:', opts: ['35 N', '25 N', '5 N', '17.5 N'], ans: 1,
           why: 'With the tail of the 20 N force at the tip of the 15 N force, the triangle has a right angle: Σ<i>F</i> = √(15² + 20²) = 25 N.' },
-        { q: 'Its direction:', opts: ['53.1° anticlockwise from the 15 N force', '36.9° anticlockwise from the 15 N force', '53.1° clockwise from the 15 N force', '233.1° clockwise from the 15 N force'], ans: 0,
+        { q: 'Its direction:', opts: ['53.1° anticlockwise from the 15 N force', '36.9° anticlockwise from the 15 N force', '53.1° clockwise from the 15 N force', '233° clockwise from the 15 N force'], ans: 0,
           why: 'tan <i>α</i> = 20 ÷ 15, so <i>α</i> = 53.1°. Turning from the 15 N force (left) towards the 20 N force (down) is anticlockwise.' }] },
       { src: 'Example 7, notes p. 3-29', stem: 'A force <i>F</i> is 20° above the +<i>x</i>-axis and has a magnitude of 5 N.', parts: [
-        { q: 'Its <i>x</i>-component ' + FX + ':', opts: ['4.7 N', '1.7 N', '5.0 N', '−4.7 N'], ans: 0, why: FX + ' = 5 cos 20° = 4.7 N.' },
-        { q: 'Its <i>y</i>-component ' + FY + ':', opts: ['1.7 N', '4.7 N', '−1.7 N', '5.0 N'], ans: 0, why: FY + ' = 5 sin 20° = 1.7 N.' }] },
+        { q: 'Its <i>x</i>-component ' + FX + ':', opts: ['4.70 N', '1.71 N', '5 N', '−4.70 N'], ans: 0, why: FX + ' = 5 cos 20° = 4.70 N.' },
+        { q: 'Its <i>y</i>-component ' + FY + ':', opts: ['1.71 N', '4.70 N', '−1.71 N', '5 N'], ans: 0, why: FY + ' = 5 sin 20° = 1.71 N.' }] },
       { src: 'Example 8, notes p. 3-30', stem: 'An 8 N force points 60° below the +<i>x</i>-axis (30° from the −<i>y</i>-axis).', parts: [
-        { q: 'Its <i>x</i>-component ' + FX + ':', opts: ['+4.0 N', '−4.0 N', '+6.9 N', '−6.9 N'], ans: 0, why: FX + ' = +8 cos 60° = +4.0 N: the force points to the right.' },
-        { q: 'Its <i>y</i>-component ' + FY + ':', opts: ['+6.9 N', '−6.9 N', '+4.0 N', '−4.0 N'], ans: 1, why: FY + ' = −8 sin 60° = −6.9 N: the force points down.' }] },
+        { q: 'Its <i>x</i>-component ' + FX + ':', opts: ['+4 N', '−4 N', '+6.93 N', '−6.93 N'], ans: 0, why: FX + ' = +8 cos 60° = +4 N: the force points to the right.' },
+        { q: 'Its <i>y</i>-component ' + FY + ':', opts: ['+6.93 N', '−6.93 N', '+4 N', '−4 N'], ans: 1, why: FY + ' = −8 sin 60° = −6.93 N: the force points down.' }] },
       { src: 'Exercise 1, notes p. 3-31', stem: 'A 10 N force points 20° below the −<i>x</i>-axis. Write its components in terms of the given force and angle, with the sign convention.', parts: [
-        { q: FX + ' =', opts: ['+10 cos 20°', '−10 cos 20°', '−10 sin 20°', '+10 sin 20°'], ans: 1, why: 'The angle is measured from the <i>x</i>-axis, so the <i>x</i>-component uses cos; the force points left, so it is negative: ' + FX + ' = −10 cos 20° = −9.4 N.' },
-        { q: FY + ' =', opts: ['−10 cos 20°', '+10 sin 20°', '−10 sin 20°', '+10 cos 20°'], ans: 2, why: 'The <i>y</i>-component uses sin; the force points down, so it is negative: ' + FY + ' = −10 sin 20° = −3.4 N.' }] },
+        { q: FX + ' =', opts: ['+10 cos 20°', '−10 cos 20°', '−10 sin 20°', '+10 sin 20°'], ans: 1, why: 'The angle is measured from the <i>x</i>-axis, so the <i>x</i>-component uses cos; the force points left, so it is negative: ' + FX + ' = −10 cos 20° = −9.40 N.' },
+        { q: FY + ' =', opts: ['−10 cos 20°', '+10 sin 20°', '−10 sin 20°', '+10 cos 20°'], ans: 2, why: 'The <i>y</i>-component uses sin; the force points down, so it is negative: ' + FY + ' = −10 sin 20° = −3.42 N.' }] },
       { src: 'Tutorial 3, B2', stem: 'Two horizontal forces act on a barge: ' + LAB.F1 + ' = 60 kN, 20° above the −<i>x</i>-axis, and ' + LAB.F2 + ' = 75 kN, 30° below the −<i>x</i>-axis.', parts: [
         { lab: '(a)', q: 'The <i>x</i>- and <i>y</i>-components of ' + LAB.F1 + ':', opts: ['−56.4 kN and +20.5 kN', '+56.4 kN and +20.5 kN', '−20.5 kN and +56.4 kN', '−56.4 kN and −20.5 kN'], ans: 0,
           why: '−60 cos 20° = −56.4 kN (left) and +60 sin 20° = +20.5 kN (up).' },
         { lab: '(b)', q: 'The <i>x</i>- and <i>y</i>-components of ' + LAB.F2 + ':', opts: ['−65.0 kN and −37.5 kN', '−37.5 kN and −65.0 kN', '+65.0 kN and −37.5 kN', '−65.0 kN and +37.5 kN'], ans: 0,
           why: '−75 cos 30° = −65.0 kN (left) and −75 sin 30° = −37.5 kN (down).' },
-        { lab: '(c)', q: 'The magnitude and direction of the resultant of ' + LAB.F1 + ' and ' + LAB.F2 + ':', opts: ['135.0 kN, 8.0° below the −<i>x</i>-axis', '122.6 kN, 8.0° below the −<i>x</i>-axis', '122.6 kN, 8.0° above the −<i>x</i>-axis', '122.6 kN, 82.0° below the −<i>x</i>-axis'], ans: 1,
-          why: RX + ' = −56.4 + (−65.0) = −121.4 kN and ' + RY + ' = 20.5 + (−37.5) = −17.0 kN. <i>R</i> = √(121.4² + 17.0²) = 122.6 kN (122.5 kN from the unrounded components). tan <i>θ</i> = 17.0 ÷ 121.4, <i>θ</i> = 8.0°; both components are negative, so <i>R</i> points left and down: 8.0° below the −<i>x</i>-axis.' }] },
+        { lab: '(c)', q: 'The magnitude and direction of the resultant of ' + LAB.F1 + ' and ' + LAB.F2 + ':', opts: ['135 kN, 7.97° below the −<i>x</i>-axis', '123 kN, 7.97° below the −<i>x</i>-axis', '123 kN, 7.97° above the −<i>x</i>-axis', '123 kN, 82.0° below the −<i>x</i>-axis'], ans: 1,
+          why: 'Keep extra figures until the end: ' + RX + ' = −56.382 + (−64.952) = −121.33 kN and ' + RY + ' = 20.521 + (−37.5) = −16.979 kN. <i>R</i> = √(121.33² + 16.979²) = 122.5 kN, which is 123 kN to 3 significant figures. tan <i>θ</i> = 16.979 ÷ 121.33, <i>θ</i> = 7.97°; both components are negative, so <i>R</i> points left and down: 7.97° below the −<i>x</i>-axis.' }] },
       { src: 'Tutorial 3, C1(a)', stem: 'Three forces act on a point: 32 N along the +<i>x</i>-axis, 25 N at 30° below the −<i>x</i>-axis and 48 N at 50° from the −<i>y</i>-axis (down and to the left). Find, by resolution of forces method, their resultant.', parts: [
-        { q: 'Its magnitude:', opts: ['105.0 N', '50.8 N', '26.4 N', '43.4 N'], ans: 1,
-          why: RX + ' = 32 − 25 cos 30° − 48 sin 50° = −26.4 N and ' + RY + ' = −25 sin 30° − 48 cos 50° = −43.4 N. <i>R</i> = √(26.4² + 43.4²) = 50.8 N.' },
+        { q: 'Its magnitude:', opts: ['105 N', '50.8 N', '26.4 N', '43.4 N'], ans: 1,
+          why: RX + ' = 32 − 25 cos 30° − 48 sin 50° = −26.42 N and ' + RY + ' = −25 sin 30° − 48 cos 50° = −43.35 N. <i>R</i> = √(26.42² + 43.35²) = 50.8 N.' },
         { q: 'Its direction:', opts: ['58.6° below the −<i>x</i>-axis', '31.4° below the −<i>x</i>-axis', '58.6° above the +<i>x</i>-axis', '58.6° below the +<i>x</i>-axis'], ans: 0,
-          why: 'tan <i>θ</i> = 43.4 ÷ 26.4, <i>θ</i> = 58.6°. Both components are negative, so <i>R</i> points left and down: 58.6° below the −<i>x</i>-axis.' }] }
+          why: 'tan <i>θ</i> = 43.35 ÷ 26.42, <i>θ</i> = 58.6°. Both components are negative, so <i>R</i> points left and down: 58.6° below the −<i>x</i>-axis.' }] }
     ];
     const QUIZ_MARKS = QUIZ.reduce((n, Q) => n + Q.parts.length, 0);
     const partLabel = (Q, k) => Q.parts[k].lab ? Q.parts[k].lab + ' ' : Q.parts.length > 1 ? `(${'abcdefgh'[k]}) ` : '';
