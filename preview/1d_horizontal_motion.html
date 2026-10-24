@@ -285,6 +285,9 @@
     .quiz-bar i { display: block; height: 100%; background: #2563eb; width: 0; }
     .quiz-q { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
     .quiz-src { font-size: 0.76rem; color: #475569; margin-bottom: 8px; }
+    .qpart { margin-top: 12px; }
+    .qpart + .qpart { border-top: 1px solid #e2e8f0; padding-top: 10px; }
+    .qpart-q { font-size: 0.92rem; font-weight: 600; margin-bottom: 6px; }
     .quiz-sum ul { padding-left: 18px; font-size: 0.86rem; }
     .quiz-sum li { margin: 4px 0; }
 
@@ -1842,72 +1845,96 @@
 
     /* ---------------- Tab 5: Challenge ---------------- */
     // every answer checked against the notes (worked examples) or Tutorial 2's answer key
+    // A question whose parts share one situation is one screen: the situation once, then (a), (b)
     const QUIZ = [
-      { src: 'Example 2, notes p. 2-14', q: 'An object moves 2 units to the right from the origin, then 3 units to the left and then another 1 unit to the left. What is the distance travelled?',
-        opts: ['2 units', '6 units', '−2 units', '0 units'], ans: 1, why: 'Distance is the length of the path travelled: 2 + 3 + 1 = 6 units. It is a scalar, so it is never negative.' },
-      { src: 'Example 2, notes p. 2-14', q: 'The same object: what is its displacement?',
-        opts: ['6 units', '2 units to the right', '−2 units (2 units to the left)', '0 units'], ans: 2, why: 'Displacement = final position − initial position = −2 − 0 = −2 units: 2 units to the left of where it started.' },
-      { src: 'Tutorial 2, A1(a)', q: 'A man travels along a straight track to and fro 4 times. The length of the track is 20 m. What is the total distance travelled?',
-        opts: ['160 m', '80 m', '20 m', '0 m'], ans: 0, why: 'One "to and fro" is 20 m there and 20 m back, 40 m. Four of them: 4 × 40 = 160 m.' },
-      { src: 'Tutorial 2, A1(b)', q: 'The same man: what is his displacement?',
-        opts: ['160 m', '80 m to the right', '20 m', '0 m'], ans: 3, why: 'He ends where he started, so final position − initial position = 0 m.' },
-      { src: 'Example 1, notes p. 2-6', q: 'A man walks 3.0 m from the origin to the left in 2.0 s. He stops for 4.0 s, turns around and walks 5.0 m to the right in 6.0 s. What is his average speed?',
-        opts: ['0.167 m/s', '1.00 m/s', '0.667 m/s', '0.250 m/s'], ans: 2, why: 'Average speed = total distance ÷ total time = (3.0 + 5.0) m ÷ (2.0 + 4.0 + 6.0) s = 8.0 ÷ 12.0 = 0.667 m/s. The time he stood still counts too.' },
-      { src: 'Example 3, notes p. 2-16', q: 'The same walk: what is his average velocity?',
-        opts: ['0.167 m/s to the right', '0.667 m/s to the right', '0.167 m/s to the left', '0.250 m/s to the right'], ans: 0, why: 'Average velocity = displacement ÷ total time = (−3.0 + 5.0) m ÷ 12.0 s = +2.0 ÷ 12.0 = 0.167 m/s. It is positive, so to the right.' },
-      { src: 'Tutorial 2, A2(c)', q: 'A girl runs 0.6 km to the right at 5.0 m/s. She then runs 1.2 km to the left at 4.0 m/s. What is her average velocity for the entire journey?',
-        opts: ['4.29 m/s', '1.43 m/s to the right', '4.50 m/s to the left', '1.43 m/s to the left'], ans: 3, why: 'Time = 600 ÷ 5.0 + 1200 ÷ 4.0 = 120 + 300 = 420 s. Displacement = +600 − 1200 = −600 m. Average velocity = −600 ÷ 420 = −1.43 m/s, which is 1.43 m/s to the left. (4.29 m/s is her average speed.)' },
-      { src: 'Example 5, notes p. 2-21', q: 'The velocity of a car changes from −2.0 m/s to −10 m/s. The speed of the car ____ and it moves in the ____ direction.',
-        opts: ['increases, positive', 'decreases, positive', 'increases, negative', 'decreases, negative'], ans: 2, why: 'The velocity is negative, so the car moves to the left (the negative direction). Its speed, the size of the velocity, goes from 2.0 to 10 m/s: it increases.' },
-      { src: 'Notes p. 2-22', q: 'What does the gradient of a position-time graph give?',
-        opts: ['The velocity', 'The acceleration', 'The displacement', 'The distance travelled'], ans: 0, why: 'The gradient of a position-time graph gives the velocity. A steeper line means a faster object; a flat line means it is stationary.' },
-      { src: 'Notes p. 2-25', q: 'What does the area under a velocity-time graph give?',
-        opts: ['The acceleration', 'The velocity', 'The displacement', 'The time taken'], ans: 2, why: 'The area under the velocity-time graph gives the displacement.' },
-      { src: 'Notes p. 2-32', q: 'What does the gradient of a velocity-time graph give?',
-        opts: ['The displacement', 'The acceleration', 'The speed', 'The position'], ans: 1, why: 'The gradient of a velocity-time graph gives the acceleration. A horizontal line (gradient 0) means constant velocity.' },
-      { src: 'Example 6, notes p. 2-29', q: 'Three seconds after an F1 car starts moving to the right from rest, it has a velocity of 30 m/s. What is its average acceleration?',
-        opts: ['90 m/s² to the right', '10 m/s² to the right', '10 m/s² to the left', '0.1 m/s² to the right'], ans: 1, why: 'Average acceleration = (final velocity − initial velocity) ÷ time = (30 − 0) ÷ 3 = 10 m/s². It is positive, so to the right.' },
-      { src: 'Worked example, notes p. 2-40', q: 'A car travelling to the right at 20 m/s brakes uniformly to 8.0 m/s in 4.0 s. Taking right as positive, find the acceleration.',
-        opts: ['+3.0 m/s²', '−3.0 m/s²', '−12 m/s²', '+7.0 m/s²'], ans: 1, why: 'a = (v − u) ÷ t = (8.0 − 20) ÷ 4.0 = −3.0 m/s². Acceleration is a vector: keep the sign. Negative means opposite to your positive direction.' },
-      { src: 'Worked example, notes p. 2-40', q: 'The same car: find the deceleration.',
-        opts: ['−3.0 m/s²', '3.0 m/s²', '12 m/s²', '−12 m/s²'], ans: 1, why: 'Deceleration = 3.0 m/s². The word already means slowing down, so give the size only. Writing −3.0 m/s² would be a double negative, which implies speeding up.' }
+      { src: 'Example 2, notes p. 2-14', stem: 'An object moves 2 units to the right from the origin, then 3 units to the left and then another 1 unit to the left.', parts: [
+        { q: 'What is the distance travelled?',
+          opts: ['2 units', '6 units', '−2 units', '0 units'], ans: 1, why: 'Distance is the length of the path travelled: 2 + 3 + 1 = 6 units. It is a scalar, so it is never negative.' },
+        { q: 'What is its displacement?',
+          opts: ['6 units', '2 units to the right', '−2 units (2 units to the left)', '0 units'], ans: 2, why: 'Displacement = final position − initial position = −2 − 0 = −2 units: 2 units to the left of where it started.' }] },
+      { src: 'Tutorial 2, A1', stem: 'A man travels along a straight track to and fro 4 times. The length of the track is 20 m.', parts: [
+        { q: 'What is the total distance travelled?',
+          opts: ['160 m', '80 m', '20 m', '0 m'], ans: 0, why: 'One "to and fro" is 20 m there and 20 m back, 40 m. Four of them: 4 × 40 = 160 m.' },
+        { q: 'What is his displacement?',
+          opts: ['160 m', '80 m to the right', '20 m', '0 m'], ans: 3, why: 'He ends where he started, so final position − initial position = 0 m.' }] },
+      { src: 'Examples 1 and 3, notes pp. 2-6 and 2-16', stem: 'A man walks 3.0 m from the origin to the left in 2.0 s. He stops for 4.0 s, turns around and walks 5.0 m to the right in 6.0 s.', parts: [
+        { q: 'What is his average speed?',
+          opts: ['0.167 m/s', '1.00 m/s', '0.667 m/s', '0.250 m/s'], ans: 2, why: 'Average speed = total distance ÷ total time = (3.0 + 5.0) m ÷ (2.0 + 4.0 + 6.0) s = 8.0 ÷ 12.0 = 0.667 m/s. The time he stood still counts too.' },
+        { q: 'What is his average velocity?',
+          opts: ['0.167 m/s to the right', '0.667 m/s to the right', '0.167 m/s to the left', '0.250 m/s to the right'], ans: 0, why: 'Average velocity = displacement ÷ total time = (−3.0 + 5.0) m ÷ 12.0 s = +2.0 ÷ 12.0 = 0.167 m/s. It is positive, so to the right.' }] },
+      { src: 'Tutorial 2, A2(c)', parts: [
+        { q: 'A girl runs 0.6 km to the right at 5.0 m/s. She then runs 1.2 km to the left at 4.0 m/s. What is her average velocity for the entire journey?',
+          opts: ['4.29 m/s', '1.43 m/s to the right', '4.50 m/s to the left', '1.43 m/s to the left'], ans: 3, why: 'Time = 600 ÷ 5.0 + 1200 ÷ 4.0 = 120 + 300 = 420 s. Displacement = +600 − 1200 = −600 m. Average velocity = −600 ÷ 420 = −1.43 m/s, which is 1.43 m/s to the left. (4.29 m/s is her average speed.)' }] },
+      { src: 'Example 5, notes p. 2-21', parts: [
+        { q: 'The velocity of a car changes from −2.0 m/s to −10 m/s. The speed of the car ____ and it moves in the ____ direction.',
+          opts: ['increases, positive', 'decreases, positive', 'increases, negative', 'decreases, negative'], ans: 2, why: 'The velocity is negative, so the car moves to the left (the negative direction). Its speed, the size of the velocity, goes from 2.0 to 10 m/s: it increases.' }] },
+      { src: 'Notes p. 2-22', parts: [
+        { q: 'What does the gradient of a position-time graph give?',
+          opts: ['The velocity', 'The acceleration', 'The displacement', 'The distance travelled'], ans: 0, why: 'The gradient of a position-time graph gives the velocity. A steeper line means a faster object; a flat line means it is stationary.' }] },
+      { src: 'Notes p. 2-25', parts: [
+        { q: 'What does the area under a velocity-time graph give?',
+          opts: ['The acceleration', 'The velocity', 'The displacement', 'The time taken'], ans: 2, why: 'The area under the velocity-time graph gives the displacement.' }] },
+      { src: 'Notes p. 2-32', parts: [
+        { q: 'What does the gradient of a velocity-time graph give?',
+          opts: ['The displacement', 'The acceleration', 'The speed', 'The position'], ans: 1, why: 'The gradient of a velocity-time graph gives the acceleration. A horizontal line (gradient 0) means constant velocity.' }] },
+      { src: 'Example 6, notes p. 2-29', parts: [
+        { q: 'Three seconds after an F1 car starts moving to the right from rest, it has a velocity of 30 m/s. What is its average acceleration?',
+          opts: ['90 m/s² to the right', '10 m/s² to the right', '10 m/s² to the left', '0.1 m/s² to the right'], ans: 1, why: 'Average acceleration = (final velocity − initial velocity) ÷ time = (30 − 0) ÷ 3 = 10 m/s². It is positive, so to the right.' }] },
+      { src: 'Worked example, notes p. 2-40', stem: 'A car travelling to the right at 20 m/s brakes uniformly to 8.0 m/s in 4.0 s. Take right as positive.', parts: [
+        { q: 'Find the acceleration.',
+          opts: ['+3.0 m/s²', '−3.0 m/s²', '−12 m/s²', '+7.0 m/s²'], ans: 1, why: 'a = (v − u) ÷ t = (8.0 − 20) ÷ 4.0 = −3.0 m/s². Acceleration is a vector: keep the sign. Negative means opposite to your positive direction.' },
+        { q: 'Find the deceleration.',
+          opts: ['−3.0 m/s²', '3.0 m/s²', '12 m/s²', '−12 m/s²'], ans: 1, why: 'Deceleration = 3.0 m/s². The word already means slowing down, so give the size only. Writing −3.0 m/s² would be a double negative, which implies speeding up.' }] }
     ];
-    let quiz = { i: 0, score: 0, pick: null, done: false, missed: [] };
-    function resetQuiz() { quiz = { i: 0, score: 0, pick: null, done: false, missed: [] }; renderQuiz(); }
+    const QUIZ_MARKS = QUIZ.reduce((n, Q) => n + Q.parts.length, 0);
+    const partLabel = (Q, k) => Q.parts.length > 1 ? `(${'abcdefgh'[k]}) ` : '';
+    let quiz = { i: 0, score: 0, picks: [], done: false, missed: [] };
+    function resetQuiz() { quiz = { i: 0, score: 0, picks: [], done: false, missed: [] }; renderQuiz(); }
     function renderQuiz() {
       const el = document.getElementById('quiz'), N = QUIZ.length;
       if (quiz.i >= N) {
         const list = quiz.missed.length
-          ? `<p>Go back over these:</p><ul>${quiz.missed.map(n => `<li>Question ${n + 1} (${QUIZ[n].src}): ${QUIZ[n].q}</li>`).join('')}</ul>`
+          ? `<p>Go back over these:</p><ul>${quiz.missed.map(([n, k]) => { const Q = QUIZ[n];
+              return `<li>Question ${n + 1}${Q.parts.length > 1 ? '(' + 'abcdefgh'[k] + ')' : ''} (${Q.src}): ${sym((Q.stem ? Q.stem + ' ' : '') + Q.parts[k].q)}</li>`; }).join('')}</ul>`
           : '<p>Every answer right. Well done.</p>';
-        el.innerHTML = `<div class="quiz-top"><span>Summary</span><span>Score: ${quiz.score} of ${N}</span></div><div class="quiz-bar"><i style="width:100%"></i></div>
-          <div class="quiz-sum"><div class="quiz-q">You scored ${quiz.score} out of ${N}.</div>${list}</div>
+        el.innerHTML = `<div class="quiz-top"><span>Summary</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div><div class="quiz-bar"><i style="width:100%"></i></div>
+          <div class="quiz-sum"><div class="quiz-q">You scored ${quiz.score} out of ${QUIZ_MARKS}.</div>${list}</div>
           <div class="row-btns"><button type="button" id="qAgain">Try the quiz again</button></div>`;
         document.getElementById('qAgain').addEventListener('click', resetQuiz);
         return;
       }
-      const Q = QUIZ[quiz.i];
-      el.innerHTML = `<div class="quiz-top"><span>Question ${quiz.i + 1} of ${N}</span><span>Score: ${quiz.score}</span></div>
+      const Q = QUIZ[quiz.i], many = Q.parts.length > 1;
+      quiz.picks = Q.parts.map(() => null);
+      el.innerHTML = `<div class="quiz-top"><span>Question ${quiz.i + 1} of ${N}</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div>
         <div class="quiz-bar"><i style="width:${(quiz.i / N) * 100}%"></i></div>
-        <div class="quiz-q">${sym(Q.q)}</div><div class="quiz-src">${Q.src}</div>
-        <div class="opts" id="qOpts">${Q.opts.map((o, j) => `<button type="button" class="opt" data-j="${j}">${sym(o)}</button>`).join('')}</div>
-        <div class="row-btns"><button type="button" id="qSubmit">Submit answer</button><button type="button" class="secondary" id="qReset">Reset quiz</button></div>
+        ${Q.stem ? `<div class="quiz-q" id="qStem">${sym(Q.stem)}</div>` : ''}<div class="quiz-src">${Q.src}${many ? ` · ${Q.parts.length} parts, answer them all` : ''}</div>
+        ${Q.parts.map((P, k) => `<div class="qpart" data-k="${k}">
+          <div class="${Q.stem ? 'qpart-q' : 'quiz-q'}">${partLabel(Q, k)}${sym(P.q)}</div>
+          <div class="opts">${P.opts.map((o, j) => `<button type="button" class="opt" data-j="${j}">${sym(o)}</button>`).join('')}</div>
+          <div class="feedback"></div></div>`).join('')}
+        <div class="row-btns"><button type="button" id="qSubmit">${many ? 'Submit answers' : 'Submit answer'}</button><button type="button" class="secondary" id="qReset">Reset quiz</button></div>
         <div class="feedback" id="qFb"></div>`;
-      el.querySelectorAll('#qOpts .opt').forEach(b => b.addEventListener('click', () => {
-        if (quiz.done) return;
-        quiz.pick = +b.dataset.j; el.querySelectorAll('#qOpts .opt').forEach(x => x.classList.toggle('picked', x === b));
-      }));
+      el.querySelectorAll('.qpart').forEach(part => {
+        const k = +part.dataset.k;
+        part.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+          if (quiz.done) return;
+          quiz.picks[k] = +b.dataset.j; part.querySelectorAll('.opt').forEach(x => x.classList.toggle('picked', x === b));
+        }));
+      });
       document.getElementById('qReset').addEventListener('click', resetQuiz);
       document.getElementById('qSubmit').addEventListener('click', () => {
         const fb = document.getElementById('qFb');
-        if (quiz.done) { quiz.i++; quiz.pick = null; quiz.done = false; renderQuiz(); return; }
-        if (quiz.pick === null) { fb.innerHTML = '<span class="verdict no">Pick an answer first.</span>'; return; }
-        quiz.done = true;
-        const ok = quiz.pick === Q.ans;
-        if (ok) quiz.score++; else quiz.missed.push(quiz.i);
-        el.querySelectorAll('#qOpts .opt').forEach((x, j) => { x.classList.remove('picked'); if (j === Q.ans) x.classList.add('right'); else if (j === quiz.pick) x.classList.add('wrong'); });
-        fb.innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> <span class="why">${sym(Q.why)}</span>`;
-        el.querySelector('.quiz-top span:last-child').textContent = `Score: ${quiz.score}`;
+        if (quiz.done) { quiz.i++; quiz.done = false; renderQuiz(); return; }
+        const left = quiz.picks.map((p, k) => p === null ? partLabel(Q, k).trim() : null).filter(x => x !== null);
+        if (left.length) { fb.innerHTML = `<span class="verdict no">${many ? `Pick an answer for every part first (still to do: ${left.join(', ')}).` : 'Pick an answer first.'}</span>`; return; }
+        quiz.done = true; fb.innerHTML = '';
+        el.querySelectorAll('.qpart').forEach(part => {
+          const k = +part.dataset.k, P = Q.parts[k], ok = quiz.picks[k] === P.ans;
+          if (ok) quiz.score++; else quiz.missed.push([quiz.i, k]);
+          part.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === P.ans) x.classList.add('right'); else if (j === quiz.picks[k]) x.classList.add('wrong'); });
+          part.querySelector('.feedback').innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> <span class="why">${sym(P.why)}</span>`;
+        });
+        el.querySelector('.quiz-top span:last-child').textContent = `Score: ${quiz.score} of ${QUIZ_MARKS}`;
         document.getElementById('qSubmit').textContent = quiz.i + 1 < N ? 'Next question' : 'See the summary';
       });
     }
