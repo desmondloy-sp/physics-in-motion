@@ -18,39 +18,177 @@
   <!-- pim-meta:end -->
   <style>
     * { box-sizing: border-box; }
+    /* the hidden attribute must win over every display rule below */
+    [hidden] { display: none !important; }
     body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
     .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
-    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    h1 { margin: 0; font-size: 1.1rem; }
     .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
-    .controls { display: grid; grid-template-columns: repeat(5, 1fr) auto; gap: 10px; align-items: end; }
-    .control-group { display: flex; flex-direction: column; gap: 4px; }
-    label { font-size: 0.8rem; font-weight: 600; }
-    input { font-size: 0.9rem; padding: 4px 0; width: 100%; }
-    .val { font-size: 0.8rem; color: #334155; font-weight: normal; }
-    button { font-size: 0.9rem; padding: 7px 10px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; }
-    button:hover { background: #334155; }
-    .readout { display: grid; grid-template-columns: repeat(4, minmax(130px, 1fr)); gap: 6px; margin-top: 8px; }
+
+    /* controls: the scenario menu, the steps or the simulation buttons; then the variables */
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 110px; }
+    .control-group.scen-group { flex: 2.2 1 260px; }
+    .control-group.button-group { flex: 2 1 280px; }
+    .control-group select { width: 100%; max-width: 100%; }
+    .controls input, .controls select, .controls button { height: 34px; }
+    label { font-size: 0.82rem; font-weight: 600; line-height: 1.2; }
+    label sub { line-height: 0; }
+    input, select, button { font-size: 0.95rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; }
+    input[type=number] { width: 100%; max-width: 120px; }
+    .buttons { display: flex; gap: 6px; flex-wrap: nowrap; }
+    button { cursor: pointer; background: #2563eb; color: white; border: none; min-width: 0; flex: 1; }
+    button:hover { background: #1d4ed8; }
+    button:disabled { background: #94a3b8; cursor: default; }
+    button.secondary { background: #475569; }
+    button.secondary:hover { background: #334155; }
+    button.secondary:disabled { background: #cbd5e1; color: #475569; }
+    button.danger { background: #dc2626; }
+    button.danger:hover { background: #b91c1c; }
+    .group-title { font-size: 0.78rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.03em; margin: 10px 0 4px; }
+    .inputs { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: flex-end; }
+    .inputs .control-group { flex: 0 1 auto; }
+    .inputs .none { font-size: 0.82rem; color: #475569; }
+    .inputs select { min-width: 160px; height: 34px; }
+    .label-row label { white-space: nowrap; }
+    .question { margin-top: 8px; font-size: 0.84rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 6px 10px; color: #7c2d12; }
+    .question:empty { display: none; }
+    .step-text { margin-top: 8px; font-size: 0.9rem; font-weight: 700; color: #1e293b; }
+    .step-text:empty { display: none; }
+    .step-text .n { display: inline-block; background: #1e293b; color: white; border-radius: 999px; padding: 1px 8px; margin-right: 6px; font-size: 0.78rem; }
+
+    .readout { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .readout.n4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .readout.n6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .readout:empty { display: none; }
     .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card.hl { box-shadow: inset 0 0 0 2px #dc2626; }
+    .readout-card.ok { background: #ecfdf5; }
+    .readout-card.no { background: #fef2f2; }
     .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
     .readout-card .value { font-size: 1rem; font-weight: bold; }
-    .readout-card.balanced { background: #ecfdf5; }
-    .readout-card.tipping { background: #fef2f2; }
-    .tabs { display: flex; gap: 6px; margin: 0 0 8px; flex-wrap: wrap; }
-    .tab { background: #e2e8f0; color: #1f2937; font-weight: 600; }
-    .tab:hover { background: #cbd5e1; }
-    .tab.active { background: #2563eb; color: white; }
-    .tab-page[hidden] { display: none; }
-    #equilCanvas { max-width: 700px; margin: 0 auto; }
-    canvas { display: block; width: 100%; border-radius: 10px; touch-action: pan-y; }
-    #sceneCanvas { height: 340px; border: 1px solid #dbeafe; background: #f8fbff; cursor: grab; }
-    #equilCanvas { height: 340px; border: 1px solid #e5e7eb; background: #fbfdff; cursor: grab; }
-    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
-    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    .words { margin-top: 8px; font-size: 0.86rem; font-weight: 600; color: #1e3a8a; background: #eef4ff; border-radius: 8px; padding: 6px 10px; }
+    .words:empty { display: none; }
+
+    .scene-wrap { margin-top: 8px; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 0 0 4px; }
+    .note { margin-top: 6px; font-size: 0.8rem; color: #475569; }
     .note ul { margin: 2px 0 0; padding-left: 18px; }
     .note li { margin: 2px 0; }
+    canvas { display: block; width: 100%; border-radius: 10px; background: white; }
+    #scene { height: 380px; border: 1px solid #dbeafe; touch-action: pan-y; }
+    #scene.t2 { height: 300px; }
+    #scene.t3 { height: 380px; }
+    #scene.t4 { height: 340px; }
+
+    /* the working, set like the notes: italic symbols */
+    .work { margin-top: 8px; }
+    .work:empty { display: none; }
+    .math { font-family: 'Times New Roman', Times, serif; font-size: 1.06rem; color: #1f2937; }
+    /* a block line, not flex: inside flex every <sub> would become its own item and lose its drop */
+    .math .eq { display: block; margin: 4px 0; line-height: 1.9; }
+    .math .eq.lit { background: #fef9c3; border-radius: 4px; padding: 0 4px; }
+    .math b { font-family: Arial, Helvetica, sans-serif; }
+
+    /* ---- the step-by-step frame: header, numbered tabs, colour key, instruction strip ---- */
+    .app-head { background: #1e293b; color: #f8fafc; border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+    .head-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .head-row h1 { flex: 1 1 260px; }
+    .steps { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #cbd5e1; }
+    .step-bar { display: flex; gap: 3px; }
+    .step-bar i { display: block; width: 18px; height: 5px; border-radius: 3px; background: #475569; }
+    .step-bar i.on { background: #fbbf24; }
+    button.teacher-btn { flex: none; background: transparent; border: 1px solid #94a3b8; color: #f8fafc; font-size: 0.82rem; padding: 5px 10px; }
+    button.teacher-btn:hover { background: #334155; }
+    /* every tab always visible: equal columns, and a long name wraps onto a second line (never a sideways scroll) */
+    .tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; margin-top: 8px; }
+    button.tab { min-width: 0; background: #f1f5f9; color: #1e293b; font-size: 0.85rem; font-weight: 600; padding: 7px 8px; border-radius: 8px; line-height: 1.2; white-space: normal; text-align: center; }
+    button.tab:hover { background: #e2e8f0; }
+    button.tab.active, button.tab.active:hover { background: #2563eb; color: white; }
+    .tab .ts { display: none; }
+    .nw { white-space: nowrap; }
+    .ckey { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 7px; font-size: 0.76rem; color: #e2e8f0; }
+    .ckey > span { display: inline-flex; align-items: center; gap: 5px; }
+    .ckey b { display: inline-block; width: 14px; height: 4px; border-radius: 2px; }
+    .strip { background: #fef9c3; border-left: 4px solid #eab308; border-radius: 6px; padding: 7px 10px; font-size: 0.86rem; margin-bottom: 8px; }
+
+    /* Predict first (above the controls), key features */
+    .learn { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 8px; }
+    .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; }
+    .box-title { font-weight: 700; font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-q { font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-box { margin-bottom: 8px; }
+    .opts { display: grid; gap: 5px; }
+    #predictOpts { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    .predict-box.done #predictOpts { display: none; }
+    .predict-box.done .predict-q { margin-bottom: 0; }
+    button.opt { flex: none; width: 100%; text-align: left; background: white; color: #1f2937; border: 1px solid #cbd5e1; font-size: 0.86rem; padding: 7px 10px; }
+    button.opt:hover { background: #f1f5f9; }
+    button.opt.picked, button.opt.picked:hover { border-color: #2563eb; background: #eff6ff; box-shadow: inset 0 0 0 1px #2563eb; }
+    button.opt.right, button.opt.right:hover { border-color: #16a34a; background: #dcfce7; box-shadow: inset 0 0 0 1px #16a34a; }
+    button.opt.wrong, button.opt.wrong:hover { border-color: #dc2626; background: #fee2e2; box-shadow: inset 0 0 0 1px #dc2626; }
+    .row-btns { display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+    .row-btns button { flex: none; padding: 6px 12px; }
+    .feedback { font-size: 0.84rem; margin-top: 7px; }
+    .feedback:empty { display: none; }
+    .feedback .verdict { font-weight: 700; }
+    .feedback .verdict.ok { color: #15803d; }
+    .feedback .verdict.no { color: #b91c1c; }
+    .feats { display: flex; flex-wrap: wrap; gap: 6px; }
+    button.feat { flex: none; background: white; color: #1e293b; border: 1px solid #cbd5e1; font-size: 0.84rem; padding: 6px 11px; border-radius: 999px; }
+    button.feat:hover { background: #f1f5f9; }
+    button.feat.on, button.feat.on:hover { background: #1e293b; color: white; border-color: #1e293b; }
+    .feat-note { font-size: 0.82rem; color: #334155; margin-top: 6px; }
+    .feat-note:empty { display: none; }
+
+    /* Challenge */
+    .quiz { max-width: 760px; margin: 0 auto; }
+    .quiz-top { display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 700; margin-bottom: 4px; }
+    .quiz-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+    .quiz-bar i { display: block; height: 100%; background: #2563eb; width: 0; }
+    .quiz-q { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+    .quiz-src { font-size: 0.76rem; color: #475569; margin-bottom: 8px; }
+    .qpart { margin-top: 12px; }
+    .qpart + .qpart { border-top: 1px solid #e2e8f0; padding-top: 10px; }
+    .qpart-q { font-size: 0.92rem; font-weight: 600; margin-bottom: 6px; }
+    .quiz-sum ul { padding-left: 18px; font-size: 0.86rem; }
+    .quiz-sum li { margin: 4px 0; }
+
+    /* Teacher mode */
+    .teacher { position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 92vw); background: white; box-shadow: -4px 0 18px rgba(0,0,0,0.18); padding: 12px; overflow-y: auto; z-index: 20; }
+    .teacher h2 { font-size: 1rem; margin: 0 0 8px; }
+    .teacher .tbtns { display: grid; gap: 6px; }
+    .teacher .tbtns button { background: white; color: #1e293b; border: 1px solid #cbd5e1; flex: none; }
+    .teacher .tbtns button:hover { background: #f1f5f9; }
+    .teacher .tbtns button.on { background: #1e293b; color: white; }
+    .teacher h3 { font-size: 0.9rem; margin: 14px 0 4px; }
+    .teacher ul { padding-left: 18px; margin: 0; font-size: 0.84rem; }
+    .teacher li { margin: 4px 0; }
+    body.no-explain .strip, body.no-explain .words, body.no-explain .feedback .why, body.no-explain .feat-note { display: none; }
+    body.no-answers .readout-card .value, body.no-answers .work { filter: blur(6px); }
+    body.free-mode .predict-box { display: none; }
+
     @media (max-width: 900px) {
-      .controls { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
-      .readout { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+      .readout, .readout.n4, .readout.n6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 700px) {
+      h1 { font-size: 1rem; }
+      #scene { height: 380px; }
+      #scene.t2 { height: 200px; } /* a phone draws the metre rule small: no empty band above it */
+      #scene.t3 { height: 360px; }
+      #scene.t4 { height: 340px; }
+      .readout, .readout.n3, .readout.n4, .readout.n6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .tab .tl { display: none; }
+      .tab .ts { display: inline; }
+      /* phones: short names in rows that wrap, so all five tabs show without scrolling */
+      .tabs { display: flex; flex-wrap: wrap; }
+      button.tab { flex: 1 1 auto; white-space: nowrap; }
+    }
+    @media (max-width: 420px) {
+      .buttons button { padding: 6px 4px; }
+      .inputs .control-group { flex: 1 1 40%; }
+      .inputs select { min-width: 0; width: 100%; }
     }
     /* Touch screens (phones, tablets; Samsung Internet reports hover: hover on a phone, so only pointer is tested):
        16 px form fields stop an iPhone zooming the page in when one is
@@ -59,6 +197,8 @@
       input:not([type=range]):not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
       button { min-height: 36px; }
       input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
+      .controls input, .controls select, .controls button { height: 36px; }
+      .inputs select { height: 36px; }
     }
   </style>
   <!-- pim-nav-style:start (generated by scripts/pim-nav.ts) -->
@@ -87,526 +227,1504 @@
     <a class="pim-nav-btn pim-nav-next" href="work-energy-incline.html" title="Next: Work Done and the Work-Energy Relationship (Chapter 5)" aria-label="Next: Work Done and the Work-Energy Relationship (Chapter 5)"><span class="pim-nav-text"><span class="pim-nav-kicker">Next<span class="pim-nav-ch"> &middot; Chapter 5</span></span><span class="pim-nav-name">Work Done and the Work-Energy Relationship</span></span><span class="pim-nav-arrow" aria-hidden="true">&rsaquo;</span></a>
   </nav>
   <!-- pim-nav:end -->
-    <h1>Centre of Gravity, Stability and Equilibrium</h1>
 
-    <div class="tabs" role="tablist">
-      <button type="button" class="tab active" role="tab" id="tabStability" aria-selected="true" data-page="pageStability">Centre of gravity and stability</button>
-      <button type="button" class="tab" role="tab" id="tabEquil" aria-selected="false" data-page="pageEquil">Types of equilibrium</button>
+    <header class="app-head">
+      <div class="head-row">
+        <h1>Centre of Gravity, Stability and Equilibrium</h1>
+        <div class="steps"><span id="stepLabel">Step 1 of 5</span><span class="step-bar" id="stepBar"><i></i><i></i><i></i><i></i><i></i></span></div>
+        <button class="teacher-btn" id="teacherBtn" type="button" hidden>Teacher mode</button>
+      </div>
+      <div class="tabs" role="tablist" id="tabs">
+        <button class="tab" role="tab" data-tab="1" type="button"><span class="tl">1. Find the centre of gravity</span><span class="ts">1. Find the CG</span></button>
+        <button class="tab" role="tab" data-tab="2" type="button"><span class="tl">2. Balancing at the centre of gravity</span><span class="ts">2. Balance</span></button>
+        <button class="tab" role="tab" data-tab="3" type="button"><span class="tl">3. Stability: tilt it and let go</span><span class="ts">3. Stability</span></button>
+        <button class="tab" role="tab" data-tab="4" type="button"><span class="tl">4. Types of equilibrium</span><span class="ts">4. Equilibrium</span></button>
+        <button class="tab" role="tab" data-tab="5" type="button"><span class="tl">5. Challenge</span><span class="ts">5. Challenge</span></button>
+      </div>
+      <div class="ckey" id="ckey"></div>
+    </header>
+
+    <div class="strip" id="strip"></div>
+
+    <!-- tabs 1 to 4: Predict first comes first, above the controls and the picture -->
+    <div class="box predict-box" id="predictBox">
+      <div class="box-title">Predict first</div>
+      <div class="predict-q" id="predictQ"></div>
+      <div class="opts" id="predictOpts"></div>
+      <div class="feedback" id="predictFb"></div>
+      <div class="row-btns" id="predictBtns"><button id="predictCheck" type="button">Check my answer</button></div>
     </div>
 
-    <div class="tab-page" id="pageStability">
-    <div class="panel">
-      <div class="controls">
-        <div class="control-group">
-          <label for="baseWidth">Base width <i>B</i> <span class="val" id="baseWidthVal"></span></label>
-          <input id="baseWidth" type="range" min="0.4" max="2.0" step="0.05" value="1.0" />
-        </div>
-        <div class="control-group">
-          <label for="boxHeight">Box height <i>H</i> <span class="val" id="boxHeightVal"></span></label>
-          <input id="boxHeight" type="range" min="0.4" max="2.4" step="0.05" value="1.4" />
-        </div>
-        <div class="control-group">
-          <label for="boxMass">Box mass <span class="val" id="boxMassVal"></span></label>
-          <input id="boxMass" type="range" min="2" max="60" step="1" value="20" />
-        </div>
-        <div class="control-group">
-          <label for="loadMass">Load mass <span class="val" id="loadMassVal"></span></label>
-          <input id="loadMass" type="range" min="0" max="60" step="1" value="15" />
-        </div>
-        <div class="control-group">
-          <label for="loadOffset">Load position <span class="val" id="loadOffsetVal"></span></label>
-          <input id="loadOffset" type="range" min="-1" max="1" step="0.01" value="0.3" />
-        </div>
-        <div class="control-group">
-          <button id="resetBtn">Reset</button>
-        </div>
-      </div>
-
-      <div class="readout">
-        <div class="readout-card">
-          <div class="title">Combined CG (from the base centre, box upright)</div>
-          <div class="value" id="cgValue">&mdash;</div>
-        </div>
-        <div class="readout-card">
-          <div class="title">Tilt angle now</div>
-          <div class="value" id="tiltValue">0&deg;</div>
-        </div>
-        <div class="readout-card">
-          <div class="title">Topples if tilted past</div>
-          <div class="value" id="critValue">&mdash;</div>
-        </div>
-        <div class="readout-card" id="stateCard">
-          <div class="title">If you let go now&hellip;</div>
-          <div class="value" id="stateValue">&mdash;</div>
-        </div>
-      </div>
-    </div>
-
+    <!-- Tabs 1 to 4 share one drawing -->
+    <section class="tab-page" id="pageSim">
       <div class="panel">
-        <div class="hint">Drag the blue box sideways to tilt it, then let go. Drag the red load to slide it along the top.</div>
-        <canvas id="sceneCanvas"></canvas>
-        <div class="note"><ul>
-          <li>The red load is fixed to the top of the box, so it tilts with the box and cannot slide or fall off. You can move it along the top only while the box is upright.</li>
-          <li>The dashed black line drops straight down from the combined centre of gravity: it is the line of action of the weight.</li>
-          <li>While that line passes <b>inside</b> the pivot edge, the weight's moment turns the box back, so it falls back onto its base.</li>
-          <li>Once the centre of gravity passes <b>beyond</b> the pivot edge, the weight's moment turns the box the other way, so it topples.</li>
-          <li>A <b>lower</b> centre of gravity or a <b>wider base</b> makes the toppling angle bigger, so the object is more stable (a coach's luggage bay, a racing car's wide track, a floor fan's heavy base).</li>
-          <li>Try it: put a heavy load on top and watch the toppling angle shrink.</li>
-        </ul></div>
-      </div>
-    </div>
+        <div class="controls" id="simControls">
+          <div class="control-group scen-group" id="scenGroup">
+            <label for="preset">Scenarios</label>
+            <select id="preset"></select>
+          </div>
+          <div class="control-group button-group" id="stepGroup">
+            <label>Steps</label>
+            <div class="buttons">
+              <button id="prevStep" class="secondary" type="button">&lsaquo; Previous step</button>
+              <button id="nextStep" type="button">Next step &rsaquo;</button>
+              <button id="resetSteps" class="danger" type="button">Reset</button>
+            </div>
+          </div>
+          <div class="control-group button-group" id="simGroup">
+            <label>Simulation controls</label>
+            <div class="buttons">
+              <button id="startBtn" type="button">Let go</button>
+              <button id="pauseBtn" class="secondary" type="button">Pause</button>
+              <button id="resetBtn" class="danger" type="button">Reset</button>
+            </div>
+          </div>
+        </div>
+        <div class="question" id="question"></div>
+        <div id="expWrap">
+          <div class="group-title" id="expTitle">Experimental controls</div>
+          <div class="inputs" id="inputs"></div>
+        </div>
 
-    <div class="tab-page" id="pageEquil" hidden>
-      <div class="panel">
-        <div class="hint">Drag each ball a little way along its surface and let go.</div>
-        <canvas id="equilCanvas"></canvas>
-        <div class="note"><ul>
-          <li><b>Stable:</b> the ball returns to where it was.</li>
-          <li><b>Unstable:</b> it keeps moving away.</li>
-          <li><b>Neutral:</b> it stays wherever you leave it.</li>
-          <li>The notes use a cone the same way: on its base, on its tip, on its side.</li>
-        </ul></div>
+        <div class="step-text" id="stepText"></div>
+
+        <!-- the readouts go under the drawing: nothing above the canvas may change height while a finger drags -->
+        <div class="scene-wrap">
+          <div class="hint" id="sceneHint"></div>
+          <canvas id="scene"></canvas>
+          <div class="readout" id="readout"></div>
+          <div class="words" id="words"></div>
+          <div class="work" id="work"></div>
+          <div class="note" id="notes"></div>
+        </div>
       </div>
-    </div>
+
+      <div class="learn">
+        <div class="box" id="featBox">
+          <div class="box-title">Key features (tap one)</div>
+          <div class="feats" id="feats"></div>
+          <div class="feat-note" id="featNote"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 5: Challenge -->
+    <section class="tab-page" id="page5" hidden>
+      <div class="panel">
+        <div class="quiz" id="quiz"></div>
+      </div>
+    </section>
   </div>
 
+  <aside class="teacher" id="teacher" hidden aria-label="Teacher mode">
+    <h2>Teacher mode</h2>
+    <div class="tbtns">
+      <button id="tExplain" type="button">Hide explanations</button>
+      <button id="tFree" type="button">Switch to free exploration</button>
+      <button id="tAnswers" type="button">Hide answer labels</button>
+      <button id="tFull" type="button">Full screen</button>
+      <button id="tReset" type="button">Reset whole applet</button>
+      <button id="tClose" type="button">Close</button>
+    </div>
+    <h3>Suggested prompts</h3>
+    <ul id="tPrompts"></ul>
+  </aside>
+
   <script>
-    const G = 10; // m s^-2, as used throughout the lecture notes
-    const LOAD_W = 0.24, LOAD_H = 0.2; // the load is a small crate strapped to the top of the box
+    const $ = id => document.getElementById(id);
+    const canvas = $('scene'), presetEl = $('preset');
+    let currentTab = 1, freeMode = false;
 
-    const el = id => document.getElementById(id);
-    const baseWidthEl = el('baseWidth'), boxHeightEl = el('boxHeight');
-    const boxMassEl = el('boxMass'), loadMassEl = el('loadMass'), loadOffsetEl = el('loadOffset');
-    const sceneCanvas = el('sceneCanvas'), equilCanvas = el('equilCanvas');
+    /* ---------------- numbers and symbols ---------------- */
+    const G = 10; // g = 10 m s^-2, as Tutorial 4 takes it
+    const RAD = Math.PI / 180;
+    const clean = v => (Math.abs(v) < 1e-9 ? 0 : v);
+    // 3 significant figures, as the lecturer's copy gives them; exact whole numbers stay whole; an exact value keeps
+    // its own figures (0.5, 7.5); a 1e-12 nudge so a binary half rounds up; a true minus sign
+    const f3 = v => {
+      const x = clean(v);
+      if (Math.abs(x - Math.round(x)) < 1e-9) return String(Math.round(x)).replace('-', '−');
+      const t = (x * (1 + 1e-12)).toPrecision(3);
+      if (Math.abs(+t - x) < 1e-9 || Math.abs(x) >= 100) return String(+t).replace('-', '−');
+      return t.replace('-', '−');
+    };
+    const sgn = v => (clean(v) > 0 ? '+' : '') + f3(v);              // +0.1, −0.15: the notes' sign convention
+    const plain = v => String(+(+v).toFixed(3)).replace('-', '−'); // a set value as set: 0.6, 20
+    const COL = { W: '#7c3aed', cg: '#2563eb', lineA: '#dc2626', lineB: '#16a34a', lineC: '#0891b2', str: '#334155', cw: '#dc2626', acw: '#2563eb',
+      ok: '#16a34a', bad: '#dc2626', grey: '#475569', mass: '#ea580c', h0: '#db2777', lam: '#fef3c7', lamE: '#b45309' };
+    const LINE_COL = { A: COL.lineA, B: COL.lineB, C: COL.lineC, P: COL.lineA };
 
-    // theta > 0: tilted clockwise, pivoting on the RIGHT bottom edge. theta < 0: on the LEFT edge.
-    const sim = { theta: 0, omega: 0, dragging: null, landedMsg: '' };
+    /* ---------------- scenarios ---------------- */
+    const PRESETS = {
+      // tab 1: hang it freely (pp. 4-16 to 4-18)
+      heart: { tab: 1, name: 'Heart-shaped lamina' },
+      card: { tab: 1, name: 'Rectangular card' },
+      tri: { tab: 1, name: 'Triangular plate' },
+      ring: { tab: 1, name: 'Ring' },
+      bag: { tab: 1, name: 'Handbag on a hanger', q: 'Example 6: Some restaurants provide customers with a gadget shown below to hang their handbags. Where is the centre of gravity (CG) of the bag?' },
+      // tab 2: a uniform metre rule on a pivot (p. 4-19; its weight 0.50 N from Tutorial 4 A5)
+      centre: { tab: 2, name: 'Pivot at the 50 cm mark', p: 50, mass: 0, xm: 10 },
+      off: { tab: 2, name: 'Pivot at the 30 cm mark', p: 30, mass: 0, xm: 10 },
+      mass: { tab: 2, name: 'A 150 g mass at the 10 cm mark', p: 20, mass: 150, xm: 10,
+        q: 'Tutorial 4 A5: the uniform metre rule is in equilibrium on a pivot at the 20 cm mark, with a 150 g mass at the 10 cm mark. The key gives its weight as 0.50 N: check that the moments balance.' },
+      // tab 3: tilt it and let go (pp. 4-22, 4-33, 4-34)
+      top: { tab: 3, name: 'Load on the top shelf', B: 0.6, load: 'top' },
+      bottom: { tab: 3, name: 'Load on the bottom shelf', B: 0.6, load: 'bottom' },
+      wide: { tab: 3, name: 'Broader base, load on top', B: 1.0, load: 'top' },
+      wall: { tab: 3, name: 'Try It!: against a wall', person: true, wall: true,
+        q: 'Try It! (p. 4-22): Stand with your left foot and left shoulder touching a wall as shown below. Can you raise your right foot off the floor without losing your balance?' },
+      away: { tab: 3, name: 'Away from the wall', person: true, wall: false },
+      // tab 4: types of equilibrium (pp. 4-28 to 4-32)
+      base: { tab: 4, name: 'Cone on its base', mode: 'base' },
+      apex: { tab: 4, name: 'Cone on its apex', mode: 'apex' },
+      side: { tab: 4, name: 'Cone on its slant side', mode: 'side' },
+      balls: { tab: 4, name: 'A ball on three surfaces', mode: 'balls',
+        q: 'Example 12: The diagram below shows a ball on three different surfaces. Indicate the types of equilibrium the ball is in.' }
+    };
+    const CUSTOM_NAME = { 2: 'Your own rule', 3: 'Your own cabinet' };
+    const S = { step: 1, scen: 'heart', custom: false };
+    const sim = { t: 0, running: false, done: false, last: null };
+    let feat = {}, hl = {};
 
-    function setupCanvas(canvas) {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      const W = Math.round(rect.width * dpr), H = Math.round(rect.height * dpr);
-      if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
-      const ctx = canvas.getContext('2d');
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      return { ctx, w: rect.width, h: rect.height };
+    /* ---------------- tab 1: hang a lamina freely ----------------
+       Lengths in cm, y up. A uniform lamina pivots freely about the point of suspension: angular acceleration =
+       −(g × horizontal distance of the CG from the vertical through the pin) ÷ k², with k² = I ÷ m about the pin,
+       plus a little damping so one run ends at rest. phi: the lamina's turn from the way it is drawn (anticlockwise +). */
+    function polyProps(pts) { // area, first moments and second polar moment about the origin, for one polygon
+      let A = 0, mx = 0, my = 0, J = 0;
+      for (let i = 0; i < pts.length; i++) {
+        const [x0, y0] = pts[i], [x1, y1] = pts[(i + 1) % pts.length], c = x0 * y1 - x1 * y0;
+        A += c / 2; mx += (x0 + x1) * c / 6; my += (y0 + y1) * c / 6;
+        J += c * (x0 * x0 + x0 * x1 + x1 * x1 + y0 * y0 + y0 * y1 + y1 * y1) / 12;
+      }
+      const s = A < 0 ? -1 : 1;
+      return { A: s * A, mx: s * mx, my: s * my, J: s * J };
     }
-
-    function params() {
-      const B = parseFloat(baseWidthEl.value);
-      const H = parseFloat(boxHeightEl.value);
-      const mBox = parseFloat(boxMassEl.value);
-      const mLoad = parseFloat(loadMassEl.value);
-      // The load slider runs -1..1 of the free travel, so the crate can never hang off the box.
-      const travel = Math.max(0, B / 2 - LOAD_W / 2);
-      const xo = parseFloat(loadOffsetEl.value) * travel;
-      const M = mBox + mLoad;
-      const xc = (mLoad * xo) / M;
-      const yc = (mBox * H / 2 + mLoad * (H + LOAD_H / 2)) / M;
-      return { B, H, mBox, mLoad, xo, travel, M, xc, yc };
-    }
-
-    // Critical angle for tipping to the right (side = +1) or left (side = -1).
-    function criticalAngle(p, side) {
-      const dx = p.B / 2 - side * p.xc; // horizontal distance from CG to that pivot edge, untilted
-      return Math.atan2(dx, p.yc);
-    }
-
-    // Horizontal offset of the CG beyond the pivot edge (positive = beyond it, i.e. toppling moment).
-    function beyondPivot(p, theta) {
-      const side = theta >= 0 ? 1 : -1;
-      const a = Math.abs(theta);
-      const dx = side * p.xc - p.B / 2; // <= 0 : CG is inside the edge when upright
-      return dx * Math.cos(a) + p.yc * Math.sin(a);
-    }
-
-    function momentOfInertiaAboutEdge(p, side) {
-      const ex = side * p.B / 2;
-      const Ibox = p.mBox * (p.B * p.B + p.H * p.H) / 12 + p.mBox * (ex * ex + (p.H / 2) ** 2);
-      const lx = p.xo - ex, ly = p.H + LOAD_H / 2;
-      const Iload = p.mLoad * (LOAD_W ** 2 + LOAD_H ** 2) / 12 + p.mLoad * (lx * lx + ly * ly);
-      return Ibox + Iload;
-    }
-
-    function step(dt) {
-      if (sim.dragging) return;
-      const p = params();
-      if (sim.theta === 0 && sim.omega === 0) return;
-      const side = sim.theta >= 0 ? 1 : -1;
-      const I = momentOfInertiaAboutEdge(p, side);
-      const sub = 8;
-      for (let i = 0; i < sub; i++) {
-        const h = dt / sub;
-        const torque = p.M * G * beyondPivot(p, sim.theta); // turns it further over when positive
-        const alpha = side * torque / I;
-        sim.omega += alpha * h;
-        const prev = sim.theta;
-        sim.theta += sim.omega * h;
-        if (Math.sign(prev) !== Math.sign(sim.theta) && prev !== 0) {
-          // Came back down onto its base: the floor stops it.
-          sim.theta = 0; sim.omega = 0; sim.landedMsg = 'Fell back onto its base';
-          return;
+    const circlePts = (R, n = 90) => Array.from({ length: n }, (_, i) => [R * Math.cos(2 * Math.PI * i / n), R * Math.sin(2 * Math.PI * i / n)]);
+    const heartAt = t => [0.6 * 16 * Math.sin(t) ** 3, 0.6 * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t))];
+    // a hole for the pin, a little way in from the edge, towards the centre of gravity
+    const inward = (q, C, by) => { const dx = C[0] - q[0], dy = C[1] - q[1], n = Math.hypot(dx, dy); return [q[0] + by * dx / n, q[1] + by * dy / n]; };
+    function makeLamina(id) {
+      let outer, inner = null, pins;
+      if (id === 'heart') outer = Array.from({ length: 120 }, (_, i) => heartAt(2 * Math.PI * i / 120));
+      else if (id === 'card') outer = [[0, 0], [16, 0], [16, 10], [0, 10]];
+      else if (id === 'tri') outer = [[0, 0], [16, 0], [8, 14]];
+      else if (id === 'ring') { outer = circlePts(8); inner = circlePts(6); }
+      else outer = [[-8, 0], [8, 0], [5, 10], [-5, 10]]; // the bag's body; its handle is light
+      const po = polyProps(outer); let A = po.A, mx = po.mx, my = po.my, J = po.J;
+      if (inner) { const pi = polyProps(inner); A -= pi.A; mx -= pi.mx; my -= pi.my; J -= pi.J; }
+      const C = [mx / A, my / A], k2c = J / A - (C[0] ** 2 + C[1] ** 2);
+      if (id === 'heart') pins = { A: inward(heartAt(0), C, 1.2), B: inward(heartAt(1.1), C, 1.2), C: inward(heartAt(-1.75), C, 1.2) };
+      else if (id === 'card') pins = { A: inward([0, 10], C, 1.3), B: inward([16, 10], C, 1.3), C: [8, 8.8] };
+      else if (id === 'tri') pins = { A: inward([8, 14], C, 1.5), B: inward([16, 0], C, 1.5), C: inward([0, 0], C, 1.5) };
+      else if (id === 'ring') pins = { A: [0, 7], B: [7 * Math.cos(-30 * RAD), 7 * Math.sin(-30 * RAD)], C: [7 * Math.cos(200 * RAD), 7 * Math.sin(200 * RAD)] };
+      else pins = { P: [0, 16] };
+      // one scale for every way it can hang: from any pin, turned up to SWING_MAX either side of its rest position,
+      // how far the shape reaches above the pin (up), below it (down) and to each side (side); dmax: the CG at rest
+      let up = 0, down = 0, side = 0, dmax = 0;
+      for (const P of Object.values(pins)) {
+        const beta = Math.atan2(C[1] - P[1], C[0] - P[0]), rest = -Math.PI / 2 - beta;
+        dmax = Math.max(dmax, Math.hypot(C[0] - P[0], C[1] - P[1]));
+        for (let a = -SWING_MAX; a <= SWING_MAX + 1e-9; a += SWING_MAX / 12) {
+          const c = Math.cos(rest + a), s = Math.sin(rest + a);
+          for (const q of outer) {
+            const vx = q[0] - P[0], vy = q[1] - P[1], wx = vx * c - vy * s, wy = vx * s + vy * c;
+            up = Math.max(up, wy); down = Math.max(down, -wy); side = Math.max(side, Math.abs(wx));
+          }
         }
-        if (Math.abs(sim.theta) >= Math.PI / 2) {
-          sim.theta = side * Math.PI / 2; sim.omega = 0; sim.landedMsg = 'Toppled onto its side';
-          return;
+      }
+      return { id, outer, inner, pins, C, k2c, up, down, side, dmax, bag: id === 'bag' };
+    }
+    // every hang starts 35° from its rest position; a drag can turn it at most 60° from rest
+    const START_TILT = 35 * RAD, SWING_MAX = 60 * RAD, ZETA = 0.2;
+    const LAM = {}; ['heart', 'card', 'tri', 'ring', 'bag'].forEach(id => { LAM[id] = makeLamina(id); });
+    const L1 = { pin: 'A', phi: 0, om: 0 };
+    const pinInfo = (Lm, pin) => { const P = Lm.pins[pin], dx = Lm.C[0] - P[0], dy = Lm.C[1] - P[1]; return { P, d: Math.hypot(dx, dy), beta: Math.atan2(dy, dx), k2: Lm.k2c + dx * dx + dy * dy }; };
+    // at rest the CG is vertically below the pin: the pin-to-CG direction (beta) turned by phi points straight down
+    const restPhi = (Lm, pin) => -Math.PI / 2 - pinInfo(Lm, pin).beta;
+    const wrapA = a => Math.atan2(Math.sin(a), Math.cos(a));
+    // the CG's horizontal distance from the vertical through the pin, in cm (+ = to the right)
+    function cgOffset() { const Lm = LAM[S.scen], I = pinInfo(Lm, L1.pin); return clean(I.d * Math.cos(L1.phi + I.beta)); }
+    // the steps: hang it from A, draw its line, from B, draw, the lines cross, check from C (the bag: hang it, then the CG)
+    function plan1(id) {
+      if (id === 'bag') return [{ pin: 'P', swing: 'tilt' }, { pin: 'P', mark: true }];
+      return [{ pin: 'A', swing: 'tilt' }, { pin: 'A', line: 'A' }, { pin: 'B', swing: 'tilt' }, { pin: 'B', line: 'B' }, { pin: 'B', cross: true }, { pin: 'C', swing: 'tilt', lineAtRest: 'C' }];
+    }
+    function linesDrawn() {
+      const P = plan1(S.scen), out = [];
+      P.slice(0, S.step).forEach(s => { if (s.line) out.push(s.line); });
+      const cur = P[S.step - 1];
+      if (cur.lineAtRest && sim.done && !sim.running && Math.abs(cgOffset()) < 1e-6) out.push(cur.lineAtRest);
+      return out;
+    }
+    function applyStep1(run = true) {
+      const Lm = LAM[S.scen], st = plan1(S.scen)[S.step - 1];
+      sim.running = false; sim.t = 0; sim.last = null; sim.done = false;
+      L1.pin = st.pin; L1.om = 0;
+      if (st.swing) {
+        L1.phi = restPhi(Lm, st.pin) + START_TILT;
+        if (freeMode || !run) runToEnd(); else start();
+      } else { L1.phi = restPhi(Lm, st.pin); sim.done = true; }
+    }
+    function lamAcc(phi, om) {
+      const Lm = LAM[S.scen], I = pinInfo(Lm, L1.pin), w0 = Math.sqrt(1000 * I.d / I.k2);
+      // cm and cm²: g × (rx / 100) ÷ (k² / 10^4) = 1000 rx ÷ k²
+      return -1000 * I.d * Math.cos(phi + I.beta) / I.k2 - 2 * ZETA * w0 * om;
+    }
+    function step1(dt) {
+      const Lm = LAM[S.scen], rest = restPhi(Lm, L1.pin), n = Math.max(1, Math.ceil(dt / (1 / 600))), h = dt / n;
+      for (let i = 0; i < n; i++) {
+        // RK4 on (phi, om)
+        const p = L1.phi, w = L1.om;
+        const k1p = w, k1w = lamAcc(p, w);
+        const k2p = w + h / 2 * k1w, k2w = lamAcc(p + h / 2 * k1p, w + h / 2 * k1w);
+        const k3p = w + h / 2 * k2w, k3w = lamAcc(p + h / 2 * k2p, w + h / 2 * k2w);
+        const k4p = w + h * k3w, k4w = lamAcc(p + h * k3p, w + h * k3w);
+        L1.phi = p + h / 6 * (k1p + 2 * k2p + 2 * k3p + k4p);
+        L1.om = w + h / 6 * (k1w + 2 * k2w + 2 * k3w + k4w);
+        const e = wrapA(L1.phi - rest);
+        if ((Math.abs(e) < 0.03 * RAD && Math.abs(L1.om) < 0.01) || sim.t > 15) { L1.phi = rest; L1.om = 0; return true; }
+      }
+      return false;
+    }
+
+    /* ---------------- tab 2: a uniform metre rule on a pivot ----------------
+       The rule weighs 0.50 N (Tutorial 4 A5's key), so its mass is 0.05 kg; its weight acts at the 50 cm mark.
+       The pivot's top edge is 10 cm above the bench: let go, the rule turns until one end touches the bench. */
+    const RULE_W = 0.5, RULE_M = RULE_W / G, PIV_H = 0.10;
+    // a light rule tips in about 0.13 s, too fast to see: the run is shown at a quarter of its real speed (the page says so)
+    const RULE_SLOW = 0.25;
+    const R2 = { p: 50, mass: 0, xm: 10, tilt: 0, om: 0 };
+    // moments about the pivot with the rule tilted by tilt (clockwise +): every horizontal distance is x cos(tilt)
+    function rule(tilt = R2.tilt) {
+      const c = Math.cos(tilt), dW = (50 - R2.p) / 100, dm = (R2.xm - R2.p) / 100;
+      const MW = clean(RULE_W * dW * c), Mm = clean(R2.mass / 1000 * G * dm * c), net = clean(MW + Mm);
+      return { dW, dm, MW, Mm, net, balanced: Math.abs(net) < 1e-9 };
+    }
+    function ruleMaxTilt(dir) { const e = dir > 0 ? 1 - R2.p / 100 : R2.p / 100; return Math.asin(Math.min(1, PIV_H / Math.max(e, 1e-6))); }
+    function step2(dt) {
+      const I = RULE_M * (1 / 12 + ((50 - R2.p) / 100) ** 2) + R2.mass / 1000 * ((R2.xm - R2.p) / 100) ** 2;
+      const n = 20, h = dt / n;
+      for (let i = 0; i < n; i++) {
+        const a = rule(0).net * Math.cos(R2.tilt) / I;
+        R2.om += a * h; R2.tilt += R2.om * h;
+        const dir = Math.sign(R2.tilt), lim = dir ? ruleMaxTilt(dir) : Infinity;
+        if (Math.abs(R2.tilt) >= lim) { R2.tilt = dir * lim; R2.om = 0; return true; }
+      }
+      return sim.t >= 1 - 1e-9; // balanced: a second of staying level
+    }
+
+    /* ---------------- tab 3: a cabinet tilted on one edge ----------------
+       Lengths in m. A 1.2 m cabinet of mass 10 kg with a 20 kg load on its top or bottom shelf (the page's own values).
+       Tilted by tilt (clockwise, onto its right edge), the weight W = 300 N turns it back while its line of action is
+       inside the base, and over once it passes outside. */
+    const CAB = { H: 1.2, mb: 10, ml: 20, LH: 0.2 };
+    const T3 = { B: 0.6, load: 'top', tilt0: 10 * RAD, tilt: 10 * RAD, om: 0, result: '' };
+    function cab() {
+      const B = T3.B, H = CAB.H, mb = CAB.mb, ml = T3.load === 'none' ? 0 : CAB.ml, M = mb + ml;
+      const LW = Math.min(0.4, B - 0.12), ly = T3.load === 'bottom' ? 0.15 : H - 0.15;
+      const yc = (mb * H / 2 + ml * ly) / M;
+      const crit = Math.atan((B / 2) / yc);
+      const I = mb * ((B * B + H * H) / 12 + (B / 2) ** 2 + (H / 2) ** 2) + ml * ((LW * LW + CAB.LH ** 2) / 12 + (B / 2) ** 2 + ly * ly);
+      return { B, H, mb, ml, M, LW, ly, yc, crit, I };
+    }
+    // the CG's horizontal position from the pivot edge (+ = beyond it, outside the base) and its height, at a tilt
+    function cabCG(c, t) { return { x: -(c.B / 2) * Math.cos(t) + c.yc * Math.sin(t), y: (c.B / 2) * Math.sin(t) + c.yc * Math.cos(t) }; }
+    function step3box(dt) {
+      const c = cab(), n = 20, h = dt / n;
+      if (T3.tilt <= 1e-9 && T3.om <= 0) { T3.tilt = 0; T3.result = 'stays standing'; return true; }
+      for (let i = 0; i < n; i++) {
+        T3.om += c.M * G * cabCG(c, T3.tilt).x / c.I * h; T3.tilt += T3.om * h;
+        if (T3.tilt <= 0) { T3.tilt = 0; T3.om = 0; T3.result = 'fell back onto its base'; return true; }
+        if (T3.tilt >= Math.PI / 2) { T3.tilt = Math.PI / 2; T3.om = 0; T3.result = 'toppled over'; return true; }
+      }
+      if (sim.t >= 4 - 1e-9) { T3.result = 'balanced on its edge'; return true; }
+      return false;
+    }
+    /* The Try It! of p. 4-22, seen from the front: the wall on the right, the person's left foot (on the right of the
+       picture) against it. x in m along the floor from the left foot's inner edge, y up. Feet: left foot 0 to 0.12 m,
+       right foot −0.36 to −0.24 m; G (the body's CG) at x = −0.12 m, 0.95 m up: the page's own values.
+       Lifting the right foot leaves the left foot as the base, and G is 0.12 m outside it. */
+    const PERSON = { G: [-0.12, 0.95], lf: [0, 0.12], rf: [-0.36, -0.24], lift: 0.06, kG2: 1.7 * 1.7 / 12 };
+    const P3 = { up: false, ang: 0, om: 0, lean: 0 };
+    const wallX = () => (PRESETS[S.scen].wall ? 0.12 : 0.62);
+    const FALL_END = Math.atan(PERSON.lift / -PERSON.rf[0]);              // the right foot's outer toe meets the floor
+    const LEAN_END = Math.atan(-(PERSON.G[0] - 0.06) / PERSON.G[1]);      // G over the middle of the left foot
+    // the pose: turned anticlockwise about the left foot's inner edge (falling), or clockwise about its middle (leaning)
+    const personPose = () => (PRESETS[S.scen].wall ? { piv: [0, 0], ang: P3.ang } : { piv: [0.06, 0], ang: -P3.lean });
+    function personAt(x, y) {
+      const { piv, ang } = personPose(), rx = x - piv[0], ry = y - piv[1], c = Math.cos(ang), s = Math.sin(ang);
+      return [piv[0] + rx * c - ry * s, piv[1] + rx * s + ry * c];
+    }
+    // where G is against the base of support: −1 inside, 0 over its edge, +1 outside
+    function personBase() { return P3.up ? [PERSON.lf[0], PERSON.lf[1]] : [PERSON.rf[0], PERSON.lf[1]]; }
+    function personInside() { const gx = personAt(...PERSON.G)[0], b = personBase(); return gx > b[0] + 1e-9 && gx < b[1] - 1e-9; }
+    function step3person(dt) {
+      if (PRESETS[S.scen].wall) {
+        // anticlockwise about the left foot's inner edge (0, 0): the weight's moment, I/m = r² + kG²
+        const n = 20, h = dt / n, rG2 = PERSON.G[0] ** 2 + PERSON.G[1] ** 2;
+        for (let i = 0; i < n; i++) {
+          const x = PERSON.G[0] * Math.cos(P3.ang) - PERSON.G[1] * Math.sin(P3.ang); // G's x after turning anticlockwise
+          P3.om += G * (-x) / (rG2 + PERSON.kG2) * h; P3.ang += P3.om * h;
+          if (P3.ang >= FALL_END) { P3.ang = FALL_END; P3.om = 0; return true; }
         }
+        return false;
       }
+      // away from the wall: the body leans over the left foot in one second (both feet still down), then the right
+      // foot lifts and it balances there
+      const u = Math.min(1, sim.t);
+      P3.lean = LEAN_END * u * u * (3 - 2 * u);
+      P3.up = sim.t >= 1 - 1e-9;
+      return sim.t >= 1.5 - 1e-9;
     }
 
-    // ---------- scene geometry ----------
-    let geo = null;
-    function computeGeometry(w, h, p) {
-      const floorY = h - 46;
-      const needW = p.B + 2 * (p.H + LOAD_H) + 0.4;
-      const needH = Math.max(p.H + LOAD_H, p.B) + 0.35;
-      const s = Math.min((w - 30) / needW, (floorY - 20) / needH);
-      return { floorY, s, cx: w / 2 };
+    /* ---------------- tab 4: a cone (30 cm tall, base radius 10 cm; its CG on its axis, a quarter of its height
+       above the base) and Example 12's ball ---------------- */
+    const CONE = { h: 30, r: 10 };
+    // one place for where the CG is: a quarter of the height above the base, three quarters below the apex
+    CONE.gb = CONE.h / 4; CONE.ga = CONE.h - CONE.gb;
+    CONE.a = Math.atan(CONE.r / CONE.h);                  // half the angle at the apex
+    CONE.Icg = 3 * CONE.r ** 2 / 20 + 3 * CONE.h ** 2 / 80; // I ÷ m about the CG, across the axis (cm²)
+    CONE.lie = Math.PI / 2 - CONE.a;                       // apex down, it stops when its slant side lies on the table
+    const DISP = { base: 15, apex: 5, side: 6 };
+    // the notes' stable equilibrium is for a slight displacement: the base tilt stops at 45°, short of the 53.1° at
+    // which the cone's CG would pass over its base edge
+    const DISP_MAX = { base: 45, apex: 30, side: 20 };
+    const C4 = { disp: 15, phi: 0, om: 0, x: 0, result: '' };
+    // the CG's height above the table (cm) in each mode, for the cone turned by phi
+    function coneCGh(mode, phi) {
+      const { r, a, gb, ga } = CONE;
+      if (mode === 'base') return r * Math.sin(phi) + gb * Math.cos(phi);
+      if (mode === 'apex') return ga * Math.cos(phi);
+      return ga * Math.sin(a);
     }
-
-    // Box-frame point (x right, y up, origin at base centre) -> canvas point, for tilt theta.
-    function toCanvas(p, g, theta, x, y) {
-      const side = theta >= 0 ? 1 : -1;
-      const ex = side * p.B / 2; // pivot edge
-      const a = -theta; // clockwise tilt in an up-is-positive frame
-      const rx = x - ex, ry = y;
-      const wx = ex + rx * Math.cos(a) - ry * Math.sin(a);
-      const wy = rx * Math.sin(a) + ry * Math.cos(a);
-      return { x: g.cx + wx * g.s, y: g.floorY - wy * g.s };
+    const coneMode = () => PRESETS[S.scen].mode;
+    function resetC4() {
+      const m = coneMode(); C4.om = 0; C4.result = '';
+      if (m === 'side') { C4.phi = 0; C4.x = C4.disp; } else { C4.phi = C4.disp * RAD; C4.x = 0; }
+      if (m === 'balls') resetBalls(true);
     }
-
-    function polygon(ctx, pts) {
-      ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
-      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
-      ctx.closePath();
-    }
-
-    function arrow(ctx, x1, y1, x2, y2, color, lw = 3, head = 10) {
-      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
-      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-      const a = Math.atan2(y2 - y1, x2 - x1);
-      ctx.beginPath(); ctx.moveTo(x2, y2);
-      ctx.lineTo(x2 - head * Math.cos(a - 0.45), y2 - head * Math.sin(a - 0.45));
-      ctx.lineTo(x2 - head * Math.cos(a + 0.45), y2 - head * Math.sin(a + 0.45));
-      ctx.closePath(); ctx.fill();
-    }
-
-    function drawScene() {
-      const { ctx, w, h } = setupCanvas(sceneCanvas);
-      const p = params();
-      const g = computeGeometry(w, h, p);
-      geo = { g, p };
-      ctx.clearRect(0, 0, w, h);
-
-      // floor
-      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, g.floorY, w, h - g.floorY);
-      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(0, g.floorY); ctx.lineTo(w, g.floorY); ctx.stroke();
-
-      const t = sim.theta;
-      const box = [toCanvas(p, g, t, -p.B / 2, 0), toCanvas(p, g, t, p.B / 2, 0), toCanvas(p, g, t, p.B / 2, p.H), toCanvas(p, g, t, -p.B / 2, p.H)];
-      ctx.fillStyle = '#2563eb'; polygon(ctx, box); ctx.fill();
-      ctx.strokeStyle = '#1e3a8a'; ctx.lineWidth = 1.5; ctx.stroke();
-
-      if (p.mLoad > 0) {
-        const lx0 = p.xo - LOAD_W / 2, lx1 = p.xo + LOAD_W / 2, ly0 = p.H, ly1 = p.H + LOAD_H;
-        const crate = [toCanvas(p, g, t, lx0, ly0), toCanvas(p, g, t, lx1, ly0), toCanvas(p, g, t, lx1, ly1), toCanvas(p, g, t, lx0, ly1)];
-        ctx.fillStyle = '#dc2626'; polygon(ctx, crate); ctx.fill();
-        ctx.strokeStyle = '#7f1d1d'; ctx.stroke();
-        // straps
-        ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 2;
-        const s1 = toCanvas(p, g, t, lx0 + LOAD_W * 0.3, ly0), s2 = toCanvas(p, g, t, lx0 + LOAD_W * 0.3, ly1);
-        const s3 = toCanvas(p, g, t, lx0 + LOAD_W * 0.7, ly0), s4 = toCanvas(p, g, t, lx0 + LOAD_W * 0.7, ly1);
-        ctx.beginPath(); ctx.moveTo(s1.x, s1.y); ctx.lineTo(s2.x, s2.y); ctx.moveTo(s3.x, s3.y); ctx.lineTo(s4.x, s4.y); ctx.stroke();
-        ctx.fillStyle = '#7f1d1d'; ctx.font = '12px Arial'; ctx.textAlign = 'center';
-        // label sits above the crate on screen, whichever way the box is turned
-        const cTop = Math.min(...crate.map(q => q.y)), cMid = crate.reduce((a, q) => a + q.x, 0) / 4;
-        ctx.fillText(`${p.mLoad} kg load`, cMid, cTop - 7);
+    function step4(dt) {
+      const m = coneMode(), { h, r } = CONE, n = 20, hh = dt / n;
+      if (m === 'balls') { stepBalls(dt); if (sim.t >= 3 - 1e-9) { C4.result = 'done'; return true; } return false; }
+      if (m === 'side') { if (sim.t >= 1.2 - 1e-9) { C4.result = 'stays where it was left'; return true; } return false; }
+      if (m === 'base') {
+        if (C4.phi <= 1e-9) { C4.phi = 0; C4.result = 'stays where it is'; return true; }
+        const I = CONE.Icg + r * r + CONE.gb ** 2;
+        for (let i = 0; i < n; i++) {
+          const x = -r * Math.cos(C4.phi) + CONE.gb * Math.sin(C4.phi); // CG beyond the base edge: + topples, − returns
+          C4.om += 1000 * x / I * hh; C4.phi += C4.om * hh;
+          if (C4.phi <= 0) { C4.phi = 0; C4.om = 0; C4.result = 'returned to its original position'; return true; }
+          if (C4.phi >= Math.PI / 2) { C4.phi = Math.PI / 2; C4.result = 'toppled'; return true; }
+        }
+        // one finite run: tilted to exactly its toppling angle it would balance on its edge for ever
+        if (sim.t >= 5 - 1e-9) { C4.result = 'balanced on its edge'; return true; }
+        return false;
       }
-
-      // Combined CG and a truly vertical plumb line (world vertical, not box vertical).
-      const cg = toCanvas(p, g, t, p.xc, p.yc);
-      const tilted = Math.abs(t) > 1e-4;
-      const side = t >= 0 ? 1 : -1;
-      const pivot = toCanvas(p, g, t, side * p.B / 2, 0);
-      const beyond = beyondPivot(p, tilted ? t : 1e-6 * side);
-      const baseL = toCanvas(p, g, 0, -p.B / 2, 0).x, baseR = toCanvas(p, g, 0, p.B / 2, 0).x;
-      const inside = tilted ? beyond < 0 : (cg.x >= baseL && cg.x <= baseR);
-      const lineColor = inside ? '#16a34a' : '#dc2626';
-
-      // black, so the dashes stand out against the blue box
-      ctx.setLineDash([6, 5]); ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(cg.x, cg.y); ctx.lineTo(cg.x, g.floorY + 16); ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.fillStyle = '#7c3aed'; ctx.beginPath(); ctx.arc(cg.x, cg.y, 6, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = 'white'; ctx.lineWidth = 1.5; ctx.stroke();
-      ctx.fillStyle = '#5b21b6'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'left';
-      ctx.fillText('CG', cg.x + 9, cg.y - 6);
-
-      // Weight arrow from the CG
-      const wLen = Math.min(70, 18 + p.M * 0.7);
-      arrow(ctx, cg.x, cg.y, cg.x, cg.y + wLen, '#7c3aed', 3, 9);
-      // "W = 350 N" with the symbol W in italics
-      const wRest = ` = ${(p.M * G).toFixed(0)} N`, wy = cg.y + wLen * 0.6;
-      ctx.font = 'italic 12px Arial'; const wsw = ctx.measureText('W').width;
-      ctx.font = '12px Arial'; const wtw = wsw + ctx.measureText(wRest).width;
-      ctx.fillStyle = 'rgba(248,251,255,0.9)'; ctx.fillRect(cg.x + 10, wy - 11, wtw + 6, 15);
-      ctx.fillStyle = '#5b21b6'; ctx.textAlign = 'left';
-      ctx.font = 'italic 12px Arial'; ctx.fillText('W', cg.x + 13, wy);
-      ctx.font = '12px Arial'; ctx.fillText(wRest, cg.x + 13 + wsw, wy);
-
-      if (tilted && Math.abs(t) < Math.PI / 2 - 1e-3) {
-        // pivot edge marker
-        ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(pivot.x, pivot.y, 5, 0, Math.PI * 2); ctx.fill();
-        ctx.font = '12px Arial'; ctx.textAlign = 'center'; ctx.fillStyle = '#0f172a';
-        ctx.fillText('pivot edge', pivot.x, g.floorY + 30);
-        // where the plumb line lands vs the pivot
-        ctx.strokeStyle = lineColor; ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.moveTo(cg.x, g.floorY + 6); ctx.lineTo(pivot.x, g.floorY + 6); ctx.stroke();
-      } else if (!tilted) {
-        ctx.strokeStyle = '#16a34a'; ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.moveTo(baseL, g.floorY + 7); ctx.lineTo(baseR, g.floorY + 7); ctx.stroke();
-        ctx.fillStyle = '#166534'; ctx.font = '12px Arial'; ctx.textAlign = 'center';
-        ctx.fillText('base of support', (baseL + baseR) / 2, g.floorY + 30);
+      // apex: not displaced at all, it stays balanced on its apex (and the run ends at once)
+      if (C4.phi <= 1e-9) { C4.phi = 0; C4.result = 'stays balanced on its apex'; return true; }
+      if (sim.t >= 5 - 1e-9) { C4.result = 'still turning'; return true; }
+      const I = CONE.Icg + CONE.ga ** 2;
+      for (let i = 0; i < n; i++) {
+        C4.om += 1000 * CONE.ga * Math.sin(C4.phi) / I * hh; C4.phi += C4.om * hh;
+        if (C4.phi >= CONE.lie) { C4.phi = CONE.lie; C4.om = 0; C4.result = 'toppled onto its slant side'; return true; }
       }
-
-      // hover/drag affordance
-      if (sim.dragging === 'box') {
-        ctx.fillStyle = 'rgba(15,23,42,0.75)'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center';
-        ctx.fillText(beyond < 0 ? 'Let go: it will fall back' : 'Let go: it will topple', w / 2, 20);
-      }
+      return false;
     }
-
-    // ---------- equilibrium panel: three balls ----------
-    const SURF_HALF = 60; // half-width of each surface, px
-    const balls = [0, 1, 2].map(i => ({ kind: i, x: 0, v: 0, off: false, fx: 0, fy: 0, fvy: 0, timer: 0 }));
+    // Example 12: a ball in a dip, on a hump and on a flat surface (drawn in px; a visual model only)
+    const SURF_HALF = 60, balls = [0, 1, 2].map(kind => ({ kind, x: 0, v: 0, off: false, fx: 0, fy: 0, fvy: 0 }));
     let eqGeo = null;
-    let eqDrag = null;
-
-    function surfHeight(kind, x) { // height above the slot's reference line, px (up positive)
-      const k = 0.012;
-      if (kind === 0) return k * x * x;      // bowl
-      if (kind === 1) return -k * x * x;     // hill
-      return 0;                              // flat
-    }
-    function surfSlope(kind, x) {
-      const k = 0.012;
-      if (kind === 0) return 2 * k * x;
-      if (kind === 1) return -2 * k * x;
-      return 0;
-    }
-
-    function ballCentre(kind, x, g) {
-      const sc = g.sc || 1, r = 12 * sc;
-      const slope = surfSlope(kind, x);
-      const n = Math.hypot(1, slope);
-      const sx = g.slotX[kind] + x * sc, sy = g.refY[kind] - surfHeight(kind, x) * sc;
-      // outward (upward) normal in canvas coords: (-slope, -1)/n with y flipped
-      return { x: sx - (slope / n) * r, y: sy - (1 / n) * r, r };
-    }
-
+    const surfH = (kind, x) => (kind === 0 ? 0.012 * x * x : kind === 1 ? -0.012 * x * x : 0);
+    const surfS = (kind, x) => (kind === 0 ? 0.024 * x : kind === 1 ? -0.024 * x : 0);
+    function resetBalls(displaced) { balls.forEach(b => { b.x = displaced ? 18 : 0; b.v = 0; b.off = false; }); }
     function stepBalls(dt) {
-      const gpx = 900; // px s^-2, visual gravity
+      const gpx = 900, n = 8, h = dt / n;
       for (const b of balls) {
-        if (eqDrag === b) continue;
-        if (b.off) {
-          b.fvy += gpx * dt; b.fx += b.v * dt; b.fy += b.fvy * dt;
-          b.timer += dt;
-          if (b.timer > 1.6) { b.off = false; b.x = 0; b.v = 0; b.timer = 0; }
-          continue;
-        }
-        const sub = 6;
-        for (let i = 0; i < sub; i++) {
-          const h = dt / sub;
-          const sl = surfSlope(b.kind, b.x);
-          const a = -gpx * sl / (1 + sl * sl) - 2.2 * b.v; // rolling along the surface with a little friction
-          b.v += a * h; b.x += b.v * h;
-        }
-        if (Math.abs(b.v) < 2 && Math.abs(b.x) < 0.5 && b.kind === 0) { b.v = 0; }
-        if (b.kind === 2 && Math.abs(b.v) < 1) b.v = 0;
-        if (Math.abs(b.x) > SURF_HALF) {
-          if (b.kind === 1) { // rolled off the hill
-            const c = ballCentre(b.kind, Math.sign(b.x) * SURF_HALF, eqGeo);
-            b.off = true; b.fx = c.x; b.fy = c.y; b.fvy = 0; b.timer = 0;
-          } else { b.x = Math.sign(b.x) * SURF_HALF; b.v = -0.3 * b.v; }
+        if (b.off) { b.fvy += gpx * dt; b.fx += b.v * dt; b.fy += b.fvy * dt; continue; }
+        for (let i = 0; i < n; i++) { const sl = surfS(b.kind, b.x); b.v += (-gpx * sl / (1 + sl * sl) - 1.6 * b.v) * h; b.x += b.v * h; }
+        if (b.kind === 2) b.v = 0;              // on the flat it stays where it is put
+        if (b.kind === 0 && sim.t > 2.6) { b.x = 0; b.v = 0; }
+        if (Math.abs(b.x) > SURF_HALF && b.kind === 1) {
+          // rolls off the end of the hump and falls (before the first drawing there is nowhere to fall from: gone)
+          const c = eqGeo ? ballCentre(b.kind, Math.sign(b.x) * SURF_HALF, eqGeo) : { x: -1e4, y: 1e4 };
+          b.off = true; b.fx = c.x; b.fy = c.y; b.fvy = 0;
         }
       }
     }
+    function ballCentre(kind, x, g) {
+      const sc = g.sc, rr = 12 * sc, sl = surfS(kind, x), n = Math.hypot(1, sl);
+      const sx = g.slotX[kind] + x * sc, sy = g.refY[kind] - surfH(kind, x) * sc;
+      return { x: sx - (sl / n) * rr, y: sy - (1 / n) * rr, r: rr };
+    }
 
-    function drawEquil() {
-      const { ctx, w, h } = setupCanvas(equilCanvas);
-      ctx.clearRect(0, 0, w, h);
-      const cols = w < 330 ? 1 : 3;
-      const slotX = [], refY = [], labelY = [];
-      for (let i = 0; i < 3; i++) {
-        if (cols === 3) { slotX.push(w / 6 + i * w / 3); refY.push(h * 0.55); labelY.push(h * 0.85); }
-        else { slotX.push(w / 2); refY.push(h * (0.22 + i * 0.3)); labelY.push(h * (0.3 + i * 0.3)); }
-      }
-      const sc = cols === 3 ? Math.min(1, (w / 6 - 6) / SURF_HALF) : 1;
-      eqGeo = { slotX, refY, sc };
-      const labels = ['Stable', 'Unstable', 'Neutral'];
+    /* ---------------- one run clock for tabs 1 to 4 ---------------- */
+    function advance(dt) {
+      sim.t += dt;
+      if (currentTab === 1) return step1(dt);
+      if (currentTab === 2) return step2(dt);
+      if (currentTab === 3) return PRESETS[S.scen].person ? step3person(dt) : step3box(dt);
+      return step4(dt);
+    }
+    function frame(ts) {
+      if (!sim.running) return;
+      if (sim.last === null) sim.last = ts;
+      // a first rAF timestamp can be earlier than the one stored: never step backwards
+      const dt = Math.max(0, Math.min(0.05, (ts - sim.last) / 1000)) * (currentTab === 2 ? RULE_SLOW : 1); sim.last = ts;
+      if (advance(dt)) { sim.running = false; sim.done = true; }
+      update();
+      if (sim.running) requestAnimationFrame(frame);
+    }
+    function resetRun() {
+      sim.t = 0; sim.running = false; sim.done = false; sim.last = null;
+      if (currentTab === 1) resetLam();
+      else if (currentTab === 2) { R2.tilt = 0; R2.om = 0; }
+      else if (currentTab === 3) { T3.tilt = T3.tilt0; T3.om = 0; T3.result = ''; P3.up = false; P3.ang = 0; P3.om = 0; P3.lean = 0; }
+      else resetC4();
+    }
+    // tab 1 runs on its own (each step that hangs it starts a swing); this puts the step's starting angle back
+    function resetLam() { const st = plan1(S.scen)[S.step - 1], Lm = LAM[S.scen]; if (st.swing) L1.phi = restPhi(Lm, st.pin) + START_TILT; L1.om = 0; }
+    function start() {
+      if (sim.done) { if (currentTab === 1) { sim.t = 0; sim.done = false; } else resetRun(); }
+      if (currentTab === 3 && PRESETS[S.scen].wall) P3.up = true;
+      sim.running = true; sim.last = null; update(); requestAnimationFrame(frame);
+    }
+    // jump to the end of the run at once (the checks, the key features and free exploration use it)
+    function runToEnd() {
+      if (sim.done && currentTab !== 1) resetRun();
+      if (currentTab === 3 && PRESETS[S.scen].wall) P3.up = true;
+      sim.running = false;
+      for (let i = 0; i < 4000; i++) if (advance(0.005)) break;
+      sim.done = true;
+    }
+    $('startBtn').addEventListener('click', start);
+    $('pauseBtn').addEventListener('click', () => {
+      if (sim.running) { sim.running = false; sim.last = null; update(); }
+      else if (sim.t > 0 && !sim.done) { sim.running = true; sim.last = null; update(); requestAnimationFrame(frame); }
+    });
+    $('resetBtn').addEventListener('click', () => { resetRun(); update(); });
 
-      for (let i = 0; i < 3; i++) {
-        ctx.strokeStyle = '#64748b'; ctx.lineWidth = 3;
-        ctx.beginPath();
-        for (let x = -SURF_HALF; x <= SURF_HALF; x += 2) {
-          const px = slotX[i] + x * sc, py = refY[i] - surfHeight(i, x) * sc;
-          if (x === -SURF_HALF) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    /* ---------------- drawing helpers ---------------- */
+    // what the canvas drew, for the checks: every label's box and every arrow, with the pane they belong to
+    window.__pim = { labels: [], arrows: [], panes: [], handles: [] };
+    function setup(cv) {
+      const r = cv.getBoundingClientRect();
+      if (r.width < 20 || r.height < 20) return null; // hidden: never draw at no size
+      const dpr = window.devicePixelRatio || 1, cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
+      if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+      const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, r.width, r.height);
+      return { ctx, W: r.width, H: r.height };
+    }
+    // Canvas text with <i>, <sub> and <sup> runs, so symbols of physical quantities are italic, as in the notes.
+    // Honours ctx.textAlign; returns the width. measureOnly = true draws nothing.
+    function richText(ctx, s, x, y, measureOnly) {
+      const base = ctx.font, m = base.match(/([\d.]+)px/), size = m ? +m[1] : 12;
+      const runs = []; let it = false, sub = 0;
+      for (const tok of String(s).split(/(<\/?(?:i|sub|sup)>)/)) {
+        if (tok === '<i>') it = true; else if (tok === '</i>') it = false;
+        else if (tok === '<sub>') sub = 1; else if (tok === '<sup>') sub = -1;
+        else if (tok === '</sub>' || tok === '</sup>') sub = 0;
+        else if (tok) {
+          let f = sub ? base.replace(/[\d.]+px/, (size * 0.75).toFixed(1) + 'px') : base;
+          if (it) f = 'italic ' + f;
+          ctx.font = f; runs.push({ t: tok, f, sub, w: ctx.measureText(tok).width });
         }
-        ctx.stroke();
-        // faint marker at the starting position
-        const home = ballCentre(i, 0, eqGeo);
-        ctx.strokeStyle = 'rgba(37,99,235,0.3)'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.arc(home.x, home.y, 12 * sc, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
-
-        const b = balls[i];
-        const c = b.off ? { x: b.fx, y: b.fy, r: 12 } : ballCentre(i, b.x, eqGeo);
-        if (c.y < h + 20) {
-          ctx.fillStyle = eqDrag === b ? '#1d4ed8' : '#2563eb';
-          ctx.beginPath(); ctx.arc(c.x, c.y, 12 * sc, 0, Math.PI * 2); ctx.fill();
-        }
-        ctx.fillStyle = '#334155'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center';
-        ctx.fillText(labels[i], slotX[i], cols === 3 ? labelY[i] : refY[i] + 40);
       }
+      ctx.font = base;
+      const w = runs.reduce((a, r) => a + r.w, 0);
+      if (measureOnly) return w;
+      const align = ctx.textAlign;
+      let cx = align === 'center' ? x - w / 2 : (align === 'right' || align === 'end') ? x - w : x;
+      ctx.textAlign = 'left';
+      for (const r of runs) { ctx.font = r.f; ctx.fillText(r.t, cx, y + (r.sub === 1 ? size * 0.3 : r.sub === -1 ? -size * 0.4 : 0)); cx += r.w; }
+      ctx.textAlign = align; ctx.font = base;
+      return w;
     }
-
-    // ---------- readouts ----------
-    function fmtDeg(r) { return `${(r * 180 / Math.PI).toFixed(1)}°`; }
-    function updateReadout() {
-      const p = params();
-      el('baseWidthVal').textContent = `(${p.B.toFixed(2)} m)`;
-      el('boxHeightVal').textContent = `(${p.H.toFixed(2)} m)`;
-      el('boxMassVal').textContent = `(${p.mBox} kg)`;
-      el('loadMassVal').textContent = `(${p.mLoad} kg)`;
-      el('loadOffsetVal').textContent = `(${p.xo >= 0 ? '+' : ''}${p.xo.toFixed(2)} m)`;
-      el('cgValue').textContent = `x = ${p.xc.toFixed(2)} m, height ${p.yc.toFixed(2)} m`;
-      el('tiltValue').textContent = `${Math.abs(sim.theta * 180 / Math.PI).toFixed(1)}° ${sim.theta > 1e-4 ? 'right' : sim.theta < -1e-4 ? 'left' : ''}`;
-      el('critValue').textContent = `${fmtDeg(criticalAngle(p, -1))} left / ${fmtDeg(criticalAngle(p, 1))} right`;
-      const card = el('stateCard'), val = el('stateValue');
-      let msg, ok;
-      if (Math.abs(sim.theta) >= Math.PI / 2 - 1e-3) { msg = 'Lying on its side'; ok = false; }
-      else if (Math.abs(sim.theta) < 1e-4) { msg = sim.landedMsg || 'Stays upright (stable)'; ok = true; }
-      else { ok = beyondPivot(p, sim.theta) < 0; msg = ok ? 'Falls back (stable)' : 'Topples over!'; }
-      val.textContent = msg;
-      card.classList.toggle('balanced', ok);
-      card.classList.toggle('tipping', !ok);
+    let PANE = 'scene', CW = 1e9, CH = 1e9; // the pane name for the checks; the canvas size a label must stay inside
+    function arrow(ctx, x1, y1, x2, y2, color, lw = 3.5, head = 11, dash = null, record = true) {
+      const len = Math.hypot(x2 - x1, y2 - y1); if (len < 1.5) return;
+      if (record) __pim.arrows.push({ pane: PANE, x1, y1, x2, y2 });
+      const a = Math.atan2(y2 - y1, x2 - x1), hd = Math.min(head, len * 0.6);
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
+      if (dash) ctx.setLineDash(dash);
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - Math.cos(a) * hd * 0.8, y2 - Math.sin(a) * hd * 0.8); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - hd * Math.cos(a - 0.45), y2 - hd * Math.sin(a - 0.45)); ctx.lineTo(x2 - hd * Math.cos(a + 0.45), y2 - hd * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill();
     }
-
-    // ---------- interaction ----------
-    function pointerPos(canvas, e) {
-      const r = canvas.getBoundingClientRect();
-      return { x: e.clientX - r.left, y: e.clientY - r.top };
+    // a label's box before it is drawn: x/y is the middle of the card's left, centre or right edge
+    function labelBox(ctx, lines, x, y, align, size) {
+      ctx.font = `bold ${size}px Arial`;
+      const w = Math.max(...lines.map(t => richText(ctx, t, 0, 0, true))), lh = size * 1.6 + 1, h = lines.length * lh - 1;
+      const x0 = Math.max(4, Math.min(CW - w - 4, align === 'center' ? x - w / 2 : align === 'right' ? x - w : x));
+      const y0 = Math.max(2, Math.min(CH - h - 2, y - size * 0.8));
+      return { x: x0 - 3, y: y0, w: w + 6, h, lh, tx: x0, size };
     }
-    function insidePoly(pt, poly) {
+    const hitBox = (a, b, pad = 1) => Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) > pad && Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) > pad;
+    function crossesArrow(box) {
+      return __pim.arrows.some(a => { for (let k = 0; k <= 24; k++) { const px = a.x1 + (a.x2 - a.x1) * k / 24, py = a.y1 + (a.y2 - a.y1) * k / 24;
+        if (px > box.x + 2 && px < box.x + box.w - 2 && py > box.y + 2 && py < box.y + box.h - 2) return true; } return false; });
+    }
+    // labels on white cards, one card per line; nudge: +1 moves down, −1 up, to dodge labels and arrows already drawn
+    function label(ctx, lines, x, y, color, align = 'center', size = 12, nudge = 0) {
+      if (!Array.isArray(lines)) lines = [lines];
+      let b = labelBox(ctx, lines, x, y, align, size);
+      if (nudge) for (let i = 0; i < 14 && (__pim.labels.some(l => l.pane === PANE && hitBox(l, b)) || crossesArrow(b)); i++) b = labelBox(ctx, lines, x, b.y + size * 0.8 + nudge * 8, align, size);
+      lines.forEach((t, i) => {
+        const card = { pane: PANE, text: t.replace(/<[^>]+>/g, ''), x: b.x, y: b.y + i * b.lh, w: b.w, h: size * 1.6 };
+        ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fillRect(card.x, card.y, card.w, card.h);
+        ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.font = `bold ${size}px Arial`; richText(ctx, t, b.tx, card.y + size * 0.8);
+        ctx.textBaseline = 'alphabetic';
+        __pim.labels.push(card);
+      });
+      return b;
+    }
+    function dot(ctx, x, y, r = 5, color = '#0f172a') { ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); }
+    function dim(ctx, x1, x2, y, text, color = '#334155', size = 11) {
+      if (Math.abs(x2 - x1) < 2) return;
+      ctx.strokeStyle = color; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.moveTo(x1, y - 5); ctx.lineTo(x1, y + 5); ctx.moveTo(x2, y - 5); ctx.lineTo(x2, y + 5); ctx.stroke();
+      label(ctx, text, (x1 + x2) / 2, y, color, 'center', size);
+    }
+    function turnArrow(ctx, cx, cy, r, clockwise, color) {
+      const a0 = -Math.PI * 0.85, a1 = -Math.PI * 0.15;
+      const s = clockwise ? a0 : a1, e = clockwise ? a1 : a0;
+      ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, r, s, e, !clockwise); ctx.stroke();
+      const tx = cx + r * Math.cos(e), ty = cy + r * Math.sin(e), tang = e + (clockwise ? Math.PI / 2 : -Math.PI / 2);
+      ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(tx + 9 * Math.cos(tang), ty + 9 * Math.sin(tang));
+      ctx.lineTo(tx + 7 * Math.cos(tang + 2.3), ty + 7 * Math.sin(tang + 2.3)); ctx.lineTo(tx + 7 * Math.cos(tang - 2.3), ty + 7 * Math.sin(tang - 2.3)); ctx.closePath(); ctx.fill();
+    }
+    function poly(ctx, pts) { ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath(); }
+    function insidePoly(pt, P) {
       let inside = false;
-      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-        const xi = poly[i].x, yi = poly[i].y, xj = poly[j].x, yj = poly[j].y;
+      for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+        const [xi, yi] = P[i], [xj, yj] = P[j];
         if (((yi > pt.y) !== (yj > pt.y)) && (pt.x < (xj - xi) * (pt.y - yi) / (yj - yi) + xi)) inside = !inside;
       }
       return inside;
     }
-
-    let dragStart = null;
-    sceneCanvas.addEventListener('pointerdown', e => {
-      if (!geo) return;
-      const pt = pointerPos(sceneCanvas, e);
-      const { g, p } = geo, t = sim.theta;
-      const crate = [toCanvas(p, g, t, p.xo - LOAD_W / 2 - 0.05, p.H), toCanvas(p, g, t, p.xo + LOAD_W / 2 + 0.05, p.H), toCanvas(p, g, t, p.xo + LOAD_W / 2 + 0.05, p.H + LOAD_H + 0.05), toCanvas(p, g, t, p.xo - LOAD_W / 2 - 0.05, p.H + LOAD_H + 0.05)];
-      const box = [toCanvas(p, g, t, -p.B / 2, 0), toCanvas(p, g, t, p.B / 2, 0), toCanvas(p, g, t, p.B / 2, p.H), toCanvas(p, g, t, -p.B / 2, p.H)];
-      if (p.mLoad > 0 && insidePoly(pt, crate)) {
-        sim.dragging = 'load';
-      } else if (insidePoly(pt, box)) {
-        sim.dragging = 'box';
-        dragStart = { x: pt.x, theta: sim.theta };
-        sim.omega = 0; sim.landedMsg = '';
-      } else return;
-      sceneCanvas.setPointerCapture(e.pointerId);
-      sceneCanvas.style.cursor = 'grabbing';
-      e.preventDefault();
-    });
-    sceneCanvas.addEventListener('pointermove', e => {
-      if (!sim.dragging || !geo) return;
-      const pt = pointerPos(sceneCanvas, e);
-      const { g, p } = geo;
-      if (sim.dragging === 'box') {
-        const dx = (pt.x - dragStart.x) / (g.s * Math.max(p.H, 0.6));
-        sim.theta = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, dragStart.theta + dx));
-      } else if (sim.dragging === 'load' && Math.abs(sim.theta) < 1e-4) {
-        const x = (pt.x - g.cx) / g.s;
-        const frac = p.travel > 0 ? Math.max(-1, Math.min(1, x / p.travel)) : 0;
-        loadOffsetEl.value = frac.toFixed(2);
-      }
-    });
-    function endDrag() {
-      if (!sim.dragging) return;
-      sim.dragging = null;
-      sceneCanvas.style.cursor = 'grab';
+    // the weight W, straight down from the CG, labelled on its right
+    function weight(ctx, x, y, len, text) {
+      dot(ctx, x, y, 5.5, COL.W);
+      arrow(ctx, x, y + 2, x, y + len, COL.W, 3, 10);
+      if (text) label(ctx, text, x + 8, y + len - 6, COL.W, 'left', 12, 1);
     }
-    sceneCanvas.addEventListener('pointerup', endDrag);
-    sceneCanvas.addEventListener('pointercancel', endDrag);
 
-    equilCanvas.addEventListener('pointerdown', e => {
-      if (!eqGeo) return;
-      const pt = pointerPos(equilCanvas, e);
-      for (const b of balls) {
-        if (b.off) continue;
-        const c = ballCentre(b.kind, b.x, eqGeo);
-        if (Math.hypot(pt.x - c.x, pt.y - c.y) < 24) {
-          eqDrag = b; b.v = 0;
-          equilCanvas.setPointerCapture(e.pointerId);
-          equilCanvas.style.cursor = 'grabbing';
-          e.preventDefault();
-          return;
-        }
-      }
-    });
-    equilCanvas.addEventListener('pointermove', e => {
-      if (!eqDrag) return;
-      const pt = pointerPos(equilCanvas, e);
-      eqDrag.x = Math.max(-SURF_HALF + 6, Math.min(SURF_HALF - 6, (pt.x - eqGeo.slotX[eqDrag.kind]) / (eqGeo.sc || 1)));
-    });
-    function endEq() { if (eqDrag) { eqDrag.v = 0; eqDrag = null; equilCanvas.style.cursor = 'grab'; } }
-    equilCanvas.addEventListener('pointerup', endEq);
-    equilCanvas.addEventListener('pointercancel', endEq);
-
-    [baseWidthEl, boxHeightEl, boxMassEl, loadMassEl, loadOffsetEl].forEach(x => x.addEventListener('input', () => {
-      // Changing the object while it is tilted: let the new object respond from the same angle.
-      if (Math.abs(sim.theta) > 1e-4 && Math.abs(sim.theta) < Math.PI / 2) sim.omega = sim.omega || 1e-6 * Math.sign(sim.theta);
-      if (Math.abs(sim.theta) < 1e-4) sim.landedMsg = '';
-    }));
-    // Reset: the starting box and load, standing upright
-    const START = [[baseWidthEl, '1.0'], [boxHeightEl, '1.4'], [boxMassEl, '20'], [loadMassEl, '15'], [loadOffsetEl, '0.3']];
-    el('resetBtn').addEventListener('click', () => {
-      START.forEach(([input, v]) => { input.value = v; });
-      sim.theta = 0; sim.omega = 0; sim.landedMsg = ''; sim.dragging = null;
-    });
-
-    // two tabs, one simulation each
-    document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(t => { const on = t === tab; t.classList.toggle('active', on); t.setAttribute('aria-selected', on); el(t.dataset.page).hidden = !on; });
-    }));
-
-    let last = null;
-    function frame(ts) {
-      if (last === null) last = ts;
-      const dt = Math.max(0, Math.min(0.05, (ts - last) / 1000));
-      last = ts;
-      // a released box starts from rest at the angle it was left at
-      if (!sim.dragging && Math.abs(sim.theta) > 1e-4 && Math.abs(sim.theta) < Math.PI / 2 && sim.omega === 0) sim.omega = 1e-6 * Math.sign(sim.theta);
-      step(dt);
-      stepBalls(dt);
-      drawScene();
-      drawEquil();
-      updateReadout();
-      requestAnimationFrame(frame);
+    /* ---------------- drawing: one function per tab ---------------- */
+    let geo = null, frozen = null;
+    function draw() {
+      __pim = window.__pim = { labels: [], arrows: [], panes: [], handles: [] };
+      const c = setup(canvas); if (!c) return;
+      const { ctx, W, H } = c;
+      CW = W; CH = H; PANE = 'scene'; __pim.panes.push({ name: 'scene', x: 0, y: 0, w: W, h: H });
+      geo = null;
+      if (currentTab === 1) drawHang(ctx, W, H);
+      else if (currentTab === 2) drawRule(ctx, W, H);
+      else if (currentTab === 3) (PRESETS[S.scen].person ? drawPerson : drawCabinet)(ctx, W, H);
+      else if (currentTab === 4) (coneMode() === 'balls' ? drawBalls : drawCone)(ctx, W, H);
     }
-    requestAnimationFrame(frame);
+
+    /* tab 1 */
+    function drawHang(ctx, W, H) {
+      const Lm = LAM[S.scen], pinX = W / 2, P = Lm.pins[L1.pin];
+      // one scale for the scenario: the shape fits whichever way it can hang (any pin, up to 60° from rest), clear of
+      // the string's label above (the shape's top at least 40 px down) and with room under the CG for the weight's arrow
+      const top = Lm.bag ? 96 : 46;
+      const k = frozen ? frozen.k : Math.min((W / 2 - 16) / Lm.side, (H - 48) / (Lm.up + Lm.down), (H - 86) / (Lm.up + Lm.dmax),
+        (H - 8 - top) / Lm.down, (H - 46 - top) / Lm.dmax);
+      const pinY = frozen ? frozen.pinY : Math.max(top, 40 + Lm.up * k);
+      const c = Math.cos(L1.phi), s = Math.sin(L1.phi);
+      const toC = q => { const vx = q[0] - P[0], vy = q[1] - P[1]; return [pinX + k * (vx * c - vy * s), pinY - k * (vx * s + vy * c)]; };
+      geo = { k, pinX, pinY, toC };
+      // the stand and the string, or the table top and the hanger
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 2;
+      if (Lm.bag) {
+        ctx.fillStyle = '#e2e8f0'; ctx.fillRect(pinX - 12, 26, Math.min(W - pinX + 2, 200), 16);
+        ctx.strokeStyle = '#475569'; ctx.strokeRect(pinX - 12, 26, Math.min(W - pinX + 2, 200), 16);
+        ctx.fillStyle = '#fbbf24'; ctx.beginPath(); ctx.ellipse(pinX, 22, 11, 5, 0, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#92400e'; ctx.stroke();
+        ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(pinX - 9, 22);
+        ctx.bezierCurveTo(pinX - 34, 24, pinX - 32, pinY - 34, pinX - 22, pinY - 10); ctx.quadraticCurveTo(pinX - 14, pinY + 4, pinX, pinY); ctx.stroke();
+        label(ctx, 'Table top', Math.min(W - 40, pinX + 70), 34, '#334155', 'center', 11);
+      } else {
+        ctx.fillStyle = '#64748b'; ctx.fillRect(pinX - 50, 8, 100, 6);
+        ctx.strokeStyle = '#334155'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(pinX, 14); ctx.lineTo(pinX, pinY); ctx.stroke();
+        label(ctx, 'string', pinX - 8, 26, '#334155', 'right', 11); // just under the bar: clear of a lamina's top edge
+      }
+      // the vertical through the point of suspension, faint, all the way down
+      ctx.strokeStyle = 'rgba(71,85,105,0.45)'; ctx.lineWidth = 1; ctx.setLineDash([2, 4]);
+      ctx.beginPath(); ctx.moveTo(pinX, pinY); ctx.lineTo(pinX, H - 4); ctx.stroke(); ctx.setLineDash([]);
+      // the lamina (a ring: the inner circle cut out)
+      ctx.beginPath();
+      const path = pts => pts.forEach((q, i) => { const [x, y] = toC(q); if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); });
+      path(Lm.outer); ctx.closePath();
+      __pim.shape = Lm.outer.map(toC); // the outline as drawn, for the checks
+      if (Lm.inner) { path(Lm.inner.slice().reverse()); ctx.closePath(); }
+      ctx.fillStyle = Lm.bag ? '#93c5fd' : COL.lam; ctx.fill('evenodd');
+      ctx.strokeStyle = Lm.bag ? '#1d4ed8' : COL.lamE; ctx.lineWidth = 2; ctx.stroke();
+      if (Lm.bag) { // the handle (light) from the body's top corners up to the hook
+        ctx.strokeStyle = '#1d4ed8'; ctx.lineWidth = 3; ctx.beginPath();
+        const a = toC([-3, 10]), m = toC([0, 16]), b = toC([3, 10]), c1 = toC([-3.5, 14.5]), c2 = toC([3.5, 14.5]);
+        ctx.moveTo(a[0], a[1]); ctx.quadraticCurveTo(c1[0], c1[1], m[0], m[1]); ctx.quadraticCurveTo(c2[0], c2[1], b[0], b[1]); ctx.stroke();
+      }
+      // the lines drawn so far, fixed to the lamina: from the pin through the CG to the far edge
+      const drawn = linesDrawn(), st = plan1(S.scen)[S.step - 1];
+      for (const pin of drawn) {
+        const Q = Lm.pins[pin], dx = Lm.C[0] - Q[0], dy = Lm.C[1] - Q[1], n = Math.hypot(dx, dy), u = [dx / n, dy / n];
+        const far = Math.max(...Lm.outer.map(q => (q[0] - Q[0]) * u[0] + (q[1] - Q[1]) * u[1]));
+        const a = toC(Q), b = toC([Q[0] + u[0] * far, Q[1] + u[1] * far]);
+        ctx.strokeStyle = LINE_COL[pin]; ctx.lineWidth = 2.5; ctx.setLineDash([8, 5]);
+        ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); ctx.setLineDash([]);
+      }
+      // the holes
+      for (const [pin, Q] of Object.entries(Lm.pins)) {
+        if (Lm.bag) continue;
+        const [x, y] = toC(Q); ctx.fillStyle = 'white'; ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      }
+      const [gx, gy] = toC(Lm.C);
+      if (st.cross || st.mark) { ctx.strokeStyle = COL.cg; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(gx, gy, 11, 0, Math.PI * 2); ctx.stroke(); }
+      if (st.mark) { ctx.strokeStyle = '#db2777'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(pinX, pinY); ctx.lineTo(gx, gy + 40); ctx.stroke(); ctx.setLineDash([]); }
+      dot(ctx, gx, gy, 5.5, COL.cg);
+      arrow(ctx, gx, gy + 3, gx, gy + 36, COL.W, 3, 10);
+      // labels: the holes' letters (pushed away from the CG), then CG and W
+      for (const [pin, Q] of Object.entries(Lm.pins)) {
+        if (Lm.bag) continue;
+        const [x, y] = toC(Q), dx = x - gx, dy = y - gy, n = Math.hypot(dx, dy) || 1;
+        label(ctx, pin, x + 13 * dx / n, y + 13 * dy / n, LINE_COL[pin], 'center', 12, 1);
+      }
+      if (Lm.bag) label(ctx, 'point of suspension', pinX + 10, pinY - 2, '#0f172a', 'left', 11);
+      label(ctx, 'CG', gx + 12, gy - 9, COL.cg, 'left', 12, -1);
+      label(ctx, '<i>W</i>', gx + 7, gy + 30, COL.W, 'left', 12, 1);
+      // a drag turns the lamina about the pin: the handle is the lamina itself (its CG for the checks)
+      __pim.handles.push({ id: 'lam', kind: 'lam', x: gx, y: gy, r: 30 });
+    }
+
+    /* tab 2 */
+    function drawRule(ctx, W, H) {
+      const k = frozen ? frozen.k : (W - 64) / 1.0, benchY = H - 40, x0 = 32;
+      const px = x0 + R2.p / 100 * k, py = benchY - PIV_H * k, th = 12;
+      const c = Math.cos(R2.tilt), s = Math.sin(R2.tilt);
+      // a point on the rule's lower edge, at x cm, turned with the rule about the pivot's top (clockwise +)
+      const onRule = (xcm, up = 0) => { const dx = (xcm - R2.p) / 100 * k; return [px + dx * c + up * s, py + dx * s - up * c]; };
+      geo = { k, px, py, x0, benchY, onRule };
+      // bench and pivot
+      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, benchY, W, H - benchY);
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, benchY); ctx.lineTo(W, benchY); ctx.stroke();
+      ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px - Math.max(10, 0.04 * k), benchY); ctx.lineTo(px + Math.max(10, 0.04 * k), benchY); ctx.closePath(); ctx.fill();
+      // the rule, with a mark every 10 cm
+      const corners = [onRule(0), onRule(100), onRule(100, th), onRule(0, th)];
+      poly(ctx, corners); ctx.fillStyle = '#fde68a'; ctx.fill(); ctx.strokeStyle = '#92400e'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.strokeStyle = '#92400e'; ctx.lineWidth = 1;
+      for (let x = 0; x <= 100; x += 10) { const a = onRule(x, th), b = onRule(x, th - (x % 50 ? 5 : 9)); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
+      // the mass on top of the rule
+      const r = rule();
+      if (R2.mass > 0) {
+        const bw = 26, bh = 18, a = onRule(R2.xm, th), ctr = [a[0] + s * bh / 2, a[1] - c * bh / 2];
+        ctx.save(); ctx.translate(ctr[0], ctr[1]); ctx.rotate(R2.tilt); ctx.fillStyle = '#fed7aa'; ctx.fillRect(-bw / 2, -bh / 2, bw, bh); ctx.strokeStyle = COL.mass; ctx.lineWidth = 1.5; ctx.strokeRect(-bw / 2, -bh / 2, bw, bh); ctx.restore();
+        const b = onRule(R2.xm);
+        // a weight arrow stops just below the bench line, above the distance labels drawn under it
+        const mEnd = b[1] + Math.min(40, benchY + 6 - b[1]);
+        arrow(ctx, b[0], b[1] + 2, b[0], mEnd, COL.mass, 3, 10);
+        label(ctx, `${plain(R2.mass)} g`, ctr[0], ctr[1] - bh / 2 - 12, '#9a3412', 'center', 11, -1);
+        label(ctx, `${f3(R2.mass / 1000 * G)} N`, b[0] - 6, mEnd - 8, COL.mass, 'right', 12, 1);
+        __pim.handles.push({ id: 'mass', kind: 'mass', x: ctr[0], y: ctr[1], r: 14 });
+      }
+      // its weight W at the 50 cm mark, straight down
+      const w0 = onRule(50);
+      const wEnd = w0[1] + Math.min(48, benchY + 6 - w0[1]);
+      arrow(ctx, w0[0], w0[1] + 2, w0[0], wEnd, COL.W, 3.5, 11);
+      dot(ctx, w0[0], w0[1], 5, COL.W);
+      label(ctx, `<i>W</i> = ${f3(RULE_W)} N`, w0[0] + 8, wEnd - 8, COL.W, 'left', 12, 1);
+      // marks on the rule: 0, 50 and 100 cm
+      [[0, 'left'], [50, 'center'], [100, 'right']].forEach(([x, al]) => { const a = onRule(x, th + 12); label(ctx, `${x} cm`, a[0] + (al === 'left' ? -2 : al === 'right' ? 2 : 0), a[1], '#334155', al, 11, -1); });
+      // the distance from the pivot to the line of action of W, along the bench
+      if (Math.abs(R2.p - 50) > 0.5) dim(ctx, px, w0[0], benchY + 18, `${f3(Math.abs(r.dW) * 100 * c)} cm`, COL.W, 11);
+      if (R2.mass > 0 && Math.abs(R2.xm - R2.p) > 0.5) dim(ctx, px, onRule(R2.xm)[0], benchY + 18, `${f3(Math.abs(r.dm) * 100 * c)} cm`, COL.mass, 11);
+      // which way it turns
+      if (!r.balanced && !sim.done) turnArrow(ctx, px, py - th - 26, 18, r.net > 0, r.net > 0 ? COL.cw : COL.acw);
+      __pim.handles.push({ id: 'pivot', kind: 'pivot', x: px, y: (py + benchY) / 2 + 6, r: 16 });
+    }
+
+    /* tab 3: the cabinet */
+    function drawCabinet(ctx, W, H) {
+      const c = cab(), floorY = H - 46;
+      // room for it standing (B wide, H tall) and lying on its right side (reaching H past its right edge)
+      // and 0.4 m on its left for the load's label
+      const needW = c.B + c.H + 0.9, needH = Math.max(c.H, c.B) + 0.25;
+      const k = frozen ? frozen.k : Math.min((W - 30) / needW, (floorY - 22) / needH);
+      const cx = W / 2 - (c.H / 2 - 0.2) * k;
+      const t = T3.tilt, cs = Math.cos(t), sn = Math.sin(t), ex = c.B / 2;
+      // cabinet frame (x right, y up, origin at the base centre) -> canvas, turned clockwise by t about the right edge
+      const toC = (x, y) => { const rx = x - ex; return [cx + (ex + rx * cs + y * sn) * k, floorY - (-rx * sn + y * cs) * k]; };
+      geo = { k, cx, floorY, toC };
+      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, floorY, W, H - floorY);
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, floorY); ctx.lineTo(W, floorY); ctx.stroke();
+      // the cabinet, its two shelves and the load
+      poly(ctx, [toC(-ex, 0), toC(ex, 0), toC(ex, c.H), toC(-ex, c.H)]); ctx.fillStyle = '#bfdbfe'; ctx.fill(); ctx.strokeStyle = '#1e3a8a'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.strokeStyle = '#1e3a8a'; ctx.lineWidth = 1.5;
+      for (const y of [0.05, c.H - 0.25]) { const a = toC(-ex, y), b = toC(ex, y); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
+      if (c.ml > 0) {
+        const y0 = c.ly - CAB.LH / 2, y1 = c.ly + CAB.LH / 2, x0 = -c.LW / 2, x1 = c.LW / 2;
+        poly(ctx, [toC(x0, y0), toC(x1, y0), toC(x1, y1), toC(x0, y1)]); ctx.fillStyle = '#dc2626'; ctx.fill(); ctx.strokeStyle = '#7f1d1d'; ctx.stroke();
+      }
+      // CG, the line of action of W down to the floor, and where it lands against the base
+      const [gx, gy] = toC(0, c.yc), g = cabCG(c, t), inside = g.x < -1e-9, through = Math.abs(g.x) <= 1e-9;
+      ctx.setLineDash([6, 5]); ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(gx, floorY + 14); ctx.stroke(); ctx.setLineDash([]);
+      const edge = toC(ex, 0), left = toC(-ex, 0);
+      ctx.lineWidth = 5;
+      if (t < 1e-6) { ctx.strokeStyle = COL.ok; ctx.beginPath(); ctx.moveTo(left[0], floorY + 6); ctx.lineTo(edge[0], floorY + 6); ctx.stroke(); label(ctx, 'base', (left[0] + edge[0]) / 2, floorY + 26, '#166534', 'center', 11); }
+      else if (t < Math.PI / 2 - 1e-3) {
+        ctx.strokeStyle = inside ? COL.ok : COL.bad; ctx.beginPath(); ctx.moveTo(gx, floorY + 6); ctx.lineTo(edge[0], floorY + 6); ctx.stroke();
+        dot(ctx, edge[0], edge[1], 5, '#0f172a');
+        label(ctx, through ? 'over the edge' : inside ? 'inside the base' : 'outside the base', edge[0], floorY + 26, inside ? '#166534' : '#991b1b', 'center', 11);
+      }
+      weight(ctx, gx, gy, 46, null);
+      label(ctx, 'CG', gx - 9, gy - 2, COL.W, 'right', 12, -1);
+      label(ctx, `<i>W</i> = ${f3(c.M * G)} N`, gx + 8, gy + 38, COL.W, 'left', 12, 1);
+      // the load's name beside the cabinet, level with the load, clear of the CG's labels
+      if (c.ml > 0) { const a = toC(-ex, c.ly); label(ctx, `${c.ml} kg load`, a[0] - 8, a[1], '#7f1d1d', 'right', 11, -1); }
+      // drag the top corner on the side away from the edge to tilt it
+      const hnd = toC(-ex, c.H); __pim.handles.push({ id: 'cab', kind: 'cab', x: hnd[0], y: hnd[1], r: 22 });
+    }
+
+    /* tab 3: the Try It! person */
+    function drawPerson(ctx, W, H) {
+      const floorY = H - 40, k = frozen ? frozen.k : Math.min((floorY - 26) / 1.85, (W - 40) / 1.3), wx = wallX();
+      const ox = W / 2 + 0.2 * k; // the left foot's inner edge (x = 0)
+      const ang = personPose().ang;
+      const toC = (x, y) => { const [wx, wy] = personAt(x, y); return [ox + wx * k, floorY - wy * k]; };
+      geo = { k, ox, floorY, toC };
+      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, floorY, W, H - floorY);
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, floorY); ctx.lineTo(W, floorY); ctx.stroke();
+      // the wall: bricks on the right
+      const wX = ox + wx * k;
+      ctx.fillStyle = '#e5e7eb'; ctx.fillRect(wX, 8, W - wX, floorY - 8); ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 1;
+      for (let y = floorY; y > 8; y -= 12) { ctx.beginPath(); ctx.moveTo(wX, y); ctx.lineTo(W, y); ctx.stroke(); for (let x = wX + ((y / 12) % 2 ? 0 : 12); x < W; x += 24) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - 12); ctx.stroke(); } }
+      ctx.strokeStyle = '#475569'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(wX, 8); ctx.lineTo(wX, floorY); ctx.stroke();
+      label(ctx, 'Wall', Math.min(W - 24, wX + 26), 22, '#334155', 'center', 11);
+      // body parts (m): shoes, legs, shorts, shirt, arms, head
+      const up = P3.up ? PERSON.lift : 0;
+      const rect = (x0, y0, x1, y1, fill, edge = '#1e293b') => { poly(ctx, [toC(x0, y0), toC(x1, y0), toC(x1, y1), toC(x0, y1)]); ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = edge; ctx.lineWidth = 1.2; ctx.stroke(); };
+      rect(-0.29, 0.06 + up, -0.15, 0.85, '#3b82f6');        // right leg
+      rect(-0.09, 0.06, 0.05, 0.85, '#3b82f6');              // left leg
+      rect(PERSON.rf[0], up, PERSON.rf[1], 0.06 + up, '#f8fafc'); // right shoe
+      rect(PERSON.lf[0], 0, PERSON.lf[1], 0.06, '#f8fafc');      // left shoe
+      rect(-0.31, 0.85, 0.07, 1.42, '#fefce8');             // shirt
+      rect(-0.36, 0.86, -0.31, 1.40, '#fde68a');            // right arm
+      rect(0.07, 0.86, 0.12, 1.40, '#fde68a');              // left arm
+      const hd = toC(-0.12, 1.55); ctx.fillStyle = '#fde68a'; ctx.beginPath(); ctx.arc(hd[0], hd[1], 0.11 * k, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#1e293b'; ctx.stroke();
+      ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.arc(hd[0], hd[1], 0.11 * k, Math.PI * 1.05 - ang, Math.PI * 1.95 - ang); ctx.fill();
+      // G, the line of action of the weight, and the base of support
+      const [gx, gy] = toC(...PERSON.G);
+      ctx.setLineDash([6, 5]); ctx.strokeStyle = '#db2777'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(gx, floorY + 14); ctx.stroke(); ctx.setLineDash([]);
+      // the base of support stays on the floor where the feet are (a foot that stays down does not move)
+      const base = personBase(), b0 = [ox + base[0] * k], b1 = [ox + base[1] * k], inside = personInside();
+      ctx.strokeStyle = COL.ok; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(b0[0], floorY + 6); ctx.lineTo(b1[0], floorY + 6); ctx.stroke();
+      ctx.strokeStyle = inside ? COL.ok : COL.bad; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(gx, floorY + 6, 4, 0, Math.PI * 2); ctx.stroke();
+      weight(ctx, gx, gy, 42, null);
+      label(ctx, '<i>G</i>', gx - 9, gy - 4, COL.W, 'right', 13, -1);
+      label(ctx, '<i>W</i>', gx + 8, gy + 34, COL.W, 'left', 12, 1);
+      label(ctx, P3.up ? 'base: left foot' : 'base: both feet', (b0[0] + b1[0]) / 2, floorY + 26, '#166534', 'center', 11);
+      label(ctx, 'Right foot', toC(PERSON.rf[0], 0)[0] - 4, floorY - 14 - up * k, '#334155', 'right', 11, -1);
+    }
+
+    /* tab 4: a cone */
+    function drawCone(ctx, W, H) {
+      const m = coneMode(), floorY = H - 44, { h, r, a } = CONE;
+      const k = frozen ? frozen.k : Math.min((floorY - 30) / (h + 2), (W - 30) / (h * 1.55));
+      const ox = m === 'apex' ? W * 0.32 : m === 'side' ? W * 0.18 : W * 0.5;
+      // the cone's outline and CG in its own frame (cm), for each way it rests
+      let pts, cg, toW;
+      if (m === 'base') {        // apex up, base on the table; turned clockwise by phi about the right base edge
+        pts = [[-r, 0], [r, 0], [0, h]]; cg = [0, CONE.gb];
+        toW = (q, ph) => { const dx = q[0] - r, dy = q[1], c = Math.cos(ph), s = Math.sin(ph); return [r + dx * c + dy * s, -dx * s + dy * c]; };
+      } else if (m === 'apex') { // apex down on the table; turned clockwise by phi about the apex
+        pts = [[0, 0], [r, h], [-r, h]]; cg = [0, CONE.ga];
+        toW = (q, ph) => { const c = Math.cos(ph), s = Math.sin(ph); return [q[0] * c + q[1] * s, -q[0] * s + q[1] * c]; };
+      } else {                   // lying on its slant side, apex on the left; rolled along by x cm
+        const u = [Math.cos(a), Math.sin(a)], n = [-Math.sin(a), Math.cos(a)];
+        pts = [[0, 0], [h * u[0] - r * n[0], h * u[1] - r * n[1]], [h * u[0] + r * n[0], h * u[1] + r * n[1]]]; cg = [CONE.ga * u[0], CONE.ga * u[1]];
+        toW = (q, ph, x) => [q[0] + x, q[1]];
+      }
+      const toC = q => [ox + q[0] * k, floorY - q[1] * k];
+      geo = { k, ox, floorY, toC };
+      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, floorY, W, H - floorY);
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, floorY); ctx.lineTo(W, floorY); ctx.stroke();
+      // the original position (dashed outline) and the height of its CG then
+      const ph = m === 'side' ? 0 : C4.phi, xr = m === 'side' ? C4.x : 0;
+      const ghost = pts.map(q => toC(toW(q, 0, 0))), now = pts.map(q => toC(toW(q, ph, xr)));
+      const h0 = coneCGh(m, 0), hN = coneCGh(m, ph), y0 = floorY - h0 * k;
+      ctx.setLineDash([5, 4]); ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5; poly(ctx, ghost); ctx.stroke();
+      ctx.strokeStyle = COL.h0; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(8, y0); ctx.lineTo(W - 8, y0); ctx.stroke(); ctx.setLineDash([]);
+      poly(ctx, now); ctx.fillStyle = 'rgba(103,232,249,0.85)'; ctx.fill(); ctx.strokeStyle = '#0e7490'; ctx.lineWidth = 2; ctx.stroke();
+      const [gx, gy] = toC(toW(cg, ph, xr));
+      weight(ctx, gx, gy, 36, null);
+      label(ctx, 'CG', gx - 9, gy - 2, COL.W, 'right', 12, -1);
+      label(ctx, '<i>W</i>', gx + 8, gy + 28, COL.W, 'left', 12, 1);
+      // the dashed line's name at its right-hand end; the heights themselves are in the readouts below
+      label(ctx, 'CG height before', W - 10, Math.max(14, y0 - 11), '#9d174d', 'right', 11, -1);
+      // drag the cone: its apex (base mode), its base corner (apex mode) or its CG (side)
+      const hp = m === 'base' ? toC(toW([0, h], ph, xr)) : m === 'apex' ? toC(toW([r, h], ph, xr)) : [gx, gy];
+      __pim.handles.push({ id: 'cone', kind: 'cone', x: hp[0], y: hp[1], r: 22 });
+    }
+    function drawBalls(ctx, W, H) {
+      const cols = W < 330 ? 1 : 3, slotX = [], refY = [], labY = [];
+      for (let i = 0; i < 3; i++) {
+        if (cols === 3) { slotX.push(W / 6 + i * W / 3); refY.push(H * 0.5); labY.push(H * 0.8); }
+        else { slotX.push(W / 2); refY.push(H * (0.2 + i * 0.3)); labY.push(H * (0.2 + i * 0.3) + 32); }
+      }
+      const sc = Math.min(1.4, cols === 3 ? (W / 6 - 8) / SURF_HALF : 1.2);
+      eqGeo = { slotX, refY, sc }; geo = eqGeo;
+      const names = ['(a) dip', '(b) hump', '(c) flat'], types = ['Stable', 'Unstable', 'Neutral'];
+      for (let i = 0; i < 3; i++) {
+        ctx.strokeStyle = '#475569'; ctx.lineWidth = 3; ctx.beginPath();
+        for (let x = -SURF_HALF; x <= SURF_HALF; x += 2) { const px = slotX[i] + x * sc, py = refY[i] - surfH(i, x) * sc; if (x === -SURF_HALF) ctx.moveTo(px, py); else ctx.lineTo(px, py); }
+        ctx.stroke();
+        const home = ballCentre(i, 0, eqGeo);
+        ctx.strokeStyle = 'rgba(37,99,235,0.35)'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(home.x, home.y, home.r, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+        const b = balls[i], c = b.off ? { x: b.fx, y: b.fy } : ballCentre(i, b.x, eqGeo);
+        if (c.y < H + 20) { ctx.fillStyle = '#2563eb'; ctx.beginPath(); ctx.arc(c.x, c.y, home.r, 0, Math.PI * 2); ctx.fill(); }
+        label(ctx, sim.done ? `${names[i]}: ${types[i]}` : names[i], slotX[i], labY[i], '#334155', 'center', 12);
+      }
+    }
+
+    /* ---------------- the inputs ---------------- */
+    // wrap: a long label may take two lines on a phone (the others stay on one line with their value)
+    const inp = (k, lab, v, min, max, step, wrap) => `<div class="control-group${wrap ? '' : ' label-row'}"><label for="in_${k}">${lab}</label><input id="in_${k}" type="number" data-k="${k}" min="${min}" max="${max}" step="${step}" value="${plain(v)}" /></div>`;
+    function buildInputs() {
+      const el = $('inputs'); let h = '';
+      $('expWrap').hidden = currentTab === 1;
+      if (currentTab === 2) h = inp('p', 'Pivot at (cm mark)', R2.p, 5, 95, 1) + inp('m', 'Mass on the rule (g)', R2.mass, 0, 500, 10) + inp('xm', 'Mass at (cm mark)', R2.xm, 0, 100, 1);
+      else if (currentTab === 3) {
+        if (PRESETS[S.scen].person) h = '<div class="none">Nothing to set: press Lift the right foot.</div>';
+        else h = inp('B', 'Base width (m)', T3.B, 0.3, 1.2, 0.05)
+          + `<div class="control-group label-row"><label for="in_load">The 20 kg load</label><select id="in_load"><option value="top">Top shelf</option><option value="bottom">Bottom shelf</option><option value="none">No load</option></select></div>`
+          + inp('tilt', 'Tilt angle (°)', Math.round(T3.tilt0 / RAD), 0, 85, 1);
+      } else if (currentTab === 4) {
+        const m = coneMode();
+        h = m === 'balls' ? '<div class="none">Each ball starts a little way from its place: press Let go.</div>'
+          : inp('disp', m === 'side' ? 'Roll it along (cm)' : 'Tilt it (°)', C4.disp, 0, DISP_MAX[m], 1);
+      }
+      el.innerHTML = h;
+      el.querySelectorAll('input').forEach(i => i.addEventListener('input', () => readInput(i)));
+      const ld = $('in_load'); if (ld) { ld.value = T3.load; ld.addEventListener('change', () => { T3.load = ld.value; resetRun(); toCustom(); update(); }); }
+    }
+    function inputValue(k) {
+      if (currentTab === 2) return k === 'p' ? R2.p : k === 'm' ? R2.mass : R2.xm;
+      if (currentTab === 3) return k === 'B' ? T3.B : Math.round(T3.tilt0 / RAD);
+      return C4.disp;
+    }
+    function syncInputs() {
+      document.querySelectorAll('#inputs input').forEach(i => {
+        if (document.activeElement === i) return;
+        const want = plain(inputValue(i.dataset.k));
+        if (i.value !== want) i.value = want;
+      });
+    }
+    function readInput(i) {
+      const k = i.dataset.k, raw = parseFloat(i.value);
+      if (!isFinite(raw)) return;
+      const lim = (v, a, b) => Math.max(a, Math.min(b, v));
+      if (currentTab === 2) {
+        if (k === 'p') R2.p = lim(Math.round(raw), 5, 95); else if (k === 'm') R2.mass = lim(raw, 0, 500); else R2.xm = lim(raw, 0, 100);
+        resetRun(); toCustom();
+      } else if (currentTab === 3) {
+        if (k === 'B') { T3.B = lim(raw, 0.3, 1.2); toCustom(); } else T3.tilt0 = lim(raw, 0, 85) * RAD;
+        resetRun();
+      } else { C4.disp = lim(raw, 0, +i.max); resetRun(); }
+      update();
+    }
+    function toCustom() {
+      if (S.custom || !CUSTOM_NAME[currentTab]) return;
+      S.custom = true; presetEl.value = 'custom';
+      // the question box keeps its height: nothing above the canvas may move while a finger drags
+      const q = $('question'); q.style.minHeight = q.offsetHeight + 'px';
+      q.innerHTML = 'Your own values. Choose a scenario from the menu to go back to it.';
+      clearFeat();
+    }
+
+    /* ---------------- drags ---------------- */
+    let drag = null;
+    function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    function pickHandle(p) {
+      if (currentTab === 1 && geo) { // anywhere on the lamina
+        const Lm = LAM[S.scen], P = Lm.outer.map(q => geo.toC(q));
+        if (insidePoly(p, P)) return __pim.handles[0];
+      }
+      let best = null, bd = Infinity;
+      for (const h of __pim.handles) { const d = Math.hypot(p.x - h.x, p.y - h.y); if (d < (h.r || 14) + 8 && d < bd) { bd = d; best = h; } }
+      return best;
+    }
+    canvas.addEventListener('pointerdown', e => {
+      if (document.activeElement && document.activeElement.tagName === 'INPUT') document.activeElement.blur();
+      const p = pos(e), h = pickHandle(p);
+      if (!h || (currentTab === 3 && PRESETS[S.scen].person)) return;
+      if (sim.running) { sim.running = false; sim.last = null; }
+      drag = h; frozen = geo;
+      if (currentTab === 1) drag.a0 = Math.atan2(-(p.y - geo.pinY), p.x - geo.pinX) - L1.phi;
+      canvas.setPointerCapture(e.pointerId); e.preventDefault();
+    });
+    canvas.addEventListener('pointermove', e => {
+      const p = pos(e);
+      if (!drag) { canvas.style.cursor = pickHandle(p) ? 'grab' : 'default'; return; }
+      canvas.style.cursor = 'grabbing';
+      const g = geo;
+      if (currentTab === 1) {
+        // turned about the pin, at most 60° either side of its rest position (the scale is fitted to that)
+        const rest = restPhi(LAM[S.scen], L1.pin), e = wrapA(Math.atan2(-(p.y - g.pinY), p.x - g.pinX) - drag.a0 - rest);
+        L1.phi = rest + Math.max(-SWING_MAX, Math.min(SWING_MAX, e)); L1.om = 0; sim.done = false; sim.t = 0;
+      }
+      else if (currentTab === 2) {
+        const xcm = Math.max(0, Math.min(100, Math.round((p.x - g.x0) / g.k * 100)));
+        if (drag.kind === 'pivot') R2.p = Math.max(5, Math.min(95, xcm)); else R2.xm = xcm;
+        R2.tilt = 0; R2.om = 0; sim.t = 0; sim.done = false; toCustom();
+      } else if (currentTab === 3) {
+        // the top corner's angle round the pivot edge sets the tilt (whole degrees)
+        const c = cab(), e0 = g.toC(c.B / 2, 0), t = Math.atan2(p.x - e0[0], e0[1] - p.y) + Math.atan2(c.B, c.H);
+        T3.tilt0 = Math.max(0, Math.min(85, Math.round(t / RAD))) * RAD; T3.tilt = T3.tilt0; T3.om = 0; T3.result = ''; sim.t = 0; sim.done = false;
+      } else if (currentTab === 4) {
+        const m = coneMode();
+        if (m === 'side') C4.disp = Math.max(0, Math.min(20, Math.round((p.x - g.ox) / g.k - CONE.ga * Math.cos(CONE.a))));
+        else if (m === 'base') { const e0 = g.toC([CONE.r, 0]); C4.disp = Math.max(0, Math.min(DISP_MAX.base, Math.round(Math.atan2(p.x - e0[0], e0[1] - p.y) / RAD + Math.atan2(CONE.r, CONE.h) / RAD))); }
+        else if (m === 'apex') { const e0 = g.toC([0, 0]); C4.disp = Math.max(0, Math.min(30, Math.round(Math.atan2(p.x - e0[0], e0[1] - p.y) / RAD - Math.atan2(CONE.r, CONE.h) / RAD))); }
+        sim.t = 0; sim.done = false; resetC4();
+      }
+      update();
+    });
+    const endDrag = () => {
+      if (!drag) return;
+      const was = drag; drag = null; frozen = null;
+      // tab 1: let go of the lamina and it swings
+      if (was.kind === 'lam' && Math.abs(wrapA(L1.phi - restPhi(LAM[S.scen], L1.pin))) > 0.2 * RAD) start();
+      update();
+    };
+    canvas.addEventListener('pointerup', endDrag);
+    canvas.addEventListener('pointercancel', endDrag);
+
+    /* ---------------- readouts, words and working ---------------- */
+    function cards(list) {
+      const el = $('readout');
+      el.className = 'readout' + ({ 3: ' n3', 4: ' n4', 6: ' n6' }[list.length] || '');
+      el.innerHTML = list.map(([id, title, value, cls]) => `<div class="readout-card${cls ? ' ' + cls : ''}${hl[id] ? ' hl' : ''}" id="${id}"><div class="title">${title}</div><div class="value">${value}</div></div>`).join('');
+    }
+    function eq(lines) { return '<div class="math">' + lines.map(l => `<span class="eq${l.lit ? ' lit' : ''}">${l.h || l}</span>`).join('') + '</div>'; }
+    const dirWord = M => (M > 0 ? 'clockwise' : M < 0 ? 'anti-clockwise' : 'no turning effect');
+    const deg = t => `${f3(t / RAD)}°`;
+    function readouts() {
+      const words = $('words'), work = $('work');
+      work.innerHTML = ''; $('stepText').innerHTML = ''; words.innerHTML = '';
+      if (currentTab === 1) {
+        const Lm = LAM[S.scen], st = plan1(S.scen)[S.step - 1], x = cgOffset(), rest = Math.abs(x) < 1e-6 && !sim.running;
+        const pinName = Lm.bag ? 'the hook' : L1.pin, n = plan1(S.scen).length;
+        const cgTxt = st.cross || (S.step === 6) ? ({ heart: 'where the lines cross', card: 'at its geometrical centre', tri: 'at its geometrical centre', ring: 'at the centre, not on the ring' })[S.scen]
+          : st.mark ? 'directly below the point of suspension' : '?';
+        const list = [['rHung', 'Hung from', Lm.bag ? 'the hook' : `point ${L1.pin}`], ['rState', 'The lamina', sim.running ? 'swinging' : rest ? 'at rest' : 'held still'],
+          ['rX', `CG from the vertical line through ${Lm.bag ? 'the hook' : L1.pin}`, `${f3(Math.abs(x))} cm`, rest ? 'ok' : '']];
+        if (!Lm.bag) list.push(['rLines', 'Lines drawn', String(linesDrawn().length)]);
+        list.push(['rCG', 'Centre of gravity', cgTxt]);
+        cards(list);
+        const T = Lm.bag ? {
+          1: 'The bag hangs from the hook and is let go. It swings, then comes to rest.',
+          2: 'The CG of the bag is directly below the point of suspension (the dashed line).' } : {
+          1: 'Hang the lamina from point A and let it go. It swings, then comes to rest.',
+          2: 'Draw the vertical line through A: the line of the string, continued across the lamina.',
+          3: 'Hang it from point B. It swings, then comes to rest.',
+          4: 'Draw the vertical line through B.',
+          5: `The centre of gravity is where the two lines cross${S.scen === 'ring' ? ': in the middle, where there is no ring at all' : S.scen === 'card' || S.scen === 'tri' ? ': the geometrical centre' : ''}.`,
+          6: 'Check: hang it from point C. When it comes to rest, the vertical line through C passes through the same point.' };
+        $('stepText').innerHTML = `<span class="n">Step ${S.step} of ${n}</span>` + T[S.step];
+        const side = x > 0 ? 'right' : 'left';
+        words.innerHTML = sim.running || !rest
+          ? `The CG is ${f3(Math.abs(x))} cm to the ${side} of the vertical line through ${pinName}: the moment of the weight about ${pinName} turns the ${Lm.bag ? 'bag' : 'lamina'} ${x > 0 ? 'clockwise' : 'anti-clockwise'}, towards that line.`
+          : `At rest: the CG is vertically below ${pinName}, so the line of action of the weight passes through ${pinName} and the weight has no moment about it.`;
+      } else if (currentTab === 2) {
+        const r = rule(), c = Math.cos(R2.tilt), turned = sim.done && Math.abs(R2.tilt) > 1e-9;
+        const list = [['rP', 'Pivot at', `${plain(R2.p)} cm mark`], ['rD', 'Pivot to the line of action of <i>W</i>', `${f3(Math.abs(r.dW) * 100 * c)} cm`],
+          ['rMW', 'Moment of <i>W</i> about the pivot', `${sgn(r.MW)} N m`]];
+        if (R2.mass > 0) list.push(['rMm', `Moment of the ${plain(R2.mass)} g mass`, `${sgn(r.Mm)} N m`]);
+        list.push(['rNet', 'Net moment', `${sgn(r.net)} N m`]);
+        list.push(['rBal', turned ? 'The rule' : 'Balanced?', turned ? `turned ${R2.tilt > 0 ? 'clockwise' : 'anti-clockwise'}` : r.balanced ? 'Yes' : 'No', r.balanced ? 'ok' : 'no']);
+        cards(list);
+        const L = [`Moment of <i>W</i> = <i>W</i> × <i>d</i> = ${f3(RULE_W)} × ${f3(Math.abs(r.dW) * c)} = ${f3(Math.abs(r.MW))} N m${r.MW ? ' ' + dirWord(r.MW) : ''}`];
+        if (R2.mass > 0) L.push(`Moment of the mass = ${f3(R2.mass / 1000 * G)} × ${f3(Math.abs(r.dm) * c)} = ${f3(Math.abs(r.Mm))} N m${r.Mm ? ' ' + dirWord(r.Mm) : ''}`);
+        L.push({ h: `Net moment Σ<i>M</i> = ${sgn(r.net)} N m${r.balanced ? ': the rule is in equilibrium' : ''}`, lit: true });
+        work.innerHTML = eq(L);
+        const where = R2.p === 50 ? 'on the pivot' : R2.p < 50 ? `${f3(50 - R2.p)} cm to the right of the pivot` : `${f3(R2.p - 50)} cm to the left of the pivot`;
+        words.innerHTML = turned ? `Let go: the rule turned ${R2.tilt > 0 ? 'clockwise' : 'anti-clockwise'} until its ${R2.tilt > 0 ? 'right' : 'left'} end touched the bench (${deg(Math.abs(R2.tilt))}).`
+          : R2.mass === 0 && R2.p === 50 ? 'The CG (the 50 cm mark) is on the pivot: the perpendicular distance from the pivot to the line of action of <i>W</i> is zero, so <i>W</i> has no turning effect. The rule is in equilibrium.'
+          : r.balanced ? `The CG is ${where}, but the clockwise and anti-clockwise moments are equal: the rule is in equilibrium.`
+          : `The CG is ${where}: <i>W</i> has a ${dirWord(r.MW)} moment about the pivot${R2.mass > 0 ? ', and the moments do not balance' : ''}. Let go and the rule turns ${dirWord(r.net)}.`;
+      } else if (currentTab === 3 && PRESETS[S.scen].person) {
+        const wall = PRESETS[S.scen].wall, fell = wall && P3.ang > 1e-6, leaned = !wall && P3.lean > 1e-6;
+        const ins = personInside(), gOut = clean(-PERSON.G[0]);
+        cards([['rBase', 'Base of support', P3.up ? 'left foot only' : 'both feet'],
+          ['rLoa', 'Line of action of <i>W</i>', ins ? 'inside the base' : 'outside the base', ins ? 'ok' : 'no'],
+          ['rTilt', 'Body tilt', `${f3((wall ? P3.ang : P3.lean) / RAD)}°`],
+          ['rWill', 'Result', !P3.up ? 'standing on both feet' : wall ? (sim.done ? 'lost balance' : 'losing balance') : (sim.done ? 'balanced on the left foot' : 'leaning over the left foot'), !P3.up ? '' : wall ? 'no' : 'ok']]);
+        words.innerHTML = !P3.up ? (wall ? 'The left foot and left shoulder touch the wall. <i>G</i> is between the feet, inside the base: press Lift the right foot.'
+            : leaned ? 'First the body leans over the left foot, with both feet still down, until <i>G</i> is above it…' : 'Now the person stands away from the wall: press Lift the right foot.')
+          : wall ? `With the right foot lifted, the base is the left foot only. G is ${f3(gOut * 100)} cm outside it, and the wall stops you leaning over it: your weight has an anti-clockwise moment about your left foot, so you lose your balance${fell && sim.done ? ' and the right foot comes back down' : ''}.`
+          : `Away from the wall you can lean over the left foot until G is above it (${f3(LEAN_END / RAD)}°)${leaned && sim.done ? ': the line of action of your weight passes through the base, so you balance' : ''}.`;
+      } else if (currentTab === 3) {
+        const c = cab(), g = cabCG(c, T3.tilt), inside = g.x < -1e-9, ran = sim.done;
+        cards([['rTilt', 'Tilt angle', deg(T3.tilt)], ['rCrit', 'Topples if tilted past', deg(c.crit)], ['rCGh', 'Height of the CG', `${f3(g.y)} m`],
+          ['rLoa', 'Line of action of <i>W</i>', Math.abs(g.x) < 1e-9 ? 'over the edge' : inside ? 'inside the base' : 'outside the base', inside ? 'ok' : 'no'],
+          ['rWill', ran ? 'Result' : 'If you let go now', ran ? T3.result : T3.tilt < 1e-9 ? 'stays standing' : inside ? 'falls back' : 'topples', (ran ? /back|stand/.test(T3.result) : inside || T3.tilt < 1e-9) ? 'ok' : 'no']]);
+        words.innerHTML = ran ? `Let go at ${deg(T3.tilt0)}: it ${T3.result}${T3.tilt0 < c.crit ? ': the line of action of <i>W</i> was inside the base, so the moment of <i>W</i> about the edge turned it back' : T3.tilt0 > c.crit ? ': the line of action of <i>W</i> was outside the base, so the moment of <i>W</i> about the edge turned it over' : ''}.`
+          : `Its CG is ${f3(c.yc)} m up${c.ml ? `, with the load on the ${T3.load === 'top' ? 'top' : 'bottom'} shelf` : ''}. Tilted on its ${f3(T3.B)} m base, it topples once the tilt passes ${deg(c.crit)}.`;
+      } else if (coneMode() === 'balls') {
+        const res = ['stable', 'unstable', 'neutral'], how = ['returned to its place', 'kept moving away', 'stayed where it was put'];
+        cards(balls.map((b, i) => [`rB${i + 1}`, ['(a) Ball in the dip', '(b) Ball on the hump', '(c) Ball on the flat'][i], sim.done ? `${res[i]}` : '?', sim.done ? (i === 1 ? 'no' : 'ok') : '']));
+        words.innerHTML = sim.done ? 'Displaced: (a) ' + how[0] + ', so it is in stable equilibrium; (b) ' + how[1] + ', unstable equilibrium; (c) ' + how[2] + ', neutral equilibrium.'
+          : 'Each ball has been pushed a little way from its place. Predict what each does, then let go.';
+      } else {
+        const m = coneMode(), ph = m === 'side' ? 0 : C4.phi, h0 = coneCGh(m, 0), hN = coneCGh(m, ph);
+        const ch = Math.abs(hN - h0) < 1e-6 ? 'at the same height' : hN > h0 ? 'raised' : 'lowered';
+        const type = { base: 'stable', apex: 'unstable', side: 'neutral' }[m];
+        // let go without being displaced, it stays where it is: that shows nothing about the type of equilibrium
+        const shown = sim.done && C4.disp > 0;
+        cards([['rH0', 'CG height before it was displaced', `${f3(h0)} cm`], ['rH', 'CG height now', `${f3(hN)} cm`], ['rCh', 'The CG is', shown && C4.result.startsWith('returned') ? 'back where it was' : ch],
+          ['rType', 'Type of equilibrium', shown ? `${type} equilibrium` : '?', shown ? (m === 'apex' ? 'no' : 'ok') : '']]);
+        words.innerHTML = sim.done && !shown ? 'It was not displaced, so it stayed where it was. Displace it a little, then let go.'
+          : sim.done ? ({ base: 'Let go: the moment of its weight turned it back. Its CG returned to its original position: stable equilibrium.',
+          apex: 'Let go: the moment of its weight turned it further over, and its CG kept moving away from its original position until the cone lay on its side: unstable equilibrium.',
+          side: 'Let go: it stays where it was rolled to, with its CG at the same height: neutral equilibrium.' })[m]
+          : m === 'side' ? `Rolled ${plain(C4.x)} cm along the table, its CG stays ${f3(hN)} cm above it. Predict what happens when you let go.`
+          : `Displaced by ${plain(C4.disp)}°, its CG is ${ch} (${f3(h0)} cm to ${f3(hN)} cm). Predict what happens when you let go.`;
+      }
+    }
+
+    function update() {
+      draw(); readouts(); syncInputs();
+      if (currentTab === 1) {
+        const mx = plan1(S.scen).length;
+        $('prevStep').disabled = S.step <= 1; $('nextStep').disabled = S.step >= mx;
+      } else {
+        const mid = sim.t > 0 && !sim.done;
+        $('pauseBtn').textContent = !sim.running && mid ? 'Play' : 'Pause';
+        $('pauseBtn').disabled = !sim.running && !mid;
+        $('startBtn').disabled = sim.running || sim.done || (currentTab === 3 && !PRESETS[S.scen].person && T3.tilt0 < 1e-9);
+        $('resetBtn').disabled = sim.t === 0 && !sim.done && !sim.running;
+      }
+    }
+    function setStep(n) { S.step = Math.max(1, Math.min(plan1(S.scen).length, n)); clearFeat(); applyStep1(); update(); }
+    $('prevStep').addEventListener('click', () => setStep(S.step - 1));
+    $('nextStep').addEventListener('click', () => setStep(S.step + 1));
+    $('resetSteps').addEventListener('click', () => chooseScenario(S.scen));
+    function loadScenario(id) {
+      const P = PRESETS[id];
+      sim.running = false; sim.t = 0; sim.done = false; sim.last = null;
+      if (id !== 'custom') { S.scen = id; S.custom = false; }
+      $('question').innerHTML = id !== 'custom' && P.q ? P.q : '';
+      if (currentTab === 1) { S.step = freeMode ? plan1(S.scen).length : 1; }
+      else if (currentTab === 2 && id !== 'custom') { R2.p = P.p; R2.mass = P.mass; R2.xm = P.xm; }
+      else if (currentTab === 3 && id !== 'custom') { if (!P.person) { T3.B = P.B; T3.load = P.load; } T3.tilt0 = 10 * RAD; }
+      else if (currentTab === 4) C4.disp = DISP[P.mode] || 0;
+      if (currentTab === 1) applyStep1(); else resetRun();
+      if (freeMode && currentTab !== 1) { /* free exploration: nothing run yet */ }
+      const btn = $('startBtn'); btn.textContent = currentTab === 3 && P.person ? 'Lift the right foot' : 'Let go';
+      $('resetBtn').textContent = currentTab === 3 && P.person ? 'Put the foot down' : 'Reset';
+      $('sceneHint').innerHTML = hintFor();
+    }
+    function hintFor() {
+      if (currentTab === 1) return 'Drag the lamina to swing it, then let go. The steps hang it from A, then B, then C.';
+      if (currentTab === 2) return 'Drag the pivot (the triangle) along the rule, 1 cm at a time. Drag the mass too.';
+      if (currentTab === 3) return PRESETS[S.scen].person ? 'Press Lift the right foot. The dashed line drops straight down from <i>G</i>.' : 'Drag the cabinet’s top left corner to tilt it, then press Let go.';
+      return coneMode() === 'balls' ? 'Press Let go: each ball starts a little way from its place.' : coneMode() === 'side' ? 'Drag the cone to roll it along the table, then press Let go.' : 'Drag the cone to tilt it, then press Let go.';
+    }
+    function chooseScenario(id) {
+      loadScenario(id);
+      $('question').style.minHeight = '';
+      clearFeat(); buildInputs(); update();
+    }
+    presetEl.addEventListener('change', () => { if (presetEl.value === 'custom') { presetEl.value = S.custom ? 'custom' : S.scen; return; } chooseScenario(presetEl.value); });
+
+    /* ---------------- the tabs ---------------- */
+    const TABS = {
+      1: { strip: 'Answer Predict first. Then press Next step: hang the lamina from A, draw the vertical line, hang it from B, draw again, and see where the lines cross.',
+        presets: ['heart', 'card', 'tri', 'ring', 'bag'],
+        key: [[COL.cg, 'Centre of gravity (CG)'], [COL.W, 'Weight <i>W</i>'], [COL.lineA, 'Line through A'], [COL.lineB, 'Line through B'], [COL.lineC, 'Line through C']],
+        notes: ['The earth pulls on every part of an object, so each part has a weight. The point through which the whole weight (<i>W</i>) of the object appears to act is called its centre of gravity (CG) (notes p. 4-15).',
+          'When an object is freely suspended, it rotates until its CG is vertically below the point of suspension (p. 4-16).',
+          'By suspending a lamina (a flat object) from at least two different points, we can locate its CG: it is where the vertical lines through the points of suspension cross.',
+          'For a regular-shaped object of uniform density and thickness, the CG is at its geometrical centre. For a ring or a frame, the CG is not on any physical part of the object (p. 4-17).'] },
+      2: { strip: 'Answer Predict first. Then move the pivot and press Let go: where must the pivot be for the rule to balance?',
+        presets: ['centre', 'off', 'mass'],
+        key: [[COL.W, 'Weight <i>W</i> of the rule'], [COL.mass, 'Weight of the mass'], [COL.cw, 'Turns clockwise'], [COL.acw, 'Turns anti-clockwise']],
+        notes: ['When an object is placed with its CG on the pivot, it is in equilibrium because the weight has no turning effect about the pivot (p. 4-19).',
+          'Otherwise its weight has a turning effect about the pivot: moment = <i>W</i> × <i>d</i>, where <i>d</i> is the perpendicular distance from the pivot to the line of action of <i>W</i>.',
+          'The weight of a uniform metre rule acts at its centre, the 50 cm mark. This rule weighs 0.50 N (the key’s answer to Tutorial 4 A5).',
+          'A moment is clockwise or anti-clockwise; a weight acts downwards (Example 8).',
+          'Once the rule tilts, each perpendicular distance becomes <i>x</i> cos <i>θ</i>.',
+          'The turn is shown at a quarter of its real speed: this light rule really tips in about 0.13 s.'] },
+      3: { strip: 'Answer Predict first. Then tilt the cabinet and let go: does it fall back or topple? Move the load, widen the base, and try the wall.',
+        presets: ['top', 'bottom', 'wide', 'wall', 'away'],
+        key: [[COL.W, 'CG and weight <i>W</i>'], [COL.ok, 'Line of action inside the base'], [COL.bad, 'Line of action outside the base']],
+        notes: ['Tilted on one edge, an object falls back while the line of action of its weight passes inside its base, and topples once it passes outside: the moment of the weight about the edge changes direction.',
+          'When you lift your right foot, your centre of gravity is outside the base area of support (your left foot): your weight produces an anti-clockwise moment about your left foot and you lose your balance (p. 4-22).',
+          'Stability is the ability of the CG of an object to return to its original position after it has been displaced. An object can be made more stable by lowering its centre of gravity and making its base broader (p. 4-33).',
+          'A coach bus carries its luggage at the bottom to lower its CG; a racing car has a wide track and a long wheelbase to increase its base area; floor fans have wide, heavy bases (p. 4-34).',
+          'The cabinet (1.2 m, 10 kg, a 20 kg load) and the person’s sizes are this page’s own values; the notes give none.'] },
+      4: { strip: 'Answer Predict first. Then displace the cone (or the balls) and let go: does it return, move away, or stay where it is?',
+        presets: ['base', 'apex', 'side', 'balls'],
+        key: [[COL.W, 'CG and weight <i>W</i>'], [COL.h0, 'CG height before it was displaced']],
+        notes: ['There are three types of equilibrium: stable, unstable and neutral (p. 4-28).',
+          'Stable equilibrium: if its CG is displaced, it returns to its original position. A cone resting on its base: tilting it raises its CG, and the moment of its weight turns it back (p. 4-29).',
+          'Unstable equilibrium: if its CG is displaced, it continues to move away from its original position. A cone resting on its apex: tilting it lowers its CG, and the moment of its weight topples it (p. 4-30).',
+          'Neutral equilibrium: if its CG is displaced, it remains at its new position. A cone on its slant side: rolling it leaves its CG at the same height (p. 4-31).',
+          'The cone (30 cm tall, base radius 10 cm, CG on its axis a quarter of its height above the base) has this page’s own sizes.'] },
+      5: { strip: 'Answer every question, then read the summary.', key: [] }
+    };
+
+    const PREDICT = {
+      1: { q: 'A lamina hangs freely from a string at point A and is let go. When it stops swinging, where is its centre of gravity?',
+        opts: ['Vertically below the point of suspension', 'Level with the point of suspension', 'Vertically above the point of suspension', 'It depends where it was let go from'], ans: 0,
+        why: 'It turns until the line of action of its weight passes through the point of suspension: then the weight has no moment about A. So the CG comes to rest vertically below A (p. 4-16). Watch the readout “CG from the vertical line through A” fall to 0 cm.' },
+      2: { q: 'A uniform metre rule rests on a pivot at the 30 cm mark and is let go. It …',
+        opts: ['turns clockwise (its right end goes down)', 'turns anti-clockwise (its left end goes down)', 'stays level', 'stays level only if it is light'], ans: 0,
+        why: 'Its weight <i>W</i> acts at its CG, the 50 cm mark, 20 cm to the right of the pivot. <i>W</i> has a clockwise moment about the pivot (0.5 × 0.2 = 0.1 N m), so the rule turns clockwise (p. 4-19). Choose “Pivot at the 30 cm mark” and let go.' },
+      3: { q: 'A cabinet holds a heavy load, either on its top shelf or on its bottom shelf. Which can be tilted further before it topples?',
+        opts: ['The load on the bottom shelf', 'The load on the top shelf', 'Both topple at the same angle', 'Neither ever topples'], ans: 0,
+        why: () => { const sv = [T3.B, T3.load]; T3.B = 0.6; T3.load = 'bottom'; const lo = cab(); T3.load = 'top'; const hi = cab(); [T3.B, T3.load] = sv;
+          return `With the load at the bottom its CG is lower (${f3(lo.yc)} m against ${f3(hi.yc)} m), so the line of action of its weight stays inside the base until a larger tilt: ${deg(lo.crit)} against ${deg(hi.crit)}. Lowering the CG makes an object more stable (p. 4-33).`; } },
+      4: { q: 'A cone standing on its base is tilted slightly. Its centre of gravity …',
+        opts: ['rises, and the moment of its weight turns it back', 'falls, and it topples', 'stays at the same height, and it stays where it is', 'rises, and it topples'], ans: 0,
+        why: () => `Tilting it about its base edge raises its CG (${f3(coneCGh('base', 0))} cm to ${f3(coneCGh('base', 15 * RAD))} cm at 15°), and the moment of its weight turns it back: stable equilibrium (p. 4-29). Let go to check.` }
+    };
+
+    const FEATS = {
+      1: [['below', 'The CG ends below the pin'], ['cross', 'Two lines cross at the CG'], ['regular', 'Regular shape: the geometrical centre'], ['ring', 'Ring: the CG is not on it'], ['bag', 'Example 6: the handbag']],
+      2: [['zero', 'CG on the pivot: no turning effect'], ['turns', 'CG beside the pivot: it turns'], ['balance', 'A load balances the weight'], ['ex8', 'Example 8: say it right']],
+      3: [['inside', 'Inside the base: falls back'], ['outside', 'Outside the base: topples'], ['lower', 'Lower the CG'], ['broader', 'Broader base'], ['wall', 'Try It!: the wall']],
+      4: [['stable', 'Stable: CG raised'], ['unstable', 'Unstable: CG lowered'], ['neutral', 'Neutral: CG at the same height'], ['balls', 'Example 12: the ball']]
+    };
+    const PROMPTS = {
+      1: ['Why does a lamina never come to rest with its CG to one side of the string?', 'Why is one line not enough to find the CG?', 'Where is the CG of a picture frame? Can you balance the frame there?'],
+      2: ['Why does the weight of the rule have no turning effect when the pivot is at 50 cm?', 'With the 150 g mass at 10 cm, where else could the pivot go? Why only there?', 'Example 8: what is wrong with “the moment is downwards”?'],
+      3: ['Why does the cabinet fall back at 15° but topple at 20°?', 'Why does a coach bus carry its luggage at the bottom?', 'Why can’t you lift your right foot with your left side against the wall?'],
+      4: ['What happens to the CG of each cone when it is displaced?', 'Which way does the moment of the weight turn each cone?', 'Is a ball on a flat table in equilibrium? Which type?'],
+      5: ['Which question did most of the class get wrong, and why?', 'Pick one wrong option: what mistake would lead a student to choose it?']
+    };
+
+    let predictPick = null;
+    function clearFeat() { feat = {}; hl = {}; syncFeatButtons(); $('featNote').textContent = ''; }
+    function syncFeatButtons() { document.querySelectorAll('#feats .feat').forEach(b => b.classList.toggle('on', !!feat[b.dataset.f])); }
+    // a key feature shows itself: a fresh copy of its scenario (an earlier feature may have changed it), then its state
+    function tapFeat(id) {
+      const on = !feat[id];
+      const want = scen => { presetEl.value = scen; chooseScenario(scen); };
+      const tilt3 = d => { T3.tilt0 = d * RAD; resetRun(); runToEnd(); };
+      clearFeat();
+      if (on) {
+        ({
+          below: () => { want('heart'); S.step = 3; applyStep1(false); hl = { rX: true }; },
+          cross: () => { want('heart'); S.step = 5; applyStep1(false); hl = { rCG: true }; },
+          regular: () => { want('card'); S.step = 5; applyStep1(false); hl = { rCG: true }; },
+          ring: () => { want('ring'); S.step = 5; applyStep1(false); hl = { rCG: true }; },
+          bag: () => { want('bag'); S.step = 2; applyStep1(false); hl = { rX: true, rCG: true }; },
+          zero: () => { want('centre'); hl = { rD: true, rMW: true }; },
+          turns: () => { want('off'); runToEnd(); hl = { rBal: true }; },
+          balance: () => { want('mass'); hl = { rMW: true, rMm: true, rNet: true }; },
+          ex8: () => { want('mass'); hl = { rMW: true, rMm: true }; },
+          inside: () => { want('top'); tilt3(15); hl = { rWill: true }; },
+          outside: () => { want('top'); tilt3(20); hl = { rWill: true }; },
+          lower: () => { want('bottom'); tilt3(20); hl = { rCrit: true, rCGh: true }; },
+          broader: () => { want('wide'); tilt3(20); hl = { rCrit: true }; },
+          wall: () => { want('wall'); runToEnd(); hl = { rLoa: true }; },
+          stable: () => { want('base'); hl = { rCh: true }; },
+          unstable: () => { want('apex'); hl = { rCh: true }; },
+          neutral: () => { want('side'); hl = { rCh: true }; },
+          balls: () => { want('balls'); runToEnd(); hl = { rB1: true, rB2: true, rB3: true }; }
+        })[id]();
+        sim.running = false;
+      }
+      feat = on ? { [id]: true } : {};
+      syncFeatButtons(); buildInputs(); update();
+      $('featNote').innerHTML = on ? featNote(id) : '';
+    }
+    function featNote(id) {
+      const c3 = (B, load) => { const sv = [T3.B, T3.load]; T3.B = B; T3.load = load; const c = cab(); [T3.B, T3.load] = sv; return c; };
+      switch (id) {
+        case 'below': return 'Hung from B, the heart swings until its CG is vertically below B: the CG’s distance from the vertical line through B falls to 0 cm. Then the line of action of the weight passes through B, and the weight has no moment about it (p. 4-16).';
+        case 'cross': return 'The line through A and the line through B both pass through the CG, so they cross there. One line is not enough: the CG could be anywhere along it. A third line, through C, passes through the same point.';
+        case 'regular': return 'A rectangular card of uniform density and thickness: the lines from holes near its corners are its diagonals, and they cross at its geometrical centre (p. 4-17).';
+        case 'ring': return 'For a ring, the lines cross at its centre, where there is no ring at all: the CG is not on any physical part of the object (p. 4-17).';
+        case 'bag': return 'Example 6: the bag hangs freely from the hook, so it comes to rest with its CG directly below the point of suspension.';
+        case 'zero': return 'With the pivot at the 50 cm mark, the line of action of <i>W</i> passes through the pivot: <i>d</i> = 0, so the moment of <i>W</i> = 0.5 × 0 = 0 N m. The rule is in equilibrium (p. 4-19).';
+        case 'turns': return 'With the pivot at the 30 cm mark, <i>W</i> acts 20 cm to the right of it: moment = 0.5 × 0.2 = 0.1 N m clockwise. Let go, the rule turns clockwise until its right end touches the bench (p. 4-19).';
+        case 'balance': { const r = rule(); return `Tutorial 4 A5: about the pivot at 20 cm, <i>W</i> (0.5 N, 30 cm to the right) gives ${sgn(r.MW)} N m and the 150 g mass (1.5 N, 10 cm to the left) gives ${sgn(r.Mm)} N m. Σ<i>M</i> = 0: the rule balances.`; }
+        case 'ex8': return 'Example 8: a student wrote “The moment of the rod’s weight about P is downwards and the force of 150 g is acting in the anti-clockwise direction”. A moment is clockwise or anti-clockwise; a weight acts downwards. The correct statement: “The moment of the rod’s weight about P is clockwise and the weight of the 150 g mass is acting downwards.”';
+        case 'inside': return `Load on the top shelf, let go at 15°: below its toppling angle (${deg(c3(0.6, 'top').crit)}), the line of action of <i>W</i> is inside the base, so the moment of <i>W</i> about the edge turns it back onto its base.`;
+        case 'outside': return `Let go at 20°: past ${deg(c3(0.6, 'top').crit)}, the line of action of <i>W</i> is outside the base, so the moment of <i>W</i> about the edge turns it over.`;
+        case 'lower': return `Load on the bottom shelf: the CG is lower (${f3(c3(0.6, 'bottom').yc)} m, not ${f3(c3(0.6, 'top').yc)} m), so it topples only past ${deg(c3(0.6, 'bottom').crit)}. Let go at 20°, it falls back. Lowering the CG makes it more stable (p. 4-33): a coach bus’s luggage compartment is at the bottom.`;
+        case 'broader': return `Base 1.0 m wide, load on top: it topples only past ${deg(c3(1.0, 'top').crit)} (the 0.6 m base: ${deg(c3(0.6, 'top').crit)}). Let go at 20°, it falls back. A broader base makes it more stable (p. 4-33): a racing car’s wide track and long wheelbase.`;
+        case 'wall': return `Try It! (p. 4-22): with the right foot lifted, the base is the left foot. G is ${f3(-PERSON.G[0] * 100)} cm outside it, and the wall stops you leaning over it: your weight produces an anti-clockwise moment about your left foot, and you lose your balance.`;
+        case 'stable': return `Cone on its base, tilted 15°: its CG rises from ${f3(coneCGh('base', 0))} cm to ${f3(coneCGh('base', 15 * RAD))} cm. Let go, the moment of its weight turns it back: stable equilibrium (p. 4-29).`;
+        case 'unstable': return `Cone on its apex, tilted 5°: its CG falls from ${f3(coneCGh('apex', 0))} cm to ${f3(coneCGh('apex', 5 * RAD))} cm. Let go, it keeps turning about its apex and its CG keeps moving away: unstable equilibrium (p. 4-30).`;
+        case 'neutral': return `Cone on its slant side, rolled along: its CG stays ${f3(coneCGh('side', 0))} cm above the table, wherever it is. It stays where it is put: neutral equilibrium (p. 4-31).`;
+        case 'balls': return 'Example 12: in the dip the ball returns (stable equilibrium); on the hump it keeps moving away (unstable equilibrium); on the flat it stays where it is put (neutral equilibrium).';
+      }
+      return '';
+    }
+
+    function renderPredict(tab) {
+      const P = PREDICT[tab], box = $('predictBox');
+      predictPick = null;
+      if (!P) { box.hidden = true; return; }
+      box.hidden = false; box.classList.remove('done');
+      $('predictQ').innerHTML = P.q;
+      $('predictFb').innerHTML = '';
+      const opts = $('predictOpts');
+      opts.innerHTML = '';
+      P.opts.forEach((o, i) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.innerHTML = o;
+        b.addEventListener('click', () => {
+          if (opts.dataset.done) return;
+          predictPick = i; opts.querySelectorAll('.opt').forEach((x, j) => x.classList.toggle('picked', j === i));
+        });
+        opts.appendChild(b);
+      });
+      delete opts.dataset.done;
+      $('predictCheck').textContent = 'Check my answer';
+    }
+    $('predictCheck').addEventListener('click', () => {
+      const P = PREDICT[currentTab], opts = $('predictOpts'), fb = $('predictFb');
+      if (!P) return;
+      if (opts.dataset.done) { renderPredict(currentTab); return; }
+      if (predictPick === null) { fb.innerHTML = '<span class="verdict no">Pick an answer first.</span>'; return; }
+      opts.dataset.done = '1';
+      const ok = predictPick === P.ans;
+      opts.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === P.ans) x.classList.add('right'); else if (j === predictPick) x.classList.add('wrong'); });
+      // the options fold away: the result line names the pick (and the right answer), then the explanation
+      $('predictBox').classList.add('done');
+      fb.innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> Your prediction: ${P.opts[predictPick]}.`
+        + (ok ? '' : ` The answer: <b>${P.opts[P.ans]}</b>.`) + ` <span class="why">${typeof P.why === 'function' ? P.why() : P.why}</span>`;
+      $('predictCheck').textContent = 'Try again';
+    });
+
+    function renderFeats(tab) {
+      const list = FEATS[tab] || [], el = $('feats');
+      $('featBox').hidden = !list.length;
+      el.innerHTML = '';
+      list.forEach(([id, lab]) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'feat'; b.dataset.f = id;
+        b.innerHTML = lab;
+        b.addEventListener('click', () => tapFeat(id));
+        el.appendChild(b);
+      });
+      $('featNote').textContent = '';
+      syncFeatButtons();
+    }
+    function renderKey(tab) {
+      // the label sits in its own span: as direct children of the inline-flex entry, <i> would become a flex item
+      $('ckey').innerHTML = (TABS[tab].key || []).map(([c, lab]) => `<span><b style="background:${c}"></b><span>${lab}</span></span>`).join('');
+    }
+    function fillPresets(list, tab) {
+      presetEl.innerHTML = '';
+      [...list, ...(CUSTOM_NAME[tab] ? ['custom'] : [])].forEach(id => { const o = document.createElement('option'); o.value = id; o.textContent = id === 'custom' ? CUSTOM_NAME[tab] : PRESETS[id].name; presetEl.appendChild(o); });
+      if (list.length) presetEl.value = list[0];
+    }
+
+    function showTab(tab) {
+      currentTab = tab;
+      sim.running = false;
+      document.querySelectorAll('#tabs .tab').forEach(b => { const on = +b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+      $('stepLabel').textContent = `Step ${tab} of 5`;
+      document.querySelectorAll('#stepBar i').forEach((i, n) => i.classList.toggle('on', n < tab));
+      $('strip').innerHTML = TABS[tab].strip;
+      renderKey(tab);
+      $('pageSim').hidden = tab === 5;
+      $('page5').hidden = tab !== 5;
+      if (tab <= 4) {
+        const T = TABS[tab];
+        canvas.className = 't' + tab;
+        $('stepGroup').hidden = tab !== 1;
+        $('simGroup').hidden = tab === 1;
+        $('notes').innerHTML = '<ul>' + T.notes.map(n => `<li>${n}</li>`).join('') + '</ul>';
+        fillPresets(T.presets, tab);
+        chooseScenario(T.presets[0]);
+      }
+      if (tab === 5) renderQuiz();
+      renderPredict(tab);
+      renderFeats(tab);
+      $('tPrompts').innerHTML = PROMPTS[tab].map(p => `<li>${p}</li>`).join('');
+    }
+    document.querySelectorAll('#tabs .tab').forEach(b => b.addEventListener('click', () => showTab(+b.dataset.tab)));
+
+    /* ---------------- Tab 5: Challenge ---------------- */
+    // every answer from the lecturer's copy of Chapter 4 (pp. 4-15 to 4-34)
+    // A question whose parts share one situation is one screen: the situation once, then its parts
+    const EQ = ['stable equilibrium', 'unstable equilibrium', 'neutral equilibrium', 'not in equilibrium'];
+    const QUIZ = [
+      { src: 'Notes p. 4-15', stem: '', parts: [
+        { q: 'The centre of gravity (CG) of an object is …', opts: ['the point through which the whole weight of the object appears to act', 'the heaviest part of the object', 'always at the middle of the object’s base', 'the lowest point of the object'], ans: 0,
+          why: 'The earth pulls on every part of an object. The point through which the whole weight (<i>W</i>) of the object appears to act is its centre of gravity (p. 4-15).' }] },
+      { src: 'Notes p. 4-16', stem: 'A lamina (a flat object) is freely suspended from a string.', parts: [
+        { lab: '(a)', q: 'When it comes to rest, its CG is …', opts: ['vertically below the point of suspension', 'vertically above the point of suspension', 'level with the point of suspension', 'wherever it was when it was let go'], ans: 0,
+          why: 'It rotates until its CG is vertically below the point of suspension: then its weight has no moment about that point (p. 4-16).' },
+        { lab: '(b)', q: 'To locate its CG, you suspend it from …', opts: ['at least two different points', 'one point only', 'its CG', 'three points on one straight line'], ans: 0,
+          why: 'By suspending a lamina from at least two different points, we can locate its CG: the vertical lines through the points of suspension cross at the CG (p. 4-16).' }] },
+      { src: 'Notes p. 4-17', stem: '', parts: [
+        { lab: '(a)', q: 'For a regular-shaped object of uniform density and thickness, the CG is …', opts: ['at its geometrical centre', 'at its lowest corner', 'outside the object', 'at its heaviest edge'], ans: 0,
+          why: 'For a regular-shaped object of uniform density and thickness, the centre of gravity is at its geometrical centre (p. 4-17).' },
+        { lab: '(b)', q: 'The CG of a ring is …', opts: ['at its centre, not on any physical part of the ring', 'on the ring, at its lowest point', 'on the ring, at its highest point', 'nowhere: a ring has no CG'], ans: 0,
+          why: 'For objects such as a ring or a frame, the centre of gravity is not on any physical part of the object (p. 4-17).' }] },
+      { src: 'Example 6, notes p. 4-18', stem: 'Some restaurants provide customers with a gadget to hang their handbags: a disc rests on the table top and a hook hangs over its edge. The bag hangs freely from the hook.', parts: [
+        { q: 'Where is the centre of gravity (CG) of the bag?', opts: ['Directly below the point of suspension', 'At the top of the handle', 'At the bottom of the bag', 'Directly below the edge of the table top'], ans: 0,
+          why: 'The bag hangs freely, so it comes to rest with its CG directly below the point of suspension (Example 6).' }] },
+      { src: 'Notes p. 4-19', stem: 'A uniform metre rule rests on a pivot.', parts: [
+        { lab: '(a)', q: 'With the pivot at the 50 cm mark, the moment of its weight <i>W</i> about the pivot is zero because …', opts: ['the perpendicular distance between the pivot and the line of action of <i>W</i> is zero', '<i>W</i> is too small to turn the rule', 'the pivot pushes up harder than <i>W</i> pulls down', '<i>W</i> acts at the 0 cm mark'], ans: 0,
+          why: 'The CG is on the pivot, so the line of action of <i>W</i> passes through the pivot: <i>d</i> = 0 and the moment is zero (p. 4-19).' },
+        { lab: '(b)', q: 'The pivot is moved to the left of the 50 cm mark. When the rule is let go, it …', opts: ['turns clockwise', 'turns anti-clockwise', 'stays level', 'rises off the pivot'], ans: 0,
+          why: '<i>W</i> now acts to the right of the pivot: its moment about the pivot is not zero, and it turns the rule clockwise (p. 4-19).' }] },
+      { src: 'Example 8, notes p. 4-21', stem: 'A uniform rod is balanced on a pivot P when a mass of 150 g is placed at its left end. A student wrote: “The moment of the rod’s weight about P is downwards and the force of 150 g is acting in the anti-clockwise direction.”', parts: [
+        { q: 'Which is the correct statement?', opts: ['The moment of the rod’s weight about P is clockwise and the weight of the 150 g mass is acting downwards.', 'The moment of the rod’s weight about P is anti-clockwise and the weight of the 150 g mass is acting downwards.', 'The moment of the rod’s weight about P is clockwise and the weight of the 150 g mass is acting upwards.', 'The student is right: the moment is downwards and the 150 g acts anti-clockwise.'], ans: 0,
+          why: 'A moment turns clockwise or anti-clockwise; a weight acts downwards. The rod’s weight acts to the right of P, so its moment about P is clockwise (Example 8).' }] },
+      { src: 'Try It!, notes p. 4-22', stem: 'You stand with your left foot and left shoulder touching a wall, then raise your right foot off the floor.', parts: [
+        { lab: '(a)', q: 'You lose your balance because your centre of gravity is …', opts: ['outside the base area of support (your left foot)', 'inside the base area of support', 'too close to the wall', 'below your knees'], ans: 0,
+          why: 'When you lift your right foot, your centre of gravity is outside the base area of support, i.e. your left foot (p. 4-22).' },
+        { lab: '(b)', q: 'About your left foot, your weight produces …', opts: ['an anti-clockwise moment', 'a clockwise moment', 'no moment at all', 'a moment only if you jump'], ans: 0,
+          why: 'Your weight produces an anti-clockwise moment about your left foot, and hence you lose your balance (p. 4-22).' }] },
+      { src: 'Notes p. 4-24', stem: '', parts: [
+        { q: 'For an object to be in equilibrium, …', opts: ['the net moment is zero and the sum of all the forces is zero', 'the net moment is zero; the forces need not add to zero', 'the sum of all the forces is zero; the moments need not', 'it must rest with its CG on a pivot'], ans: 0,
+          why: 'Two conditions must be met: the net moment due to all the forces on the object is zero, Σ<i>M</i> = 0, and the sum of all forces is zero, Σ<i>F</i> = 0 (p. 4-24).' }] },
+      { src: 'Notes pp. 4-29 to 4-31', stem: 'A cone rests on a level table.', parts: [
+        { lab: '(a)', q: 'Resting on its base, it is in …', opts: EQ, ans: 0, why: 'Slightly displaced, its CG returns to its original position: stable equilibrium (p. 4-29).' },
+        { lab: '(b)', q: 'Resting on its apex, it is in …', opts: EQ, ans: 1, why: 'Displaced, it continues to rotate about the apex and its CG keeps moving away: unstable equilibrium (p. 4-30).' },
+        { lab: '(c)', q: 'Resting on its slant side, it is in …', opts: EQ, ans: 2, why: 'Displaced by rolling, its CG remains at the position it rolls to: neutral equilibrium (p. 4-31).' }] },
+      { src: 'Example 12, notes p. 4-32', stem: 'A ball rests on three different surfaces: (a) at the bottom of a curved dip, (b) on the top of a curved hump, (c) on a flat surface.', parts: [
+        { lab: '(a)', q: 'In the dip, the ball is in …', opts: EQ, ans: 0, why: 'Displaced, it rolls back to the bottom: stable equilibrium (Example 12).' },
+        { lab: '(b)', q: 'On the hump, the ball is in …', opts: EQ, ans: 1, why: 'Displaced, it keeps rolling away: unstable equilibrium (Example 12).' },
+        { lab: '(c)', q: 'On the flat surface, the ball is in …', opts: EQ, ans: 2, why: 'Displaced, it stays at its new position: neutral equilibrium (Example 12).' }] },
+      { src: 'Notes p. 4-33', stem: '', parts: [
+        { lab: '(a)', q: 'Stability is …', opts: ['the ability of the CG of an object to return to its original position after it has been displaced', 'the weight of an object', 'how fast an object topples', 'the area of an object’s base'], ans: 0,
+          why: 'Stability is the ability of the CG of an object to return to its original position after it has been displaced (p. 4-33).' },
+        { lab: '(b)', q: 'An object can be made more stable by …', opts: ['lowering its CG and making its base broader', 'raising its CG and making its base broader', 'lowering its CG and making its base narrower', 'raising its CG and making its base narrower'], ans: 0,
+          why: 'An object can be made more stable by lowering its centre of gravity and making its base broader (p. 4-33).' }] },
+      { src: 'Try It!, notes p. 4-34', stem: '', parts: [
+        { lab: '1.', q: 'The luggage compartment of a coach bus is located at the bottom to …', opts: ['lower its CG', 'raise its CG', 'make its base narrower', 'make it lighter'], ans: 0,
+          why: 'Luggage at the bottom lowers the bus’s CG (p. 4-34).' },
+        { lab: '2.', q: 'A racing car has a wide track and a long wheelbase to …', opts: ['increase its base area', 'reduce its base area', 'raise its CG', 'make it heavier'], ans: 0,
+          why: 'A wide track and a long wheelbase increase its base area (p. 4-34).' },
+        { lab: '3.', q: 'Floor-mounted electric fans have …', opts: ['wide and heavy bases', 'wide and light bases', 'narrow and heavy bases', 'narrow and light bases'], ans: 0,
+          why: 'A wide base gives a broad base area, and a heavy base lowers the CG: both make the fan more stable (p. 4-34).' }] }
+    ];
+    // the options are written with the right one first (or in a fixed order); turn each part's list round by a fixed
+    // amount so the right answer is not always in the same place
+    { let pc = 0; QUIZ.forEach(Q => Q.parts.forEach(P => { const n = P.opts.length, r = (pc++ * 3 + 1) % n;
+      P.opts = P.opts.slice(r).concat(P.opts.slice(0, r)); P.ans = (P.ans - r + n) % n; })); }
+    const QUIZ_MARKS = QUIZ.reduce((n, Q) => n + Q.parts.length, 0);
+    const partLabel = (Q, k) => Q.parts[k].lab ? Q.parts[k].lab + ' ' : '';
+    let quiz = { i: 0, score: 0, picks: [], done: false, missed: [] };
+    function resetQuiz() { quiz = { i: 0, score: 0, picks: [], done: false, missed: [] }; renderQuiz(); }
+    function renderQuiz() {
+      const el = $('quiz'), N = QUIZ.length;
+      if (quiz.i >= N) {
+        const list = quiz.missed.length
+          ? `<p>Go back over these:</p><ul>${quiz.missed.map(([n, k]) => { const Q = QUIZ[n];
+              return `<li>Question ${n + 1}${partLabel(Q, k).trim()} (${Q.src}): ${(Q.stem ? Q.stem + ' ' : '') + Q.parts[k].q}</li>`; }).join('')}</ul>`
+          : '<p>Every answer right. Well done.</p>';
+        el.innerHTML = `<div class="quiz-top"><span>Summary</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div><div class="quiz-bar"><i style="width:100%"></i></div>
+          <div class="quiz-sum"><div class="quiz-q">You scored ${quiz.score} out of ${QUIZ_MARKS}.</div>${list}</div>
+          <div class="row-btns"><button type="button" id="qAgain">Try the quiz again</button></div>`;
+        $('qAgain').addEventListener('click', resetQuiz);
+        return;
+      }
+      const Q = QUIZ[quiz.i], many = Q.parts.length > 1;
+      quiz.picks = Q.parts.map(() => null);
+      el.innerHTML = `<div class="quiz-top"><span>Question ${quiz.i + 1} of ${N}</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div>
+        <div class="quiz-bar"><i style="width:${(quiz.i / N) * 100}%"></i></div>
+        ${Q.stem ? `<div class="quiz-q" id="qStem">${Q.stem}</div>` : ''}<div class="quiz-src">${Q.src}${many ? ` · ${Q.parts.length} parts, answer them all` : ''}</div>
+        ${Q.parts.map((P, k) => `<div class="qpart" data-k="${k}">
+          <div class="${Q.stem ? 'qpart-q' : 'quiz-q'}">${partLabel(Q, k)}${P.q}</div>
+          <div class="opts">${P.opts.map((o, j) => `<button type="button" class="opt" data-j="${j}">${o}</button>`).join('')}</div>
+          <div class="feedback"></div></div>`).join('')}
+        <div class="row-btns"><button type="button" id="qSubmit">${many ? 'Submit answers' : 'Submit answer'}</button><button type="button" class="secondary" id="qReset">Reset quiz</button></div>
+        <div class="feedback" id="qFb"></div>`;
+      el.querySelectorAll('.qpart').forEach(part => {
+        const k = +part.dataset.k;
+        part.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+          if (quiz.done) return;
+          quiz.picks[k] = +b.dataset.j; part.querySelectorAll('.opt').forEach(x => x.classList.toggle('picked', x === b));
+        }));
+      });
+      $('qReset').addEventListener('click', resetQuiz);
+      $('qSubmit').addEventListener('click', () => {
+        const fb = $('qFb');
+        if (quiz.done) { quiz.i++; quiz.done = false; renderQuiz(); return; }
+        const left = quiz.picks.map((p, k) => p === null ? partLabel(Q, k).trim() || `part ${k + 1}` : null).filter(x => x !== null);
+        if (left.length) { fb.innerHTML = `<span class="verdict no">${many ? `Pick an answer for every part first (still to do: ${left.join(', ')}).` : 'Pick an answer first.'}</span>`; return; }
+        quiz.done = true; fb.innerHTML = '';
+        el.querySelectorAll('.qpart').forEach(part => {
+          const k = +part.dataset.k, P = Q.parts[k], ok = quiz.picks[k] === P.ans;
+          if (ok) quiz.score++; else quiz.missed.push([quiz.i, k]);
+          part.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === P.ans) x.classList.add('right'); else if (j === quiz.picks[k]) x.classList.add('wrong'); });
+          part.querySelector('.feedback').innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> <span class="why">${P.why}</span>`;
+        });
+        el.querySelector('.quiz-top span:last-child').textContent = `Score: ${quiz.score} of ${QUIZ_MARKS}`;
+        $('qSubmit').textContent = quiz.i + 1 < N ? 'Next question' : 'See the summary';
+      });
+    }
+
+    /* ---------------- Teacher mode ---------------- */
+    // Only the teacher link (this page's address + ?teacher) shows the button; students and the
+    // Brightspace embed use the plain address. Not a lock: the panel only changes this screen.
+    const teacher = $('teacher');
+    if (new URLSearchParams(location.search).has('teacher')) $('teacherBtn').hidden = false;
+    $('teacherBtn').addEventListener('click', () => { teacher.hidden = !teacher.hidden; });
+    $('tClose').addEventListener('click', () => { teacher.hidden = true; });
+    $('tExplain').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-explain');
+      e.target.textContent = on ? 'Show explanations' : 'Hide explanations'; e.target.classList.toggle('on', on);
+    });
+    $('tAnswers').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-answers');
+      e.target.textContent = on ? 'Show answer labels' : 'Hide answer labels'; e.target.classList.toggle('on', on);
+    });
+    // free exploration: tab 1 shows its last step at once; no Predict first
+    $('tFree').addEventListener('click', e => {
+      freeMode = !freeMode; document.body.classList.toggle('free-mode', freeMode);
+      e.target.textContent = freeMode ? 'Back to the guided steps' : 'Switch to free exploration'; e.target.classList.toggle('on', freeMode);
+      showTab(currentTab);
+    });
+    const fullBtn = $('tFull');
+    if (!document.fullscreenEnabled) fullBtn.hidden = true;
+    fullBtn.addEventListener('click', () => {
+      if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {});
+    });
+    document.addEventListener('fullscreenchange', () => { fullBtn.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
+    $('tReset').addEventListener('click', () => { resetQuiz(); showTab(1); });
+
+    window.addEventListener('resize', () => { if (currentTab <= 4) update(); });
+    showTab(1);
+  </script>
+  <script>
+    // Embedded (Brightspace): tell the page around the frame how tall this page is, so a resize script in the
+    // embed code can fit the frame to it (no blank space, no inner scrollbar). Measured from the content, not
+    // scrollHeight, which never drops below the frame's own height and so could never shrink it.
+    (function () {
+      if (window.parent === window) return;
+      let last = 0;
+      function height() {
+        const c = document.querySelector('.container'), cs = getComputedStyle(document.body);
+        return Math.ceil(c.getBoundingClientRect().bottom + window.scrollY + parseFloat(cs.paddingBottom) + parseFloat(cs.marginBottom) + 4);
+      }
+      function send(force) {
+        const h = height();
+        if (!force && Math.abs(h - last) < 2) return;
+        last = h;
+        window.parent.postMessage({ type: 'pim-height', page: location.pathname.split('/').pop(), height: h }, '*');
+      }
+      new ResizeObserver(() => send(false)).observe(document.querySelector('.container'));
+      window.addEventListener('load', () => send(true));
+      // the embed's script asks once it is listening, in case this page loaded first
+      window.addEventListener('message', e => { if (e.data && e.data.type === 'pim-height?') send(true); });
+      send(true);
+    })();
   </script>
   <script>
     // Phones: a swipe that starts on an empty part of a drawing scrolls the page (touch-action: pan-y),
     // and a touch the page grabbed for a drag (its own setPointerCapture call) keeps the page still.
     // (hasPointerCapture can't tell: a touch is always captured implicitly.)
-    // The kinematics graphs are left out: a sideways drag scrubs them and an up-down one scrolls.
     document.querySelectorAll('canvas:not(.graph-canvas)').forEach(c => {
       let grabbed = false;
       const capture = c.setPointerCapture;
