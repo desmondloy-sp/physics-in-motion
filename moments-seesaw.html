@@ -18,37 +18,177 @@
   <!-- pim-meta:end -->
   <style>
     * { box-sizing: border-box; }
+    /* the hidden attribute must win over every display rule below */
+    [hidden] { display: none !important; }
     body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
     .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
-    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    h1 { margin: 0; font-size: 1.1rem; }
     .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
-    .controls { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: end; }
-    .control-group { display: flex; flex-direction: column; gap: 4px; flex: 1 1 92px; min-width: 0; }
-    .control-group.scen { flex: 2.4 1 230px; }
-    .control-group.hidden { display: none; }
-    label { font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
-    input, select { font-size: 0.9rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
-    input:disabled { background: #f1f5f9; color: #64748b; }
-    .buttons { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; align-items: center; }
-    button { font-size: 0.9rem; padding: 7px 14px; border-radius: 7px; border: none; background: #2563eb; color: white; cursor: pointer; }
-    button.locked { background: #475569; }
-    .lockstate { font-size: 0.82rem; font-weight: 600; color: #475569; }
-    .readout { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 6px; margin-top: 8px; }
+
+    /* controls: the scenario menu, the steps and the simulation buttons; then the variables */
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 110px; }
+    .control-group.scen-group { flex: 2.2 1 260px; }
+    .control-group.button-group { flex: 2 1 280px; }
+    .control-group select { width: 100%; max-width: 100%; }
+    .controls input, .controls select, .controls button { height: 34px; }
+    label { font-size: 0.82rem; font-weight: 600; line-height: 1.2; }
+    label sub { line-height: 0; }
+    input, select, button { font-size: 0.95rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; }
+    input[type=number] { width: 100%; max-width: 120px; }
+    .buttons { display: flex; gap: 6px; flex-wrap: nowrap; }
+    button { cursor: pointer; background: #2563eb; color: white; border: none; min-width: 0; flex: 1; }
+    button:hover { background: #1d4ed8; }
+    button:disabled { background: #94a3b8; cursor: default; }
+    button.secondary { background: #475569; }
+    button.secondary:hover { background: #334155; }
+    button.secondary:disabled { background: #cbd5e1; color: #475569; }
+    button.danger { background: #dc2626; }
+    button.danger:hover { background: #b91c1c; }
+    .group-title { font-size: 0.78rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.03em; margin: 10px 0 4px; }
+    .inputs { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: flex-end; }
+    .inputs .control-group { flex: 0 1 auto; }
+    .inputs .none { font-size: 0.82rem; color: #475569; }
+    .inputs select { min-width: 180px; height: 34px; }
+    .label-row label { white-space: nowrap; }
+    .question { margin-top: 8px; font-size: 0.84rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 6px 10px; color: #7c2d12; }
+    .question:empty { display: none; }
+    .step-text { margin-top: 8px; font-size: 0.9rem; font-weight: 700; color: #1e293b; }
+    .step-text:empty { display: none; }
+    .step-text .n { display: inline-block; background: #1e293b; color: white; border-radius: 999px; padding: 1px 8px; margin-right: 6px; font-size: 0.78rem; }
+
+    .readout { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .readout.n4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .readout.n6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .readout:empty { display: none; }
     .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card.hl { box-shadow: inset 0 0 0 2px #dc2626; }
+    .readout-card.ok { background: #ecfdf5; }
+    .readout-card.no { background: #fef2f2; }
     .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
     .readout-card .value { font-size: 1rem; font-weight: bold; }
-    .readout-card.balanced { background: #ecfdf5; }
-    .readout-card.tipping { background: #fef2f2; }
-    .readout-card.off .value { color: #94a3b8; font-weight: normal; font-size: 0.85rem; }
-    canvas { display: block; width: 100%; border-radius: 10px; touch-action: pan-y; }
-    #sceneCanvas { height: 360px; border: 1px solid #dbeafe; background: #f8fbff; }
-    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
-    .hint .q { display: block; color: #9a3412; margin-top: 2px; }
-    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    .words { margin-top: 8px; font-size: 0.86rem; font-weight: 600; color: #1e3a8a; background: #eef4ff; border-radius: 8px; padding: 6px 10px; }
+    .words:empty { display: none; }
+
+    .scene-wrap { margin-top: 8px; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 0 0 4px; }
+    .note { margin-top: 6px; font-size: 0.8rem; color: #475569; }
     .note ul { margin: 2px 0 0; padding-left: 18px; }
     .note li { margin: 2px 0; }
+    canvas { display: block; width: 100%; border-radius: 10px; background: white; }
+    #scene { height: 340px; border: 1px solid #dbeafe; touch-action: pan-y; }
+    #scene.t2 { height: 340px; }
+    #scene.t3 { height: 360px; }
+    #scene.t4 { height: 380px; }
+
+    /* the working, set like the notes: italic symbols */
+    .work { margin-top: 8px; }
+    .work:empty { display: none; }
+    .math { font-family: 'Times New Roman', Times, serif; font-size: 1.06rem; color: #1f2937; }
+    /* a block line, not flex: inside flex every <sub> would become its own item and lose its drop */
+    .math .eq { display: block; margin: 4px 0; line-height: 1.9; }
+    .math .eq.lit { background: #fef9c3; border-radius: 4px; padding: 0 4px; }
+    .math b { font-family: Arial, Helvetica, sans-serif; }
+
+    /* ---- the step-by-step frame: header, numbered tabs, colour key, instruction strip ---- */
+    .app-head { background: #1e293b; color: #f8fafc; border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+    .head-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .head-row h1 { flex: 1 1 260px; }
+    .steps { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #cbd5e1; }
+    .step-bar { display: flex; gap: 3px; }
+    .step-bar i { display: block; width: 18px; height: 5px; border-radius: 3px; background: #475569; }
+    .step-bar i.on { background: #fbbf24; }
+    button.teacher-btn { flex: none; background: transparent; border: 1px solid #94a3b8; color: #f8fafc; font-size: 0.82rem; padding: 5px 10px; }
+    button.teacher-btn:hover { background: #334155; }
+    /* every tab always visible: equal columns, and a long name wraps onto a second line (never a sideways scroll) */
+    .tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; margin-top: 8px; }
+    button.tab { min-width: 0; background: #f1f5f9; color: #1e293b; font-size: 0.85rem; font-weight: 600; padding: 7px 8px; border-radius: 8px; line-height: 1.2; white-space: normal; text-align: center; }
+    button.tab:hover { background: #e2e8f0; }
+    button.tab.active, button.tab.active:hover { background: #2563eb; color: white; }
+    .tab .ts { display: none; }
+    .nw { white-space: nowrap; }
+    .ckey { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 7px; font-size: 0.76rem; color: #e2e8f0; }
+    .ckey > span { display: inline-flex; align-items: center; gap: 5px; }
+    .ckey b { display: inline-block; width: 14px; height: 4px; border-radius: 2px; }
+    .strip { background: #fef9c3; border-left: 4px solid #eab308; border-radius: 6px; padding: 7px 10px; font-size: 0.86rem; margin-bottom: 8px; }
+
+    /* Predict first (above the controls), key features */
+    .learn { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 8px; }
+    .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; }
+    .box-title { font-weight: 700; font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-q { font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-box { margin-bottom: 8px; }
+    .opts { display: grid; gap: 5px; }
+    #predictOpts { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    .predict-box.done #predictOpts { display: none; }
+    .predict-box.done .predict-q { margin-bottom: 0; }
+    button.opt { flex: none; width: 100%; text-align: left; background: white; color: #1f2937; border: 1px solid #cbd5e1; font-size: 0.86rem; padding: 7px 10px; }
+    button.opt:hover { background: #f1f5f9; }
+    button.opt.picked, button.opt.picked:hover { border-color: #2563eb; background: #eff6ff; box-shadow: inset 0 0 0 1px #2563eb; }
+    button.opt.right, button.opt.right:hover { border-color: #16a34a; background: #dcfce7; box-shadow: inset 0 0 0 1px #16a34a; }
+    button.opt.wrong, button.opt.wrong:hover { border-color: #dc2626; background: #fee2e2; box-shadow: inset 0 0 0 1px #dc2626; }
+    .row-btns { display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+    .row-btns button { flex: none; padding: 6px 12px; }
+    .feedback { font-size: 0.84rem; margin-top: 7px; }
+    .feedback:empty { display: none; }
+    .feedback .verdict { font-weight: 700; }
+    .feedback .verdict.ok { color: #15803d; }
+    .feedback .verdict.no { color: #b91c1c; }
+    .feats { display: flex; flex-wrap: wrap; gap: 6px; }
+    button.feat { flex: none; background: white; color: #1e293b; border: 1px solid #cbd5e1; font-size: 0.84rem; padding: 6px 11px; border-radius: 999px; }
+    button.feat:hover { background: #f1f5f9; }
+    button.feat.on, button.feat.on:hover { background: #1e293b; color: white; border-color: #1e293b; }
+    .feat-note { font-size: 0.82rem; color: #334155; margin-top: 6px; }
+    .feat-note:empty { display: none; }
+
+    /* Challenge */
+    .quiz { max-width: 760px; margin: 0 auto; }
+    .quiz-top { display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 700; margin-bottom: 4px; }
+    .quiz-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+    .quiz-bar i { display: block; height: 100%; background: #2563eb; width: 0; }
+    .quiz-q { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+    .quiz-src { font-size: 0.76rem; color: #475569; margin-bottom: 8px; }
+    .qpart { margin-top: 12px; }
+    .qpart + .qpart { border-top: 1px solid #e2e8f0; padding-top: 10px; }
+    .qpart-q { font-size: 0.92rem; font-weight: 600; margin-bottom: 6px; }
+    .quiz-sum ul { padding-left: 18px; font-size: 0.86rem; }
+    .quiz-sum li { margin: 4px 0; }
+
+    /* Teacher mode */
+    .teacher { position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 92vw); background: white; box-shadow: -4px 0 18px rgba(0,0,0,0.18); padding: 12px; overflow-y: auto; z-index: 20; }
+    .teacher h2 { font-size: 1rem; margin: 0 0 8px; }
+    .teacher .tbtns { display: grid; gap: 6px; }
+    .teacher .tbtns button { background: white; color: #1e293b; border: 1px solid #cbd5e1; flex: none; }
+    .teacher .tbtns button:hover { background: #f1f5f9; }
+    .teacher .tbtns button.on { background: #1e293b; color: white; }
+    .teacher h3 { font-size: 0.9rem; margin: 14px 0 4px; }
+    .teacher ul { padding-left: 18px; margin: 0; font-size: 0.84rem; }
+    .teacher li { margin: 4px 0; }
+    body.no-explain .strip, body.no-explain .words, body.no-explain .feedback .why, body.no-explain .feat-note { display: none; }
+    body.no-answers .readout-card .value, body.no-answers .work { filter: blur(6px); }
+    body.free-mode .predict-box { display: none; }
+
     @media (max-width: 900px) {
-      .readout { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+      .readout, .readout.n4, .readout.n6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 700px) {
+      h1 { font-size: 1rem; }
+      #scene { height: 360px; }
+      #scene.t2 { height: 360px; }
+      #scene.t3 { height: 340px; }
+      #scene.t4 { height: 400px; }
+      .readout, .readout.n3, .readout.n4, .readout.n6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .tab .tl { display: none; }
+      .tab .ts { display: inline; }
+      /* phones: short names in rows that wrap, so all five tabs show without scrolling */
+      .tabs { display: flex; flex-wrap: wrap; }
+      button.tab { flex: 1 1 auto; white-space: nowrap; }
+    }
+    @media (max-width: 420px) {
+      .buttons button { padding: 6px 4px; }
+      .inputs .control-group { flex: 1 1 40%; }
+      .inputs select { min-width: 0; width: 100%; }
     }
     /* Touch screens (phones, tablets; Samsung Internet reports hover: hover on a phone, so only pointer is tested):
        16 px form fields stop an iPhone zooming the page in when one is
@@ -57,7 +197,8 @@
       input:not([type=range]):not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
       button { min-height: 36px; }
       input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
-      .control-group.scen { flex-basis: 100%; }
+      .controls input, .controls select, .controls button { height: 36px; }
+      .inputs select { height: 36px; }
     }
   </style>
   <!-- pim-nav-style:start (generated by scripts/pim-nav.ts) -->
@@ -86,323 +227,1363 @@
     <a class="pim-nav-btn pim-nav-next" href="centre-of-gravity.html" title="Next: Centre of Gravity, Stability and Equilibrium (Chapter 4)" aria-label="Next: Centre of Gravity, Stability and Equilibrium (Chapter 4)"><span class="pim-nav-text"><span class="pim-nav-kicker">Next<span class="pim-nav-ch"> &middot; Chapter 4</span></span><span class="pim-nav-name">Centre of Gravity, Stability and Equilibrium</span></span><span class="pim-nav-arrow" aria-hidden="true">&rsaquo;</span></a>
   </nav>
   <!-- pim-nav:end -->
-    <h1>Moment of a Force and the Principle of Moments (Seesaw)</h1>
 
-    <div class="panel">
-      <div class="controls">
-        <div class="control-group scen">
-          <label for="preset">Scenarios</label>
-          <select id="preset">
-            <option value="two" selected>Two children on the seesaw</option>
-            <option value="three">Three children on the seesaw</option>
-            <option value="equal">Equal masses at different distances</option>
-          </select>
+    <header class="app-head">
+      <div class="head-row">
+        <h1>Moment of a Force and the Principle of Moments (Seesaw)</h1>
+        <div class="steps"><span id="stepLabel">Step 1 of 5</span><span class="step-bar" id="stepBar"><i></i><i></i><i></i><i></i><i></i></span></div>
+        <button class="teacher-btn" id="teacherBtn" type="button" hidden>Teacher mode</button>
+      </div>
+      <div class="tabs" role="tablist" id="tabs">
+        <button class="tab" role="tab" data-tab="1" type="button"><span class="tl">1. Moment = <span class="nw"><i>F</i> × <i>d</i></span></span><span class="ts">1. <span class="nw"><i>M</i> = <i>F</i> × <i>d</i></span></span></button>
+        <button class="tab" role="tab" data-tab="2" type="button"><span class="tl">2. Clockwise or anti-clockwise</span><span class="ts">2. Direction</span></button>
+        <button class="tab" role="tab" data-tab="3" type="button"><span class="tl">3. Principle of moments: the seesaw</span><span class="ts">3. Seesaw</span></button>
+        <button class="tab" role="tab" data-tab="4" type="button"><span class="tl">4. Find the unknown force</span><span class="ts">4. Unknown</span></button>
+        <button class="tab" role="tab" data-tab="5" type="button"><span class="tl">5. Challenge</span><span class="ts">5. Challenge</span></button>
+      </div>
+      <div class="ckey" id="ckey"></div>
+    </header>
+
+    <div class="strip" id="strip"></div>
+
+    <!-- tabs 1 to 4: Predict first comes first, above the controls and the picture -->
+    <div class="box predict-box" id="predictBox">
+      <div class="box-title">Predict first</div>
+      <div class="predict-q" id="predictQ"></div>
+      <div class="opts" id="predictOpts"></div>
+      <div class="feedback" id="predictFb"></div>
+      <div class="row-btns" id="predictBtns"><button id="predictCheck" type="button">Check my answer</button></div>
+    </div>
+
+    <!-- Tabs 1 to 4 share one drawing -->
+    <section class="tab-page" id="pageSim">
+      <div class="panel">
+        <div class="controls" id="simControls">
+          <div class="control-group scen-group" id="scenGroup">
+            <label for="preset">Scenarios</label>
+            <select id="preset"></select>
+          </div>
+          <div class="control-group button-group" id="stepGroup">
+            <label>Steps</label>
+            <div class="buttons">
+              <button id="prevStep" class="secondary" type="button">&lsaquo; Previous step</button>
+              <button id="nextStep" type="button">Next step &rsaquo;</button>
+              <button id="resetSteps" class="danger" type="button">Reset</button>
+            </div>
+          </div>
+          <div class="control-group button-group" id="simGroup">
+            <label>Simulation controls</label>
+            <div class="buttons">
+              <button id="startBtn" type="button">Remove the lock</button>
+              <button id="pauseBtn" class="secondary" type="button">Pause</button>
+              <button id="resetBtn" class="danger" type="button">Lock it level</button>
+            </div>
+          </div>
         </div>
-        <div class="control-group"><label for="m1">Mass A (kg)</label><input id="m1" type="number" min="1" max="100" step="1" value="30" /></div>
-        <div class="control-group"><label for="x1">A from pivot (m)</label><input id="x1" type="number" min="-2.85" max="2.85" step="0.01" /></div>
-        <div class="control-group"><label for="m2">Mass B (kg)</label><input id="m2" type="number" min="1" max="100" step="1" value="40" /></div>
-        <div class="control-group"><label for="x2">B from pivot (m)</label><input id="x2" type="number" min="-2.85" max="2.85" step="0.01" /></div>
-        <div class="control-group cgroup"><label for="m3">Mass C (kg)</label><input id="m3" type="number" min="1" max="100" step="1" value="20" /></div>
-        <div class="control-group cgroup"><label for="x3">C from pivot (m)</label><input id="x3" type="number" min="-2.85" max="2.85" step="0.01" /></div>
-      </div>
-      <div class="buttons">
-        <button id="lockBtn">Remove the lock</button>
-        <span class="lockstate" id="lockState"></span>
+        <div class="question" id="question"></div>
+        <div id="expWrap">
+          <div class="group-title" id="expTitle">Experimental controls</div>
+          <div class="inputs" id="inputs"></div>
+        </div>
+
+        <div class="step-text" id="stepText"></div>
+
+        <!-- the readouts go under the drawing: nothing above the canvas may change height while a finger drags -->
+        <div class="scene-wrap">
+          <div class="hint" id="sceneHint"></div>
+          <canvas id="scene"></canvas>
+          <div class="readout" id="readout"></div>
+          <div class="words" id="words"></div>
+          <div class="work" id="work"></div>
+          <div class="note" id="notes"></div>
+        </div>
       </div>
 
-      <div class="readout">
-        <div class="readout-card" id="acwCard"><div class="title">Sum of anticlockwise moments</div><div class="value" id="acwValue">&mdash;</div></div>
-        <div class="readout-card" id="cwCard"><div class="title">Sum of clockwise moments</div><div class="value" id="cwValue">&mdash;</div></div>
-        <div class="readout-card" id="netCard"><div class="title">Net moment (clockwise +)</div><div class="value" id="netValue">&mdash;</div></div>
-        <div class="readout-card" id="stateCard"><div class="title">Balanced?</div><div class="value" id="stateValue">&mdash;</div></div>
+      <div class="learn">
+        <div class="box" id="featBox">
+          <div class="box-title">Key features (tap one)</div>
+          <div class="feats" id="feats"></div>
+          <div class="feat-note" id="featNote"></div>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <div class="panel">
-      <div class="hint">Drag the children along the seesaw, or type their distances. Distances are measured from the pivot: negative = left of the pivot.</div>
-      <canvas id="sceneCanvas"></canvas>
-      <div class="note"><ul>
-        <li>Moment = force &times; perpendicular distance from the pivot to the line of action of the force.</li>
-        <li>Here each force is a child's weight, <i>W</i> = <i>mg</i>, with <i>g</i> = 10 m s<sup>-2</sup>.</li>
-        <li>A weight on the <b>right</b> of the pivot turns the seesaw <b>clockwise</b>. A weight on the <b>left</b> turns it <b>anticlockwise</b>.</li>
-        <li>By the <b>principle of moments</b>, the seesaw balances only when the sum of clockwise moments equals the sum of anticlockwise moments.</li>
-        <li>The seesaw starts <b>locked at the horizontal level</b>, so each perpendicular distance is simply the distance along the plank, and the moments are worked out for that position.</li>
-        <li>When we <b>remove the lock</b>, if the moments are not equal, it turns until one end hits the ground. (Once it tilts, the perpendicular distances get shorter, so the moments are no longer shown; moving a child locks it level again.)</li>
-        <li>The seesaw is a light plank pivoted at its centre, so its own weight has no moment.</li>
-      </ul></div>
-    </div>
+    <!-- Tab 5: Challenge -->
+    <section class="tab-page" id="page5" hidden>
+      <div class="panel">
+        <div class="quiz" id="quiz"></div>
+      </div>
+    </section>
   </div>
 
+  <aside class="teacher" id="teacher" hidden aria-label="Teacher mode">
+    <h2>Teacher mode</h2>
+    <div class="tbtns">
+      <button id="tExplain" type="button">Hide explanations</button>
+      <button id="tFree" type="button">Switch to free exploration</button>
+      <button id="tAnswers" type="button">Hide answer labels</button>
+      <button id="tFull" type="button">Full screen</button>
+      <button id="tReset" type="button">Reset whole applet</button>
+      <button id="tClose" type="button">Close</button>
+    </div>
+    <h3>Suggested prompts</h3>
+    <ul id="tPrompts"></ul>
+  </aside>
+
   <script>
-    const G = 10;
-    const HALF = 3; // plank is 6 m long, pivoted at its centre
-    const el = id => document.getElementById(id);
-    const canvas = el('sceneCanvas');
-    const presetEl = el('preset');
+    const $ = id => document.getElementById(id);
+    const canvas = $('scene'), presetEl = $('preset');
+    let currentTab = 1, freeMode = false;
 
-    // positions in metres from the pivot (negative = left)
-    const kids = [
-      { id: 'A', massEl: el('m1'), posEl: el('x1'), x: -2, color: '#2563eb' },
-      { id: 'B', massEl: el('m2'), posEl: el('x2'), x: 2.5, color: '#16a34a' },
-      { id: 'C', massEl: el('m3'), posEl: el('x3'), x: 1, color: '#d97706' }
-    ];
-    let tilt = 0, tiltVel = 0;
-    let locked = true;
-
-    // Each scenario only sets the number of children and their starting places; the masses and distances
-    // can then be changed freely, so there is no separate custom case.
-    const PRESETS = {
-      two: { m: [30, 40, 20], x: [-2, 1, 1], c: false },
-      three: { m: [40, 20, 20], x: [-1.5, 1, 2], c: true },
-      equal: { m: [30, 30, 20], x: [-2, 1, 1], c: false }
+    /* ---------------- numbers and symbols ---------------- */
+    const G = 10; // g = 10 m s^-2, as Tutorial 4 takes it
+    const RAD = Math.PI / 180;
+    const clean = v => (Math.abs(v) < 1e-9 ? 0 : v);
+    // 3 significant figures, as the lecturer's copy gives them (1.73 m, 17.3 N m); exact whole numbers stay whole (30 N);
+    // an exact value keeps its own figures (0.5, 4.5); a 1e-12 nudge so a binary half rounds up; a true minus sign
+    const f3 = v => {
+      const x = clean(v);
+      if (Math.abs(x - Math.round(x)) < 1e-9) return String(Math.round(x)).replace('-', '−');
+      const t = (x * (1 + 1e-12)).toPrecision(3);
+      if (Math.abs(+t - x) < 1e-9 || Math.abs(x) >= 100) return String(+t).replace('-', '−');
+      return t.replace('-', '−');
     };
-    const useC = () => PRESETS[presetEl.value].c;
-    function applyPreset() {
-      const p = PRESETS[presetEl.value];
-      kids.forEach((k, i) => { k.massEl.value = p.m[i]; k.x = p.x[i]; k.posEl.value = k.x.toFixed(2); });
-      document.querySelectorAll('.cgroup').forEach(g => g.classList.toggle('hidden', !p.c));
-      setLocked(true);
+    const sgn = v => (clean(v) > 0 ? '+' : '') + f3(v);              // +346, −200: the notes' sign convention
+    const plain = v => String(+(+v).toFixed(3)).replace('-', '−'); // a set value as set: 1.5, 0.25
+    const COL = { F: '#dc2626', loa: '#64748b', d: '#16a34a', cw: '#dc2626', acw: '#2563eb', zero: '#64748b', known: '#0891b2', unk: '#ea580c', W: '#7c3aed', grey: '#475569' };
+
+    /* ---------------- a beam and its forces (tabs 1, 2 and 4) ----------------
+       x: metres from the left end of the beam. A force acts at x; "body" is the angle (degrees, anticlockwise from
+       the beam pointing right) of the side its arrow is drawn on; head: true when the arrow ends at the beam (a push),
+       false when it starts there (a pull). The force's own direction is then body (pull) or body + 180 (push).     */
+    const dirOf = f => (f.head ? f.body + 180 : f.body);
+    const sinD = a => clean(Math.sin(a * RAD)), cosD = a => clean(Math.cos(a * RAD));
+    // moment about a point at xp, clockwise positive (notes p. 4-9): M = −(x − xp) × F sin(direction)
+    const momentOf = (f, F, xp) => clean(-(f.x - xp) * F * sinD(dirOf(f)));
+    // the angle between the arrow and the beam, measured from the beam's side towards the pivot (as the notes draw it)
+    function thetaOf(f, xp) {
+      const toPivot = f.x > xp + 1e-9 ? 180 : 0;
+      let a = Math.abs(((f.body - toPivot) % 360 + 540) % 360 - 180);
+      return Math.round(a * 1e6) / 1e6;
+    }
+    const perpOf = (f, xp) => clean(Math.abs(f.x - xp) * Math.abs(sinD(f.body)));
+    const lenTxt = (m, unit) => (unit === 'cm' ? `${plain(m * 100)} cm` : `${plain(m)} m`);
+
+    /* ---------------- scenarios (every number from the notes, the lecturer's copy or Tutorial 4) ---------------- */
+    const F_ = (id, F, x, body, head, extra = {}) => Object.assign({ id, F, x, body, head }, extra);
+    const PRESETS = {
+      // tab 1: one force; the pivot is the only point
+      ex1a: { tab: 1, name: 'Force at right angles to the beam', L: 2.5, xp: 0, kind: 'pivot', snap: 0.1, forces: [F_('f', 10, 2.0, -90, false)],
+        q: 'Example 1a (notes p. 4-5): What is the perpendicular distance <i>d</i> if the force <i>F</i> is applied 2.0 m from the pivot? (<i>F</i> = 10 N is a value for this page; the example gives no force.)' },
+      ex1b: { tab: 1, name: 'Force at 60° to the beam', L: 2.5, xp: 0, kind: 'pivot', snap: 0.1, forces: [F_('f', 10, 2.0, 120, true)],
+        q: 'Example 1b (p. 4-6): What is the perpendicular distance <i>d</i> if the force <i>F</i> is applied 2.0 m from the pivot, at 60° to the beam? Tutorial 4 B1: A force of 10 N acts at an angle of 60° to a beam of length 2.0 m away from the pivot. Find the moment of the force about the pivot.' },
+      a1: { tab: 1, name: 'A 20 N force 0.5 m away', L: 0.7, xp: 0, kind: 'pivot', snap: 0.05, forces: [F_('f', 20, 0.5, -90, false)],
+        q: 'Tutorial 4 A1: A force of 20 N acts at a perpendicular distance of 0.5 m from a pivot. Calculate the moment of the force.' },
+      a2b: { tab: 1, name: 'Force through the pivot', L: 5.0, xp: 2.0, kind: 'pivot', snap: 0.1, forces: [F_('f', 10, 2.0, 90, true)],
+        q: 'Tutorial 4 A2(b): Calculate the moment of the 10 N force about the pivot. (The force acts straight down at the pivot.)' },
+      a2c: { tab: 1, name: 'Force along the beam', L: 4.3, xp: 0.3, kind: 'pivot', snap: 0.1, forces: [F_('f', 10, 4.3, 0, true)],
+        q: 'Tutorial 4 A2(c): Calculate the moment of the 10 N force about the pivot. (The force pushes along the beam, 4.0 m from the pivot.)' },
+
+      // tab 2: clockwise or anti-clockwise, and the net moment
+      ex2: { tab: 2, name: 'Spanner turning a nut', L: 0.25, xp: 0, kind: 'nut', snap: 0.01, forces: [F_('f', 20, 0.2, 90, false)],
+        q: 'Example 2 (p. 4-8): What is the moment about the centre of the nut (pivot) if the force <i>F</i> of 20 N is applied at a distance of (a) 0.2 m from the pivot, (b) 0.1 m from the pivot?' },
+      ex3a: { tab: 2, name: 'Force at 60° to the rod', L: 2.0, xp: 2.0, kind: 'point', pivotName: 'A', snap: 0.1, forces: [F_('f', 200, 0, 60, false)],
+        q: 'Example 3(a) (p. 4-10): Determine the moment of the 200 N force <i>F</i> about pivot A.' },
+      ex3b: { tab: 2, name: 'Force at 150° to the rod', L: 2.0, xp: 2.0, kind: 'point', pivotName: 'A', snap: 0.1, forces: [F_('f', 200, 0, 150, true)],
+        q: 'Example 3(b) (p. 4-10): Determine the moment of the 200 N force <i>F</i> about pivot A. (The force makes 150° with the rod, so the working uses 2.0 sin 30°: sin 150° = sin 30°.)' },
+      a2a: { tab: 2, name: 'Force at the left end', L: 2.6, xp: 2.0, kind: 'pivot', snap: 0.1, forces: [F_('f', 10, 0, -90, false)],
+        q: 'Tutorial 4 A2(a): Calculate the moment of the 10 N force about the pivot. State whether the moment is clockwise or anticlockwise.' },
+      ex4: { tab: 2, name: 'Three forces on a light rod', L: 0.75, xp: 0.05, kind: 'pivot', snap: 0.05, forces: [F_('f1', 30, 0.25, -90, true), F_('f2', 20, 0.45, 90, true), F_('f3', 10, 0.65, -90, true)],
+        q: 'Example 4 (p. 4-12): Three forces act on a light (negligible weight) rod as shown. Find the net moment about the pivot.' },
+      ex7: { tab: 2, name: 'Rod supported at its centre', L: 1.4, xp: 0.7, kind: 'pivot', snap: 0.05, forces: [F_('f1', 30, 0.2, -90, false), F_('w', 100, 0.7, -90, false, { weight: true }), F_('f3', 50, 1.0, -90, false)],
+        q: 'Example 7 (p. 4-20): A uniform rod of mass 10 kg is supported at the centre of the rod. A force of 30 N is applied at 50 cm to the left of the pivot, while another force of 50 N is applied at 30 cm to the right of the pivot. Compute the moments due to the weight, the 30 N force, and the 50 N force about the centre of the rod.' },
+
+      // tab 3: the seesaw (Tutorial 4 A3: 4.0 m long, pivoted at its centre). x: metres from the pivot, left negative
+      a3: { tab: 3, name: 'Two children: where must B sit?', kids: [['A', 30, -2.0], ['B', 40, 1.0]],
+        q: 'Tutorial 4 A3: A seesaw of length 4.0 m is pivoted at its center. A child of mass 30 kg sits at one end. At what distance from the pivot must a second child of mass 40 kg sit to balance the seesaw?' },
+      equal: { tab: 3, name: 'Two children of equal mass', kids: [['A', 30, -2.0], ['B', 30, 1.0]],
+        q: 'Two children of the same mass, 30 kg each. A sits at the left end, 2.0 m from the pivot. Where must B sit to balance the seesaw?' },
+      three: { tab: 3, name: 'Three children', kids: [['A', 40, -1.5], ['B', 20, 1.0], ['C', 20, 2.0]],
+        q: 'Child A (40 kg) sits 1.5 m left of the pivot; B (20 kg) and C (20 kg) sit 1.0 m and 2.0 m right of it. Do the moments balance?' },
+
+      // tab 4: a beam in equilibrium with one or two unknown forces. points: where moments can be taken
+      ex5: { tab: 4, name: 'Light rod: find F', L: 0.46, unit: 'cm', snap: 0.01, supports: [['tri', 0.18]], labels: [[0.18, 'pivot']],
+        forces: [F_('F', 0, 0.03, -90, true, { unknown: true, sym: 'F' }), F_('k1', 5, 0.28, 90, true, { drag: true }), F_('k2', 20, 0.43, -90, true, { drag: true })],
+        points: [['pivot', 'the pivot', 0.18]], marks: [0.03, 0.18, 0.28, 0.43],
+        q: 'Example 5 (p. 4-14): A light uniform rod is balanced (in equilibrium) as shown. Calculate the force <i>F</i>.' },
+      ex9: { tab: 4, name: 'Find the weight of a rod', L: 2.0, unit: 'cm', snap: 0.01, supports: [['tri', 0.2]], labels: [[0.2, 'A']],
+        forces: [F_('k1', 4, 0, -90, false, { drag: true }), F_('W', 0, 1.0, -90, false, { unknown: true, sym: 'W', weight: true })],
+        points: [['A', 'point A', 0.2]], marks: [0, 0.2, 1.0],
+        q: 'Example 9 (p. 4-23): A uniform rod 2 m long is supported at point A, 20 cm from one end. It is balanced when a load of 4 N is suspended from the same end. Calculate the weight of the rod.' },
+      ex10: { tab: 4, name: 'Beam on a hinge: P and R', L: 2.5, unit: 'm', snap: 0.1, supports: [['hinge', 0]], ends: ['A', 'B'],
+        forces: [F_('R', 0, 0, 90, false, { unknown: true, sym: 'R' }), F_('w', 80, 1.0, -90, false, { weight: true }), F_('P', 0, 2.5, 90, false, { unknown: true, sym: 'P' })],
+        points: [['A', 'point A (the hinge)', 0], ['cg', 'the centre of gravity', 1.0], ['B', 'point B', 2.5]], marks: [0, 1.0, 2.5],
+        q: 'Example 10 (p. 4-25): A non-uniform beam AB of length 2.5 m and weight 80 N is attached to a fixed hinge at A. Its centre of gravity is 1 m from the hinge. Determine (a) the vertical force <i>P</i> that will keep the beam horizontal, (b) the reaction <i>R</i> at the hinge.' },
+      ex11: { tab: 4, name: 'Rod on two supports', L: 7, unit: 'm', snap: 0.1, supports: [['tri', 1, 'F'], ['tri', 5, 'G']], ends: ['A', 'B'],
+        forces: [F_('R', 0, 1, 90, false, { unknown: true, sym: 'R' }), F_('w', 240, 3.5, -90, false, { weight: true }), F_('S', 0, 5, 90, false, { unknown: true, sym: 'S' })],
+        points: [['F', 'point F', 1], ['G', 'point G', 5], ['A', 'end A', 0], ['B', 'end B', 7]], marks: [0, 1, 3.5, 5, 7],
+        q: 'Example 11 (pp. 4-26, 4-27): A straight uniform rod AB of length 7 m and weight 240 N rests on two supports F and G as shown. Find the reactions <i>R</i> and <i>S</i> at the supports.' },
+      a4: { tab: 4, name: 'Rod held up at one end', L: 2.0, unit: 'm', snap: 0.1, supports: [['tri', 0]], labels: [[0, 'pivot']],
+        forces: [F_('w', 10, 1.0, -90, false, { weight: true }), F_('F', 0, 2.0, -90, true, { unknown: true, sym: 'F' })],
+        points: [['pivot', 'the pivot', 0]], marks: [0, 1.0, 2.0],
+        q: 'Tutorial 4 A4: A uniform rod of weight 10 N and length 2.0 m is pivoted at one end and kept horizontal by applying an upward force at the other end. What is the magnitude of this force?' },
+      b2: { tab: 4, name: 'Boy on a hinged board', L: 5, unit: 'm', snap: 0.1, supports: [['hinge', 0], ['rope', 3]], ends: ['A', 'D'], labels: [[3, 'B']],
+        forces: [F_('w', 48, 2.5, -90, false, { weight: true }), F_('T', 0, 3, 90, false, { unknown: true, sym: 'T' }), F_('boy', 500, 5, 90, true, { drag: true, name: 'boy' })],
+        points: [['A', 'point A (the hinge)', 0]], marks: [0, 2.5, 3, 5],
+        q: 'Tutorial 4 B2: A uniform board AD is 5.00 m long. It is hinged at A and is supported by a vertical rope at B, 3.00 m from A. A boy of weight 500 N stands at the end D of the board. Find the tension <i>T</i> in the rope when (i) the weight of the board is neglected, (ii) the board has a weight of 48.0 N. (b) As the boy walks from D to B, describe how the tension in the rope will change.' },
+      b3: { tab: 4, name: 'Beam hung by two ropes', L: 6, unit: 'm', snap: 0.1, supports: [['rope', 2], ['rope', 5]], ends: ['A', 'B'],
+        forces: [F_('TA', 0, 2, 90, false, { unknown: true, sym: 'T<sub>A</sub>' }), F_('w', 300, 3, -90, false, { weight: true }), F_('TB', 0, 5, 90, false, { unknown: true, sym: 'T<sub>B</sub>' })],
+        points: [['pA', 'where TA acts', 2], ['pB', 'where TB acts', 5], ['A', 'end A', 0], ['B', 'end B', 6]], marks: [0, 2, 3, 5, 6],
+        q: 'Tutorial 4 B3: A uniform beam AB is suspended by two ropes as shown. The beam is 6.00 m long and has a weight of 300 N. Calculate the tensions <i>T</i><sub>A</sub> and <i>T</i><sub>B</sub>.' }
+    };
+    const CUSTOM_NAME = { 1: 'Your own force', 2: 'Your own forces', 3: 'Your own seesaw', 4: 'Your own positions' };
+
+    /* ---------------- the state ---------------- */
+    let S = { scen: 'ex1a', base: 'ex1a', step: 1, custom: false };
+    let B = null;   // tabs 1, 2, 4: { L, xp, kind, snap, forces, ... }
+    let K = null;   // tab 3: the children
+    const sim = { t: 0, running: false, last: null, tilt: 0, om: 0, done: false };
+    let hl = {}, feat = {};
+
+    function loadScenario(id) {
+      const P = PRESETS[id];
+      S.scen = id; S.custom = id === 'custom';
+      if (!S.custom) {
+        S.base = id;
+        if (P.tab === 3) K = P.kids.map(([nm, m, x]) => ({ id: nm, m, x, color: { A: '#2563eb', B: '#16a34a', C: '#d97706' }[nm] }));
+        else {
+          B = JSON.parse(JSON.stringify(Object.assign({}, P, { q: undefined })));
+          B.unit = B.unit || 'm';
+          if (P.tab === 4) { B.points = P.points.map(([pid, name, x]) => ({ id: pid, name, x })); B.about = B.points[0].id; }
+        }
+        $('question').innerHTML = P.q;
+      } else $('question').innerHTML = 'Your own values. Choose a scenario from the menu to go back to the example.';
+      S.step = freeMode ? maxStep() : 1;
+      resetSeesaw();
+    }
+    function maxStep() {
+      if (currentTab === 1 || currentTab === 2) return 4;
+      if (currentTab === 4 && B) { const s = solve4(); return s.blocked ? 2 : s.other ? 5 : 4; }
+      return 1;
     }
 
-    function setLocked(v) {
-      locked = v;
-      el('lockBtn').textContent = locked ? 'Remove the lock' : 'Lock it level again';
-      el('lockBtn').className = locked ? '' : 'locked';
-      el('lockState').textContent = locked ? 'Locked at the horizontal level: the moments are calculated for this position.' : 'Free to turn.';
+    /* ---------------- tab 4: the principle of moments, solved ---------------- */
+    // the vertical component of a force, upward positive, per newton
+    const upOf = f => Math.sign(sinD(dirOf(f)));
+    function solve4() {
+      const pt = B.points.find(p => p.id === B.about), xp = pt.x;
+      const unk = B.forces.filter(f => f.unknown);
+      // a force's moment per newton about xp; an unknown with no distance drops out of the equation
+      const c = f => clean(-(f.x - xp) * upOf(f));
+      const inEq = unk.filter(f => Math.abs(c(f)) > 1e-9);
+      let known = 0;
+      B.forces.filter(f => !f.unknown).forEach(f => { known += c(f) * f.F; });
+      known = clean(known);
+      const out = { pt, xp, unk, inEq, known, c, blocked: inEq.length > 1, vals: {} };
+      if (inEq.length !== 1) return out;
+      const u = inEq[0];
+      out.u = u; out.vals[u.id] = clean(-known / c(u));
+      const other = unk.find(f => f !== u);
+      if (other) {
+        // the sum of the forces is zero too (p. 4-24): what the others leave over, the second unknown supplies
+        let sum = 0;
+        B.forces.forEach(f => { if (f !== other) sum += upOf(f) * (f.unknown ? out.vals[f.id] : f.F); });
+        out.other = other; out.vals[other.id] = clean(-sum / upOf(other));
+      }
+      return out;
     }
+    const symOf = f => `<i>${f.sym.replace(/<sub>/, '</i><sub>').replace(/<\/sub>/, '</sub><i>')}</i>`.replace('<i></i>', '');
 
-    const active = () => kids.filter(k => k.id !== 'C' || useC());
-    const mass = k => Math.max(1, parseFloat(k.massEl.value) || 1);
-
-    function moments() {
+    /* ---------------- tab 3: the seesaw ---------------- */
+    const HALF = 2.0, PIVOT_H = 0.5; // a 4.0 m seesaw (Tutorial 4 A3), pivot 0.5 m high
+    const MAX_TILT = Math.asin(PIVOT_H / HALF), RUN_END = 3;
+    const kidsOn = () => K.filter(k => k.id !== 'C' || K.length > 2);
+    // moments about the pivot with the plank tilted by tilt (clockwise +): each perpendicular distance is x cos(tilt)
+    function seesaw(tilt = sim.tilt) {
       let cw = 0, acw = 0;
-      for (const k of active()) { const M = mass(k) * G * k.x; if (M > 0) cw += M; else acw -= M; }
-      const net = cw - acw;
-      const balanced = Math.abs(net) < Math.max(0.5, 0.005 * Math.max(cw, acw));
-      return { cw, acw, net, balanced };
+      for (const k of kidsOn()) { const M = clean(k.m * G * k.x * Math.cos(tilt)); if (M > 0) cw += M; else acw -= M; }
+      const net = clean(cw - acw);
+      return { cw: clean(cw), acw: clean(acw), net, balanced: Math.abs(net) < 1e-6 };
     }
-
-    // ---------- drawing ----------
-    let geo = null;
-    function setup() {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      const W = Math.round(rect.width * dpr), H = Math.round(rect.height * dpr);
-      if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
-      const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      return { ctx, w: rect.width, h: rect.height };
+    function resetSeesaw() { sim.t = 0; sim.running = false; sim.last = null; sim.tilt = 0; sim.om = 0; sim.done = false; }
+    // the plank turns about the pivot: angular acceleration = net moment ÷ (sum of m x²); it stops when an end touches the ground
+    function stepSeesaw(dt) {
+      const I = kidsOn().reduce((a, k) => a + k.m * k.x * k.x, 0) || 1;
+      const n = 20, h = dt / n;
+      for (let i = 0; i < n; i++) {
+        const lv = seesaw(0).net, a = lv * Math.cos(sim.tilt) / I;
+        sim.om += a * h; sim.tilt += sim.om * h;
+        if (Math.abs(sim.tilt) >= MAX_TILT) { sim.tilt = Math.sign(sim.tilt) * MAX_TILT; sim.om = 0; return true; }
+      }
+      return false;
     }
+    function frame(ts) {
+      if (!sim.running) return;
+      if (sim.last === null) sim.last = ts;
+      // a first rAF timestamp can be earlier than the one stored: never step backwards
+      const dt = Math.max(0, Math.min(0.05, (ts - sim.last) / 1000)); sim.last = ts;
+      sim.t = Math.min(RUN_END, sim.t + dt);
+      const hit = stepSeesaw(dt);
+      if (hit || sim.t >= RUN_END - 1e-9) { sim.running = false; sim.done = true; }
+      update();
+      if (sim.running) requestAnimationFrame(frame);
+    }
+    function start() {
+      if (sim.done) resetSeesaw();
+      sim.running = true; sim.last = null; update(); requestAnimationFrame(frame);
+    }
+    // jump to the end of the run at once (the checks and the key features use it)
+    function runToEnd() {
+      resetSeesaw();
+      for (let i = 0; i < RUN_END * 200; i++) { sim.t += 0.005; if (stepSeesaw(0.005)) break; }
+      sim.t = Math.min(RUN_END, sim.t); sim.done = true; sim.running = false;
+    }
+    $('startBtn').addEventListener('click', start);
+    $('pauseBtn').addEventListener('click', () => {
+      if (sim.running) { sim.running = false; sim.last = null; update(); }
+      else if (sim.t > 0 && !sim.done) start();
+    });
+    $('resetBtn').addEventListener('click', () => { resetSeesaw(); update(); });
 
-    function arrow(ctx, x1, y1, x2, y2, color, lw = 3, head = 10) {
+    /* ---------------- drawing helpers ---------------- */
+    // what the canvas drew, for the checks: every label's box and every arrow, with the pane they belong to
+    window.__pim = { labels: [], arrows: [], panes: [], handles: [] };
+    function setup(cv) {
+      const r = cv.getBoundingClientRect();
+      if (r.width < 20 || r.height < 20) return null; // hidden: never draw at no size
+      const dpr = window.devicePixelRatio || 1, cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
+      if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+      const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, r.width, r.height);
+      return { ctx, W: r.width, H: r.height };
+    }
+    // Canvas text with <i>, <sub> and <sup> runs, so symbols of physical quantities are italic, as in the notes.
+    // Honours ctx.textAlign; returns the width. measureOnly = true draws nothing.
+    function richText(ctx, s, x, y, measureOnly) {
+      const base = ctx.font, m = base.match(/([\d.]+)px/), size = m ? +m[1] : 12;
+      const runs = []; let it = false, sub = 0;
+      for (const tok of String(s).split(/(<\/?(?:i|sub|sup)>)/)) {
+        if (tok === '<i>') it = true; else if (tok === '</i>') it = false;
+        else if (tok === '<sub>') sub = 1; else if (tok === '<sup>') sub = -1;
+        else if (tok === '</sub>' || tok === '</sup>') sub = 0;
+        else if (tok) {
+          let f = sub ? base.replace(/[\d.]+px/, (size * 0.75).toFixed(1) + 'px') : base;
+          if (it) f = 'italic ' + f;
+          ctx.font = f; runs.push({ t: tok, f, sub, w: ctx.measureText(tok).width });
+        }
+      }
+      ctx.font = base;
+      const w = runs.reduce((a, r) => a + r.w, 0);
+      if (measureOnly) return w;
+      const align = ctx.textAlign;
+      let cx = align === 'center' ? x - w / 2 : (align === 'right' || align === 'end') ? x - w : x;
+      ctx.textAlign = 'left';
+      for (const r of runs) { ctx.font = r.f; ctx.fillText(r.t, cx, y + (r.sub === 1 ? size * 0.3 : r.sub === -1 ? -size * 0.4 : 0)); cx += r.w; }
+      ctx.textAlign = align; ctx.font = base;
+      return w;
+    }
+    let PANE = 'scene', CW = 1e9, CH = 1e9; // the pane name for the checks; the canvas size a label must stay inside
+    function arrow(ctx, x1, y1, x2, y2, color, lw = 3.5, head = 11, dash = null, record = true) {
+      const len = Math.hypot(x2 - x1, y2 - y1); if (len < 1.5) return;
+      if (record) __pim.arrows.push({ pane: PANE, x1, y1, x2, y2 });
+      const a = Math.atan2(y2 - y1, x2 - x1), hd = Math.min(head, len * 0.6);
       ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
-      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-      const a = Math.atan2(y2 - y1, x2 - x1);
-      ctx.beginPath(); ctx.moveTo(x2, y2);
-      ctx.lineTo(x2 - head * Math.cos(a - 0.45), y2 - head * Math.sin(a - 0.45));
-      ctx.lineTo(x2 - head * Math.cos(a + 0.45), y2 - head * Math.sin(a + 0.45));
-      ctx.closePath(); ctx.fill();
+      if (dash) ctx.setLineDash(dash);
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - Math.cos(a) * hd * 0.8, y2 - Math.sin(a) * hd * 0.8); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - hd * Math.cos(a - 0.45), y2 - hd * Math.sin(a - 0.45)); ctx.lineTo(x2 - hd * Math.cos(a + 0.45), y2 - hd * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill();
     }
-
-    function drawLock(ctx, x, y) {
-      // a small padlock on a prop under the right end of the plank
-      ctx.fillStyle = '#475569';
-      ctx.fillRect(x - 3, y, 6, geo.groundY - y);
-      ctx.strokeStyle = '#334155'; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(x, y - 22, 7, Math.PI, 0); ctx.stroke();
-      ctx.fillStyle = '#f59e0b'; ctx.fillRect(x - 10, y - 22, 20, 15);
-      ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.arc(x, y - 15, 2.5, 0, Math.PI * 2); ctx.fill();
+    // a label's box before it is drawn: x/y is the middle of the card's left, centre or right edge
+    function labelBox(ctx, lines, x, y, align, size) {
+      ctx.font = `bold ${size}px Arial`;
+      const w = Math.max(...lines.map(t => richText(ctx, t, 0, 0, true))), lh = size * 1.6 + 1, h = lines.length * lh - 1;
+      const x0 = Math.max(4, Math.min(CW - w - 4, align === 'center' ? x - w / 2 : align === 'right' ? x - w : x));
+      const y0 = Math.max(2, Math.min(CH - h - 2, y - size * 0.8));
+      return { x: x0 - 3, y: y0, w: w + 6, h, lh, tx: x0, size };
     }
+    const hitBox = (a, b, pad = 1) => Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) > pad && Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) > pad;
+    function crossesArrow(box) {
+      return __pim.arrows.some(a => { for (let k = 0; k <= 24; k++) { const px = a.x1 + (a.x2 - a.x1) * k / 24, py = a.y1 + (a.y2 - a.y1) * k / 24;
+        if (px > box.x + 2 && px < box.x + box.w - 2 && py > box.y + 2 && py < box.y + box.h - 2) return true; } return false; });
+    }
+    // labels on white cards, one card per line; nudge: +1 moves down, −1 up, to dodge labels and arrows already drawn
+    function label(ctx, lines, x, y, color, align = 'center', size = 12, nudge = 0) {
+      if (!Array.isArray(lines)) lines = [lines];
+      let b = labelBox(ctx, lines, x, y, align, size);
+      if (nudge) for (let i = 0; i < 14 && (__pim.labels.some(l => l.pane === PANE && hitBox(l, b)) || crossesArrow(b)); i++) b = labelBox(ctx, lines, x, b.y + size * 0.8 + nudge * 8, align, size);
+      lines.forEach((t, i) => {
+        const card = { pane: PANE, text: t.replace(/<[^>]+>/g, ''), x: b.x, y: b.y + i * b.lh, w: b.w, h: size * 1.6 };
+        ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fillRect(card.x, card.y, card.w, card.h);
+        ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.font = `bold ${size}px Arial`; richText(ctx, t, b.tx, card.y + size * 0.8);
+        ctx.textBaseline = 'alphabetic';
+        __pim.labels.push(card);
+      });
+      return b;
+    }
+    function dot(ctx, x, y, r = 5, color = '#0f172a') { ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); }
+    // a dimension line with a tick at each end and its length on a card in the middle
+    function dim(ctx, x1, x2, y, text, color = '#334155', size = 11) {
+      if (Math.abs(x2 - x1) < 2) return;
+      ctx.strokeStyle = color; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.moveTo(x1, y - 5); ctx.lineTo(x1, y + 5); ctx.moveTo(x2, y - 5); ctx.lineTo(x2, y + 5); ctx.stroke();
+      label(ctx, text, (x1 + x2) / 2, y, color, 'center', size);
+    }
+    // a curved arrow round a point: the turning direction (clockwise or anti-clockwise)
+    function turnArrow(ctx, cx, cy, r, clockwise, color) {
+      const a0 = -Math.PI * 0.85, a1 = -Math.PI * 0.15;
+      const s = clockwise ? a0 : a1, e = clockwise ? a1 : a0;
+      ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, r, s, e, !clockwise); ctx.stroke();
+      const tx = cx + r * Math.cos(e), ty = cy + r * Math.sin(e), tang = e + (clockwise ? Math.PI / 2 : -Math.PI / 2);
+      ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(tx + 9 * Math.cos(tang), ty + 9 * Math.sin(tang));
+      ctx.lineTo(tx + 7 * Math.cos(tang + 2.3), ty + 7 * Math.sin(tang + 2.3)); ctx.lineTo(tx + 7 * Math.cos(tang - 2.3), ty + 7 * Math.sin(tang - 2.3)); ctx.closePath(); ctx.fill();
+    }
+    function tri(ctx, x, y, color = '#334155') { ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 12, y + 22); ctx.lineTo(x + 12, y + 22); ctx.closePath(); ctx.fill(); }
 
+    /* ---------------- drawing: one function per tab ---------------- */
+    let geo = null;
     function draw() {
-      const { ctx, w, h } = setup();
-      ctx.clearRect(0, 0, w, h);
-      const groundY = h - 34;
-      const px = Math.min((w - 60) / (2 * HALF), 150); // px per metre
-      const pivotH = Math.min(104, HALF * px * 0.35); // keeps the resting tilt near 20 degrees at any width
-      const cx = w / 2, cy = groundY - pivotH;
-      const maxTilt = Math.asin(Math.min(0.9, pivotH / (HALF * px)));
-      geo = { px, cx, cy, maxTilt, groundY };
-      const ux = Math.cos(tilt), uy = Math.sin(tilt); // beam direction (clockwise tilt = right end down)
-      const onBeam = (x, up = 0) => ({ x: cx + ux * x * px + uy * up, y: cy + uy * x * px - ux * up });
-
-      // ground
-      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, groundY, w, h - groundY);
-      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(w, groundY); ctx.stroke();
-
-      // pivot
-      ctx.fillStyle = '#334155';
-      ctx.beginPath(); ctx.moveTo(cx, cy + 4); ctx.lineTo(cx - 26, groundY); ctx.lineTo(cx + 26, groundY); ctx.closePath(); ctx.fill();
-
-      // the lock: props under both ends hold the plank level
-      if (locked && Math.abs(tilt) < 0.01) {
-        [-1, 1].forEach(sd => { const e = onBeam(sd * (HALF - 0.35), -7); drawLock(ctx, e.x, e.y); });
-      }
-
-      // plank
-      const a = onBeam(-HALF), b = onBeam(HALF);
-      ctx.strokeStyle = '#a16207'; ctx.lineWidth = 12; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.lineCap = 'butt';
-      // metre ticks
-      ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1.5;
-      for (let m = -HALF + 1; m < HALF; m++) { const p = onBeam(m, -4), q = onBeam(m, 4); ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke(); }
-
-      const kidsNow = active();
-      const maxW = Math.max(...kidsNow.map(k => mass(k) * G));
-      const figH = k => 44 + Math.sqrt(mass(k)) * 3; // a heavier child is drawn a little taller
-      const maxFig = Math.max(...kidsNow.map(figH));
-      const showDist = locked && Math.abs(tilt) < 0.01;
-      const narrow = w < 600; // on a phone the distances are shown in the position boxes instead
-      // distances from the pivot: one row per child ABOVE the children, clear of the weight labels below the plank
-      if (!narrow && showDist) {
-        const topUp = 6 + maxFig + 26 + (kidsNow.length - 1) * 18 + 4;
-        // (onBeam's second argument is the height ABOVE the plank)
-        const g0 = onBeam(0, 6), g1 = onBeam(0, topUp);
-        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
-        ctx.beginPath(); ctx.moveTo(g0.x, g0.y); ctx.lineTo(g1.x, g1.y); ctx.stroke(); ctx.setLineDash([]);
-        kidsNow.forEach((k, i) => {
-          const up = 6 + maxFig + 26 + i * 18;
-          const p0 = onBeam(0, up), p1 = onBeam(k.x, up);
-          ctx.strokeStyle = k.color; ctx.lineWidth = 1.5;
-          ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
-          ctx.fillStyle = k.color;
-          [p0, p1].forEach(q => { ctx.beginPath(); ctx.moveTo(q.x, q.y - 4); ctx.lineTo(q.x, q.y + 4); ctx.stroke(); });
-          // label just above the middle of its own line, so rows never collide
-          const mid = onBeam(k.x / 2, up + 7);
-          ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-          ctx.fillText(`${k.id}: ${Math.abs(k.x).toFixed(2)} m`, mid.x, mid.y);
-          ctx.textBaseline = 'alphabetic';
-        });
-      }
-      // pass 1: weight arrows from each child's centre of gravity (drawn first so the children sit on top of them)
-      kidsNow.forEach(k => {
-        const m = mass(k), W = m * G, H = figH(k);
-        const out = k.x >= 0 ? 1 : -1;
-        const cg = onBeam(k.x, 6 + H * 0.45);
-        const len = Math.min(H * 0.45 + 26 + 50 * W / maxW, groundY - 8 - cg.y);
-        arrow(ctx, cg.x, cg.y, cg.x, cg.y + len, '#7c3aed', 3, 10);
-        // "W = 300 N" with the symbol W in italics ("300 N" alone on a phone)
-        const sym = narrow ? '' : 'W', rest = narrow ? `${W.toFixed(0)} N` : ` = ${W.toFixed(0)} N`;
-        ctx.font = 'italic bold 12px Arial'; const sw = ctx.measureText(sym).width;
-        ctx.font = 'bold 12px Arial'; const tw = sw + ctx.measureText(rest).width;
-        const lx = out > 0 ? cg.x - 8 - tw : cg.x + 8; // inner side of the arrow
-        ctx.fillStyle = 'rgba(248,251,255,0.9)'; ctx.fillRect(lx - 3, cg.y + len - 15, tw + 6, 16);
-        ctx.fillStyle = '#5b21b6'; ctx.textAlign = 'left';
-        ctx.font = 'italic bold 12px Arial'; ctx.fillText(sym, lx, cg.y + len - 3);
-        ctx.font = 'bold 12px Arial'; ctx.fillText(rest, lx + sw, cg.y + len - 3);
-      });
-      // pass 2: the children, as stick figures standing on the plank, with name and mass above the head
-      kidsNow.forEach(k => {
-        const m = mass(k), H = figH(k);
-        const base = onBeam(k.x, 6);
-        ctx.save(); ctx.translate(base.x, base.y); ctx.rotate(tilt);
-        ctx.globalAlpha = drag && drag.k === k ? 0.75 : 1;
-        ctx.strokeStyle = k.color; ctx.fillStyle = k.color; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-        const hip = -H * 0.45, shoulder = -H * 0.74, headR = H * 0.12, headY = -H + headR;
-        ctx.beginPath();
-        ctx.moveTo(-H * 0.14, 0); ctx.lineTo(0, hip); ctx.lineTo(H * 0.14, 0);      // legs
-        ctx.moveTo(0, hip); ctx.lineTo(0, shoulder);                                // body
-        ctx.moveTo(-H * 0.2, -H * 0.5); ctx.lineTo(0, shoulder); ctx.lineTo(H * 0.2, -H * 0.5); // arms
-        ctx.stroke();
-        ctx.beginPath(); ctx.arc(0, headY, headR, 0, Math.PI * 2); ctx.fill();
-        ctx.globalAlpha = 1; ctx.lineCap = 'butt'; ctx.lineJoin = 'miter';
-        ctx.fillStyle = '#0f172a'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-        ctx.fillText(`${k.id} · ${m} kg`, 0, -H - 6);
-        ctx.restore();
-        k.hit = { x: base.x + uy * H / 2, y: base.y - ux * H / 2, r: H * 0.6 };
-      });
-
-      // what the seesaw does / will do
-      const mo = moments();
-      let msg, col;
-      if (locked) {
-        col = mo.balanced ? '#15803d' : '#b45309';
-        msg = mo.balanced ? ['Clockwise moments = anticlockwise moments.', 'Remove the lock to test it.'] : ['The moments are not equal.', 'Remove the lock to see what happens.'];
-      } else {
-        col = mo.balanced ? '#15803d' : '#b91c1c';
-        msg = [mo.balanced ? 'It stays level: the seesaw is balanced' : (mo.net > 0 ? 'Turns clockwise (right side goes down)' : 'Turns anticlockwise (left side goes down)')];
-      }
-      ctx.fillStyle = col; ctx.textAlign = 'center';
-      // one line on a wide screen, one line per sentence on a phone
-      if (w < 600) { ctx.font = 'bold 12px Arial'; msg.forEach((t, i) => ctx.fillText(t, w / 2, 18 + i * 16)); }
-      else { ctx.font = 'bold 14px Arial'; ctx.fillText(msg.join(' '), w / 2, 22); }
+      __pim = window.__pim = { labels: [], arrows: [], panes: [], handles: [] };
+      const c = setup(canvas); if (!c) return;
+      const { ctx, W, H } = c;
+      CW = W; CH = H; PANE = 'scene'; __pim.panes.push({ name: 'scene', x: 0, y: 0, w: W, h: H });
+      geo = null;
+      if (currentTab === 1 || currentTab === 2) drawOne(ctx, W, H);
+      else if (currentTab === 3) drawSeesaw(ctx, W, H);
+      else if (currentTab === 4) drawBeam(ctx, W, H);
+    }
+    // the beam across the canvas: px per metre, and where it sits
+    function fitBeam(W, H, padL, padR, by) {
+      const k = (W - padL - padR) / B.L;
+      return { k, X: x => padL + x * k, by };
+    }
+    function beamBar(ctx, g, color = '#64748b') {
+      ctx.fillStyle = color; ctx.fillRect(g.X(0), g.by - 4, B.L * g.k, 8);
     }
 
-    function updateReadout() {
-      const mo = moments();
-      const off = !locked;
-      ['acwCard', 'cwCard', 'netCard'].forEach(id => el(id).classList.toggle('off', off));
-      if (off) {
-        ['acwValue', 'cwValue', 'netValue'].forEach(id => { el(id).textContent = 'Lock it level to measure'; });
-        el('netCard').classList.remove('balanced', 'tipping');
-        el('stateValue').textContent = mo.balanced ? 'Yes: it stays level' : 'No: it turns';
-        el('stateCard').classList.toggle('balanced', mo.balanced); el('stateCard').classList.toggle('tipping', !mo.balanced);
+    /* tabs 1 and 2: one force (or a few) about a pivot */
+    function arrowLen(F, Fmax, narrow) { return (narrow ? 34 : 40) + (narrow ? 34 : 44) * (Fmax > 0 ? F / Fmax : 1); }
+    function forceEnds(f, g, len) {
+      const P = [g.X(f.x), g.by], b = [P[0] + len * cosD(f.body), P[1] - len * sinD(f.body)];
+      return f.head ? { a: b, b: P, free: b, P } : { a: P, b, free: b, P };
+    }
+    function forceColour(f, xp, st) {
+      if (currentTab === 1 || st < 2) return COL.F;
+      const M = momentOf(f, f.F, xp);
+      return M > 0 ? COL.cw : M < 0 ? COL.acw : COL.zero;
+    }
+    // where the perpendicular from the pivot meets a force's line of action (metres, y up)
+    function footOf(f, xp) {
+      const ux = cosD(f.body), uy = sinD(f.body), t = (xp - f.x) * ux;
+      return [f.x + t * ux, t * uy];
+    }
+    const angled = f => Math.abs(Math.abs(sinD(f.body)) - 1) > 1e-6;
+    // tabs 1 and 2: the beam AND every perpendicular drawn must fit, so the scale takes the height into account too
+    function arrowLens(narrow) {
+      const one = B.forces.length === 1, Fmax = Math.max(...B.forces.map(f => f.F), 1);
+      return B.forces.map(f => (one ? (narrow ? 78 : 96) : arrowLen(f.F, Fmax, narrow)));
+    }
+    function fitOne(W, H, narrow) {
+      // room at each end for the pivot's name and the curved turning arrow
+      const by = H * 0.5, lens = arrowLens(narrow);
+      let padL = narrow ? 46 : 70, padR = padL;
+      let x0 = 0, x1 = B.L, y0 = 0, y1 = 0;
+      B.forces.forEach(f => { if (currentTab === 1 || angled(f)) { const [fx, fy] = footOf(f, B.xp); x0 = Math.min(x0, fx); x1 = Math.max(x1, fx); y0 = Math.min(y0, fy); y1 = Math.max(y1, fy); } });
+      let g = null;
+      // an arrow that sticks out past the end of the beam needs room too: widen that side's margin and fit again
+      for (let pass = 0; pass < 3; pass++) {
+        const k = Math.min((W - padL - padR) / (x1 - x0), y1 > 1e-9 ? (by - 44) / y1 : Infinity, y0 < -1e-9 ? (H - by - 44) / -y0 : Infinity);
+        const ox = padL + (W - padL - padR - (x1 - x0) * k) / 2 - x0 * k;
+        g = { k, X: x => ox + x * k, by };
+        let needL = 0, needR = 0;
+        B.forces.forEach((f, i) => { const fx = g.X(f.x) + lens[i] * cosD(f.body); needL = Math.max(needL, 12 - fx); needR = Math.max(needR, fx - (W - 12)); });
+        if (needL < 0.5 && needR < 0.5) break;
+        padL += needL; padR += needR;
+      }
+      return g;
+    }
+    let frozen = null; // the scale stays put while a finger drags, so the pointer keeps hold of what it grabbed
+    function drawOne(ctx, W, H) {
+      const narrow = W < 560, sz = narrow ? 11 : 12, st = S.step, xp = B.xp, one = B.forces.length === 1;
+      const g = drag && frozen ? frozen : fitOne(W, H, narrow);
+      geo = g;
+      const P0 = g.X(xp);
+      // the beam, or a spanner round a nut (Example 2)
+      if (B.kind === 'nut') {
+        ctx.fillStyle = '#d6c7a1'; ctx.strokeStyle = '#8a7a52'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(P0, g.by - 9, B.L * g.k + 10, 18, 9); else ctx.rect(P0, g.by - 9, B.L * g.k + 10, 18); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(P0, g.by, 26, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#94a3b8'; ctx.strokeStyle = '#475569';
+        ctx.beginPath(); for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; ctx[i ? 'lineTo' : 'moveTo'](P0 + 15 * Math.cos(a), g.by + 15 * Math.sin(a)); } ctx.closePath(); ctx.fill(); ctx.stroke();
+        dot(ctx, P0, g.by, 4, '#0f172a');
+        label(ctx, 'nut (pivot)', P0, g.by + 44, '#334155', 'center', sz);
+      } else {
+        beamBar(ctx, g);
+        if (B.kind === 'point') { dot(ctx, P0, g.by, 7, '#0f172a'); label(ctx, B.pivotName || 'pivot', P0 + (xp > B.L / 2 ? 18 : -18), g.by + 4, '#0f172a', xp > B.L / 2 ? 'left' : 'right', sz + 1); }
+        else tri(ctx, P0, g.by + 4);
+      }
+      const lens = arrowLens(narrow), ends = B.forces.map((f, i) => forceEnds(f, g, lens[i]));
+      // the distances along the beam from the pivot, on the side away from the arrows
+      const above = B.forces.every(f => sinD(f.body) <= 0.2);
+      if (one) {
+        const f = B.forces[0], e = ends[0], r = Math.abs(f.x - xp);
+        if (r > 1e-9) dim(ctx, Math.min(P0, e.P[0]), Math.max(P0, e.P[0]), above ? g.by - 28 : g.by + 62, lenTxt(r, B.unit), '#334155', sz);
+      } else {
+        // multi-force: the gaps between the pivot and each force, in order (as the notes mark them)
+        const xs = [xp, ...B.forces.map(f => f.x)].sort((a, b) => a - b).filter((x, i, a) => i === 0 || x - a[i - 1] > 1e-9);
+        for (let i = 1; i < xs.length; i++) dim(ctx, g.X(xs[i - 1]), g.X(xs[i]), g.by - (above ? 26 : 0) + (above ? 0 : 62), lenTxt(xs[i] - xs[i - 1], B.unit), '#334155', sz);
+      }
+      // the line of action, dashed, through the point where F acts: tab 1 from step 2; tab 2 with d (step 3) for a force at an angle
+      B.forces.forEach((f, i) => {
+        const e = ends[i];
+        if ((currentTab === 1 && st >= 2) || (currentTab === 2 && st >= 3 && angled(f))) {
+          ctx.strokeStyle = COL.loa; ctx.lineWidth = 1.5; ctx.setLineDash([6, 5]);
+          ctx.beginPath(); ctx.moveTo(e.P[0] - 2000 * cosD(f.body), e.P[1] + 2000 * sinD(f.body)); ctx.lineTo(e.P[0] + 2000 * cosD(f.body), e.P[1] - 2000 * sinD(f.body)); ctx.stroke(); ctx.setLineDash([]);
+        }
+      });
+      // the perpendicular distance: tab 1 from step 3; tab 2 for a force at an angle, from step 3
+      B.forces.forEach((f, i) => { if (st >= 3 && (currentTab === 1 || Math.abs(Math.abs(sinD(f.body)) - 1) > 1e-6)) drawPerp(ctx, f, ends[i], g, P0, sz, narrow); });
+      // the angle between the force and the beam, for a force at an angle
+      B.forces.forEach((f, i) => {
+        const e = ends[i], th = thetaOf(f, xp), r = Math.abs(f.x - xp);
+        if (th < 1 || th > 179 || r < 1e-9 || (!one && !angled(f))) return;
+        const toP = f.x > xp + 1e-9 ? 180 : 0, a0 = -toP * RAD, a1 = -f.body * RAD;
+        if (Math.abs(th - 90) < 1e-6) {
+          // a right angle: a small square between the beam (towards the pivot) and the arrow
+          const ux = cosD(toP), uy = -sinD(toP), vx = cosD(f.body), vy = -sinD(f.body), s = 10;
+          ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.2; ctx.beginPath();
+          ctx.moveTo(e.P[0] + ux * s, e.P[1] + uy * s); ctx.lineTo(e.P[0] + ux * s + vx * s, e.P[1] + uy * s + vy * s); ctx.lineTo(e.P[0] + vx * s, e.P[1] + vy * s); ctx.stroke();
+          return;
+        }
+        let d = a1 - a0; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+        ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(e.P[0], e.P[1], 24, a0, a0 + d, d < 0); ctx.stroke();
+        const am = a0 + d / 2;
+        label(ctx, `${plain(th)}°`, e.P[0] + 40 * Math.cos(am), e.P[1] + 40 * Math.sin(am), '#334155', 'center', sz, Math.sin(am) > 0 ? 1 : -1);
+      });
+      // the forces, then their labels: value, then (tab 2) the direction word or the moment
+      B.forces.forEach((f, i) => {
+        const e = ends[i], col = forceColour(f, xp, st);
+        arrow(ctx, e.a[0], e.a[1], e.b[0], e.b[1], col, 3.5, 11);
+        __pim.handles.push({ id: f.id, kind: 'pt', x: e.P[0], y: e.P[1] });
+        if (one) __pim.handles.push({ id: f.id, kind: 'tip', x: e.free[0], y: e.free[1] });
+      });
+      // the pivot's name beside its triangle, clear of any force acting at the pivot
+      if (B.kind === 'pivot') label(ctx, 'pivot', P0 + 15, g.by + 22, '#334155', 'left', sz, 1);
+      B.forces.forEach((f, i) => {
+        const e = ends[i], col = forceColour(f, xp, st), M = momentOf(f, f.F, xp);
+        const name = f.weight ? `<i>W</i> = ${f3(f.F)} N` : one ? `<i>F</i> = ${f3(f.F)} N` : `${f3(f.F)} N`;
+        const lines = [name];
+        if (currentTab === 2 && st === 2) lines.push(M > 0 ? 'clockwise' : M < 0 ? 'anti-clockwise' : 'no moment');
+        if (currentTab === 2 && st >= 3) lines.push(`<i>M</i> = ${sgn(M)} N m`);
+        const up = e.free[1] < e.P[1] - 1, vx = e.free[0] - e.P[0], vy = e.free[1] - e.P[1], vl = Math.hypot(vx, vy) || 1;
+        // beyond the free end of the arrow, or beside it when the arrow lies near the beam
+        const lx = e.free[0] + vx / vl * 12, ly = e.free[1] + vy / vl * 14 + (up ? -8 : 8);
+        label(ctx, lines, lx, ly + (up ? -(lines.length - 1) * (sz * 1.6 + 1) : 0), col, Math.abs(vx) / vl > 0.6 ? (vx > 0 ? 'left' : 'right') : 'center', sz, up ? -1 : 1);
+      });
+      // tab 2, step 4: which way the beam turns
+      if (currentTab === 2 && st >= 4) {
+        const net = B.forces.reduce((a, f) => a + momentOf(f, f.F, xp), 0);
+        if (Math.abs(net) > 1e-9) turnArrow(ctx, P0, g.by, 34, net > 0, net > 0 ? COL.cw : COL.acw);
+        // the result goes along the bottom: the top is where upward arrows and their labels are
+        const t = Math.abs(net) < 1e-9 ? 'Σ<i>M</i> = 0: the rod does not turn' : `Σ<i>M</i> = ${sgn(net)} N m: turns ${net > 0 ? 'clockwise' : 'anti-clockwise'}`;
+        label(ctx, t, W / 2, H - 14, Math.abs(net) < 1e-9 ? COL.zero : net > 0 ? COL.cw : COL.acw, 'center', sz, -1);
+      }
+      if (currentTab === 1 && st >= 4) {
+        const f = B.forces[0], d = perpOf(f, xp);
+        label(ctx, `<i>M</i> = <i>F</i> × <i>d</i> = ${f3(f.F)} × ${f3(d)} = ${f3(f.F * d)} N m`, W / 2, H - 14, '#0f172a', 'center', sz, -1);
+      }
+    }
+    function drawPerp(ctx, f, e, g, P0, sz, narrow) {
+      const d = perpOf(f, B.xp), P = e.P, O = [P0, g.by];
+      if (d < 1e-9) {
+        label(ctx, '<i>d</i> = 0: the line of action passes through the pivot', CW / 2, CH - 40, COL.d, 'center', sz, -1);
         return;
       }
-      el('acwValue').textContent = `${mo.acw.toFixed(0)} N m`;
-      el('cwValue').textContent = `${mo.cw.toFixed(0)} N m`;
-      el('netValue').textContent = `${mo.net > 0 ? '+' : ''}${mo.net.toFixed(0)} N m`;
-      el('stateValue').textContent = mo.balanced ? 'Yes' : 'No';
-      ['netCard', 'stateCard'].forEach(id => { el(id).classList.toggle('balanced', mo.balanced); el(id).classList.toggle('tipping', !mo.balanced); });
+      const ux = cosD(f.body), uy = -sinD(f.body), t = (O[0] - P[0]) * ux + (O[1] - P[1]) * uy;
+      const foot = [P[0] + t * ux, P[1] + t * uy];
+      if (Math.abs(foot[1] - O[1]) < 2) {
+        // the force is at right angles to the beam: d lies along the beam, so draw it as a dimension, with dashed guides
+        // a row of its own, clear of the grey distance along the beam
+        const y = sinD(f.body) > 0.2 ? g.by + 96 : g.by - 60;
+        ctx.strokeStyle = COL.loa; ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(O[0], g.by); ctx.lineTo(O[0], y); ctx.moveTo(P[0], g.by); ctx.lineTo(P[0], y); ctx.stroke(); ctx.setLineDash([]);
+        arrow(ctx, (O[0] + P[0]) / 2, y, O[0], y, COL.d, 2, 8); arrow(ctx, (O[0] + P[0]) / 2, y, P[0], y, COL.d, 2, 8);
+        label(ctx, `<i>d</i> = ${f3(d)} m`,(O[0] + P[0]) / 2, y + (sinD(f.body) > 0.2 ? 16 : -16), COL.d, 'center', sz, sinD(f.body) > 0.2 ? 1 : -1);
+        return;
+      }
+      const mx = (O[0] + foot[0]) / 2, my = (O[1] + foot[1]) / 2;
+      arrow(ctx, mx, my, O[0], O[1], COL.d, 2, 8); arrow(ctx, mx, my, foot[0], foot[1], COL.d, 2, 8);
+      // the right angle where d meets the line of action
+      const vx = (O[0] - foot[0]) / (Math.hypot(O[0] - foot[0], O[1] - foot[1]) || 1), vy = (O[1] - foot[1]) / (Math.hypot(O[0] - foot[0], O[1] - foot[1]) || 1);
+      const sx = Math.sign(t) || 1, s = 9;
+      ctx.strokeStyle = COL.d; ctx.lineWidth = 1.2; ctx.beginPath();
+      ctx.moveTo(foot[0] + vx * s, foot[1] + vy * s); ctx.lineTo(foot[0] + vx * s - ux * s * sx, foot[1] + vy * s - uy * s * sx); ctx.lineTo(foot[0] - ux * s * sx, foot[1] - uy * s * sx); ctx.stroke();
+      // the label beside the middle of d, on the side away from the beam
+      const nx = -vy, ny = vx, side = ny < 0 ? 1 : -1;
+      label(ctx, `<i>d</i> = ${f3(d)} m`, mx + nx * 16 * side, my + ny * 16 * side, COL.d, nx * side > 0.3 ? 'left' : nx * side < -0.3 ? 'right' : 'center', sz, my < g.by ? -1 : 1);
     }
 
-    // ---------- interaction ----------
+    /* tab 3: the seesaw */
+    function drawSeesaw(ctx, W, H) {
+      const narrow = W < 600, sz = narrow ? 11 : 12;
+      const groundY = H - 34, px = Math.min((W - 60) / (2 * HALF), 150);
+      const pivotH = PIVOT_H * px, cx = W / 2, cy = groundY - pivotH, tilt = sim.tilt;
+      geo = { px, cx, cy, groundY };
+      const ux = Math.cos(tilt), uy = Math.sin(tilt); // plank direction (clockwise tilt = right end down)
+      const onBeam = (x, up = 0) => ({ x: cx + ux * x * px + uy * up, y: cy + uy * x * px - ux * up });
+      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, groundY, W, H - groundY);
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(W, groundY); ctx.stroke();
+      ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.moveTo(cx, cy + 4); ctx.lineTo(cx - 24, groundY); ctx.lineTo(cx + 24, groundY); ctx.closePath(); ctx.fill();
+      const locked = !sim.running && sim.t === 0 && !sim.done;
+      if (locked) [-1, 1].forEach(sd => {
+        // the lock: a prop under each end holds the plank level
+        const e = onBeam(sd * (HALF - 0.2), -6); ctx.fillStyle = '#475569'; ctx.fillRect(e.x - 3, e.y, 6, groundY - e.y);
+        ctx.fillStyle = '#f59e0b'; ctx.fillRect(e.x - 8, e.y + 10, 16, 12);
+      });
+      const a = onBeam(-HALF), b = onBeam(HALF);
+      ctx.strokeStyle = '#a16207'; ctx.lineWidth = 10; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.lineCap = 'butt';
+      ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 1.5;
+      for (let m = -HALF + 0.5; m < HALF - 1e-9; m += 0.5) { const p = onBeam(m, -3), q = onBeam(m, 3); ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke(); }
+      const kids = kidsOn(), figH = k => 40 + Math.sqrt(k.m) * 3, maxW = Math.max(...kids.map(k => k.m * G));
+      // the perpendicular distance of each child's weight from the pivot: the horizontal distance between the pivot and
+      // the point where the child stands (x cos θ once the plank tilts); one row each, above every head
+      kids.forEach(k => { k.wUnder = groundY - 6 - onBeam(k.x, -5).y < 30; });
+      const top = Math.min(...kids.map(k => onBeam(k.x, 6 + figH(k) + 18 + (k.wUnder ? sz * 1.6 + 1 : 0)).y));
+      kids.forEach((k, i) => {
+        if (Math.abs(k.x) < 1e-9) return;
+        const p1 = onBeam(k.x, 0), d = Math.abs(k.x) * Math.cos(tilt);
+        dim(ctx, Math.min(cx, p1.x), Math.max(cx, p1.x), top - 14 - i * 22, `${k.id}: ${Math.abs(tilt) < 1e-9 ? plain(Math.abs(k.x)) : f3(d)} m`, k.color, sz);
+      });
+      // the weights, straight down from where each child stands, then the children on top
+      const wText = Wt => (narrow ? `${f3(Wt)} N` : `<i>W</i> = ${f3(Wt)} N`);
+      kids.forEach(k => {
+        const Wt = k.m * G, p = onBeam(k.x, -5), room = groundY - 6 - p.y;
+        const len = Math.max(16, Math.min(28 + 40 * Wt / maxW, room));
+        arrow(ctx, p.x, p.y, p.x, p.y + len, COL.W, 3, 10);
+        // on the side away from the pivot; with no room under the plank (the end resting on the ground) it goes under the name instead
+        const out = k.x >= 0 ? 1 : -1;
+        if (!k.wUnder) label(ctx, wText(Wt), p.x + out * 8, Math.min(p.y + len - 8, groundY - 12), '#5b21b6', out > 0 ? 'left' : 'right', sz, 1);
+      });
+      kids.forEach(k => {
+        const Hh = figH(k), base = onBeam(k.x, 6);
+        ctx.save(); ctx.translate(base.x, base.y); ctx.rotate(tilt);
+        ctx.strokeStyle = k.color; ctx.fillStyle = k.color; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        const hip = -Hh * 0.45, sh = -Hh * 0.74, hr = Hh * 0.12, hy = -Hh + hr;
+        ctx.beginPath(); ctx.moveTo(-Hh * 0.14, 0); ctx.lineTo(0, hip); ctx.lineTo(Hh * 0.14, 0); ctx.moveTo(0, hip); ctx.lineTo(0, sh);
+        ctx.moveTo(-Hh * 0.2, -Hh * 0.5); ctx.lineTo(0, sh); ctx.lineTo(Hh * 0.2, -Hh * 0.5); ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, hy, hr, 0, Math.PI * 2); ctx.fill();
+        ctx.restore(); ctx.lineCap = 'butt'; ctx.lineJoin = 'miter';
+        const top = onBeam(k.x, 6 + Hh + 10);
+        if (k.wUnder) {
+          label(ctx, `${k.id} · ${plain(k.m)} kg`, top.x, top.y - (sz * 1.6 + 1), '#0f172a', 'center', sz);
+          label(ctx, wText(k.m * G), top.x, top.y, '#5b21b6', 'center', sz);
+        } else label(ctx, `${k.id} · ${plain(k.m)} kg`, top.x, top.y, '#0f172a', 'center', sz);
+        __pim.handles.push({ id: k.id, kind: 'kid', x: base.x + uy * Hh / 2, y: base.y - ux * Hh / 2, r: Hh * 0.6 });
+      });
+      const mo = seesaw(0);
+      let msg, col;
+      if (locked) { col = mo.balanced ? '#15803d' : '#b45309'; msg = mo.balanced ? 'Locked level: clockwise moments = anti-clockwise moments' : 'Locked level: the moments are not equal'; }
+      else if (mo.balanced) { col = '#15803d'; msg = 'It stays level: the seesaw is balanced'; }
+      else { col = '#b91c1c'; msg = mo.net > 0 ? 'Turns clockwise (right side goes down)' : 'Turns anti-clockwise (left side goes down)'; }
+      label(ctx, msg, W / 2, 14, col, 'center', sz);
+    }
+
+    /* tab 4: a beam in equilibrium */
+    function drawBeam(ctx, W, H) {
+      const narrow = W < 560, sz = narrow ? 11 : 12, st = S.step, s = solve4();
+      const g = fitBeam(W, H, narrow ? 26 : 70, narrow ? 26 : 70, H - 118);
+      geo = g;
+      const ropeTop = 6;
+      // ropes and supports
+      (B.supports || []).forEach(([kind, x]) => {
+        const X = g.X(x);
+        if (kind === 'rope') { ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X, ropeTop); ctx.lineTo(X, g.by); ctx.stroke(); ctx.fillStyle = '#94a3b8'; ctx.fillRect(X - 18, 0, 36, ropeTop); }
+      });
+      beamBar(ctx, g, '#94a3b8');
+      (B.supports || []).forEach(([kind, x]) => {
+        const X = g.X(x);
+        if (kind === 'tri') tri(ctx, X, g.by + 4);
+        if (kind === 'hinge') { ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 2; ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(X, g.by, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); dot(ctx, X, g.by, 2.5); }
+      });
+      // the point the moments are taken about: a ring round it (from step 2)
+      if (st >= 2) { ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(g.X(s.xp), g.by, 11, 0, Math.PI * 2); ctx.stroke(); }
+      // names of the ends and the supports, under the beam
+      const names = [];
+      if (B.ends) { if (B.ends[0]) names.push([0, B.ends[0]]); if (B.ends[1]) names.push([B.L, B.ends[1]]); }
+      (B.supports || []).forEach(([kind, x, nm]) => { if (nm) names.push([x, nm]); });
+      (B.labels || []).forEach(([x, nm]) => names.push([x, nm]));
+      // forces: unknowns orange (? until solved), weights purple, known forces blue
+      const solved = f => f.unknown && st >= (f === s.other ? 5 : 4) && s.vals[f.id] !== undefined;
+      const valOf = f => (f.unknown ? s.vals[f.id] : f.F);
+      const Fmax = Math.max(...B.forces.map(f => (f.unknown ? (s.vals[f.id] || 0) : f.F)), 1);
+      const lenOf = f => (f.unknown && !solved(f) ? (narrow ? 50 : 60) : (narrow ? 32 : 38) + (narrow ? 26 : 34) * Math.min(1, Math.abs(valOf(f)) / Fmax));
+      const ends = B.forces.map(f => forceEnds(f, g, lenOf(f)));
+      // the distances: step 1 the gaps between the marked points (as the notes draw them); from step 2 the distance of
+      // each force from the chosen point, one row each, above the beam
+      const rowY = i => g.by - (narrow ? 104 : 112) - i * (sz * 1.6 + 6);
+      if (st < 2) {
+        const xs = (B.marks || []).slice().sort((a, b) => a - b);
+        for (let i = 1; i < xs.length; i++) dim(ctx, g.X(xs[i - 1]), g.X(xs[i]), rowY(0), lenTxt(xs[i] - xs[i - 1], B.unit), '#334155', sz);
+      } else {
+        let row = 0;
+        B.forces.forEach(f => {
+          const r = Math.abs(f.x - s.xp); if (r < 1e-9) return;
+          const col = f.unknown ? COL.unk : f.weight ? COL.W : COL.known;
+          dim(ctx, Math.min(g.X(f.x), g.X(s.xp)), Math.max(g.X(f.x), g.X(s.xp)), rowY(row++), lenTxt(r, B.unit), col, sz);
+        });
+      }
+      B.forces.forEach((f, i) => {
+        const e = ends[i], col = f.unknown ? COL.unk : f.weight ? COL.W : COL.known;
+        arrow(ctx, e.a[0], e.a[1], e.b[0], e.b[1], col, 3.5, 11);
+        if (f.drag) __pim.handles.push({ id: f.id, kind: 'pt', x: e.P[0], y: e.P[1] });
+      });
+      names.forEach(([x, nm]) => label(ctx, nm, g.X(x), g.by + 36, '#0f172a', 'center', sz + 1, 1));
+      B.forces.forEach((f, i) => {
+        const e = ends[i], col = f.unknown ? COL.unk : f.weight ? COL.W : COL.known, up = e.free[1] < e.P[1];
+        let t;
+        if (f.unknown) t = solved(f) ? `${symOf(f)} = ${f3(valOf(f))} N` : `${symOf(f)} = ?`;
+        else t = f.weight ? `<i>W</i> = ${f3(f.F)} N` : `${f3(f.F)} N${f.name ? ` (${f.name})` : ''}`;
+        label(ctx, t, e.free[0], e.free[1] + (up ? -12 : 12), col, 'center', sz, up ? -1 : 1);
+      });
+      if (st >= 2 && s.blocked) label(ctx, 'Two unknown forces have a moment about this point', W / 2, 14, '#b91c1c', 'center', sz);
+      else if (st >= 4 && s.u) label(ctx, `About ${s.pt.name}: Σ<i>M</i> = 0 ✓`, W / 2, 14, '#15803d', 'center', sz);
+    }
+
+    /* ---------------- the inputs ---------------- */
+    function buildInputs() {
+      const el = $('inputs');
+      $('expWrap').hidden = false;
+      let h = '';
+      if (currentTab === 1) {
+        const f = B.forces[0];
+        h = inp('F', 'Force <i>F</i> (N)', f.F, 0, 1) + inp('r', 'Distance from the pivot (m)', clean(f.x - B.xp), 0, B.snap, true);
+      } else if (currentTab === 2) {
+        h = B.forces.map((f, i) => inp('F' + i, B.forces.length === 1 ? 'Force <i>F</i> (N)' : f.weight ? 'Weight <i>W</i> (N)' : `Force ${i + 1} (N)`, f.F, 0, 1)).join('');
+      } else if (currentTab === 3) {
+        h = K.map(k => inp('m' + k.id, `Mass of ${k.id} (kg)`, k.m, 1, 1) + inp('x' + k.id, `${k.id} from the pivot (m)`, k.x, -HALF, 0.05)).join('');
+      } else if (currentTab === 4) {
+        h = `<div class="control-group label-row"><label for="aboutSel">Take moments about</label><select id="aboutSel">${B.points.map(p => `<option value="${p.id}"${p.id === B.about ? ' selected' : ''}>${p.name}</option>`).join('')}</select></div>`;
+        const d = B.forces.find(f => f.drag);
+        h += `<div class="none">${d ? 'Drag a known force (blue) along the beam to move it.' : 'Nothing else to change here.'}</div>`;
+      }
+      el.innerHTML = h;
+      el.querySelectorAll('input').forEach(i => i.addEventListener('input', () => readInput(i)));
+      const ab = $('aboutSel');
+      if (ab) ab.addEventListener('change', () => { B.about = ab.value; S.step = Math.min(Math.max(S.step, 2), maxStep()); if (freeMode) S.step = maxStep(); clearFeat(); update(); });
+    }
+    // wrap: a long label may take two lines on a phone (the others stay on one line with their value)
+    const inp = (k, lab, v, min, step, wrap) => `<div class="control-group${wrap ? '' : ' label-row'}"><label for="in_${k}">${lab}</label><input id="in_${k}" type="number" data-k="${k}" min="${min}" step="${step}" value="${plain(v)}" /></div>`;
+    function inputValue(k) {
+      if (currentTab === 1) return k === 'F' ? B.forces[0].F : clean(B.forces[0].x - B.xp);
+      if (currentTab === 2) return B.forces[+k.slice(1)].F;
+      if (currentTab === 3) { const kid = K.find(x => x.id === k.slice(1)); return k[0] === 'm' ? kid.m : kid.x; }
+      return 0;
+    }
+    function syncInputs() {
+      document.querySelectorAll('#inputs input').forEach(i => {
+        if (document.activeElement === i) return;
+        const want = plain(inputValue(i.dataset.k));
+        if (i.value !== want) i.value = want;
+      });
+      const ab = $('aboutSel'); if (ab && ab.value !== B.about) ab.value = B.about;
+    }
+    function readInput(i) {
+      const k = i.dataset.k, raw = parseFloat(i.value);
+      if (!isFinite(raw)) return;
+      if (currentTab === 1) {
+        const f = B.forces[0];
+        if (k === 'F') f.F = Math.max(0, Math.min(500, raw));
+        else f.x = Math.max(B.xp, Math.min(B.L, B.xp + raw));
+      } else if (currentTab === 2) B.forces[+k.slice(1)].F = Math.max(0, Math.min(1000, raw));
+      else if (currentTab === 3) {
+        const kid = K.find(x => x.id === k.slice(1));
+        if (k[0] === 'm') kid.m = Math.max(1, Math.min(100, raw)); else kid.x = Math.max(-HALF, Math.min(HALF, raw));
+        resetSeesaw();
+      }
+      toCustom(); update();
+    }
+    function toCustom() {
+      if (S.custom) return;
+      S.custom = true; S.scen = 'custom'; presetEl.value = 'custom';
+      // the question box keeps its height: nothing above the canvas may move while a finger drags
+      const q = $('question'); q.style.minHeight = q.offsetHeight + 'px';
+      q.innerHTML = 'Your own values. Choose a scenario from the menu to go back to the example.';
+      clearFeat();
+    }
+
+    /* ---------------- drags ---------------- */
     let drag = null;
     function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
-    function pick(p) {
+    function pickHandle(p) {
       let best = null, bd = Infinity;
-      for (const k of active()) { if (!k.hit) continue; const d = Math.hypot(p.x - k.hit.x, p.y - k.hit.y); if (d < k.hit.r + 8 && d < bd) { bd = d; best = k; } }
+      for (const h of __pim.handles) {
+        const d = Math.hypot(p.x - h.x, p.y - h.y), r = h.r ? h.r + 8 : 20;
+        // the free end of an arrow wins over the point it acts at when both are near
+        const score = d - (h.kind === 'tip' ? 6 : 0);
+        if (d < r && score < bd) { bd = score; best = h; }
+      }
       return best;
     }
+    const snapTo = (v, s) => Math.round(v / s) * s;
     canvas.addEventListener('pointerdown', e => {
-      const p = pos(e), k = pick(p); if (!k) return;
-      drag = { k }; canvas.setPointerCapture(e.pointerId); e.preventDefault();
+      // a box still focused after typing is never refreshed (syncInputs skips it): let go of it first
+      if (document.activeElement && document.activeElement.tagName === 'INPUT') document.activeElement.blur();
+      const p = pos(e), h = pickHandle(p);
+      if (!h || (currentTab === 3 && sim.running)) return;
+      drag = h; frozen = geo; canvas.setPointerCapture(e.pointerId); e.preventDefault();
     });
     canvas.addEventListener('pointermove', e => {
       const p = pos(e);
-      if (!drag) { canvas.style.cursor = pick(p) ? 'grab' : 'default'; return; }
+      if (!drag) { canvas.style.cursor = pickHandle(p) ? 'grab' : 'default'; return; }
       canvas.style.cursor = 'grabbing';
-      // moving a child locks the seesaw level again; project the pointer onto the plank
-      if (!locked) setLocked(true);
-      const ux = Math.cos(tilt), uy = Math.sin(tilt);
-      let x = ((p.x - geo.cx) * ux + (p.y - geo.cy) * uy) / geo.px;
-      x = Math.round(Math.max(-HALF + 0.15, Math.min(HALF - 0.15, x)) * 100) / 100;
-      drag.k.x = x; drag.k.posEl.value = x.toFixed(2);
-    });
-    const end = () => { drag = null; };
-    canvas.addEventListener('pointerup', end);
-    canvas.addEventListener('pointercancel', end);
-
-    el('lockBtn').addEventListener('click', () => setLocked(!locked));
-    presetEl.addEventListener('change', applyPreset);
-    [el('m1'), el('m2'), el('m3')].forEach(x => x.addEventListener('input', () => { setLocked(true); }));
-    kids.forEach(k => k.posEl.addEventListener('input', () => {
-      const v = parseFloat(k.posEl.value);
-      if (!isNaN(v)) { k.x = Math.max(-HALF + 0.15, Math.min(HALF - 0.15, v)); setLocked(true); }
-    }));
-
-    applyPreset();
-    let last = null;
-    function frame(ts) {
-      if (last === null) last = ts;
-      const dt = Math.max(0, Math.min(0.05, (ts - last) / 1000)); last = ts;
-      if (geo) {
-        const mo = moments();
-        const target = locked || mo.balanced ? 0 : Math.sign(mo.net) * geo.maxTilt;
-        // ease the plank toward level or toward resting on the ground
-        tiltVel += ((target - tilt) * 30 - tiltVel * 9) * dt;
-        tilt += tiltVel * dt;
-        if (Math.abs(tilt) > geo.maxTilt) { tilt = Math.sign(tilt) * geo.maxTilt; tiltVel = 0; }
+      if (currentTab === 3) {
+        const k = K.find(x => x.id === drag.id), g = geo;
+        const ux = Math.cos(sim.tilt), uy = Math.sin(sim.tilt);
+        k.x = clean(snapTo(Math.max(-HALF, Math.min(HALF, ((p.x - g.cx) * ux + (p.y - g.cy) * uy) / g.px)), 0.05));
+        resetSeesaw();
+      } else {
+        const f = B.forces.find(x => x.id === drag.id), g = geo;
+        if (drag.kind === 'tip') {
+          // turn the force: the angle of the free end round the point where it acts, in steps of 5°
+          const P = [g.X(f.x), g.by];
+          f.body = snapTo(Math.atan2(-(p.y - P[1]), p.x - P[0]) / RAD, 5);
+        } else {
+          const lo = currentTab === 1 ? B.xp : 0;
+          f.x = clean(+snapTo(Math.max(lo, Math.min(B.L, (p.x - g.X(0)) / g.k)), B.snap).toFixed(4));
+        }
       }
-      draw(); updateReadout();
-      requestAnimationFrame(frame);
+      toCustom(); update();
+    });
+    const endDrag = () => { if (drag) { drag = null; frozen = null; update(); } };
+    canvas.addEventListener('pointerup', endDrag);
+    canvas.addEventListener('pointercancel', endDrag);
+
+    /* ---------------- readouts, words and working ---------------- */
+    function cards(list) {
+      const el = $('readout');
+      el.className = 'readout' + ({ 3: ' n3', 4: ' n4', 6: ' n6' }[list.length] || '');
+      el.innerHTML = list.map(([id, title, value, cls]) => `<div class="readout-card${cls ? ' ' + cls : ''}${hl[id] ? ' hl' : ''}" id="${id}"><div class="title">${title}</div><div class="value">${value}</div></div>`).join('');
     }
-    requestAnimationFrame(frame);
+    function eq(lines) { return '<div class="math">' + lines.map(l => `<span class="eq${l.lit ? ' lit' : ''}">${l.h || l}</span>`).join('') + '</div>'; }
+    const dirWord = M => (M > 0 ? 'clockwise' : M < 0 ? 'anti-clockwise' : 'no turning effect');
+    // d as the notes work it out: r if F is at right angles, r sin θ if not
+    function dWork(f, xp) {
+      const r = Math.abs(f.x - xp), th = thetaOf(f, xp);
+      if (r < 1e-9) return { s: '0', v: 0 };
+      if (Math.abs(th - 90) < 1e-6) return { s: plain(r), v: r };
+      return { s: `${plain(r)} sin ${plain(th)}°`, v: perpOf(f, xp) };
+    }
+    function readouts() {
+      const words = $('words'), work = $('work'), st = S.step;
+      work.innerHTML = ''; $('stepText').innerHTML = ''; words.innerHTML = '';
+      if (currentTab === 1) {
+        const f = B.forces[0], xp = B.xp, r = Math.abs(f.x - xp), th = thetaOf(f, xp), d = perpOf(f, xp), M = f.F * d;
+        cards([['rF', 'Force <i>F</i>', `${f3(f.F)} N`], ['rR', 'Distance from the pivot along the beam', lenTxt(r, B.unit)], ['rTh', 'Angle between <i>F</i> and the beam', `${plain(th)}°`],
+          ['rD', 'Perpendicular distance <i>d</i>', st >= 3 ? `${f3(d)} m` : '?'], ['rM', 'Moment <i>M</i> = <i>F</i> × <i>d</i>', st >= 4 ? `${f3(M)} N m` : '?']]);
+        $('stepText').innerHTML = `<span class="n">Step ${st} of 4</span>` + ({
+          1: 'The force <i>F</i> acts on the beam. Where does it act, and at what angle?',
+          2: 'Its line of action: a straight line along the force, through the point where it acts (the dashed line).',
+          3: 'The perpendicular distance <i>d</i>: the shortest distance from the pivot to the line of action (green).',
+          4: 'The moment: <i>M</i> = <i>F</i> × <i>d</i> (notes p. 4-3).' })[st];
+        if (st >= 3) {
+          const dw = dWork(f, xp), L = [];
+          if (r < 1e-9) L.push({ h: '<i>F</i> acts at the pivot: <i>d</i> = 0', lit: st === 3 });
+          else if (d < 1e-9) L.push({ h: `<i>d</i> = ${plain(r)} sin ${plain(th)}° = 0 m: <i>F</i> acts along the beam`, lit: st === 3 });
+          else if (Math.abs(th - 90) < 1e-6) L.push({ h: `<i>d</i> = ${f3(d)} m: <i>F</i> is at right angles to the beam`, lit: st === 3 });
+          else L.push({ h: `<i>d</i> = ${dw.s} = ${f3(d)} m`, lit: st === 3 });
+          if (st >= 4) L.push({ h: `<i>M</i> = <i>F</i> × <i>d</i> = ${f3(f.F)} × ${f3(d)} = <span class="nw">${f3(M)} N m</span>`, lit: true });
+          work.innerHTML = eq(L);
+        }
+        words.innerHTML = st < 3 ? 'Drag the dot where <i>F</i> acts along the beam, or drag the free end of the arrow to turn the force.'
+          : d < 1e-9 ? 'The line of action passes through the pivot, so the perpendicular distance is zero and the force has no turning effect.'
+          : `The perpendicular distance (${f3(d)} m) is ${Math.abs(d - r) < 1e-9 ? 'the same as' : 'shorter than'} the distance along the beam (${lenTxt(r, B.unit)}).`;
+        return;
+      }
+      if (currentTab === 2) {
+        const xp = B.xp, Ms = B.forces.map(f => momentOf(f, f.F, xp)), net = clean(Ms.reduce((a, b) => a + b, 0));
+        const name = (f, i) => B.forces.length === 1 ? `the ${f3(f.F)} N force` : f.weight ? 'the weight' : `the ${f3(f.F)} N force`;
+        const list = B.forces.map((f, i) => [`rM${i + 1}`, `Moment of ${name(f, i)}`, st >= 3 ? `${sgn(Ms[i])} N m` : st >= 2 ? dirWord(Ms[i]) : '?']);
+        list.push(['rNet', 'Net moment Σ<i>M</i>', st >= 4 ? `${sgn(net)} N m` : '?'], ['rTurn', 'The rod turns', st >= 4 ? (net > 0 ? 'clockwise' : net < 0 ? 'anti-clockwise' : 'not at all') : '?']);
+        cards(list);
+        $('stepText').innerHTML = `<span class="n">Step ${st} of 4</span>` + ({
+          1: 'The forces on the rod, and the pivot.',
+          2: 'Which way does each force turn the rod about the pivot? Clockwise (red) or anti-clockwise (blue).',
+          3: 'Each moment with its sign: clockwise positive, anti-clockwise negative (notes p. 4-9).',
+          4: 'The net moment: Σ<i>M</i> = sum of clockwise moments + sum of anti-clockwise moments (p. 4-11).' })[st];
+        if (st >= 3) {
+          const L = B.forces.map((f, i) => {
+            const dw = dWork(f, xp), M = Ms[i];
+            return { h: `${f.weight ? '<i>W</i>' : f3(f.F) + ' N'}: &nbsp;<i>M</i> = ${M < 0 ? '−' : ''}${f3(f.F)} × ${dw.s} = <span class="nw">${sgn(M)} N m</span>${M ? ` (${dirWord(M)})` : ''}`, lit: st === 3 };
+          });
+          if (st >= 4 && B.forces.length > 1) {
+            L.push({ h: `Σ<i>M</i> = ${Ms.map(m => `(${sgn(m)})`).join(' + ')} = <span class="nw">${sgn(net)} N m</span>`, lit: true });
+            if (net) L.push({ h: `or <span class="nw">${f3(Math.abs(net))} N m</span> ${dirWord(net)}`, lit: true });
+          }
+          work.innerHTML = eq(L);
+        }
+        words.innerHTML = st < 2 ? 'Drag the dot where a force acts along the rod. With one force, drag the free end of the arrow to turn it.'
+          : `Clockwise moments are positive, anti-clockwise moments negative.${st >= 4 ? (net ? ` Net moment ${sgn(net)} N m: the rod turns ${dirWord(net)}.` : ' The moments cancel: the rod does not turn.') : ''}`;
+        return;
+      }
+      if (currentTab === 3) {
+        const mo = seesaw(), tilted = Math.abs(sim.tilt) > 1e-9;
+        cards([['rACW', 'Sum of anti-clockwise moments', `${f3(mo.acw)} N m`], ['rCW', 'Sum of clockwise moments', `${f3(mo.cw)} N m`],
+          ['rNet', 'Net moment Σ<i>M</i> (clockwise +)', `${sgn(mo.net)} N m`], ['rBal', 'Balanced?', mo.balanced ? 'Yes' : 'No', mo.balanced ? 'ok' : 'no']]);
+        const L = kidsOn().filter(k => Math.abs(k.x) > 1e-9).map(k => {
+          const M = clean(k.m * G * k.x * Math.cos(sim.tilt));
+          return `${k.id}: &nbsp;${f3(k.m * G)} N × ${tilted ? `${plain(Math.abs(k.x))} cos ${f3(Math.abs(sim.tilt) / RAD)}°` : `${plain(Math.abs(k.x))} m`} = <span class="nw">${f3(Math.abs(M))} N m</span> ${dirWord(M)}`;
+        });
+        L.push({ h: `Clockwise ${f3(mo.cw)} N m ${mo.balanced ? '=' : '≠'} anti-clockwise ${f3(mo.acw)} N m`, lit: true });
+        work.innerHTML = eq(L);
+        words.innerHTML = tilted ? `The plank has tilted ${f3(Math.abs(sim.tilt) / RAD)}° and rests on the ground: each perpendicular distance is now shorter (<i>x</i> cos <i>θ</i>). Press “Lock it level” to try again.`
+          : sim.done || sim.running ? (mo.balanced ? 'The lock is off and the seesaw stays level: the clockwise and anti-clockwise moments are equal.' : '')
+          : 'Drag a child along the plank, or type the distances (negative = left of the pivot). Then remove the lock.';
+        return;
+      }
+      if (currentTab === 4) {
+        const s = solve4(), mx = maxStep();
+        const unkCards = s.unk.map(f => [`r${f.id}`, `${symOf(f)}`, s.vals[f.id] !== undefined && st >= (f === s.other ? 5 : 4) ? `${f3(s.vals[f.id])} N` : '?']);
+        cards([...unkCards, ['rAbout', 'Taking moments about', st >= 2 ? s.pt.name : '?'], ['rSum', 'Σ<i>M</i> about that point', st >= 4 && s.u ? '0 N m' : '?', st >= 4 && s.u ? 'ok' : '']]);
+        $('stepText').innerHTML = `<span class="n">Step ${st} of ${mx}</span>` + (st === 1 ? 'The forces on the beam. The unknowns are orange.'
+          : st === 2 ? (s.blocked ? 'Two unknown forces have a moment about this point: one equation cannot give two unknowns. Choose a point where an unknown force acts.'
+            : `Take moments about ${s.pt.name}${s.unk.some(f => Math.abs(f.x - s.xp) < 1e-9) ? ': the unknown force there has no moment (<i>d</i> = 0)' : ''}.`)
+          : st === 3 ? 'Principle of moments: in equilibrium the net moment is zero, Σ<i>M</i> = 0 (p. 4-13).'
+          : st === 4 ? `Solve for ${symOf(s.u)}.` : 'The sum of the forces is zero too (p. 4-24): total upward forces = total downward forces.');
+        if (st >= 3 && s.u) work.innerHTML = eq(work4(s, st));
+        const neg = s.unk.find(f => s.vals[f.id] !== undefined && s.vals[f.id] < -1e-9 && st >= (f === s.other ? 5 : 4));
+        words.innerHTML = neg ? `${symOf(neg)} comes out negative: it must act the other way (${upOf(neg) > 0 ? 'downwards' : 'upwards'}) to keep the beam level.`
+          : s.blocked && st >= 2 ? 'Problem-solving strategy (p. 4-27): place the “pivot” where unknown forces act.'
+          : st >= 4 && s.u ? `With ${symOf(s.u)} = ${f3(s.vals[s.u.id])} N the clockwise and anti-clockwise moments about ${s.pt.name} are equal.` : '';
+      }
+    }
+    function work4(s, st) {
+      const L = [], m = v => plain(v);
+      const parts = B.forces.filter(f => Math.abs(f.x - s.xp) > 1e-9).map(f => {
+        const c = s.c(f), r = Math.abs(f.x - s.xp);
+        return `(${c < 0 ? '−' : ''}${f.unknown ? symOf(f) : f3(f.F)} × ${m(r)})`;
+      });
+      L.push({ h: `Taking moments about ${s.pt.name}:`, lit: false });
+      L.push({ h: `Σ<i>M</i> = ${parts.join(' + ')} = 0`, lit: st === 3 });
+      if (st >= 4) {
+        const cu = s.c(s.u), U = symOf(s.u);
+        L.push({ h: `0 = ${f3(s.known)} ${cu < 0 ? '−' : '+'} ${m(Math.abs(cu))}${U}`, lit: st === 4 });
+        L.push({ h: `${U} = <span class="nw">${f3(s.vals[s.u.id])} N</span>`, lit: st === 4 });
+      }
+      if (st >= 5 && s.other) {
+        const term = f => (f.unknown ? symOf(f) : f3(f.F));
+        const ups = B.forces.filter(f => upOf(f) > 0), downs = B.forces.filter(f => upOf(f) < 0);
+        L.push({ h: `Total upward forces = total downward forces: &nbsp;${ups.map(term).join(' + ')} = ${downs.map(term).join(' + ')}`, lit: true });
+        L.push({ h: `${symOf(s.other)} = <span class="nw">${f3(s.vals[s.other.id])} N</span>`, lit: true });
+      }
+      return L;
+    }
+
+    function update() {
+      draw(); readouts(); syncInputs();
+      const mx = maxStep();
+      if (S.step > mx) S.step = mx;
+      $('prevStep').disabled = S.step <= 1; $('nextStep').disabled = S.step >= mx;
+      const mid = sim.t > 0 && !sim.done;
+      $('pauseBtn').textContent = !sim.running && mid ? 'Play' : 'Pause';
+      $('pauseBtn').disabled = !sim.running && !mid;
+      $('startBtn').disabled = sim.running || sim.done;
+      $('resetBtn').disabled = sim.t === 0 && !sim.done && !sim.running;
+    }
+    function setStep(n) { S.step = Math.max(1, Math.min(maxStep(), n)); clearFeat(); update(); }
+    $('prevStep').addEventListener('click', () => setStep(S.step - 1));
+    $('nextStep').addEventListener('click', () => setStep(S.step + 1));
+    $('resetSteps').addEventListener('click', () => chooseScenario(presetEl.value));
+    function chooseScenario(id) {
+      loadScenario(id === 'custom' ? 'custom' : id);
+      $('question').style.minHeight = '';
+      clearFeat(); buildInputs(); update();
+    }
+    presetEl.addEventListener('change', () => chooseScenario(presetEl.value));
+
+    /* ---------------- the tabs ---------------- */
+    const TABS = {
+      1: { strip: 'Answer Predict first. Then press Next step: the force, its line of action, the perpendicular distance <i>d</i> from the pivot, and the moment <i>M</i> = <i>F</i> × <i>d</i>.',
+        presets: ['ex1a', 'ex1b', 'a1', 'a2b', 'a2c'], hint: 'Drag the dot where <i>F</i> acts along the beam, or drag the free end of the arrow to turn the force (5° at a time).',
+        key: [[COL.F, 'Force <i>F</i>'], [COL.loa, 'Line of action'], [COL.d, 'Perpendicular distance <i>d</i>']],
+        notes: ['A force can cause an object to turn about a pivot. This turning effect is called the moment of a force (notes p. 4-2).',
+          'The moment <i>M</i> of a force is the product of the force <i>F</i> and the perpendicular distance <i>d</i> from the line of action of the force to the pivot: <i>M</i> = <i>F</i> × <i>d</i> (p. 4-3).',
+          'The line of action is a straight line parallel to the force, through the point at which the force is applied.',
+          'When the force is not perpendicular to the beam, <i>d</i> is the shortest distance between the pivot and the line of action (p. 4-4).',
+          'The SI unit for moment is the newton metre (N m) (p. 4-8).'] },
+      2: { strip: 'Answer Predict first. Then press Next step: which way each force turns the rod, each moment with its sign, and the net moment.',
+        presets: ['ex2', 'ex3a', 'ex3b', 'a2a', 'ex4', 'ex7'], hint: 'Drag the dot where a force acts along the rod. With one force, drag the free end of its arrow to turn it.',
+        key: [[COL.cw, 'Clockwise moment (+)'], [COL.acw, 'Anti-clockwise moment (−)'], [COL.zero, 'No moment']],
+        notes: ['A clockwise moment turns an object in the same direction as the hands of a clock; an anti-clockwise moment turns it the opposite way (p. 4-7).',
+          'Sign convention: clockwise moments are positive, anti-clockwise moments negative (p. 4-9).',
+          'When several forces act, the net moment is Σ<i>M</i> = sum of clockwise moments + sum of anti-clockwise moments (p. 4-11).',
+          'A force whose line of action passes through the pivot has no moment, such as the weight of a uniform rod supported at its centre (Example 7).'] },
+      3: { strip: 'Answer Predict first. Then move the children until the moments balance, and remove the lock to test it.',
+        presets: ['a3', 'equal', 'three'], hint: 'Drag a child along the plank (0.05 m at a time), or type the values. Distances are measured from the pivot: negative = left.',
+        key: [[COL.W, 'Weight <i>W</i> = <i>mg</i>'], [COL.cw, 'Turns clockwise'], [COL.acw, 'Turns anti-clockwise']],
+        notes: ['Each child’s weight <i>W</i> = <i>mg</i> (<i>g</i> = 10 m s<sup>−2</sup>) acts straight down through the child.',
+          'A weight on the right of the pivot turns the seesaw clockwise; a weight on the left turns it anti-clockwise.',
+          'Principle of moments: when an object is in equilibrium the net moment Σ<i>M</i> = 0, so the sum of clockwise moments equals the sum of anti-clockwise moments (p. 4-13).',
+          'The seesaw is a light plank pivoted at its centre, so its own weight has no moment.',
+          'Removing the lock lets the plank turn; once it tilts, each perpendicular distance becomes <i>x</i> cos <i>θ</i>.'] },
+      4: { strip: 'Answer Predict first. Then press Next step: the forces, the point to take moments about, Σ<i>M</i> = 0, and the unknown. Try another point in the menu.',
+        presets: ['ex5', 'ex9', 'ex10', 'ex11', 'a4', 'b2', 'b3'], hint: 'Choose the point to take moments about below the menu. Drag a known force (blue) along the beam to move it.',
+        key: [[COL.known, 'Known force'], [COL.unk, 'Unknown force'], [COL.W, 'Weight of the beam']],
+        notes: ['The weight of a uniform rod acts at its centre, its centre of gravity (pp. 4-15, 4-19).',
+          'For an object in equilibrium: the net moment is zero, Σ<i>M</i> = 0, and the sum of all the forces is zero, Σ<i>F</i> = 0 (p. 4-24).',
+          'Problem-solving strategy: take moments about the point where an unknown force acts. Its perpendicular distance is zero, so it drops out (p. 4-27).',
+          'A force at the pivot or hinge that is not asked for is not drawn: about that point its moment is zero.'] },
+      5: { strip: 'Answer every question, then read the summary.', key: [] }
+    };
+
+    const PREDICT = {
+      1: { q: 'Example 1b: a force acts 2.0 m from the pivot, at 60° to the beam. The perpendicular distance <i>d</i> from the pivot to its line of action is …',
+        opts: ['2.0 m', '1.73 m', '1.0 m', '2.31 m'], ans: 1,
+        why: '<i>d</i> is the side of the right-angled triangle opposite the 60° angle: <i>d</i> = 2.0 × sin 60° = 1.73 m (the notes give 1.7 m). 1.0 m is 2.0 cos 60°. Choose “Force at 60° to the beam” and press Next step to check.' },
+      2: { q: 'Example 4: three forces act on a light rod: 30 N up at 0.2 m, 20 N down at 0.4 m and 10 N up at 0.6 m from the pivot. The net moment about the pivot is …',
+        opts: ['20 N m clockwise', '4 N m clockwise', '4 N m anti-clockwise', '0 N m: the rod balances'], ans: 2,
+        why: 'Σ<i>M</i> = (−30 × 0.2) + (20 × 0.4) + (−10 × 0.6) = −6 + 8 − 6 = −4 N m, or 4 N m anti-clockwise. 20 N m adds the sizes and forgets the directions. Choose “Three forces on a light rod” to check.' },
+      3: { q: 'Tutorial 4 A3: a 30 kg child sits at one end of a 4.0 m seesaw, 2.0 m from the pivot. Where must a 40 kg child sit to balance it?',
+        opts: ['2.0 m from the pivot', '2.67 m from the pivot', '1.5 m from the pivot', '1.0 m from the pivot'], ans: 2,
+        why: 'Anti-clockwise moments = clockwise moments: 400 × <i>x</i> = 300 × 2.0, so <i>x</i> = 600 ÷ 400 = 1.5 m. The heavier child sits closer to the pivot. (2.67 m swaps the masses, and is off the end of the seesaw.) Drag B to check.' },
+      4: { q: 'Example 5: a light rod is balanced. <i>F</i> (up) acts 15 cm left of the pivot; 5 N (down) 10 cm right of it; 20 N (up) 25 cm right of it. The force <i>F</i> is …',
+        opts: ['30 N', '15 N', '25 N', '33.3 N'], ans: 0,
+        why: 'Σ<i>M</i> = (<i>F</i> × 15) + (5 × 10) + (−20 × 25) = 0, so 15<i>F</i> = 450 and <i>F</i> = 30 N (p. 4-14). 33.3 N leaves out the 5 N force’s moment. Press Next step to check.' }
+    };
+
+    const FEATS = {
+      1: [['loa', 'Line of action'], ['perp', 'Perpendicular distance'], ['through', 'Through the pivot: no moment'], ['along', 'Along the beam: no moment']],
+      2: [['sign', 'Clockwise +, anti-clockwise −'], ['farther', 'Farther from the pivot: larger moment'], ['net', 'The net moment'], ['weight', 'Weight through the pivot']],
+      3: [['balance', 'Clockwise = anti-clockwise'], ['closer', 'Heavier child sits closer'], ['equal', 'Equal masses, equal distances'], ['turns', 'Not balanced: it turns']],
+      4: [['about', 'Take moments where an unknown acts'], ['two', 'Two unknowns: wrong point'], ['sumF', 'Then: sum of forces = 0'], ['centre', 'Uniform rod: weight at its centre'], ['walk', 'The boy walks towards B']]
+    };
+    const PROMPTS = {
+      1: ['Why is d never longer than the distance along the beam?', 'Turn the force until its moment is zero. Where does its line of action go?', 'A door handle is far from the hinges. Why?'],
+      2: ['How can you tell clockwise from anti-clockwise without working anything out?', 'In Example 4, which single force would make the net moment zero?', 'Why does the weight of a rod supported at its centre have no moment?'],
+      3: ['Why must the heavier child sit closer to the pivot?', 'Add a third child. Is there more than one way to balance the seesaw?', 'Once the plank tilts, why do all the moments get smaller by the same factor?'],
+      4: ['Why do we take moments about the point where an unknown force acts?', 'In Example 11, take moments about G instead of F. Do you get the same answers?', 'As the boy walks from D to B, how does the tension in the rope change, and why?'],
+      5: ['Which question did most of the class get wrong, and why?', 'Pick one wrong option: what mistake would lead a student to choose it?']
+    };
+
+    let predictPick = null;
+    function clearFeat() { feat = {}; hl = {}; syncFeatButtons(); $('featNote').textContent = ''; }
+    function syncFeatButtons() { document.querySelectorAll('#feats .feat').forEach(b => b.classList.toggle('on', !!feat[b.dataset.f])); }
+    // a key feature shows itself: it picks the scenario (if needed) and the step or the state that shows it
+    function tapFeat(id) {
+      const on = !feat[id];
+      // always a fresh copy of the scenario: an earlier feature may have moved something in it
+      const want = scen => { presetEl.value = scen; chooseScenario(scen); };
+      clearFeat();
+      if (on) {
+        ({
+          loa: () => { want('ex1b'); S.step = 2; },
+          perp: () => { want('ex1b'); S.step = 3; hl = { rD: true }; },
+          through: () => { want('a2b'); S.step = 4; hl = { rD: true, rM: true }; },
+          along: () => { want('a2c'); S.step = 4; hl = { rD: true, rM: true }; },
+          sign: () => { want('ex3b'); S.step = 3; hl = { rM1: true }; },
+          farther: () => { want('ex2'); S.step = 3; hl = { rM1: true }; },
+          net: () => { want('ex4'); S.step = 4; hl = { rNet: true, rTurn: true }; },
+          weight: () => { want('ex7'); S.step = 3; hl = { rM2: true }; },
+          balance: () => { want('three'); resetSeesaw(); hl = { rACW: true, rCW: true }; },
+          closer: () => { want('a3'); K[1].x = 1.5; resetSeesaw(); hl = { rBal: true }; },
+          equal: () => { want('equal'); K[1].x = 2.0; resetSeesaw(); hl = { rBal: true }; },
+          turns: () => { want('a3'); runToEnd(); hl = { rNet: true }; },
+          about: () => { want('ex11'); B.about = 'F'; S.step = 4; hl = { rS: true }; },
+          two: () => { want('ex11'); B.about = 'A'; S.step = 2; },
+          sumF: () => { want('ex10'); B.about = 'A'; S.step = 5; hl = { rR: true }; },
+          centre: () => { want('ex9'); S.step = 1; },
+          walk: () => { want('b2'); B.forces.find(f => f.id === 'boy').x = 3; S.step = 4; hl = { rT: true }; }
+        })[id]();
+        sim.running = false;
+      }
+      feat = on ? { [id]: true } : {};
+      syncFeatButtons(); buildInputs(); update();
+      $('featNote').innerHTML = on ? featNote(id) : '';
+    }
+    function featNote(id) {
+      switch (id) {
+        case 'loa': return 'The dashed line is the line of action of <i>F</i>: a straight line along the force, through the point where it acts. The moment depends on how far this line passes from the pivot.';
+        case 'perp': return `The perpendicular distance is the shortest distance from the pivot to the line of action: <i>d</i> = 2.0 × sin 60° = ${f3(2 * sinD(60))} m (Example 1b gives 1.7 m). With <i>F</i> = 10 N (Tutorial 4 B1), <i>M</i> = 10 × ${f3(2 * sinD(60))} = ${f3(20 * sinD(60))} N m.`;
+        case 'through': return 'Tutorial 4 A2(b): the 10 N force acts at the pivot, so <i>d</i> = 0 and <i>M</i> = 10 × 0 = 0 N m. A force through the pivot cannot turn the beam.';
+        case 'along': return 'Tutorial 4 A2(c): the 10 N force pushes along the beam, so its line of action passes through the pivot: <i>d</i> = 0 and <i>M</i> = 0 N m, even though it acts 4.0 m away.';
+        case 'sign': return 'Example 3(b): <i>M</i> = 200 × 2.0 sin 30° = 200 N m anti-clockwise, or, using the sign convention, <i>M</i> = −200 N m. In (a) the force turns the rod clockwise: <i>M</i> = +346 N m.';
+        case 'farther': return 'Example 2: at 0.2 m, <i>M</i> = 20 × 0.2 = 4.0 N m anti-clockwise; at 0.1 m, <i>M</i> = 20 × 0.1 = 2.0 N m. The moment is greater farther from the pivot: it is easier to turn the nut if the force is applied farther from the nut. Drag the force to 0.1 m to see it.';
+        case 'net': return 'Example 4: Σ<i>M</i> = (−30 × 0.2) + (20 × 0.4) + (−10 × 0.6) = 8 + (−12) = −4 N m, or 4 N m anti-clockwise.';
+        case 'weight': return 'Example 7: the moment due to the weight = 100 × 0 = 0 N m: it acts through the pivot. The 50 N force gives +15 N m and the 30 N force −15 N m.';
+        case 'balance': return `Three children: clockwise ${f3(seesaw(0).cw)} N m (B and C) = anti-clockwise ${f3(seesaw(0).acw)} N m (A). Σ<i>M</i> = 0, so the seesaw balances: remove the lock and it stays level.`;
+        case 'closer': return 'Tutorial 4 A3: 400 × <i>x</i> = 300 × 2.0, so <i>x</i> = 1.5 m. The 40 kg child sits 1.5 m from the pivot, closer than the 30 kg child.';
+        case 'equal': return 'Equal masses balance at equal distances: 300 × 2.0 = 300 × 2.0.';
+        case 'turns': return `With B at 1.0 m the anti-clockwise moment (600 N m) is larger than the clockwise moment (400 N m): Σ<i>M</i> = −200 N m. Without the lock the seesaw turns anti-clockwise until the left end touches the ground.`;
+        case 'about': return 'Example 11: about F, <i>R</i> has no moment: Σ<i>M</i> = 240 × 2.5 + (−<i>S</i> × 4) = 0, so <i>S</i> = 150 N. Then <i>R</i> + <i>S</i> = 240 gives <i>R</i> = 90 N. About G you get the same answers the other way round (p. 4-27).';
+        case 'two': return 'About end A both <i>R</i> and <i>S</i> have a moment: one equation, two unknowns. Choose point F or G, where an unknown force acts.';
+        case 'sumF': return 'Example 10: about A, Σ<i>M</i> = 80 × 1 + (−<i>P</i> × 2.5) = 0 gives <i>P</i> = 32 N. Then sum of upward forces = weight: <i>R</i> + <i>P</i> = 80, so <i>R</i> = 80 − 32 = 48 N.';
+        case 'centre': return 'Example 9: the rod is uniform, so its weight <i>W</i> acts at its centre, 100 cm from the end and 80 cm from A. About A: −4 × 20 + (<i>W</i> × 80) = 0, so <i>W</i> = 1 N.';
+        case 'walk': return `Tutorial 4 B2(b): with the boy at B (3.00 m from A), <i>T</i> × 3.00 = 500 × 3.00 + 48.0 × 2.50, so <i>T</i> = ${f3((1500 + 120) / 3)} N. As the boy walks from D to B his clockwise moment about A decreases, so the tension decreases (873 N at D).`;
+      }
+      return '';
+    }
+
+    function renderPredict(tab) {
+      const P = PREDICT[tab], box = $('predictBox');
+      predictPick = null;
+      if (!P) { box.hidden = true; return; }
+      box.hidden = false; box.classList.remove('done');
+      $('predictQ').innerHTML = P.q;
+      $('predictFb').innerHTML = '';
+      const opts = $('predictOpts');
+      opts.innerHTML = '';
+      P.opts.forEach((o, i) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.innerHTML = o;
+        b.addEventListener('click', () => {
+          if (opts.dataset.done) return;
+          predictPick = i; opts.querySelectorAll('.opt').forEach((x, j) => x.classList.toggle('picked', j === i));
+        });
+        opts.appendChild(b);
+      });
+      delete opts.dataset.done;
+      $('predictCheck').textContent = 'Check my answer';
+    }
+    $('predictCheck').addEventListener('click', () => {
+      const P = PREDICT[currentTab], opts = $('predictOpts'), fb = $('predictFb');
+      if (!P) return;
+      if (opts.dataset.done) { renderPredict(currentTab); return; }
+      if (predictPick === null) { fb.innerHTML = '<span class="verdict no">Pick an answer first.</span>'; return; }
+      opts.dataset.done = '1';
+      const ok = predictPick === P.ans;
+      opts.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === P.ans) x.classList.add('right'); else if (j === predictPick) x.classList.add('wrong'); });
+      // the options fold away: the result line names the pick (and the right answer), then the explanation
+      $('predictBox').classList.add('done');
+      fb.innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> Your prediction: ${P.opts[predictPick]}.`
+        + (ok ? '' : ` The answer: <b>${P.opts[P.ans]}</b>.`) + ` <span class="why">${P.why}</span>`;
+      $('predictCheck').textContent = 'Try again';
+    });
+
+    function renderFeats(tab) {
+      const list = FEATS[tab] || [], el = $('feats');
+      $('featBox').hidden = !list.length;
+      el.innerHTML = '';
+      list.forEach(([id, lab]) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'feat'; b.dataset.f = id;
+        b.innerHTML = lab;
+        b.addEventListener('click', () => tapFeat(id));
+        el.appendChild(b);
+      });
+      $('featNote').textContent = '';
+      syncFeatButtons();
+    }
+    function renderKey(tab) {
+      // the label sits in its own span: as direct children of the inline-flex entry, <i> would become a flex item
+      $('ckey').innerHTML = (TABS[tab].key || []).map(([c, lab]) => `<span><b style="background:${c}"></b><span>${lab}</span></span>`).join('');
+    }
+    function fillPresets(list, tab) {
+      presetEl.innerHTML = '';
+      [...list, 'custom'].forEach(id => { const o = document.createElement('option'); o.value = id; o.textContent = id === 'custom' ? CUSTOM_NAME[tab] : PRESETS[id].name; presetEl.appendChild(o); });
+      if (list.length) presetEl.value = list[0];
+    }
+
+    function showTab(tab) {
+      currentTab = tab;
+      sim.running = false;
+      document.querySelectorAll('#tabs .tab').forEach(b => { const on = +b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+      $('stepLabel').textContent = `Step ${tab} of 5`;
+      document.querySelectorAll('#stepBar i').forEach((i, n) => i.classList.toggle('on', n < tab));
+      $('strip').innerHTML = TABS[tab].strip;
+      renderKey(tab);
+      $('pageSim').hidden = tab === 5;
+      $('page5').hidden = tab !== 5;
+      if (tab <= 4) {
+        const T = TABS[tab];
+        canvas.className = 't' + tab;
+        $('stepGroup').hidden = tab === 3;
+        $('simGroup').hidden = tab !== 3;
+        $('sceneHint').innerHTML = T.hint;
+        $('notes').innerHTML = '<ul>' + T.notes.map(n => `<li>${n}</li>`).join('') + '</ul>';
+        fillPresets(T.presets, tab);
+        chooseScenario(T.presets[0]);
+      }
+      if (tab === 5) renderQuiz();
+      renderPredict(tab);
+      renderFeats(tab);
+      $('tPrompts').innerHTML = PROMPTS[tab].map(p => `<li>${p}</li>`).join('');
+    }
+    document.querySelectorAll('#tabs .tab').forEach(b => b.addEventListener('click', () => showTab(+b.dataset.tab)));
+
+    /* ---------------- Tab 5: Challenge ---------------- */
+    // every answer recomputed and matched to the lecturer's copy or Tutorial 4's answer key
+    // A question whose parts share one situation is one screen: the situation once, then its parts
+    const QUIZ = [
+      { src: 'Notes pp. 4-3, 4-8; Tutorial 4 A1', stem: 'The moment of a force.', parts: [
+        { lab: '(a)', q: 'The moment <i>M</i> of a force is the product of the force <i>F</i> and …', opts: ['the perpendicular distance from the line of action of the force to the pivot', 'the distance along the beam from the pivot to the force', 'the time for which the force acts', 'the mass of the object it turns'], ans: 0,
+          why: '<i>M</i> = <i>F</i> × <i>d</i>, where <i>d</i> is the perpendicular distance from the line of action of the force to the pivot (p. 4-3).' },
+        { lab: '(b)', q: 'The SI unit for moment is …', opts: ['newton metre (N m)', 'newton (N)', 'joule per metre (J m<sup>−1</sup>)', 'newton per metre (N m<sup>−1</sup>)'], ans: 0,
+          why: 'The SI unit for moment is newton metre (N m) (p. 4-8).' },
+        { lab: 'A1.', q: 'A force of 20 N acts at a perpendicular distance of 0.5 m from a pivot. The moment of the force is …', opts: ['10 N m', '40 N m', '20.5 N m', '0.025 N m'], ans: 0,
+          why: '<i>M</i> = <i>F</i> × <i>d</i> = 20 × 0.5 = 10 N m (key: 10 N m). 40 N m divides instead of multiplying.' }] },
+      { src: 'Tutorial 4, A2', stem: 'A 10 N force acts on a beam: (a) straight down, 2.0 m to the left of the pivot; (b) straight down, at the pivot; (c) along the beam, 4.0 m from the pivot. Calculate the moment of the 10 N force about the pivot in each case.', parts: [
+        { lab: '(a)', q: 'In (a) the moment is …', opts: ['20 N m anti-clockwise', '20 N m clockwise', '5 N m anti-clockwise', '0 N m'], ans: 0,
+          why: '<i>M</i> = 10 × 2.0 = 20 N m. A downward force on the left of the pivot turns the beam anti-clockwise (key: 20 N m).' },
+        { lab: '(b)', q: 'In (b) the moment is …', opts: ['0 N m', '10 N m', '20 N m', '30 N m'], ans: 0,
+          why: 'The force acts at the pivot: <i>d</i> = 0, so <i>M</i> = 10 × 0 = 0 N m (key: 0 N m).' },
+        { lab: '(c)', q: 'In (c) the moment is …', opts: ['0 N m', '40 N m', '2.5 N m', '10 N m'], ans: 0,
+          why: 'The line of action runs along the beam, through the pivot: <i>d</i> = 0, so <i>M</i> = 0 N m (key: 0 N m). The 4.0 m is not a perpendicular distance.' }] },
+      { src: 'Example 1b; Tutorial 4, B1', stem: 'A force of 10 N acts at an angle of 60° to a beam, 2.0 m away from the pivot.', parts: [
+        { lab: '(a)', q: 'The perpendicular distance <i>d</i> from the pivot to the line of action is …', opts: ['1.73 m', '2.0 m', '1.0 m', '2.31 m'], ans: 0,
+          why: '<i>d</i> = 2.0 × sin 60° = 1.73 m (Example 1b gives 1.7 m). 1.0 m is 2.0 cos 60°.' },
+        { lab: '(b)', q: 'The moment of the force about the pivot is …', opts: ['17.3 N m', '20 N m', '10 N m', '11.5 N m'], ans: 0,
+          why: '<i>M</i> = <i>F</i> × <i>d</i> = 10 × 1.73 = 17.3 N m (key: 17 N m). 20 N m uses the distance along the beam.' }] },
+      { src: 'Example 3, notes p. 4-10', stem: 'A 200 N force <i>F</i> acts at one end of a rod 2.0 m long. Use the sign convention: clockwise positive, anti-clockwise negative.', parts: [
+        { lab: '(a)', q: '<i>F</i> acts at 60° to the rod and turns it clockwise about pivot A. <i>M</i> = …', opts: ['+346 N m', '−346 N m', '+400 N m', '+200 N m'], ans: 0,
+          why: '<i>M</i> = 200 × 2.0 sin 60° = 346 N m clockwise, so <i>M</i> = +346 N m.' },
+        { lab: '(b)', q: '<i>F</i> acts at 150° to the rod and turns it anti-clockwise about A. <i>M</i> = …', opts: ['−200 N m', '+200 N m', '−346 N m', '−400 N m'], ans: 0,
+          why: '<i>M</i> = 200 × 2.0 sin 30° = 200 N m anti-clockwise (sin 150° = sin 30°), so <i>M</i> = −200 N m.' }] },
+      { src: 'Example 4, notes p. 4-12', stem: 'Three forces act on a light rod: 30 N upwards 0.2 m from the pivot, 20 N downwards 0.4 m from it, and 10 N upwards 0.6 m from it, all on the same side.', parts: [
+        { q: 'The net moment about the pivot is …', opts: ['4 N m anti-clockwise', '4 N m clockwise', '20 N m clockwise', '0 N m'], ans: 0,
+          why: 'Σ<i>M</i> = (−30 × 0.2) + (20 × 0.4) + (−10 × 0.6) = 8 + (−12) = −4 N m, or 4 N m anti-clockwise.' }] },
+      { src: 'Tutorial 4, A3', stem: 'A seesaw of length 4.0 m is pivoted at its center. A child of mass 30 kg sits at one end.', parts: [
+        { q: 'At what distance from the pivot must a second child of mass 40 kg sit to balance the seesaw?', opts: ['1.5 m', '2.0 m', '2.67 m', '1.33 m'], ans: 0,
+          why: 'ACWM = CWM: 400 × <i>x</i> = 300 × 2.0, so <i>x</i> = 600 ÷ 400 = 1.5 m (key: 1.5 m).' }] },
+      { src: 'Tutorial 4, A4', stem: 'A uniform rod of weight 10 N and length 2.0 m is pivoted at one end and kept horizontal by applying an upward force at the other end.', parts: [
+        { q: 'What is the magnitude of this force?', opts: ['5.0 N', '10 N', '20 N', '2.5 N'], ans: 0,
+          why: 'The weight acts at the centre, 1.0 m from the pivot: <i>F</i> × 2.0 = 10 × 1.0, so <i>F</i> = 5.0 N (key: 5.0 N).' }] },
+      { src: 'Tutorial 4, A5', stem: 'A uniform metre rule is balanced on a pivot at the 20 cm mark, with a 150 g mass hung at the 10 cm mark.', parts: [
+        { q: 'The weight of the metre rule is …', opts: ['0.50 N', '1.5 N', '4.5 N', '0.15 N'], ans: 0,
+          why: 'The weight acts at the 50 cm mark, 30 cm from the pivot. 0.15 × 10 = 1.5 N acts 10 cm on the other side: 1.5 × 0.1 = <i>W</i> × 0.3, so <i>W</i> = 0.50 N.' }] },
+      { src: 'Tutorial 4, B2', stem: 'A uniform board AD is 5.00 m long. It is hinged at A and supported by a vertical rope at B, 3.00 m from A. A boy of weight 500 N stands at the end D of the board.', parts: [
+        { lab: '(a)(i)', q: 'The tension <i>T</i> in the rope when the weight of the board is neglected is …', opts: ['833 N', '500 N', '300 N', '1250 N'], ans: 0,
+          why: 'About A: <i>T</i> × 3.00 = 500 × 5.00, so <i>T</i> = 833 N (key: 833 N).' },
+        { lab: '(a)(ii)', q: 'The tension when the board has a weight of 48.0 N is …', opts: ['873 N', '881 N', '849 N', '833 N'], ans: 0,
+          why: 'The board’s weight acts at its centre, 2.50 m from A: <i>T</i> × 3.00 = 500 × 5.00 + 48.0 × 2.50, so 3<i>T</i> = 2620 and <i>T</i> = 873 N (key: 873 N).' },
+        { lab: '(b)', q: 'As the boy walks from D to B, the tension in the rope …', opts: ['decreases', 'increases', 'stays the same', 'drops to zero at B'], ans: 0,
+          why: 'His perpendicular distance from A decreases, so his clockwise moment decreases. The rope’s anti-clockwise moment must decrease too, and its distance is fixed, so <i>T</i> decreases (540 N with him at B).' }] },
+      { src: 'Tutorial 4, B3', stem: 'A uniform beam AB, 6.00 m long and of weight 300 N, hangs from two ropes: <i>T</i><sub>A</sub> 2.00 m from A and <i>T</i><sub>B</sub> 1.00 m from B.', parts: [
+        { lab: '(a)', q: '<i>T</i><sub>A</sub> = …', opts: ['200 N', '100 N', '150 N', '300 N'], ans: 0,
+          why: 'About the point where <i>T</i><sub>B</sub> acts: 300 × 2.00 = <i>T</i><sub>A</sub> × 3.00, so <i>T</i><sub>A</sub> = 200 N (key: 200 N).' },
+        { lab: '(b)', q: '<i>T</i><sub>B</sub> = …', opts: ['100 N', '200 N', '150 N', '300 N'], ans: 0,
+          why: 'About the point where <i>T</i><sub>A</sub> acts: <i>T</i><sub>B</sub> × 3.00 = 300 × 1.00, so <i>T</i><sub>B</sub> = 100 N. Check: 200 + 100 = 300 N (key: 100 N).' }] },
+      { src: 'Tutorial 4, B4', stem: 'A bridge weighs 10000 N. The span between pillars A and B is 80.0 m. The centre of gravity of the bridge is 43.0 m to the right of A, and the bridge is in equilibrium.', parts: [
+        { q: 'The force exerted by B on the bridge is …', opts: ['5375 N', '4625 N', '10000 N', '5000 N'], ans: 0,
+          why: 'Take moments about A, so the force at A drops out: <i>F</i><sub>B</sub> × 80.0 = 10000 × 43.0, so <i>F</i><sub>B</sub> = 5375 N (key: 5375 N). 4625 N is the force at A.' }] },
+      { src: 'Tutorial 4, C4', stem: 'A winch: a rope is wound round a drum of radius 10 cm, and a force <i>F</i> is applied to a handle 40 cm long. The tension <i>T</i> in the rope is 1000 N and the winch has no friction.', parts: [
+        { lab: '(b)', q: 'The magnitude of <i>F</i> is …', opts: ['250 N', '4000 N', '1000 N', '100 N'], ans: 0,
+          why: '<i>F</i> × 0.40 = <i>T</i> × 0.10 = 1000 × 0.10, so <i>F</i> = 250 N (key: 250 N).' },
+        { lab: '(c)', q: 'As the rope gets coiled round the drum, <i>F</i> increases because …', opts: ['the perpendicular distance of <i>T</i> from the pivot increases, so <i>F</i> must give a larger moment', 'the tension in the rope increases', 'the handle gets shorter', 'friction in the winch increases'], ans: 0,
+          why: 'The coiled rope increases the drum’s radius, so <i>T</i>’s perpendicular distance and moment increase. By the principle of moments the moment of <i>F</i> must increase, and the handle’s length is fixed, so <i>F</i> increases.' }] }
+    ];
+    // the options are written with the right one first; turn each part's list round by a fixed amount so the right
+    // answer is not always in the same place (positions 4, 1, 2, 3, 4, 1, ... down the quiz)
+    { let pc = 0; QUIZ.forEach(Q => Q.parts.forEach(P => { const n = P.opts.length, r = (pc++ * 3 + 1) % n;
+      P.opts = P.opts.slice(r).concat(P.opts.slice(0, r)); P.ans = (P.ans - r + n) % n; })); }
+    const QUIZ_MARKS = QUIZ.reduce((n, Q) => n + Q.parts.length, 0);
+    const partLabel = (Q, k) => Q.parts[k].lab ? Q.parts[k].lab + ' ' : Q.parts.length > 1 && Q.parts[k].lab === undefined ? `(${'abcdefgh'[k]}) ` : '';
+    let quiz = { i: 0, score: 0, picks: [], done: false, missed: [] };
+    function resetQuiz() { quiz = { i: 0, score: 0, picks: [], done: false, missed: [] }; renderQuiz(); }
+    function renderQuiz() {
+      const el = $('quiz'), N = QUIZ.length;
+      if (quiz.i >= N) {
+        const list = quiz.missed.length
+          ? `<p>Go back over these:</p><ul>${quiz.missed.map(([n, k]) => { const Q = QUIZ[n];
+              return `<li>Question ${n + 1}${partLabel(Q, k).trim()} (${Q.src}): ${(Q.stem ? Q.stem + ' ' : '') + Q.parts[k].q}</li>`; }).join('')}</ul>`
+          : '<p>Every answer right. Well done.</p>';
+        el.innerHTML = `<div class="quiz-top"><span>Summary</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div><div class="quiz-bar"><i style="width:100%"></i></div>
+          <div class="quiz-sum"><div class="quiz-q">You scored ${quiz.score} out of ${QUIZ_MARKS}.</div>${list}</div>
+          <div class="row-btns"><button type="button" id="qAgain">Try the quiz again</button></div>`;
+        $('qAgain').addEventListener('click', resetQuiz);
+        return;
+      }
+      const Q = QUIZ[quiz.i], many = Q.parts.length > 1;
+      quiz.picks = Q.parts.map(() => null);
+      el.innerHTML = `<div class="quiz-top"><span>Question ${quiz.i + 1} of ${N}</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div>
+        <div class="quiz-bar"><i style="width:${(quiz.i / N) * 100}%"></i></div>
+        ${Q.stem ? `<div class="quiz-q" id="qStem">${Q.stem}</div>` : ''}<div class="quiz-src">${Q.src}${many ? ` · ${Q.parts.length} parts, answer them all` : ''}</div>
+        ${Q.parts.map((P, k) => `<div class="qpart" data-k="${k}">
+          <div class="${Q.stem ? 'qpart-q' : 'quiz-q'}">${partLabel(Q, k)}${P.q}</div>
+          <div class="opts">${P.opts.map((o, j) => `<button type="button" class="opt" data-j="${j}">${o}</button>`).join('')}</div>
+          <div class="feedback"></div></div>`).join('')}
+        <div class="row-btns"><button type="button" id="qSubmit">${many ? 'Submit answers' : 'Submit answer'}</button><button type="button" class="secondary" id="qReset">Reset quiz</button></div>
+        <div class="feedback" id="qFb"></div>`;
+      el.querySelectorAll('.qpart').forEach(part => {
+        const k = +part.dataset.k;
+        part.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+          if (quiz.done) return;
+          quiz.picks[k] = +b.dataset.j; part.querySelectorAll('.opt').forEach(x => x.classList.toggle('picked', x === b));
+        }));
+      });
+      $('qReset').addEventListener('click', resetQuiz);
+      $('qSubmit').addEventListener('click', () => {
+        const fb = $('qFb');
+        if (quiz.done) { quiz.i++; quiz.done = false; renderQuiz(); return; }
+        const left = quiz.picks.map((p, k) => p === null ? partLabel(Q, k).trim() || `part ${k + 1}` : null).filter(x => x !== null);
+        if (left.length) { fb.innerHTML = `<span class="verdict no">${many ? `Pick an answer for every part first (still to do: ${left.join(', ')}).` : 'Pick an answer first.'}</span>`; return; }
+        quiz.done = true; fb.innerHTML = '';
+        el.querySelectorAll('.qpart').forEach(part => {
+          const k = +part.dataset.k, P = Q.parts[k], ok = quiz.picks[k] === P.ans;
+          if (ok) quiz.score++; else quiz.missed.push([quiz.i, k]);
+          part.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === P.ans) x.classList.add('right'); else if (j === quiz.picks[k]) x.classList.add('wrong'); });
+          part.querySelector('.feedback').innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> <span class="why">${P.why}</span>`;
+        });
+        el.querySelector('.quiz-top span:last-child').textContent = `Score: ${quiz.score} of ${QUIZ_MARKS}`;
+        $('qSubmit').textContent = quiz.i + 1 < N ? 'Next question' : 'See the summary';
+      });
+    }
+
+    /* ---------------- Teacher mode ---------------- */
+    // Only the teacher link (this page's address + ?teacher) shows the button; students and the
+    // Brightspace embed use the plain address. Not a lock: the panel only changes this screen.
+    const teacher = $('teacher');
+    if (new URLSearchParams(location.search).has('teacher')) $('teacherBtn').hidden = false;
+    $('teacherBtn').addEventListener('click', () => { teacher.hidden = !teacher.hidden; });
+    $('tClose').addEventListener('click', () => { teacher.hidden = true; });
+    $('tExplain').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-explain');
+      e.target.textContent = on ? 'Show explanations' : 'Hide explanations'; e.target.classList.toggle('on', on);
+    });
+    $('tAnswers').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-answers');
+      e.target.textContent = on ? 'Show answer labels' : 'Hide answer labels'; e.target.classList.toggle('on', on);
+    });
+    // free exploration: every step shown at once, no Predict first
+    $('tFree').addEventListener('click', e => {
+      freeMode = !freeMode; document.body.classList.toggle('free-mode', freeMode);
+      e.target.textContent = freeMode ? 'Back to the guided steps' : 'Switch to free exploration'; e.target.classList.toggle('on', freeMode);
+      showTab(currentTab);
+    });
+    const fullBtn = $('tFull');
+    if (!document.fullscreenEnabled) fullBtn.hidden = true;
+    fullBtn.addEventListener('click', () => {
+      if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {});
+    });
+    document.addEventListener('fullscreenchange', () => { fullBtn.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
+    $('tReset').addEventListener('click', () => { resetQuiz(); showTab(1); });
+
+    window.addEventListener('resize', () => { if (currentTab <= 4) update(); });
+    showTab(1);
+  </script>
+  <script>
+    // Embedded (Brightspace): tell the page around the frame how tall this page is, so a resize script in the
+    // embed code can fit the frame to it (no blank space, no inner scrollbar). Measured from the content, not
+    // scrollHeight, which never drops below the frame's own height and so could never shrink it.
+    (function () {
+      if (window.parent === window) return;
+      let last = 0;
+      function height() {
+        const c = document.querySelector('.container'), cs = getComputedStyle(document.body);
+        return Math.ceil(c.getBoundingClientRect().bottom + window.scrollY + parseFloat(cs.paddingBottom) + parseFloat(cs.marginBottom) + 4);
+      }
+      function send(force) {
+        const h = height();
+        if (!force && Math.abs(h - last) < 2) return;
+        last = h;
+        window.parent.postMessage({ type: 'pim-height', page: location.pathname.split('/').pop(), height: h }, '*');
+      }
+      new ResizeObserver(() => send(false)).observe(document.querySelector('.container'));
+      window.addEventListener('load', () => send(true));
+      // the embed's script asks once it is listening, in case this page loaded first
+      window.addEventListener('message', e => { if (e.data && e.data.type === 'pim-height?') send(true); });
+      send(true);
+    })();
   </script>
   <script>
     // Phones: a swipe that starts on an empty part of a drawing scrolls the page (touch-action: pan-y),
     // and a touch the page grabbed for a drag (its own setPointerCapture call) keeps the page still.
     // (hasPointerCapture can't tell: a touch is always captured implicitly.)
-    // The kinematics graphs are left out: a sideways drag scrubs them and an up-down one scrolls.
     document.querySelectorAll('canvas:not(.graph-canvas)').forEach(c => {
       let grabbed = false;
       const capture = c.setPointerCapture;
