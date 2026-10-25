@@ -18,47 +18,179 @@
   <!-- pim-meta:end -->
   <style>
     * { box-sizing: border-box; }
+    /* the hidden attribute must win over every display rule below */
+    [hidden] { display: none !important; }
     body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
     .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
-    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    h1 { margin: 0; font-size: 1.1rem; }
     .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
-    .groups { display: grid; grid-template-columns: auto 1fr; gap: 8px; }
-    .group { border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 8px 8px; min-width: 0; }
-    .group-title { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #64748b; margin-bottom: 6px; }
-    .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-    .controls { display: grid; grid-template-columns: 1.7fr 1fr 1fr 1.3fr 1.1fr; gap: 10px; align-items: end; }
-    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-    label { font-size: 0.8rem; font-weight: 600; }
-    .val { font-weight: normal; color: #334155; }
-    select { font-size: 0.9rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
-    input[type=range] { width: 100%; }
-    button { font-size: 0.9rem; padding: 7px 12px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; }
-    button.go { background: #2563eb; }
+
+    /* controls: the scenario menu, the steps and the simulation buttons; then the variables */
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 110px; }
+    .control-group.scen-group { flex: 2.2 1 260px; }
+    .control-group.button-group { flex: 2 1 280px; }
+    .control-group select { width: 100%; max-width: 100%; }
+    .controls input, .controls select, .controls button { height: 34px; }
+    label { font-size: 0.82rem; font-weight: 600; line-height: 1.2; }
+    label sub { line-height: 0; }
+    input, select, button { font-size: 0.95rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; }
+    input[type=number] { width: 100%; max-width: 120px; }
+    .buttons { display: flex; gap: 6px; flex-wrap: nowrap; }
+    button { cursor: pointer; background: #2563eb; color: white; border: none; min-width: 0; flex: 1; }
+    button:hover { background: #1d4ed8; }
+    button:disabled { background: #94a3b8; cursor: default; }
+    button.secondary { background: #475569; }
+    button.secondary:hover { background: #334155; }
+    button.secondary:disabled { background: #cbd5e1; color: #475569; }
     button.danger { background: #dc2626; }
-    button:disabled { opacity: 0.45; cursor: default; }
-    .status { font-size: 0.82rem; font-weight: 700; color: #334155; margin-top: 6px; min-height: 1em; }
-    .note ul { margin: 2px 0 0; padding-left: 18px; }
-    .note li { margin: 2px 0; }
-    .question { margin-top: 8px; font-size: 0.85rem; font-weight: 700; color: #7c2d12; background: #fff7ed; border-radius: 7px; padding: 6px 8px; }
+    button.danger:hover { background: #b91c1c; }
+    .moments { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+    .moments button { flex: none; padding: 6px 12px; }
+    .group-title { font-size: 0.78rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.03em; margin: 10px 0 4px; }
+    .inputs { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: flex-end; }
+    .inputs .control-group { flex: 0 1 auto; }
+    .inputs .none { font-size: 0.82rem; color: #475569; }
+    .label-row label { white-space: nowrap; }
+    .question { margin-top: 8px; font-size: 0.84rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 6px 10px; color: #7c2d12; }
     .question:empty { display: none; }
+    .step-text { margin-top: 8px; font-size: 0.9rem; font-weight: 700; color: #1e293b; }
+    .step-text:empty { display: none; }
+    .step-text .n { display: inline-block; background: #1e293b; color: white; border-radius: 999px; padding: 1px 8px; margin-right: 6px; font-size: 0.78rem; }
+
     .readout { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout.n6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
     .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card.hl { box-shadow: inset 0 0 0 2px #dc2626; }
+    .readout-card.ok { background: #ecfdf5; }
     .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
     .readout-card .value { font-size: 1rem; font-weight: bold; }
-    .readout-card.zero { background: #ecfdf5; }
-    .layout { display: grid; grid-template-columns: 1fr; gap: 8px; }
-    @media (min-width: 900px) { .layout { grid-template-columns: 1.7fr 1fr; } }
-    canvas { display: block; width: 100%; border-radius: 10px; touch-action: pan-y; }
-    #sceneCanvas { height: 250px; border: 1px solid #dbeafe; background: #f8fbff; }
-    #fbdCanvas { height: 250px; border: 1px solid #e5e7eb; background: #fbfdff; }
-    #graphCanvas { height: 170px; }
-    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
-    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    .words { margin-top: 8px; font-size: 0.86rem; font-weight: 600; color: #1e3a8a; background: #eef4ff; border-radius: 8px; padding: 6px 10px; }
+    .words:empty { display: none; }
+
+    .scene-wrap { margin-top: 8px; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 0 0 4px; }
+    .note { margin-top: 6px; font-size: 0.8rem; color: #475569; }
+    .note ul { margin: 2px 0 0; padding-left: 18px; }
+    .note li { margin: 2px 0; }
+    canvas { display: block; width: 100%; border-radius: 10px; background: white; }
+    #scene { height: 380px; border: 1px solid #dbeafe; touch-action: pan-y; }
+    #scene.t2 { height: 260px; }
+    #scene.t3 { height: 270px; }
+    #scene.t4 { height: 390px; }
+    .graph-title { font-weight: 700; margin: 8px 0 4px; font-size: 0.88rem; }
+    #graph { height: 210px; border: 1px solid #e5e7eb; touch-action: pan-y; }
+
+    /* the working, set like the notes: italic symbols, stacked fractions */
+    .work { margin-top: 8px; }
+    .work:empty { display: none; }
+    .math { font-family: 'Times New Roman', Times, serif; font-size: 1.06rem; color: #1f2937; }
+    /* a block line, not flex: inside flex every <sub> would become its own item and lose its drop */
+    .math .eq { display: block; margin: 4px 0; line-height: 2.1; }
+    .math .eq.lit { background: #fef9c3; border-radius: 4px; padding: 0 4px; }
+    .math .frac { display: inline-flex; flex-direction: column; text-align: center; vertical-align: middle; line-height: 1.15; }
+    .math .frac > span:first-child { border-bottom: 1px solid currentColor; padding: 0 3px; }
+    .math .frac > span:last-child { padding: 0 3px; }
+    .math b { font-family: Arial, Helvetica, sans-serif; }
+
+    /* ---- the step-by-step frame: header, numbered tabs, colour key, instruction strip ---- */
+    .app-head { background: #1e293b; color: #f8fafc; border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+    .head-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .head-row h1 { flex: 1 1 260px; }
+    .steps { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #cbd5e1; }
+    .step-bar { display: flex; gap: 3px; }
+    .step-bar i { display: block; width: 18px; height: 5px; border-radius: 3px; background: #475569; }
+    .step-bar i.on { background: #fbbf24; }
+    button.teacher-btn { flex: none; background: transparent; border: 1px solid #94a3b8; color: #f8fafc; font-size: 0.82rem; padding: 5px 10px; }
+    button.teacher-btn:hover { background: #334155; }
+    /* every tab always visible: equal columns, and a long name wraps onto a second line (never a sideways scroll) */
+    .tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; margin-top: 8px; }
+    button.tab { min-width: 0; background: #f1f5f9; color: #1e293b; font-size: 0.85rem; font-weight: 600; padding: 7px 8px; border-radius: 8px; line-height: 1.2; white-space: normal; text-align: center; }
+    button.tab:hover { background: #e2e8f0; }
+    button.tab.active, button.tab.active:hover { background: #2563eb; color: white; }
+    .tab .ts { display: none; }
+    .nw { white-space: nowrap; }
+    .ckey { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 7px; font-size: 0.76rem; color: #e2e8f0; }
+    .ckey > span { display: inline-flex; align-items: center; gap: 5px; }
+    .ckey b { display: inline-block; width: 14px; height: 4px; border-radius: 2px; }
+    .strip { background: #fef9c3; border-left: 4px solid #eab308; border-radius: 6px; padding: 7px 10px; font-size: 0.86rem; margin-bottom: 8px; }
+
+    /* Predict first (above the controls), key features */
+    .learn { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 8px; }
+    .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; }
+    .box-title { font-weight: 700; font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-q { font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-box { margin-bottom: 8px; }
+    .opts { display: grid; gap: 5px; }
+    #predictOpts { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    .predict-box.done #predictOpts { display: none; }
+    .predict-box.done .predict-q { margin-bottom: 0; }
+    button.opt { flex: none; width: 100%; text-align: left; background: white; color: #1f2937; border: 1px solid #cbd5e1; font-size: 0.86rem; padding: 7px 10px; }
+    button.opt:hover { background: #f1f5f9; }
+    button.opt.picked, button.opt.picked:hover { border-color: #2563eb; background: #eff6ff; box-shadow: inset 0 0 0 1px #2563eb; }
+    button.opt.right, button.opt.right:hover { border-color: #16a34a; background: #dcfce7; box-shadow: inset 0 0 0 1px #16a34a; }
+    button.opt.wrong, button.opt.wrong:hover { border-color: #dc2626; background: #fee2e2; box-shadow: inset 0 0 0 1px #dc2626; }
+    .row-btns { display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+    .row-btns button { flex: none; padding: 6px 12px; }
+    .feedback { font-size: 0.84rem; margin-top: 7px; }
+    .feedback:empty { display: none; }
+    .feedback .verdict { font-weight: 700; }
+    .feedback .verdict.ok { color: #15803d; }
+    .feedback .verdict.no { color: #b91c1c; }
+    .feats { display: flex; flex-wrap: wrap; gap: 6px; }
+    button.feat { flex: none; background: white; color: #1e293b; border: 1px solid #cbd5e1; font-size: 0.84rem; padding: 6px 11px; border-radius: 999px; }
+    button.feat:hover { background: #f1f5f9; }
+    button.feat.on, button.feat.on:hover { background: #1e293b; color: white; border-color: #1e293b; }
+    .feat-note { font-size: 0.82rem; color: #334155; margin-top: 6px; }
+    .feat-note:empty { display: none; }
+
+    /* Challenge */
+    .quiz { max-width: 760px; margin: 0 auto; }
+    .quiz-top { display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 700; margin-bottom: 4px; }
+    .quiz-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+    .quiz-bar i { display: block; height: 100%; background: #2563eb; width: 0; }
+    .quiz-q { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+    .quiz-src { font-size: 0.76rem; color: #475569; margin-bottom: 8px; }
+    .qpart { margin-top: 12px; }
+    .qpart + .qpart { border-top: 1px solid #e2e8f0; padding-top: 10px; }
+    .qpart-q { font-size: 0.92rem; font-weight: 600; margin-bottom: 6px; }
+    .quiz-sum ul { padding-left: 18px; font-size: 0.86rem; }
+    .quiz-sum li { margin: 4px 0; }
+
+    /* Teacher mode */
+    .teacher { position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 92vw); background: white; box-shadow: -4px 0 18px rgba(0,0,0,0.18); padding: 12px; overflow-y: auto; z-index: 20; }
+    .teacher h2 { font-size: 1rem; margin: 0 0 8px; }
+    .teacher .tbtns { display: grid; gap: 6px; }
+    .teacher .tbtns button { background: white; color: #1e293b; border: 1px solid #cbd5e1; flex: none; }
+    .teacher .tbtns button:hover { background: #f1f5f9; }
+    .teacher .tbtns button.on { background: #1e293b; color: white; }
+    .teacher h3 { font-size: 0.9rem; margin: 14px 0 4px; }
+    .teacher ul { padding-left: 18px; margin: 0; font-size: 0.84rem; }
+    .teacher li { margin: 4px 0; }
+    body.no-explain .strip, body.no-explain .words, body.no-explain .feedback .why, body.no-explain .feat-note { display: none; }
+    body.no-answers .readout-card .value, body.no-answers .work { filter: blur(6px); }
+    body.free-mode .predict-box { display: none; }
+
     @media (max-width: 900px) {
-      .groups { grid-template-columns: 1fr; }
-      .controls { grid-template-columns: 1fr 1fr; }
-      .controls .control-group:first-child { grid-column: 1 / -1; }
-      .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .readout, .readout.n6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 700px) {
+      h1 { font-size: 1rem; }
+      #scene { height: 600px; }
+      #scene.t2 { height: 270px; }
+      #scene.t3 { height: 280px; }
+      #scene.t4 { height: 400px; }
+      #graph { height: 200px; }
+      .readout, .readout.n6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .tab .tl { display: none; }
+      .tab .ts { display: inline; }
+      /* phones: short names in rows that wrap, so all five tabs show without scrolling */
+      .tabs { display: flex; flex-wrap: wrap; }
+      button.tab { flex: 1 1 auto; white-space: nowrap; }
+    }
+    @media (max-width: 420px) {
+      .buttons button { padding: 6px 4px; }
+      .inputs .control-group { flex: 1 1 40%; }
     }
     /* Touch screens (phones, tablets; Samsung Internet reports hover: hover on a phone, so only pointer is tested):
        16 px form fields stop an iPhone zooming the page in when one is
@@ -67,6 +199,7 @@
       input:not([type=range]):not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
       button { min-height: 36px; }
       input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
+      .controls input, .controls select, .controls button { height: 36px; }
     }
   </style>
   <!-- pim-nav-style:start (generated by scripts/pim-nav.ts) -->
@@ -95,80 +228,331 @@
     <a class="pim-nav-btn pim-nav-next" href="newtons-third-law-pairs.html" title="Next: Newton's Third Law: Action and Reaction (Chapter 3)" aria-label="Next: Newton's Third Law: Action and Reaction (Chapter 3)"><span class="pim-nav-text"><span class="pim-nav-kicker">Next<span class="pim-nav-ch"> &middot; Chapter 3</span></span><span class="pim-nav-name">Newton's Third Law: Action and Reaction</span></span><span class="pim-nav-arrow" aria-hidden="true">&rsaquo;</span></a>
   </nav>
   <!-- pim-nav:end -->
-    <h1>Newton's Second Law with Friction</h1>
 
-    <div class="panel">
-      <div class="groups">
-        <div class="group">
-          <div class="group-title">Simulation controls</div>
-          <div class="row">
-            <button id="startBtn" class="go">Start</button>
-            <button id="playBtn">Pause</button>
-            <button id="resetBtn" class="danger">Reset</button>
+    <header class="app-head">
+      <div class="head-row">
+        <h1>Newton's Second Law with Friction</h1>
+        <div class="steps"><span id="stepLabel">Step 1 of 5</span><span class="step-bar" id="stepBar"><i></i><i></i><i></i><i></i><i></i></span></div>
+        <button class="teacher-btn" id="teacherBtn" type="button" hidden>Teacher mode</button>
+      </div>
+      <div class="tabs" role="tablist" id="tabs">
+        <button class="tab" role="tab" data-tab="1" type="button"><span class="tl">1. Free-body diagram</span><span class="ts">1. Free-body</span></button>
+        <button class="tab" role="tab" data-tab="2" type="button"><span class="tl">2. First law and inertia</span><span class="ts">2. First law</span></button>
+        <button class="tab" role="tab" data-tab="3" type="button"><span class="tl">3. <span class="nw">&Sigma;<i>F</i> = <i>ma</i></span> with friction</span><span class="ts">3. <span class="nw">&Sigma;<i>F</i> = <i>ma</i></span></span></button>
+        <button class="tab" role="tab" data-tab="4" type="button"><span class="tl">4. Connected blocks and pulleys</span><span class="ts">4. Pulleys</span></button>
+        <button class="tab" role="tab" data-tab="5" type="button"><span class="tl">5. Challenge</span><span class="ts">5. Challenge</span></button>
+      </div>
+      <div class="ckey" id="ckey"></div>
+    </header>
+
+    <div class="strip" id="strip"></div>
+
+    <!-- tabs 1 to 4: Predict first comes first, above the controls and the picture -->
+    <div class="box predict-box" id="predictBox">
+      <div class="box-title">Predict first</div>
+      <div class="predict-q" id="predictQ"></div>
+      <div class="opts" id="predictOpts"></div>
+      <div class="feedback" id="predictFb"></div>
+      <div class="row-btns" id="predictBtns"><button id="predictCheck" type="button">Check my answer</button></div>
+    </div>
+
+    <!-- Tabs 1 to 4 share one drawing -->
+    <section class="tab-page" id="pageSim">
+      <div class="panel">
+        <div class="controls">
+          <div class="control-group scen-group">
+            <label for="preset">Scenarios</label>
+            <select id="preset"></select>
           </div>
-        </div>
-        <div class="group">
-          <div class="group-title">Experimental controls</div>
-          <div class="controls">
-            <div class="control-group">
-              <label for="preset">Scenarios</label>
-              <select id="preset">
-                <option value="accelerate" selected>Push bigger than friction</option>
-                <option value="ex14">Push equal to friction</option>
-                <option value="slowdown">No push</option>
-                <option value="custom">Custom</option>
-              </select>
+          <div class="control-group button-group" id="stepGroup">
+            <label>Steps</label>
+            <div class="buttons">
+              <button id="prevStep" class="secondary" type="button">&lsaquo; Previous step</button>
+              <button id="nextStep" type="button">Next step &rsaquo;</button>
+              <button id="resetSteps" class="danger" type="button">Reset</button>
             </div>
-            <div class="control-group"><label for="mass">Mass <i>m</i> <span class="val" id="massVal"></span></label><input id="mass" type="range" min="1" max="20" step="0.5" /></div>
-            <div class="control-group"><label for="fric">Friction <i>f</i> <span class="val" id="fricVal"></span></label><input id="fric" type="range" min="0" max="40" step="0.2" /></div>
-            <div class="control-group"><label for="force">Applied force <i>F</i> <span class="val" id="forceVal"></span></label><input id="force" type="range" min="0" max="40" step="0.2" /></div>
-            <div class="control-group"><label for="u">Starting velocity <i>u</i> <span class="val" id="uVal"></span></label><input id="u" type="range" min="0.5" max="6" step="0.5" /></div>
+          </div>
+          <div class="control-group button-group" id="simGroup">
+            <label>Simulation controls</label>
+            <div class="buttons">
+              <button id="startBtn" type="button">Start</button>
+              <button id="pauseBtn" class="secondary" type="button">Pause</button>
+              <button id="resetBtn" class="danger" type="button">Reset</button>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="question" id="question"></div>
-      <div class="readout">
-        <div class="readout-card" id="netCard"><div class="title">Net force &Sigma;<i>F</i></div><div class="value" id="net">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Acceleration <i>a</i> = &Sigma;<i>F</i> / <i>m</i></div><div class="value" id="acc">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Velocity <i>v</i></div><div class="value" id="vel">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Friction <i>f</i></div><div class="value" id="fnow">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Normal force <i>N</i> = <i>W</i> = <i>mg</i></div><div class="value" id="nval">&mdash;</div></div>
-      </div>
-      <div class="status" id="status"></div>
-    </div>
+        <div class="moments" id="moments">
+          <button id="prevMoment" class="secondary" type="button">&lsaquo; Previous key moment</button>
+          <button id="nextMoment" class="secondary" type="button">Next key moment &rsaquo;</button>
+        </div>
+        <div class="question" id="question"></div>
+        <div class="group-title" id="expTitle">Experimental controls</div>
+        <div class="inputs" id="inputs"></div>
 
-    <div class="layout">
-      <div class="panel">
-        <div class="hint">The block is already sliding to the right. Press Start for a 10 s run. Drag the tip of the red force arrow to change the push, before the run or while it moves.</div>
-        <canvas id="sceneCanvas"></canvas>
-      </div>
-      <div class="panel">
-        <canvas id="fbdCanvas"></canvas>
-        <div class="note">Free-body diagram (arrow lengths to scale): weight <i>W</i> = <i>mg</i> down, normal force <i>N</i> up, applied force <i>F</i>, friction <i>f</i>. The red arrow underneath is the net force. <i>g</i> = 10 m s<sup>-2</sup>.</div>
-      </div>
-    </div>
+        <div class="step-text" id="stepText"></div>
 
-    <div class="panel">
-      <b style="font-size:0.88rem">Velocity&ndash;time graph</b>
-      <canvas id="graphCanvas"></canvas>
-    </div>
+        <!-- the readouts go under the drawing: nothing above the canvas may change height while a finger drags -->
+        <div class="scene-wrap">
+          <div class="hint" id="sceneHint"></div>
+          <canvas id="scene"></canvas>
+          <div id="graphWrap">
+            <div class="graph-title">Velocity&ndash;time graph, <i>v</i>&ndash;<i>t</i></div>
+            <canvas id="graph"></canvas>
+          </div>
+          <div class="readout" id="readout"></div>
+          <div class="words" id="words"></div>
+          <div class="work" id="work"></div>
+          <div class="note" id="notes"></div>
+        </div>
+      </div>
+
+      <div class="learn">
+        <div class="box" id="featBox">
+          <div class="box-title">Key features (tap one)</div>
+          <div class="feats" id="feats"></div>
+          <div class="feat-note" id="featNote"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 5: Challenge -->
+    <section class="tab-page" id="page5" hidden>
+      <div class="panel">
+        <div class="quiz" id="quiz"></div>
+      </div>
+    </section>
   </div>
 
+  <aside class="teacher" id="teacher" hidden aria-label="Teacher mode">
+    <h2>Teacher mode</h2>
+    <div class="tbtns">
+      <button id="tExplain" type="button">Hide explanations</button>
+      <button id="tFree" type="button">Switch to free exploration</button>
+      <button id="tAnswers" type="button">Hide answer labels</button>
+      <button id="tFull" type="button">Full screen</button>
+      <button id="tReset" type="button">Reset whole applet</button>
+      <button id="tClose" type="button">Close</button>
+    </div>
+    <h3>Suggested prompts</h3>
+    <ul id="tPrompts"></ul>
+  </aside>
+
   <script>
-    const G = 10;
-    const el = id => document.getElementById(id);
-    // Every scenario starts with the block already sliding, so friction is always the same size f and opposes
-    // the motion. A block at rest (friction that changes with the push) is left out: the course doesn't teach it.
+    const $ = id => document.getElementById(id);
+    const canvas = $('scene'), graphCv = $('graph'), presetEl = $('preset');
+    let currentTab = 1, freeMode = false;
+
+    /* ---------------- numbers and symbols ---------------- */
+    const G = 10; // g = 10 m s^-2, as the notes and Tutorial 3 take it
+    const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
+    const clean = v => (Math.abs(v) < 1e-9 ? 0 : v);
+    // 3 significant figures, as the lecturer's copy gives them (0.167, 1.67 N, 20.3 N); exact whole numbers stay
+    // whole (50 N, 2 m s^-2); a 1e-12 nudge so a binary half rounds up; a true minus sign
+    const f3 = v => {
+      const x = clean(v);
+      if (Math.abs(x - Math.round(x)) < 1e-9) return String(Math.round(x)).replace('-', '−');
+      const t = (x * (1 + 1e-12)).toPrecision(3);
+      // an exact value keeps its own figures (0.4 N, 1.25, 17.6); only a rounded one is padded to 3 (0.167, 4.70)
+      if (Math.abs(+t - x) < 1e-9 || Math.abs(x) >= 100) return String(+t).replace('-', '−');
+      return t.replace('-', '−');
+    };
+    const plain = v => String(+(+v).toFixed(2)).replace('-', '−'); // a typed value as typed: 10, 17.6
+    const tx = t => (Math.round(t * 100) / 100).toFixed(2);      // a time on the clock: 2.00 s
+    const MS2 = 'm s<sup>−2</sup>', MS1 = 'm s<sup>−1</sup>';
+    const SF = 'Σ<i>F</i>', SFX = 'Σ<i>F</i><sub><i>x</i></sub>', SFY = 'Σ<i>F</i><sub><i>y</i></sub>';
+    const COL = { W: '#ea580c', N: '#16a34a', F: '#2563eb', f: '#334155', T: '#db2777', R: '#dc2626', v: '#15803d', a: '#7c3aed' };
+
+    /* ---------------- scenarios (every number from the notes, the lecturer's copy or Tutorial 3) ---------------- */
     const PRESETS = {
-      accelerate: { m: 5, f: 8, F: 20, u: 2 },
-      ex14: { m: 5, f: 17.6, F: 17.6, u: 2 },
-      slowdown: { m: 5, f: 8, F: 0, u: 6 }
+      // tab 1: free-body diagrams. unk = the quantity the example asks for.
+      ex13: { tab: 1, name: '5 kg object at rest', m: 5, F: 0, th: 0, f: 0, a: 0, unk: 'N', motion: 'rest',
+        q: 'Example 13 (notes p. 3-49): An object of mass 5 kg rests on a horizontal surface. (a) Draw the free-body diagram of the object. (b) Find the magnitude of the following forces: (i) the weight <i>W</i> of the object, (ii) the components of <i>W</i> along the <i>x</i>- and <i>y</i>-axes, (iii) the normal reaction force <i>N</i>.' },
+      ex14: { tab: 1, name: 'Pulled at 30°, uniform velocity', m: null, F: null, th: 30, f: 17.6, a: 0, unk: 'F', motion: 'uniform',
+        q: 'Example 14 (notes p. 3-50): A box is pulled on a horizontal surface at uniform velocity by a force <i>P</i>, at 30° above the horizontal. The frictional force <i>Q</i> between the box and the surface is 17.6 N. (a) Draw the free-body diagram of the box. (b) Find the magnitude of <i>P</i>.' },
+      b4: { tab: 1, name: 'Pushed with 30 N, accelerating', m: 2, F: 30, th: 0, f: null, a: 1, unk: 'f', motion: 'accel',
+        q: 'Tutorial 3, B4: A 2.0 kg box is being pushed horizontally along a rough surface by a 30 N force at a constant acceleration of 1.0 m s<sup>−2</sup>. (a) What is the net force acting on the box? (b) What is the frictional force between the box and the surface?' },
+
+      // tab 2: velocity profiles [t, v], straight lines between the points
+      rest: { tab: 2, name: 'Puck at rest on the ice', kind: 'puck', v: 0, tEnd: 4,
+        q: 'Notes p. 3-16: A hockey puck placed on the ice has an upward force and a downward force acting on it. These two forces produce a net force of zero. Press Start: what does the puck do?' },
+      slide: { tab: 2, name: 'Puck sliding at constant speed', kind: 'puck', v: 2, tEnd: 4,
+        q: 'Notes p. 3-17: A hockey puck slides to the right with constant speed on the ice. There is an upward force and a downward force acting on it, such that their net force is zero. Press Start: what happens to its speed?' },
+      trolley: { tab: 2, name: 'Box on a trolley hits a wall', kind: 'trolley', u: 3, dec: 1, tHit: 2,
+        q: 'Try it! (notes p. 3-46): A box is on a smooth trolley moving with constant velocity 3.0 m s<sup>−1</sup>. The trolley strikes a vertical wall at <i>t</i> = 2 s, and the box is projected onto a horizontal rough surface. Draw the velocity-time graph for the box, given the constant deceleration of the object on the rough surface is 1 m s<sup>−2</sup>.' },
+      b3: { tab: 2, name: 'Velocity–time graph, 2.0 kg', kind: 'graph', m: 2, pts: [[0, 0], [10, 2], [30, 2], [35, 0]], tEnd: 35, speed: 5,
+        q: 'Tutorial 3, B3: The velocity-time graph of an object of mass 2.0 kg rises from 0 to 2 m s<sup>−1</sup> between 0 and 10 s, stays at 2 m s<sup>−1</sup> until 30 s, then falls to 0 at 35 s. (a) Between which time interval(s) did the object experience a net force? (b) Are the net forces the same in magnitude and direction? (c) Which Newton’s law of motion is applicable between 10 s and 30 s?' },
+
+      // tab 3: a block with a force to the right (F) and one to the left (L). kind 'force': L always acts;
+      // 'friction': L acts only while the block slides to the right, and can stop it but never push it back
+      ex11: { tab: 3, name: 'Car of mass 1500 kg', m: 1500, F: 4500, L: 0, kind: 'force', u: 0, tEnd: 4,
+        q: 'Example 11 (notes p. 3-38): A car has a mass of 1500 kg. (a) Calculate the resultant force <i>F</i> required to give the car an acceleration of 3 m s<sup>−2</sup>. (b) Calculate the acceleration if <i>F</i> is doubled.' },
+      ex2a: { tab: 3, name: '5 N and 3 N on a 2 kg block', m: 2, F: 5, L: 3, kind: 'force', u: 0, tEnd: 4,
+        q: 'Exercise 2 (notes p. 3-39): A 3 N force acts to the left and a 5 N force to the right on a 2 kg block. Determine the magnitude and direction of the net force and acceleration.' },
+      ex2b: { tab: 3, name: '5 N and 10 N on a 4 kg block', m: 4, F: 5, L: 10, kind: 'force', u: 0, tEnd: 4,
+        q: 'Exercise 2 (notes p. 3-39): A 10 N force acts to the left and a 5 N force to the right on a 4 kg block. Determine the magnitude and direction of the net force and acceleration.' },
+      a3: { tab: 3, name: 'Pushed at constant velocity', m: 2, F: 30, L: 30, kind: 'friction', u: 1, tEnd: 4,
+        q: 'Tutorial 3, A3: A 2.0 kg box is being pushed horizontally along a rough surface by a 30 N force at a constant velocity of 1.0 m s<sup>−1</sup>. (a) What is the net force acting on the box? (b) What is the frictional force between the box and the surface?' },
+      b4m: { tab: 3, name: 'Pushed with 30 N, speeding up', m: 2, F: 30, L: 28, kind: 'friction', u: 0, tEnd: 4,
+        q: 'Tutorial 3, B4: A 2.0 kg box is being pushed horizontally along a rough surface by a 30 N force at a constant acceleration of 1.0 m s<sup>−2</sup>. The frictional force is 28 N. Press Start and check the acceleration.' },
+
+      // tab 4: two bodies joined by a light string
+      ex17: { tab: 4, name: 'Two blocks on a smooth floor', lay: 'floor', mA: 50, mB: 10, P: 10,
+        q: 'Example 17 (notes p. 3-53): Two blocks A and B connected by a light string are pulled to the right by a 10 N force <i>P</i> on a smooth horizontal floor. (a) Draw a free body diagram for each block. (b) Find the acceleration of the blocks. (c) Find the tension <i>T</i> in the string.' },
+      ex18: { tab: 4, name: 'Two boxes over a pulley', lay: 'hang', mA: 30, mB: 20,
+        q: 'Example 18 (notes p. 3-55): Two boxes A and B are connected by a light string that passes over a frictionless pulley. (a) Draw the free body diagram for each box. (b) Find the acceleration of the boxes. (c) Find the tension <i>T</i> in the string.' },
+      ex19: { tab: 4, name: 'One on a table, one hanging', lay: 'table', mA: 30, mB: 20,
+        q: 'Example 19 (notes p. 3-56): Two boxes A and B are connected by a light string that passes over a frictionless pulley. (a) Draw the free body diagram for each box. (b) Find the acceleration of the boxes. (c) Find the tension <i>T</i> in the string. (The working takes the table as smooth.)' },
+      b9: { tab: 4, name: '40 kg on a bench, 10 kg hanging', lay: 'table', mA: 40, mB: 10,
+        q: 'Tutorial 3, B9: A 40 kg mass is initially at rest on a smooth bench and a 10 kg mass is attached to it. (a) Draw the free-body diagram of each mass. (b) What is the acceleration of the system? (c) What is the speed of the 10 kg mass after 2 s after the masses start moving?' }
     };
-    const T_RUN = 10; // one run lasts 10 s, then the block and the graph stop
-    const QUESTIONS = {
-      ex14: 'Example 14: a box is pulled on a horizontal surface at uniform velocity by a force <i>P</i>. The frictional force <i>Q</i> between the box and the surface is 17.6 N. Draw the free-body diagram of the box and find the magnitude of <i>P</i>. Press Start: the velocity stays the same, so what must the net force be?',
-    };
-    const sim = { x: 0, v: 0, t: 0, running: false, started: false, stopped: false, hist: [] };
+    const CUSTOM_NAME = { 1: 'Your own box', 2: 'Your own trolley run', 3: 'Your own forces', 4: 'Your own masses' };
+
+    /* ---------------- the state ---------------- */
+    // P1..P4: the values in use on each tab (a copy of the scenario, changed by the inputs and drags)
+    let S = { scen: 'ex13', base: 'ex13', step: 1, custom: false };
+    let P1 = {}, P2 = {}, P3 = {}, P4 = {};
+    const sim = { t: 0, running: false, last: null };
+    const STEPS = { 1: 6, 4: 5 };
+    let hl = {}, feat = {};
+
+    function loadScenario(id) {
+      const P = PRESETS[id];
+      S.scen = id; S.custom = id === 'custom';
+      if (!S.custom) {
+        S.base = id;
+        if (P.tab === 1) P1 = { m: P.m, F: P.F, th: P.th, f: P.f, a: P.a, unk: P.unk, motion: P.motion };
+        if (P.tab === 2) P2 = Object.assign({}, P);
+        if (P.tab === 3) P3 = { m: P.m, F: P.F, L: P.L, kind: P.kind, u: P.u, tEnd: P.tEnd };
+        if (P.tab === 4) P4 = { lay: P.lay, mA: P.mA, mB: P.mB, P: P.P || 0 };
+        $('question').innerHTML = P.q;
+      } else $('question').innerHTML = 'Your own values. Choose a scenario from the menu to go back to an example from the notes.';
+      S.step = freeMode ? (STEPS[currentTab] || 1) : 1;
+      sim.t = 0; sim.running = false; sim.last = null;
+    }
+
+    /* ---------------- tab 1: the free-body diagram ---------------- */
+    // the values of every force; null = not given in the example; the unknown is solved from Newton's 2nd law
+    function fbd() {
+      const P = P1, custom = S.custom;
+      // every value is worked out from the example's own data (m, g, the forces, a), never typed in as an answer
+      if (!custom && P.unk === 'N') { const W = P.m * G; return { m: P.m, W, N: W, F: 0, th: 0, f: 0, net: 0, a: 0 }; } // at rest: ΣFy = 0
+      if (!custom && P.unk === 'F') return { m: null, W: null, N: null, F: P.f / Math.cos(rad(P.th)), th: P.th, f: P.f, net: 0, a: 0 }; // uniform velocity: ΣFx = 0
+      if (!custom && P.unk === 'f') { const W = P.m * G, net = P.m * P.a; return { m: P.m, W, N: W, F: P.F, th: 0, f: P.F - net, net, a: P.a }; } // ΣF = ma
+      const m = P.m, W = m * G, net = P.F * Math.cos(rad(P.th)) - P.f;
+      return { m, W, N: W - P.F * Math.sin(rad(P.th)), F: P.F, th: P.th, f: P.f, net, a: net / m };
+    }
+    // names: Example 14 calls the pull P and the friction Q
+    const nmF = () => (S.base === 'ex14' && !S.custom ? '<i>P</i>' : '<i>F</i>');
+    const nmf = () => (S.base === 'ex14' && !S.custom ? '<i>Q</i>' : '<i>f</i>');
+    const unknown1 = () => (S.custom ? 'a' : P1.unk);
+    // which step shows each force
+    const AT = { W: 2, N: 3, F: 4, f: 5, net: 6 };
+    const shown1 = k => S.step >= AT[k];
+    const known1 = k => !(k === unknown1() && S.step < 6);
+
+    /* ---------------- tab 2: velocity profiles ---------------- */
+    function profile() {
+      const P = P2;
+      if (P.kind === 'puck') return { pts: [[0, P.v], [P.tEnd, P.v], [P.tEnd + 1, P.v]], tEnd: P.tEnd };
+      if (P.kind === 'graph') return { pts: [...P.pts, [P.tEnd + 1, 0]], tEnd: P.tEnd };
+      const tStop = P.tHit + P.u / P.dec, tEnd = Math.ceil(tStop + 0.999);
+      return { pts: [[0, P.u], [P.tHit, P.u], [tStop, 0], [tEnd + 1, 0]], tEnd, tStop };
+    }
+    // v and x at time t (exact for straight-line pieces); a is the gradient of the piece starting at t
+    function at2(t) {
+      const { pts } = profile();
+      let x = 0, v = pts[0][1], a = 0;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const [t0, v0] = pts[i], [t1, v1] = pts[i + 1];
+        const g = (v1 - v0) / (t1 - t0);
+        if (t >= t1) { x += (v0 + v1) / 2 * (t1 - t0); continue; }
+        const d = t - t0; v = v0 + g * d; x += v0 * d + g * d * d / 2; a = g; break;
+      }
+      return { v, x, a };
+    }
+
+    /* ---------------- tab 3: the block ---------------- */
+    function motion3(t) {
+      const { m, F, L, kind, u } = P3;
+      const a0 = (F - L) / m;
+      if (kind === 'force') return { v: u + a0 * t, x: u * t + a0 * t * t / 2, a: a0, net: F - L, moving: true };
+      // friction: only while the block slides to the right
+      if (u <= 1e-9 && F <= L) return { v: 0, x: 0, a: 0, net: 0, moving: false, never: true };
+      if (a0 >= 0) return { v: u + a0 * t, x: u * t + a0 * t * t / 2, a: a0, net: F - L, moving: true };
+      const ts = u / -a0;
+      if (t < ts - 1e-9) return { v: u + a0 * t, x: u * t + a0 * t * t / 2, a: a0, net: F - L, moving: true, ts };
+      return { v: 0, x: u * ts / 2, a: 0, net: 0, moving: false, stopped: true, ts };
+    }
+    function stop3() { const s = motion3(1e9); return s.ts !== undefined ? Math.min(P3.tEnd, s.ts) : P3.tEnd; }
+
+    /* ---------------- tab 4: two bodies and a string ---------------- */
+    function solve4() {
+      const { lay, mA, mB, P } = P4, M = mA + mB;
+      if (lay === 'floor') { const a = P / M; return { a, T: mB * a }; }
+      if (lay === 'table') { const a = mB * G / M; return { a, T: mA * a }; }
+      // hanging over the pulley: a > 0 means A goes down
+      const a = (mA - mB) * G / M; return { a, T: 2 * mA * mB * G / M };
+    }
+    const T4END = 2;
+
+    /* ---------------- the clock ---------------- */
+    function runEnd() {
+      if (currentTab === 2) return profile().tEnd;
+      if (currentTab === 3) return stop3();
+      if (currentTab === 4) return T4END;
+      return 0;
+    }
+    const playSpeed = () => (currentTab === 2 && P2.kind === 'graph' ? P2.speed : 1);
+    function frame(ts) {
+      if (!sim.running) return;
+      if (sim.last === null) sim.last = ts;
+      // a first rAF timestamp can be earlier than the one stored: never step backwards
+      const dt = Math.max(0, Math.min(0.05, (ts - sim.last) / 1000)); sim.last = ts;
+      const end = runEnd();
+      sim.t = Math.min(end, sim.t + dt * playSpeed());
+      if (sim.t >= end - 1e-9) { sim.t = end; sim.running = false; }
+      update();
+      if (sim.running) requestAnimationFrame(frame);
+    }
+    function start() {
+      if (sim.t >= runEnd() - 1e-9) sim.t = 0;
+      sim.running = true; sim.last = null; update(); requestAnimationFrame(frame);
+    }
+    function setTime(t) { sim.running = false; sim.last = null; sim.t = Math.max(0, Math.min(runEnd(), t)); update(); }
+    function resetRun() { sim.running = false; sim.last = null; sim.t = 0; update(); }
+    function keyMoments() {
+      const end = runEnd(), m = [0];
+      if (currentTab === 2) {
+        const pr = profile();
+        const every = pr.tEnd > 12 ? 5 : 1;
+        for (let s = every; s <= end + 1e-9; s += every) m.push(s);
+        pr.pts.forEach(([t]) => m.push(t));
+      } else if (currentTab === 3) {
+        for (let s = 1; s <= end + 1e-9; s++) m.push(s);
+        m.push(end);
+      } else if (currentTab === 4) { m.push(0.5, 1, 1.5, 2); }
+      return m.filter(x => x <= end + 1e-9).sort((p, q) => p - q).filter((x, i, a) => i === 0 || x - a[i - 1] > 1e-6);
+    }
+    $('startBtn').addEventListener('click', start);
+    $('pauseBtn').addEventListener('click', () => {
+      if (sim.running) { sim.running = false; sim.last = null; update(); }
+      else if (sim.t > 0 && sim.t < runEnd()) start();
+    });
+    $('resetBtn').addEventListener('click', resetRun);
+    $('nextMoment').addEventListener('click', () => { const n = keyMoments().find(m => m > sim.t + 1e-6); if (n !== undefined) setTime(n); });
+    $('prevMoment').addEventListener('click', () => { const p = keyMoments().filter(m => m < sim.t - 1e-6).pop(); if (p !== undefined) setTime(p); });
+
+    /* ---------------- drawing helpers ---------------- */
+    // what the canvas drew, for the checks: every label's box and every arrow, with the pane they belong to
+    window.__pim = { labels: [], arrows: [], panes: [] };
+    function setup(cv) {
+      const r = cv.getBoundingClientRect();
+      if (r.width < 20 || r.height < 20) return null; // hidden: never draw at no size
+      const dpr = window.devicePixelRatio || 1, cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
+      if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+      const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, r.width, r.height);
+      return { ctx, W: r.width, H: r.height };
+    }
     // Canvas text with <i>, <sub> and <sup> runs, so symbols of physical quantities are italic, as in the notes.
     // Honours ctx.textAlign; returns the width. measureOnly = true draws nothing.
     function richText(ctx, s, x, y, measureOnly) {
@@ -194,226 +578,1046 @@
       ctx.textAlign = align; ctx.font = base;
       return w;
     }
-
-
-    function applyPreset() {
-      el('question').innerHTML = QUESTIONS[el('preset').value] || '';
-      const p = PRESETS[el('preset').value]; if (!p) return;
-      el('mass').value = p.m; el('fric').value = p.f; el('force').value = p.F; el('u').value = p.u;
-      reset();
-    }
-    function reset() { const u = +el('u').value; sim.x = 0; sim.v = u; sim.t = 0; sim.hist = [{ t: 0, v: u }]; sim.running = false; sim.started = false; sim.stopped = false; }
-    // one decimal place, without float drift (3.7499999 s is 3.75 s, which shows as 3.8)
-    const d1 = v => (Math.round(v * 1e6) / 1e6).toFixed(1);
-    const done = () => sim.stopped || sim.t >= T_RUN - 1e-9;
-    const P = () => ({ m: +el('mass').value, f: +el('fric').value, F: +el('force').value });
-
-    // Friction and net force while the block slides to the right: friction is f, to the left.
-    // Once a run has stopped the block, there is no sliding friction to show (moving: false).
-    function forces() {
-      const { m, f, F } = P();
-      if (sim.stopped) return { m, f, F, fr: 0, net: 0, a: 0, N: m * G, moving: false };
-      return { m, f, F, fr: -f, net: F - f, a: (F - f) / m, N: m * G, moving: true };
-    }
-
-    function step(dt) {
-      const n = 10;
-      for (let i = 0; i < n; i++) {
-        const h = Math.min(dt / n, T_RUN - sim.t); // the last sub-step ends exactly at 10 s
-        if (h <= 0) break;
-        const s = forces();
-        const v0 = sim.v, v1 = v0 + s.a * h;
-        // friction can stop a sliding block but never push it backwards: the run ends when it stops
-        if (v1 <= 0) {
-          const tau = -v0 / s.a; // it stops part-way through this sub-step, after v0^2 / 2|a|
-          sim.x += v0 * tau / 2; sim.t += tau; sim.v = 0; sim.stopped = true;
-          break;
-        } else {
-          sim.x += (v0 + v1) / 2 * h; // exact for constant acceleration within the sub-step
-          sim.v = v1;
-        }
-        sim.t += h;
-      }
-      const last = sim.hist[sim.hist.length - 1];
-      if (!last || sim.t - last.t > 0.05 || done()) sim.hist.push({ t: sim.t, v: sim.v });
-      if (done()) sim.running = false;
-    }
-
-    function setup(canvas) {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      const cw = Math.round(rect.width * dpr), ch = Math.round(rect.height * dpr);
-      if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
-      const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      return { ctx, w: rect.width, h: rect.height };
-    }
-    function arrow(ctx, x1, y1, x2, y2, color, lw = 4, head = 11) {
+    let PANE = '', CW = 1e9; // the pane name for the checks; the canvas width a label must stay inside
+    function arrow(ctx, x1, y1, x2, y2, color, lw = 3.5, head = 11, dash = null) {
       const len = Math.hypot(x2 - x1, y2 - y1); if (len < 1.5) return;
+      __pim.arrows.push({ pane: PANE, x1, y1, x2, y2 });
       const a = Math.atan2(y2 - y1, x2 - x1), hd = Math.min(head, len * 0.6);
       ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
+      if (dash) ctx.setLineDash(dash);
       ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - Math.cos(a) * hd * 0.8, y2 - Math.sin(a) * hd * 0.8); ctx.stroke();
+      ctx.setLineDash([]);
       ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - hd * Math.cos(a - 0.45), y2 - hd * Math.sin(a - 0.45)); ctx.lineTo(x2 - hd * Math.cos(a + 0.45), y2 - hd * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill();
     }
-    function tag(ctx, t, x, y, color, align = 'center') {
-      ctx.font = 'bold 12px Arial'; ctx.textAlign = align; ctx.textBaseline = 'middle';
-      const tw = richText(ctx, t, 0, 0, true), x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
-      ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(x0 - 3, y - 8, tw + 6, 16);
-      ctx.fillStyle = color; richText(ctx, t, x, y); ctx.textBaseline = 'alphabetic';
+    // a label on a white card; align 'left' | 'center' | 'right'; returns its box
+    function label(ctx, html, x, y, color, align = 'center', size = 12) {
+      ctx.font = `bold ${size}px Arial`; ctx.textAlign = align; ctx.textBaseline = 'middle';
+      const w = richText(ctx, html, 0, 0, true);
+      // never off the canvas: a label near an edge slides back inside it
+      const x0 = Math.max(4, Math.min(CW - w - 4, align === 'center' ? x - w / 2 : align === 'right' ? x - w : x));
+      const box = { pane: PANE, text: html.replace(/<[^>]+>/g, ''), x: x0 - 3, y: y - size * 0.8, w: w + 6, h: size * 1.6 };
+      ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fillRect(box.x, box.y, box.w, box.h);
+      ctx.fillStyle = color; ctx.textAlign = 'left'; richText(ctx, html, x0, y); ctx.textBaseline = 'alphabetic';
+      __pim.labels.push(box);
+      return box;
     }
-
-    let handle = null;
-    const PX_PER_N = 2.6;
-    function drawScene() {
-      const { ctx, w, h } = setup(el('sceneCanvas'));
-      ctx.clearRect(0, 0, w, h);
-      const floorY = h - 50, pxPerM = 60;
-      const bx = w / 2; // the camera follows the block
-      // floor with metre marks that scroll past
-      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, floorY, w, h - floorY);
-      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, floorY); ctx.lineTo(w, floorY); ctx.stroke();
-      ctx.fillStyle = '#475569'; ctx.font = '11px Arial'; ctx.textAlign = 'center';
-      const first = Math.floor(sim.x - bx / pxPerM) - 1;
-      for (let m = first; m < first + w / pxPerM + 3; m++) {
-        const x = bx + (m - sim.x) * pxPerM;
-        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x, floorY); ctx.lineTo(x, floorY + 8); ctx.stroke();
-        // the tick always shows; its label only when the whole label fits (no half-cut "28 m" at the edge)
-        const lw = ctx.measureText(`${m} m`).width / 2;
-        if (x - lw >= 0 && x + lw <= w) ctx.fillText(`${m} m`, x, floorY + 20);
-      }
-      // block
-      const { m } = P();
-      const size = 44 + m * 1.6, top = floorY - size;
-      ctx.fillStyle = '#2563eb'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(bx - size / 2, top, size, size, 6) : ctx.rect(bx - size / 2, top, size, size); ctx.fill();
-      ctx.fillStyle = 'white'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.fillText(`${(+m).toFixed(1)} kg`, bx, top + size / 2 + 5);
-      const s = forces();
-      // applied force, pushing from the right-hand side of the block; its tip is what you drag
-      const cy = top + size * 0.35;
-      const startX = bx + size / 2;
-      const endX = startX + s.F * PX_PER_N;
-      if (s.F > 0.1) arrow(ctx, startX, cy, endX, cy, '#dc2626', 4);
-      handle = { x: s.F > 0.1 ? endX : startX + 6, y: cy, bx, size }; // no push: grab next to the block's side
-      tag(ctx, `<i>F</i> = ${s.F.toFixed(1)} N`, s.F > 0.1 ? (startX + endX) / 2 : startX + 34, cy - 18, '#b91c1c');
-      // friction along the floor contact, only while the block slides
-      if (s.moving && Math.abs(s.fr) > 0.05) {
-        const fdir = Math.sign(s.fr);
-        const fx0 = bx + fdir * size * 0.1;
-        arrow(ctx, fx0, floorY - 6, fx0 + s.fr * PX_PER_N, floorY - 6, '#d97706', 4);
-        tag(ctx, `<i>f</i> = ${Math.abs(s.fr).toFixed(1)} N`, fx0 + s.fr * PX_PER_N / 2, floorY + 32, '#b45309');
-      }
-      // velocity arrow above
-      if (Math.abs(sim.v) > 0.02) {
-        arrow(ctx, bx, top - 14, bx + Math.max(-110, Math.min(110, sim.v * 22)), top - 14, '#16a34a', 3, 9);
-        tag(ctx, `<i>v</i> = ${sim.v.toFixed(1)} m/s`, bx, top - 30, '#15803d');
-      }
-      ctx.fillStyle = '#334155'; ctx.font = '12px Arial'; ctx.textAlign = 'left';
-      richText(ctx, `<i>t</i> = ${d1(sim.t)} s     <i>x</i> = ${d1(sim.x)} m`, 8, 16);
-    }
-
-    function drawFBD() {
-      const { ctx, w, h } = setup(el('fbdCanvas'));
-      ctx.clearRect(0, 0, w, h);
-      const s = forces();
-      const cx = w / 2, cy = h / 2 - 12, half = 26;
-      const maxF = Math.max(s.N, Math.abs(s.F), Math.abs(s.fr), 1);
-      const k = Math.min(w * 0.34, h / 2 - half - 30) / maxF; // N and W must stay inside the canvas
-      ctx.fillStyle = '#334155'; ctx.fillRect(cx - half, cy - half, 2 * half, 2 * half);
-      arrow(ctx, cx, cy - half, cx, cy - half - s.N * k, '#0891b2', 3.5);
-      tag(ctx, `<i>N</i> = ${s.N.toFixed(1)} N`, cx + 10, cy - half - s.N * k * 0.6, '#0e7490', 'left');
-      arrow(ctx, cx, cy + half, cx, cy + half + s.N * k, '#7c3aed', 3.5);
-      tag(ctx, `<i>W</i> = ${s.N.toFixed(1)} N`, cx + 10, cy + half + s.N * k * 0.6, '#6d28d9', 'left');
-      if (s.moving && s.F > 0.05) { const d = 1; arrow(ctx, cx + d * half, cy - 8, cx + d * half + s.F * k, cy - 8, '#dc2626', 3.5); tag(ctx, `<i>F</i> = ${s.F.toFixed(1)} N`, cx + d * half + s.F * k * 0.5, cy - 24, '#b91c1c'); }
-      if (s.moving && Math.abs(s.fr) > 0.05) { const d = Math.sign(s.fr); arrow(ctx, cx + d * half, cy + 10, cx + d * half + s.fr * k, cy + 10, '#d97706', 3.5); tag(ctx, `<i>f</i> = ${Math.abs(s.fr).toFixed(1)} N`, cx + d * half + s.fr * k * 0.5, cy + 26, '#b45309'); }
-      // net force
-      const ny = h - 12;
-      if (!s.moving) tag(ctx, 'The block has stopped', cx, ny, '#334155');
-      else if (Math.abs(s.net) > 0.05) { arrow(ctx, cx, ny, cx + s.net * k * 1.5, ny, '#b91c1c', 3); tag(ctx, `Σ<i>F</i> = ${Math.abs(s.net).toFixed(1)} N ${s.net > 0 ? 'right' : 'left'}`, cx, ny - 14, '#b91c1c'); }
-      else tag(ctx, 'Σ<i>F</i> = 0: forces balanced', cx, ny, '#15803d');
-    }
-
-    function drawGraph() {
-      const { ctx, w, h } = setup(el('graphCanvas'));
-      ctx.clearRect(0, 0, w, h);
-      const L = 46, R = 10, T = 10, B = 26, pw = w - L - R, ph = h - T - B;
-      const t0 = 0, t1 = T_RUN;
-      const vmax = Math.max(2, ...sim.hist.map(p => Math.abs(p.v))) * 1.15;
-      const X = t => L + (t - t0) / 10 * pw, Y = v => T + ph - v / vmax * ph;
-      ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1; ctx.font = '11px Arial'; ctx.fillStyle = '#475569';
-      const step = vmax > 10 ? 5 : vmax > 4 ? 2 : 1;
-      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-      for (let v = 0; v <= vmax; v += step) { ctx.beginPath(); ctx.moveTo(L, Y(v)); ctx.lineTo(w - R, Y(v)); ctx.stroke(); ctx.fillText(v.toFixed(0), L - 5, Y(v)); }
-      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-      for (let t = Math.ceil(t0); t <= t1; t++) ctx.fillText(t.toFixed(0), X(t), h - B + 5);
+    function paneTitle(ctx, r, text) {
+      ctx.font = 'bold 13px Arial'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#334155';
+      const w = richText(ctx, text, r.x + 10, r.y + 14);
+      __pim.labels.push({ pane: PANE, text: text.replace(/<[^>]+>/g, ''), x: r.x + 10, y: r.y + 4, w, h: 20, title: true });
       ctx.textBaseline = 'alphabetic';
-      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(L, h - B); ctx.moveTo(L, Y(0)); ctx.lineTo(w - R, Y(0)); ctx.stroke();
-      richText(ctx, '<i>t</i> (s)', w - 24, h - 2); ctx.save(); ctx.translate(12, T + ph / 2); ctx.rotate(-Math.PI / 2); richText(ctx, '<i>v</i> (m/s)', 0, 0); ctx.restore();
+    }
+    function dot(ctx, x, y, r = 5, color = '#0f172a') { ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); }
+    function roundRect(ctx, x, y, w, h, r, fill, stroke) {
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
+      if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+      if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke(); }
+    }
+    function floorLine(ctx, x0, x1, y) {
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+      ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1;
+      for (let x = x0 + 4; x < x1; x += 12) { ctx.beginPath(); ctx.moveTo(x, y + 2); ctx.lineTo(x - 7, y + 10); ctx.stroke(); }
+    }
+    // a "nice" gridline step: 1, 2, 2.5 or 5 times a power of ten, giving at most `max` steps
+    function niceStep(range, max) {
+      const raw = range / max, p = Math.pow(10, Math.floor(Math.log10(raw)));
+      for (const k of [1, 2, 2.5, 5, 10]) if (k * p >= raw - 1e-12) return k * p;
+      return 10 * p;
+    }
+
+    /* ---------------- drawing: the scene ---------------- */
+    let view = null; // tab 1: the free-body diagram's centre and scale (held still while a finger drags)
+    function draw() {
+      __pim = window.__pim = { labels: [], arrows: [], panes: [] };
+      const c = setup(canvas); if (!c) return;
+      const { ctx, W, H } = c;
+      CW = W;
+      if (currentTab === 1) drawFBD(ctx, W, H);
+      else if (currentTab === 2) drawFirst(ctx, W, H);
+      else if (currentTab === 3) drawBlock(ctx, W, H);
+      else if (currentTab === 4) drawPair(ctx, W, H);
+      drawGraph();
+    }
+    function pane(r, name) { PANE = name; __pim.panes.push(Object.assign({ name }, r)); return r; }
+
+    /* tab 1 */
+    function drawFBD(ctx, W, H) {
+      const wide = W >= 640;
+      const A = pane(wide ? { x: 0, y: 0, w: W * 0.46, h: H } : { x: 0, y: 0, w: W, h: H * 0.38 }, 'situation');
+      const s = fbd(), unk = unknown1();
+      // ---- the situation, as the example draws it
+      paneTitle(ctx, A, 'The situation');
+      const fy = A.y + A.h * (wide ? 0.66 : 0.74), size = Math.min(70, A.w * 0.2);
+      const bx = A.x + A.w * 0.42 - size / 2, by = fy - size;
+      floorLine(ctx, A.x + 12, A.x + A.w - 12, fy);
+      roundRect(ctx, bx, by, size, size, 4, '#fde68a', '#92400e');
+      ctx.fillStyle = '#78350f'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(s.m === null ? 'box' : `${plain(s.m)} kg`, bx + size / 2, by + size / 2); ctx.textBaseline = 'alphabetic';
+      const fKnown = known1('F'), fVal = fKnown ? ` = ${f3(s.F)} N` : '';
+      if (s.F > 1e-9 || S.base === 'ex14') {
+        if (s.th < 0.5 && (S.custom || S.base === 'b4')) {
+          // a push: the arrow ends at the box's left side
+          arrow(ctx, bx - 64, by + size / 2, bx - 2, by + size / 2, COL.F);
+          label(ctx, `${nmF()}${fVal}`, bx - 34, by + size / 2 - 18, COL.F);
+        } else {
+          const x1 = bx + size, y1 = by + size * 0.3, L = Math.min(76, A.w * 0.24);
+          const x2 = x1 + L * Math.cos(rad(s.th)), y2 = y1 - L * Math.sin(rad(s.th));
+          ctx.strokeStyle = '#94a3b8'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x1 + L, y1); ctx.stroke(); ctx.setLineDash([]);
+          arrow(ctx, x1, y1, x2, y2, COL.F);
+          if (s.th > 0.5) label(ctx, `${plain(s.th)}°`, x1 + 34, y1 - 8, '#334155', 'left', 11);
+          label(ctx, `${nmF()}${fVal}`, Math.min(x2 + 4, A.x + A.w - 70), Math.max(y2 - 14, A.y + 34), COL.F, 'left');
+        }
+      }
+      // the motion, above the box
+      const my = by - 22;
+      if (S.base === 'ex13' && !S.custom) label(ctx, 'at rest', bx + size / 2, my, '#334155');
+      else if (Math.abs(s.a) < 1e-9) { arrow(ctx, bx + 4, my, bx + size + 22, my, COL.v, 3, 9); label(ctx, 'uniform velocity', bx + size / 2 + 10, my - 16, COL.v); }
+      else { const d = Math.sign(s.a); arrow(ctx, bx + size / 2 - d * 24, my, bx + size / 2 + d * 30, my, COL.a, 3, 9);
+        label(ctx, known1('a') || !S.custom ? `<i>a</i> = ${f3(Math.abs(s.a))} ${MS2}` : '<i>a</i> = ?', bx + size / 2, my - 16, COL.a); }
+
+      // ---- the free-body diagram
+      const B = pane(wide ? { x: W * 0.46, y: 0, w: W * 0.54, h: H } : { x: 0, y: H * 0.38, w: W, h: H * 0.62 }, 'fbd');
+      ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+      ctx.beginPath(); if (wide) { ctx.moveTo(B.x, 8); ctx.lineTo(B.x, H - 8); } else { ctx.moveTo(8, B.y); ctx.lineTo(W - 8, B.y); } ctx.stroke();
+      paneTitle(ctx, B, 'Free-body diagram');
+      // the forces as drawn: W and N are drawn without a value when the example gives no mass
+      const dW = s.W === null ? 40 : s.W, dF = s.F, dN = s.W === null ? 40 - dF * Math.sin(rad(30)) : Math.max(0, s.N);
+      if (!view || !dragging) {
+        const cx = B.x + B.w * 0.5, cy = B.y + B.h * 0.52;
+        const maxF = Math.max(dW, dN, dF * 1.05, s.f || 0, 1);
+        const room = Math.min(B.w * 0.5 - 60, B.h * 0.5 - 38);
+        view = { cx, cy, k: room / maxF };
+      }
+      const { cx, cy, k } = view;
+      ctx.strokeStyle = '#f472b6'; ctx.lineWidth = 1; ctx.setLineDash([6, 4]);
+      ctx.beginPath(); ctx.moveTo(B.x + 14, cy); ctx.lineTo(B.x + B.w - 14, cy); ctx.moveTo(cx, B.y + 30); ctx.lineTo(cx, B.y + B.h - 10); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = '#db2777'; ctx.font = 'italic bold 13px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('x', B.x + B.w - 14, cy + 14); ctx.fillText('y', cx + 12, B.y + 34); ctx.textBaseline = 'alphabetic';
+      dot(ctx, cx, cy, 6);
+      handles = {};
+      const val = (key, v, nm) => !known1(key) ? `${nm} = ?` : v === null ? nm : `${nm} = ${f3(v)} N`;
+      if (shown1('W')) {
+        arrow(ctx, cx, cy, cx, cy + dW * k, COL.W);
+        label(ctx, val('W', s.W, '<i>W</i>'), cx + 10, cy + dW * k - 6, COL.W, 'left');
+      }
+      if (shown1('N') && dN > 1e-9) {
+        arrow(ctx, cx, cy, cx, cy - dN * k, COL.N);
+        label(ctx, val('N', s.N, '<i>N</i>'), cx + 10, cy - dN * k + 8, COL.N, 'left');
+      }
+      if (shown1('F') && dF > 1e-9) {
+        const x2 = cx + dF * k * Math.cos(rad(s.th)), y2 = cy - dF * k * Math.sin(rad(s.th));
+        arrow(ctx, cx, cy, x2, y2, COL.F);
+        handles.F = { x: x2, y: y2 };
+        label(ctx, val('F', s.F, nmF()), x2, y2 - 16, COL.F, s.th > 20 ? 'left' : 'center');
+        if (s.th > 0.5) { ctx.strokeStyle = '#334155'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(cx, cy, 30, -rad(s.th), 0); ctx.stroke(); label(ctx, `${plain(s.th)}°`, cx + 38, cy - 10, '#334155', 'left', 11); }
+      }
+      if (shown1('f') && s.f > 1e-9) {
+        const x2 = cx - s.f * k;
+        arrow(ctx, cx, cy, x2, cy, COL.f);
+        handles.f = { x: x2, y: cy };
+        label(ctx, val('f', s.f, nmf()), x2, cy - 16, COL.f, 'center');
+      }
+      // step 6: Newton's second law, with the net force at the bottom
+      if (shown1('net')) {
+        const ny = B.y + B.h - 18;
+        if (Math.abs(s.net) < 1e-9) label(ctx, `${SFX} = 0: the forces along <i>x</i> balance`, cx, ny, '#15803d');
+        else { const L = Math.max(30, Math.min(B.w * 0.3, Math.abs(s.net) * k)); // never too short to see arrow(ctx, cx - (s.net > 0 ? L / 2 : -L / 2), ny - 16, cx + (s.net > 0 ? L / 2 : -L / 2), ny - 16, COL.R, 3, 9);
+          label(ctx, `${SFX} = ${f3(Math.abs(s.net))} N ${s.net > 0 ? 'to the right' : 'to the left'}`, cx, ny, COL.R); }
+      }
+    }
+
+    /* tab 2 */
+    function drawFirst(ctx, W, H) {
+      const P = P2, st = at2(sim.t), pr = profile();
+      pane({ x: 0, y: 0, w: W, h: H }, 'scene');
+      const L = 26, R = 26, gy = H - 72;
+      ctx.fillStyle = '#334155'; ctx.font = '12px Arial'; ctx.textAlign = 'left';
+      richText(ctx, `<i>t</i> = ${tx(sim.t)} s`, 10, 18);
+      if (P.kind === 'puck') {
+        // the ice, 0 to 10 m
+        const sx = (W - L - R) / 10, X = m => L + m * sx;
+        ctx.fillStyle = '#e0f2fe'; ctx.fillRect(L, gy, W - L - R, 16); ctx.strokeStyle = '#7dd3fc'; ctx.strokeRect(L, gy, W - L - R, 16);
+        const x0 = P.v > 0 ? 1 : 5, px = X(x0 + st.x);
+        ticks(ctx, X, 0, 10, 1, gy + 30, [px + 30]);
+        roundRect(ctx, px - 24, gy - 14, 48, 14, 5, '#1e293b');
+        label(ctx, 'Puck', px, gy - 28, '#1e293b', 'center', 11);
+        arrow(ctx, px - 30, gy - 7, px - 30, gy - 62, COL.N, 3.5);
+        label(ctx, 'Upward force on the puck, due to the ice', px - 30, gy - 76, COL.N, 'center', 11);
+        arrow(ctx, px + 30, gy - 7, px + 30, gy + 40, COL.W, 3.5);
+        label(ctx, 'Downward force on the puck, due to gravity', px + 30, gy + 54, COL.W, 'center', 11);
+        if (P.v > 0) { arrow(ctx, px - 20, gy - 96, px + 40, gy - 96, COL.v, 3, 9); label(ctx, `<i>v</i> = ${f3(P.v)} ${MS1}, constant`, px + 46, gy - 96, COL.v, 'left'); }
+        else label(ctx, '<i>v</i> = 0', px + 46, gy - 96, COL.v, 'left');
+        label(ctx, `${SF} = 0`, W / 2, 40, COL.R);
+        return;
+      }
+      if (P.kind === 'trolley') {
+        const D = P.u * P.tHit + P.u * P.u / (2 * P.dec);
+        // the trolley (84 px) sits behind the box, so the scale starts 54 px in: it never starts off the left edge
+        const range = D + 2.5, sx = (W - L - R - 84) / range, X = m => L + 54 + m * sx;
+        const tTop = gy - 34, boxS = 30, sHit = P.u * P.tHit;
+        const wallX = X(sHit) + boxS;
+        // the rough surface beyond the wall, at the height of the trolley's top
+        ctx.fillStyle = '#d6d3d1'; ctx.fillRect(wallX, tTop, W - R - wallX, gy - tTop);
+        ctx.strokeStyle = '#78716c'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(wallX, gy); ctx.lineTo(wallX, tTop); ctx.lineTo(W - R, tTop); ctx.stroke();
+        ctx.strokeStyle = '#a8a29e'; ctx.lineWidth = 1;
+        for (let x = wallX + 6; x < W - R - 4; x += 9) { ctx.beginPath(); ctx.moveTo(x, tTop + 1); ctx.lineTo(x + 4, tTop - 3); ctx.stroke(); }
+        label(ctx, 'Rough surface', (wallX + W - R) / 2, gy - 14, '#57534e', 'center', 11);
+        floorLine(ctx, L, wallX, gy);
+        ticks(ctx, X, 0, Math.floor(range), range > 14 ? 5 : range > 7 ? 2 : 1, gy + 26);
+        // the trolley stops at the wall; the box keeps going
+        const sTr = Math.min(st.x, sHit), trR = X(sTr) + boxS, trL = trR - 84;
+        roundRect(ctx, trL, gy - 34, 84, 24, 4, '#bfdbfe', '#1e3a8a');
+        dot(ctx, trL + 16, gy - 5, 5, '#1e3a8a'); dot(ctx, trR - 16, gy - 5, 5, '#1e3a8a');
+        ctx.fillStyle = '#1e3a8a'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center'; ctx.fillText('Trolley', trL + 30, gy - 18);
+        const bxL = X(st.x), bTop = tTop - boxS;
+        roundRect(ctx, bxL, bTop, boxS, boxS, 3, '#475569');
+        const onRough = sim.t > P.tHit + 1e-9, stopped = st.v < 1e-9;
+        if (st.v > 1e-9) { arrow(ctx, bxL, bTop - 18, bxL + 14 + st.v * 14, bTop - 18, COL.v, 3, 9); label(ctx, `<i>v</i> = ${f3(st.v)} ${MS1}`, bxL + 20 + st.v * 14, bTop - 18, COL.v, 'left'); }
+        else label(ctx, 'at rest', bxL + boxS / 2, bTop - 18, '#334155');
+        if (onRough && !stopped) { arrow(ctx, bxL + boxS / 2, tTop - 6, bxL - 40, tTop - 6, COL.f, 3.5, 10); label(ctx, 'friction', bxL - 44, tTop - 22, COL.f, 'right', 11); }
+        label(ctx, onRough && !stopped ? `${SF}: to the left (friction)` : `${SF} = 0`, W / 2, 40, COL.R);
+        return;
+      }
+      // a velocity-time graph (Tutorial 3, B3): a block and its net force
+      const range = 57, sx = (W - L - R - 50) / range, X = m => L + m * sx;
+      floorLine(ctx, L, W - R, gy);
+      ticks(ctx, X, 0, 55, 10, gy + 26);
+      const bx = X(st.x), net = P.m * st.a;
+      roundRect(ctx, bx, gy - 36, 44, 36, 4, '#94a3b8', '#334155');
+      ctx.fillStyle = '#0f172a'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center'; ctx.fillText('2.0 kg', bx + 22, gy - 14);
+      if (st.v > 1e-9) { arrow(ctx, bx + 22, gy - 52, bx + 40 + st.v * 22, gy - 52, COL.v, 3, 9); label(ctx, `<i>v</i> = ${f3(st.v)} ${MS1}`, bx + 46 + st.v * 22, gy - 52, COL.v, 'left'); }
+      if (Math.abs(net) > 1e-9) { const d = Math.sign(net); arrow(ctx, bx + 22, gy - 84, bx + 22 + d * (30 + Math.abs(net) * 60), gy - 84, COL.R, 3.5, 10);
+        label(ctx, `${SF} = ${f3(Math.abs(net))} N ${d > 0 ? 'to the right' : 'to the left'}`, d > 0 ? bx + 22 : bx + 22, gy - 104, COL.R, d > 0 ? 'left' : 'right'); }
+      else label(ctx, `${SF} = 0`, bx + 22, gy - 96, COL.R);
+    }
+    // distance marks under a scene
+    // (a mark's number is left out where an arrow passes through it: avoid = the arrows' x)
+    function ticks(ctx, X, from, to, step, y, avoid = []) {
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1; ctx.fillStyle = '#475569'; ctx.font = '11px Arial'; ctx.textAlign = 'center';
+      for (let m = from; m <= to + 1e-9; m += step) {
+        const x = X(m), w = ctx.measureText(`${m} m`).width;
+        ctx.beginPath(); ctx.moveTo(x, y - 12); ctx.lineTo(x, y - 6); ctx.stroke();
+        if (!avoid.some(a => Math.abs(a - x) < w / 2 + 5)) ctx.fillText(`${m} m`, x, y + 4);
+      }
+    }
+
+    /* tab 3 */
+    let dragging = null, handles = {}, drag3K = null;
+    function drawBlock(ctx, W, H) {
+      const P = P3, st = motion3(sim.t);
+      pane({ x: 0, y: 0, w: W, h: H }, 'scene');
+      const gy = H - 58, size = 58, top = gy - size;
+      // the camera follows the block; distance marks scroll past
+      const pxPerM = P.m >= 100 ? 26 : 34, bx = W / 2;
+      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, gy, W, H - gy);
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+      ctx.fillStyle = '#475569'; ctx.font = '11px Arial'; ctx.textAlign = 'center';
+      const every = 2, first = Math.floor((st.x - bx / pxPerM) / every) * every - every;
+      for (let m = first; m < st.x + W / pxPerM + every; m += every) {
+        const x = bx + (m - st.x) * pxPerM;
+        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x, gy); ctx.lineTo(x, gy + 8); ctx.stroke();
+        const lw = ctx.measureText(`${m} m`).width / 2;
+        if (x - lw >= 0 && x + lw <= W) ctx.fillText(`${m} m`, x, gy + 20);
+      }
+      roundRect(ctx, bx - size / 2, top, size, size, 6, '#2563eb');
+      ctx.fillStyle = 'white'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(`${plain(P.m)} kg`, bx, top + size / 2); ctx.textBaseline = 'alphabetic';
+      // the forces: lengths to one scale, the larger force at most a quarter of the width (held while a finger drags)
+      if (!dragging || !drag3K) drag3K = (W * 0.26) / Math.max(P.F, P.L, 1e-9);
+      const kF = drag3K, cy = top + size * 0.32;
+      handles = {};
+      const leftOn = P.kind === 'force' || st.moving;
+      if (P.F > 1e-9) { arrow(ctx, bx + size / 2, cy, bx + size / 2 + P.F * kF, cy, COL.F); }
+      handles.F = { x: bx + size / 2 + Math.max(P.F * kF, 8), y: cy };
+      label(ctx, `<i>F</i> = ${f3(P.F)} N`, bx + size / 2 + Math.max(P.F * kF, 8) / 2 + 4, cy - 18, COL.F);
+      if (P.L > 1e-9 && leftOn) {
+        if (P.kind === 'force') { arrow(ctx, bx - size / 2, cy, bx - size / 2 - P.L * kF, cy, COL.f); label(ctx, `${f3(P.L)} N`, bx - size / 2 - P.L * kF / 2, cy - 18, COL.f); }
+        else { arrow(ctx, bx, gy - 5, bx - P.L * kF, gy - 5, '#d97706'); label(ctx, `<i>f</i> = ${f3(P.L)} N`, bx - P.L * kF / 2 - size / 4, gy + 36, '#b45309'); }
+      }
+      // the velocity, and the net force above it
+      if (Math.abs(st.v) > 1e-9) {
+        const vmax = Math.max(Math.abs(P.u), Math.abs(motion3(stop3()).v), 1e-9), L = 26 + 60 * Math.abs(st.v) / vmax, d = Math.sign(st.v);
+        arrow(ctx, bx, top - 24, bx + d * L, top - 24, COL.v, 3, 9);
+        label(ctx, `<i>v</i> = ${f3(st.v)} ${MS1}`, bx + d * (L + 6), top - 24, COL.v, d > 0 ? 'left' : 'right');
+      } else label(ctx, '<i>v</i> = 0', bx + 10, top - 24, COL.v, 'left');
+      const ny = top - 54;
+      if (st.never) label(ctx, 'The push is not larger than the friction: the block does not start to slide.', W / 2, ny, '#334155', 'center', 11);
+      else if (st.stopped) label(ctx, 'Friction has stopped the block.', W / 2, ny, '#334155', 'center', 12);
+      else if (Math.abs(st.net) < 1e-9) label(ctx, `${SF} = 0`, bx, ny, COL.R);
+      else { const d = Math.sign(st.net), L = Math.max(18, Math.abs(st.net) * kF); arrow(ctx, bx, ny, bx + d * L, ny, COL.R, 3, 9);
+        label(ctx, `${SF} = ${f3(Math.abs(st.net))} N`, bx + d * (L + 6), ny, COL.R, d > 0 ? 'left' : 'right'); }
+      ctx.fillStyle = '#334155'; ctx.font = '12px Arial'; ctx.textAlign = 'left';
+      richText(ctx, `<i>t</i> = ${tx(sim.t)} s     <i>x</i> = ${f3(st.x)} m`, 10, 18);
+    }
+
+    /* tab 4 */
+    function drawPair(ctx, W, H) {
+      const P = P4, sol = solve4(), t = sim.t, d = sol.a * t * t / 2, dmax = Math.abs(sol.a) * T4END * T4END / 2;
+      pane({ x: 0, y: 0, w: W, h: H }, 'scene');
+      const showA = S.step >= 4, showT = S.step >= 5;
+      const aTxt = showA ? `<i>a</i> = ${f3(Math.abs(sol.a))} ${MS2}` : '<i>a</i>';
+      const tTxt = showT ? `<i>T</i> = ${f3(sol.T)} N` : '<i>T</i>';
+      ctx.fillStyle = '#334155'; ctx.font = '12px Arial'; ctx.textAlign = 'left';
+      richText(ctx, `<i>t</i> = ${tx(t)} s`, 10, 18);
+      // the block's name sits above its left corner (above its middle when strings come off both top corners)
+      const box = (x, y, w, h, fill, name, m, mid) => {
+        roundRect(ctx, x, y, w, h, 4, fill, '#1e293b');
+        ctx.fillStyle = '#0f172a'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(`${plain(m)} kg`, x + w / 2, y + h / 2); ctx.textBaseline = 'alphabetic';
+        label(ctx, name, mid ? x + w / 2 : x + 8, y - 10, '#0f172a', mid ? 'center' : 'left', 12);
+      };
+      const WA = `<i>W</i><sub>A</sub> = ${f3(P.mA * G)} N`, WB = `<i>W</i><sub>B</sub> = ${f3(P.mB * G)} N`;
+      if (P.lay === 'floor') {
+        // B (left) and A (right) on a smooth floor, pulled to the right by P on A
+        const narrow = W < 560, gy = H * 0.62, bw = narrow ? 54 : 70, bh = 56;
+        const bx0 = narrow ? 12 : W * 0.12, ax0 = narrow ? bx0 + bw + 82 : W * 0.42; // room for a T label each side
+        const room = Math.max(0, Math.min(W * 0.22, W - (ax0 + bw + 50 + 76))), s = dmax > 1e-9 ? room / dmax : 0;
+        const shift = d * s, ax = ax0 + shift, bxx = bx0 + shift;
+        floorLine(ctx, 10, W - 10, gy);
+        label(ctx, 'Smooth floor', W - 50, gy + 22, '#64748b', 'center', 11);
+        ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(bxx + bw, gy - bh / 2); ctx.lineTo(ax, gy - bh / 2); ctx.stroke();
+        box(bxx, gy - bh, bw, bh, '#fef3c7', 'B', P.mB); box(ax, gy - bh, bw, bh, '#dbeafe', 'A', P.mA);
+        // forces on each block, drawn from its middle (lengths not to scale)
+        for (const [x, nm, w] of [[bxx + bw / 2, 'B', WB], [ax + bw / 2, 'A', WA]]) {
+          arrow(ctx, x, gy - bh, x, gy - bh - 34, COL.N, 3); label(ctx, `<i>N</i><sub>${nm}</sub>`, x + 14, gy - bh - 30, COL.N, 'left', 11);
+          arrow(ctx, x, gy, x, gy + 36, COL.W, 3); label(ctx, w, x, gy + 48, COL.W, 'center', 11);
+        }
+        const my = gy - bh / 2;
+        arrow(ctx, bxx + bw, my - 10, bxx + bw + 34, my - 10, COL.T, 3); label(ctx, tTxt, bxx + bw + 4, my - 26, COL.T, 'left', 11);
+        arrow(ctx, ax, my + 8, ax - 34, my + 8, COL.T, 3); label(ctx, tTxt, ax - 4, my + 20, COL.T, 'right', 11);
+        arrow(ctx, ax + bw, my, ax + bw + 50, my, COL.F, 3.5); label(ctx, `<i>P</i> = ${f3(P.P)} N`, ax + bw + 54, my, COL.F, 'left', 12);
+        arrow(ctx, W * 0.30, 46, W * 0.30 + 46, 46, COL.a, 3, 9); label(ctx, aTxt, W * 0.30 + 52, 46, COL.a, 'left');
+        return;
+      }
+      if (P.lay === 'hang') {
+        // a pulley at the top; A hangs on the left, B on the right
+        const px = W / 2, py = 66, r = 34, bw = 64, bh = 40, room = H * 0.14, s = dmax > 1e-9 ? room / dmax : 0;
+        ctx.fillStyle = '#64748b'; ctx.fillRect(px - 90, 18, 180, 8); ctx.fillRect(px - 3, 26, 6, py - 26);
+        ctx.fillStyle = '#cbd5e1'; ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#475569'; ctx.lineWidth = 2; ctx.stroke(); dot(ctx, px, py, 4, '#475569');
+        const yA = H * 0.45 + d * s, yB = H * 0.45 - d * s;
+        ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(px - r, py); ctx.lineTo(px - r, yA); ctx.moveTo(px + r, py); ctx.lineTo(px + r, yB); ctx.stroke();
+        box(px - r - bw / 2, yA, bw, bh, '#dbeafe', 'A', P.mA, true); box(px + r - bw / 2, yB, bw, bh, '#fef3c7', 'B', P.mB, true);
+        for (const [x, y, nm, w, side] of [[px - r, yA, 'A', WA, -1], [px + r, yB, 'B', WB, 1]]) {
+          arrow(ctx, x + side * 14, y, x + side * 14, y - 40, COL.T, 3); label(ctx, tTxt, x + side * 22, y - 30, COL.T, side < 0 ? 'right' : 'left', 11);
+          arrow(ctx, x, y + bh, x, y + bh + 40, COL.W, 3); label(ctx, w, x, y + bh + 52, COL.W, 'center', 11);
+        }
+        if (Math.abs(sol.a) > 1e-9) {
+          const dA = Math.sign(sol.a); // + : A goes down
+          arrow(ctx, px - r - bw / 2 - 26, yA + bh / 2 - dA * 18, px - r - bw / 2 - 26, yA + bh / 2 + dA * 18, COL.a, 3, 9);
+          arrow(ctx, px + r + bw / 2 + 26, yB + bh / 2 + dA * 18, px + r + bw / 2 + 26, yB + bh / 2 - dA * 18, COL.a, 3, 9);
+          label(ctx, aTxt, px, H - 16, COL.a, 'center');
+        } else label(ctx, '<i>a</i> = 0: the weights balance', px, H - 16, COL.a, 'center');
+        return;
+      }
+      // A on a table (smooth), the string over a pulley at the table's edge, B hanging
+      const ty = H * 0.42, edge = W * 0.62, bw = W < 560 ? 56 : 70, bh = 44, ax0 = Math.min(70, W * 0.06), roomX = edge - 30 - (ax0 + bw) - 50, roomY = H * 0.22;
+      const s = dmax > 1e-9 ? Math.min(roomX, roomY) / dmax : 0, shift = d * s;
+      ctx.fillStyle = '#e7e5e4'; ctx.fillRect(14, ty, edge - 14, 14); ctx.strokeStyle = '#78716c'; ctx.lineWidth = 2; ctx.strokeRect(14, ty, edge - 14, 14);
+      ctx.fillRect(edge - 26, ty + 14, 10, H - ty - 24);
+      label(ctx, 'Smooth table', edge - 34, ty + 7, '#64748b', 'right', 10);
+      const pr = 14, pcx = edge + 4, pcy = ty - pr + 2;
+      ctx.fillStyle = '#cbd5e1'; ctx.beginPath(); ctx.arc(pcx, pcy, pr, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#475569'; ctx.stroke();
+      const ax = ax0 + shift, ay = ty - bh, bxx = pcx + pr - bw / 2, by = ty + 30 + shift;
+      ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(ax + bw, ty - bh / 2); ctx.lineTo(pcx, ty - bh / 2 + 0); ctx.moveTo(pcx + pr, pcy); ctx.lineTo(pcx + pr, by); ctx.stroke();
+      box(ax, ay, bw, bh, '#dbeafe', 'A', P.mA); box(bxx, by, bw, bh, '#fef3c7', 'B', P.mB);
+      const amx = ax + bw / 2;
+      arrow(ctx, amx, ay, amx, ay - 34, COL.N, 3); label(ctx, '<i>N</i><sub>A</sub>', amx + 12, ay - 30, COL.N, 'left', 11);
+      arrow(ctx, amx, ty, amx, ty + 36, COL.W, 3); label(ctx, WA, amx, ty + 48, COL.W, 'center', 11);
+      arrow(ctx, ax + bw, ty - bh / 2 - 10, ax + bw + 36, ty - bh / 2 - 10, COL.T, 3); label(ctx, tTxt, ax + bw + 40, ty - bh / 2 - 22, COL.T, 'left', 11);
+      const bmx = bxx + bw / 2;
+      arrow(ctx, bmx + 16, by, bmx + 16, by - 34, COL.T, 3); label(ctx, tTxt, bmx + 22, by - 24, COL.T, 'left', 11);
+      arrow(ctx, bmx, by + bh, bmx, by + bh + 34, COL.W, 3); label(ctx, WB, bmx + 8, by + bh + 26, COL.W, 'left', 11);
+      arrow(ctx, 70, 44, 116, 44, COL.a, 3, 9); label(ctx, aTxt, 122, 44, COL.a, 'left');
+      arrow(ctx, bxx + bw + 22, by + 4, bxx + bw + 22, by + 40, COL.a, 3, 9);
+    }
+
+    /* ---------------- the velocity-time graph (tabs 2 and 3) ---------------- */
+    let graphFeat = null;
+    function drawGraph() {
+      const show = currentTab === 2 || currentTab === 3;
+      $('graphWrap').hidden = !show;
+      if (!show) return;
+      const c = setup(graphCv); if (!c) return;
+      const { ctx, W, H } = c;
+      PANE = 'graph'; CW = W;
+      const end = runEnd(), vAt = t => currentTab === 2 ? at2(t).v : motion3(t).v;
+      // the axes cover the whole run, so they never rescale while it plays
+      const ts = []; for (let i = 0; i <= 200; i++) ts.push(end * i / 200);
+      if (currentTab === 2) profile().pts.forEach(([t]) => { if (t <= end) ts.push(t); });
+      ts.sort((a, b) => a - b);
+      const vs = ts.map(vAt);
+      let vmax = Math.max(0, ...vs), vmin = Math.min(0, ...vs);
+      if (vmax - vmin < 1e-9) vmax = 1;
+      const vstep = niceStep(vmax - vmin, 4);
+      vmax = Math.ceil(vmax / vstep - 1e-9) * vstep; vmin = Math.floor(vmin / vstep + 1e-9) * vstep;
+      const Lm = 46, Rm = 14, Tm = 12, Bm = 30, pw = W - Lm - Rm, ph = H - Tm - Bm;
+      const X = t => Lm + t / end * pw, Y = v => Tm + (vmax - v) / (vmax - vmin) * ph;
+      ctx.font = '11px Arial'; ctx.fillStyle = '#475569'; ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      for (let v = vmin; v <= vmax + 1e-9; v += vstep) { ctx.beginPath(); ctx.moveTo(Lm, Y(v)); ctx.lineTo(W - Rm, Y(v)); ctx.stroke(); ctx.fillText(f3(v), Lm - 5, Y(v)); }
+      const tstep = end > 12 ? 5 : end > 6 ? 2 : 1;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      for (let t = 0; t <= end + 1e-9; t += tstep) { ctx.beginPath(); ctx.moveTo(X(t), Tm); ctx.lineTo(X(t), H - Bm); ctx.stroke(); ctx.fillText(String(+t.toFixed(2)), X(t), H - Bm + 5); }
+      ctx.textBaseline = 'alphabetic';
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(Lm, Tm); ctx.lineTo(Lm, H - Bm); ctx.moveTo(Lm, Y(0)); ctx.lineTo(W - Rm, Y(0)); ctx.stroke();
+      ctx.fillStyle = '#334155'; ctx.font = '12px Arial'; ctx.textAlign = 'right';
+      richText(ctx, '<i>t</i> (s)', W - Rm, H - 4);
+      ctx.save(); ctx.translate(12, Tm + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; richText(ctx, `<i>v</i> (${MS1})`, 0, 0); ctx.restore();
+      // the areas A1, A2, A3 under the rough-surface part of the trolley run (notes p. 3-46)
+      if (graphFeat === 'area' && currentTab === 2 && P2.kind === 'trolley') {
+        const pr = profile(), cols = ['rgba(37,99,235,0.18)', 'rgba(22,163,74,0.18)', 'rgba(234,88,12,0.18)', 'rgba(124,58,237,0.18)'];
+        let t0 = P2.tHit, i = 0;
+        while (t0 < pr.tStop - 1e-9 && i < 8) {
+          const t1 = Math.min(pr.tStop, t0 + 1);
+          ctx.fillStyle = cols[i % 4]; ctx.beginPath(); ctx.moveTo(X(t0), Y(0));
+          for (let k = 0; k <= 10; k++) { const tt = t0 + (t1 - t0) * k / 10; ctx.lineTo(X(tt), Y(at2(tt).v)); }
+          ctx.lineTo(X(t1), Y(0)); ctx.closePath(); ctx.fill();
+          const A = (at2(t0).v + at2(t1).v) / 2 * (t1 - t0);
+          label(ctx, `<i>A</i><sub>${i + 1}</sub> = ${f3(A)} m`, X((t0 + t1) / 2), Y(at2((t0 + t1) / 2).v / 2) + (i % 2 ? 10 : -6), '#1e293b', 'center', 11);
+          t0 = t1; i++;
+        }
+      }
+      // the gradient of a straight part = the acceleration
+      if (graphFeat === 'grad' && currentTab === 3) {
+        const t1 = end, t0 = 0, v0 = vAt(t0), v1 = vAt(t1);
+        ctx.strokeStyle = '#7c3aed'; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(X(t0), Y(v0)); ctx.lineTo(X(t1), Y(v0)); ctx.lineTo(X(t1), Y(v1)); ctx.stroke(); ctx.setLineDash([]);
+        label(ctx, `Δ<i>t</i> = ${f3(t1 - t0)} s`, X((t0 + t1) / 2), Y(v0) + (v1 >= v0 ? 12 : -12), '#7c3aed', 'center', 11);
+        label(ctx, `Δ<i>v</i> = ${f3(v1 - v0)} ${MS1}`, X(t1) - 6, Y((v0 + v1) / 2), '#7c3aed', 'right', 11);
+      }
+      // the line so far, and a dot at now
       ctx.strokeStyle = '#16a34a'; ctx.lineWidth = 2.5; ctx.beginPath();
-      sim.hist.forEach((p, i) => { if (p.t < t0) return; const x = X(p.t), y = Y(p.v); if (i === 0 || sim.hist[i - 1].t < t0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+      const drawn = ts.filter(t => t <= sim.t + 1e-9); drawn.push(sim.t);
+      drawn.forEach((t, i) => { const x = X(t), y = Y(vAt(t)); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
       ctx.stroke();
+      dot(ctx, X(sim.t), Y(vAt(sim.t)), 4.5, '#15803d');
     }
 
-    function updateReadout() {
-      const s = forces();
-      el('massVal').textContent = `(${(+s.m).toFixed(1)} kg)`; el('fricVal').textContent = `(${s.f.toFixed(1)} N)`;
-      el('forceVal').textContent = `(${s.F.toFixed(1)} N)`; el('uVal').textContent = `(${(+el('u').value).toFixed(1)} m/s)`;
-      const z = v => (Math.abs(v) < 0.05 ? 0 : v);
-      const sign = t => t.replace('-', '−');
-      // once the block has stopped there is no sliding friction, so the force readouts have nothing to show
-      el('net').textContent = s.moving ? sign(`${z(s.net).toFixed(1)} N`) : '—'; el('acc').textContent = s.moving ? sign(`${z(s.a).toFixed(1)} m/s²`) : '—';
-      el('vel').textContent = `${d1(z(sim.v))} m/s`; el('fnow').textContent = s.moving ? `${s.f.toFixed(1)} N, to the left` : '—';
-      el('nval').textContent = `${s.N.toFixed(1)} N`;
-      el('netCard').classList.toggle('zero', s.moving && Math.abs(s.net) < 0.05);
-      el('playBtn').textContent = sim.started && !sim.running && !done() ? 'Play' : 'Pause';
-      el('playBtn').disabled = !sim.started || done();
-      el('startBtn').disabled = sim.started && !done();
-      el('status').innerHTML = sim.stopped ? `Friction stopped the block at <i>t</i> = ${d1(sim.t)} s, after <i>x</i> = ${d1(sim.x)} m. The run ends here. Press Reset (or Start) to run again.`
-        : done() ? `The 10 s run has finished: <i>v</i> = ${d1(z(sim.v))} m/s, <i>x</i> = ${d1(sim.x)} m. Press Reset (or Start) to run again.`
-        : !sim.started ? 'Set up the forces, then press Start.' : sim.running ? '' : 'Paused.';
+    /* ---------------- the inputs ---------------- */
+    const INPUTS = {
+      1: () => [['m', 'Mass <i>m</i> (kg)', P1.m, 1, 0.5], ['F', S.base === 'ex14' && !S.custom ? 'Pull <i>P</i> (N)' : 'Applied force <i>F</i> (N)', P1.F, 0, 0.5],
+        ['th', 'Angle <i>θ</i> (°)', P1.th, 0, 1], ['f', S.base === 'ex14' && !S.custom ? 'Friction <i>Q</i> (N)' : 'Friction <i>f</i> (N)', P1.f, 0, 0.5]],
+      2: () => P2.kind === 'trolley' ? [['u', 'Speed of the trolley <i>u</i> (m/s)', P2.u, 0.5, 0.5], ['dec', 'Deceleration on the rough surface (m/s²)', P2.dec, 0.5, 0.5]]
+        : P2.kind === 'puck' && P2.v > 0 ? [['v', 'Speed of the puck (m/s)', P2.v, 0.5, 0.5]] : [],
+      3: () => [['m', 'Mass <i>m</i> (kg)', P3.m, 0.5, 0.5], ['F', 'Force to the right <i>F</i> (N)', P3.F, 0, 0.5],
+        ['L', P3.kind === 'friction' ? 'Friction <i>f</i> (N)' : 'Force to the left (N)', P3.L, 0, 0.5], ['u', 'Starting velocity <i>u</i> (m/s)', P3.u, 0, 0.5]],
+      4: () => [['mA', 'Mass of A (kg)', P4.mA, 0.5, 0.5], ['mB', 'Mass of B (kg)', P4.mB, 0.5, 0.5]].concat(P4.lay === 'floor' ? [['P', 'Pull <i>P</i> (N)', P4.P, 0, 0.5]] : [])
+    };
+    function buildInputs() {
+      const list = INPUTS[currentTab](), el = $('inputs');
+      el.innerHTML = list.length ? list.map(([k, lab, v, min, step]) => `<div class="control-group label-row"><label for="in_${k}">${lab}</label>
+        <input id="in_${k}" type="number" data-k="${k}" min="${min}" step="${step}" value="${v === null || v === undefined ? '' : plain(v)}" placeholder="${v === null ? (k === 'm' ? 'not given' : '?') : ''}" /></div>`).join('')
+        : '<div class="none">Nothing to change in this scenario: watch the forces and the graph.</div>';
+      $('expTitle').hidden = false;
+      el.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => readInput(inp)));
+    }
+    function syncInputs() {
+      document.querySelectorAll('#inputs input').forEach(inp => {
+        if (document.activeElement === inp) return;
+        const k = inp.dataset.k, P = { 1: P1, 2: P2, 3: P3, 4: P4 }[currentTab], v = P[k];
+        const want = v === null || v === undefined ? '' : plain(v);
+        if (inp.value !== want) inp.value = want;
+      });
+    }
+    function readInput(inp) {
+      const k = inp.dataset.k, raw = parseFloat(inp.value);
+      if (!isFinite(raw)) return;
+      const min = parseFloat(inp.min) || 0, v = Math.max(min, raw);
+      if (currentTab === 1) { fillGaps1(); P1[k] = k === 'th' ? Math.min(80, v) : v; toCustom(); }
+      else if (currentTab === 2) { P2[k] = Math.min(k === 'v' ? 5 : k === 'u' ? 6 : 4, v); if (k !== 'v') toCustom(); resetRun(); }
+      else if (currentTab === 3) { P3[k] = v; toCustom(); resetRun(); }
+      else { P4[k] = v; toCustom(); resetRun(); }
+      update();
+    }
+    // a custom box needs every value: the example's unknown takes its answer, a missing mass takes 5 kg
+    function fillGaps1() {
+      if (P1.unk === 'a') return; // already a box of your own
+      const was = S.custom; S.custom = false;
+      const s = fbd();
+      S.custom = was;
+      P1 = { m: s.m === null ? 5 : s.m, F: s.F, th: s.th, f: s.f, a: s.a, unk: 'a', motion: 'custom' };
+    }
+    function toCustom() {
+      if (S.custom) return;
+      S.custom = true; S.scen = 'custom'; presetEl.value = 'custom';
+      if (currentTab === 1) S.step = STEPS[1];
+      // the question box keeps its height: nothing above the canvas may move while a finger drags
+      const q = $('question'); q.style.minHeight = q.offsetHeight + 'px';
+      q.innerHTML = 'Your own values. Choose a scenario from the menu to go back to an example from the notes.';
+      clearFeat();
     }
 
-    // ---------- dragging the force handle ----------
-    let drag = false;
-    const sc = el('sceneCanvas');
-    function pos(e) { const r = sc.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
-    sc.addEventListener('pointerdown', e => {
-      const p = pos(e); if (!handle || Math.hypot(p.x - handle.x, p.y - handle.y) > 22) return;
-      drag = true; sc.setPointerCapture(e.pointerId); e.preventDefault();
-    });
-    sc.addEventListener('pointermove', e => {
+    /* ---------------- dragging (tab 1: the force arrows; tab 3: the push) ---------------- */
+    function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    canvas.addEventListener('pointerdown', e => {
+      if (currentTab !== 1 && currentTab !== 3) return;
       const p = pos(e);
-      if (!drag) { sc.style.cursor = handle && Math.hypot(p.x - handle.x, p.y - handle.y) < 22 ? 'ew-resize' : 'default'; return; }
-      const d = p.x - handle.bx, edge = handle.size / 2;
-      let F = d <= edge ? 0 : (d - edge) / PX_PER_N;
-      F = Math.max(0, Math.min(40, Math.round(F * 5) / 5));
-      if (+el('force').value !== F) { el('force').value = F; toCustom(); }
+      const hit = Object.entries(handles).find(([, h]) => Math.hypot(p.x - h.x, p.y - h.y) < 22);
+      if (!hit) return;
+      dragging = hit[0]; canvas.setPointerCapture(e.pointerId); e.preventDefault();
     });
-    const end = () => { drag = false; };
-    sc.addEventListener('pointerup', end); sc.addEventListener('pointercancel', end);
+    canvas.addEventListener('pointermove', e => {
+      const p = pos(e);
+      if (!dragging) { canvas.style.cursor = Object.values(handles).some(h => Math.hypot(p.x - h.x, p.y - h.y) < 22) ? 'grab' : 'default'; return; }
+      if (currentTab === 1) {
+        fillGaps1();
+        const { cx, cy, k } = view;
+        if (dragging === 'F') {
+          const dx = p.x - cx, dy = cy - p.y;
+          P1.F = Math.round(Math.min(200, Math.hypot(dx, dy) / k) * 2) / 2;
+          P1.th = Math.round(Math.max(0, Math.min(80, deg(Math.atan2(Math.max(0, dy), Math.max(1e-6, dx))))));
+        } else P1.f = Math.round(Math.max(0, Math.min(200, (cx - p.x) / k)) * 2) / 2;
+        toCustom();
+      } else {
+        // the push: the camera follows the block, so the block is always at the middle; the scale is held
+        const W = canvas.getBoundingClientRect().width, F = Math.max(0, (p.x - W / 2 - 29) / drag3K);
+        const stepF = drag3K < 0.05 ? 100 : 0.5;
+        P3.F = Math.round(Math.min((W / 2 - 40) / drag3K, F) / stepF) * stepF;
+        toCustom(); sim.running = false; sim.t = 0;
+      }
+      update();
+    });
+    const endDrag = () => { if (dragging) { dragging = null; view = null; drag3K = null; update(); } };
+    canvas.addEventListener('pointerup', endDrag);
+    canvas.addEventListener('pointercancel', endDrag);
 
-    const toCustom = () => { el('preset').value = 'custom'; el('question').textContent = ''; };
-    el('preset').addEventListener('change', applyPreset);
-    ['mass', 'fric', 'force'].forEach(id => el(id).addEventListener('input', toCustom));
-    el('u').addEventListener('input', () => { toCustom(); reset(); }); // a new starting velocity restarts the block
-    const restart = () => reset();
-    el('startBtn').addEventListener('click', () => { if (done()) restart(); sim.started = true; sim.running = true; });
-    el('playBtn').addEventListener('click', () => { if (sim.started && !done()) sim.running = !sim.running; });
-    el('resetBtn').addEventListener('click', restart);
-
-    applyPreset();
-    let last = null;
-    function frame(ts) {
-      if (last === null) last = ts;
-      const dt = Math.max(0, Math.min(0.05, (ts - last) / 1000)); last = ts;
-      if (sim.running) step(dt);
-      drawScene(); drawFBD(); drawGraph(); updateReadout();
-      requestAnimationFrame(frame);
+    /* ---------------- readouts, words and working ---------------- */
+    function cards(list) {
+      const el = $('readout');
+      el.className = 'readout' + (list.length === 6 ? ' n6' : '');
+      el.innerHTML = list.map(([id, title, value, cls]) => `<div class="readout-card${cls ? ' ' + cls : ''}${hl[id] ? ' hl' : ''}" id="${id}"><div class="title">${title}</div><div class="value">${value}</div></div>`).join('');
     }
-    requestAnimationFrame(frame);
+    function eq(lines) { return '<div class="math">' + lines.map(l => `<span class="eq${l.lit ? ' lit' : ''}">${l.h || l}</span>`).join('') + '</div>'; }
+    function readouts() {
+      const words = $('words'), work = $('work');
+      if (currentTab === 1) {
+        const s = fbd(), v = (key, x, unit = 'N') => !shown1(key) ? '—' : !known1(key) ? '?' : x === null ? 'not given' : `${f3(x)} ${unit}`;
+        cards([['rW', 'Weight <i>W</i> = <i>mg</i>', v('W', s.W)], ['rN', 'Normal force <i>N</i>', v('N', s.N)],
+          ['rF', S.base === 'ex14' && !S.custom ? 'Pull <i>P</i>' : 'Applied force <i>F</i>', v('F', s.F)],
+          ['rf', S.base === 'ex14' && !S.custom ? 'Friction <i>Q</i>' : 'Friction <i>f</i>', v('f', s.f)],
+          ['rNet', 'Net force ' + SFX, v('net', s.net)],
+          ['rA', 'Acceleration <i>a</i>', S.custom && S.step < 6 ? '?' : `${f3(s.a)} ${MS2}`]]);
+        $('stepText').innerHTML = `<span class="n">Step ${S.step} of 6</span>${stepText1(s)}`;
+        words.innerHTML = s.W === null && S.step >= 2 ? 'No mass is given, so <i>W</i> and <i>N</i> are drawn without values. <i>N</i> is drawn shorter than <i>W</i>: the pull <i>P</i> also pulls the box up a little.' : '';
+        work.innerHTML = S.step >= 6 ? work1(s) : '';
+        return;
+      }
+      $('stepText').innerHTML = currentTab === 4 ? `<span class="n">Step ${S.step} of 5</span>${stepText4()}` : '';
+      if (currentTab === 2) {
+        const P = P2, st = at2(sim.t), net = P.kind === 'graph' ? P.m * st.a : null;
+        const netTxt = Math.abs(st.a) < 1e-9 ? '0 N' : net !== null ? `${f3(Math.abs(net))} N ${net > 0 ? 'right' : 'left'}` : 'to the left';
+        cards([['rT', 'Time <i>t</i>', `${tx(sim.t)} s`], ['rV', 'Velocity <i>v</i>', `${f3(st.v)} ${MS1}`],
+          ['rA', 'Acceleration <i>a</i>', `${f3(st.a)} ${MS2}`], ['rNet', 'Net force ' + SF, netTxt, Math.abs(st.a) < 1e-9 ? 'ok' : ''],
+          ['rX', 'Distance moved', `${f3(st.x)} m`]]);
+        words.innerHTML = words2(st);
+        work.innerHTML = '';
+        return;
+      }
+      if (currentTab === 3) {
+        const P = P3, st = motion3(sim.t);
+        cards([['rT', 'Time <i>t</i>', `${tx(sim.t)} s`], ['rV', 'Velocity <i>v</i>', `${f3(st.v)} ${MS1}`],
+          ['rNet', 'Net force ' + SF, st.moving ? `${f3(st.net)} N` : '—', st.moving && Math.abs(st.net) < 1e-9 ? 'ok' : ''],
+          ['rA', 'Acceleration <i>a</i> = ' + SF + ' / <i>m</i>', st.moving ? `${f3(st.a)} ${MS2}` : '—'], ['rX', 'Displacement <i>x</i>', `${f3(st.x)} m`]]);
+        words.innerHTML = words3(st);
+        const net = P.F - P.L, a = net / P.m;
+        const first = P.L < 1e-9 ? `${SF} = <i>F</i> = ${f3(P.F)} N`
+          : P.kind === 'friction' ? `${SF} = <i>F</i> − <i>f</i> = ${f3(P.F)} − ${f3(P.L)} = ${f3(net)} N`
+          : `${SF} = ${f3(P.F)} − ${f3(P.L)} = ${f3(net)} N &nbsp;(right is positive)`;
+        work.innerHTML = st.never ? '' : eq([first,
+          `<i>a</i> = <span class="frac"><span>${SF}</span><span><i>m</i></span></span> = <span class="frac"><span>${f3(net)}</span><span>${plain(P.m)}</span></span> = ${f3(a)} ${MS2}` + (st.stopped ? ', while the block slides' : '')]);
+        return;
+      }
+      const sol = solve4(), t = sim.t, v = Math.abs(sol.a) * t, dist = Math.abs(sol.a) * t * t / 2;
+      cards([['rA', 'Acceleration <i>a</i>', S.step >= 4 ? `${f3(Math.abs(sol.a))} ${MS2}` : '?'], ['rT', 'Tension <i>T</i>', S.step >= 5 ? `${f3(sol.T)} N` : '?'],
+        ['rTime', 'Time <i>t</i>', `${tx(t)} s`], ['rV', 'Speed of each block', `${f3(v)} ${MS1}`], ['rX', 'Distance moved', `${f3(dist)} m`]]);
+      words.innerHTML = words4(sol, t, v);
+      work.innerHTML = work4(sol);
+    }
+
+    function stepText1(s) {
+      const ex = S.custom ? 'custom' : S.base;
+      switch (S.step) {
+        case 1: return 'Draw the object “free”, as a dot, with the <i>x</i>- and <i>y</i>-axes. Draw only the forces acting on it.';
+        case 2: return s.W === null ? 'Its weight <i>W</i>, vertically down. No mass is given, so <i>W</i> has no value here.' : `Its weight <i>W</i> = <i>mg</i> = ${plain(s.m)} × 10 = ${f3(s.W)} N, vertically down.`;
+        case 3: return 'The normal force <i>N</i> from the surface, perpendicular to it: straight up.';
+        case 4: return ex === 'ex13' ? 'Nothing pushes or pulls the object: no force to add.' : ex === 'ex14' ? 'The pull <i>P</i>, at 30° above the <i>x</i>-axis. It is the unknown.' : s.th > 0.5 ? `The applied force <i>F</i> = ${f3(s.F)} N, at ${plain(s.th)}° above the <i>x</i>-axis.` : `The push <i>F</i> = ${f3(s.F)} N, along +<i>x</i>.`;
+        case 5: return ex === 'ex13' ? 'The object is at rest and nothing pushes it, so there is no friction.' : ex === 'b4' ? 'Friction, along the surface and against the motion: along −<i>x</i>. It is the unknown.' : `Friction ${ex === 'ex14' ? '<i>Q</i>' : '<i>f</i>'} = ${f3(s.f)} N, along the surface and against the motion: along −<i>x</i>.`;
+        case 6: return ex === 'ex13' ? 'At rest: Σ<i>F</i><sub><i>y</i></sub> = 0, so <i>N</i> balances <i>W</i>.' : ex === 'ex14' ? 'Uniform velocity: Σ<i>F</i><sub><i>x</i></sub> = 0. Solve for <i>P</i>.' : ex === 'b4' ? 'Newton’s 2nd law along <i>x</i>: Σ<i>F</i> = <i>ma</i>. Solve for <i>f</i>.' : 'Newton’s 2nd law along <i>x</i>: Σ<i>F</i><sub><i>x</i></sub> = <i>ma</i>.';
+      }
+      return '';
+    }
+    function work1(s) {
+      const ex = S.custom ? 'custom' : S.base;
+      if (ex === 'ex13') return eq([`(b)(i) <i>W</i> = <i>mg</i> = ${s.m.toFixed(1)} × ${plain(G)} = ${f3(s.W)} N`, `(b)(ii) <i>W</i><sub><i>x</i></sub> = 0 N, &nbsp;<i>W</i><sub><i>y</i></sub> = ${f3(s.W)} N`,
+        { h: `(b)(iii) Since the object is at rest, ${SFY} = 0 N: &nbsp;<i>N</i> = <i>W</i><sub><i>y</i></sub> = ${f3(s.N)} N`, lit: true }]);
+      if (ex === 'ex14') return eq([`For constant velocity motion, ${SFX} = 0 N`, `<i>P</i> cos ${plain(s.th)}° = <i>Q</i>`,
+        { h: `<i>P</i> = <span class="frac"><span>${plain(s.f)}</span><span>cos ${plain(s.th)}°</span></span> = ${f3(s.F)} N`, lit: true }]);
+      if (ex === 'b4') return eq([`(a) Σ<i>F</i> = <i>ma</i> = ${s.m.toFixed(1)} × ${s.a.toFixed(1)} = ${f3(s.net)} N, in the direction of the acceleration`,
+        `(b) Σ<i>F</i> = <i>F</i> − <i>f</i>: &nbsp;${f3(s.F)} − <i>f</i> = ${f3(s.net)}`, { h: `<i>f</i> = ${f3(s.f)} N, against the push`, lit: true }]);
+      const cth = s.th > 0.5 ? ` cos ${plain(s.th)}°` : '';
+      return eq([`${SFX} = <i>F</i>${cth} − <i>f</i> = ${f3(s.F)}${cth} − ${f3(s.f)} = ${f3(s.net)} N`,
+        { h: `<i>a</i> = <span class="frac"><span>${SFX}</span><span><i>m</i></span></span> = <span class="frac"><span>${f3(s.net)}</span><span>${plain(s.m)}</span></span> = ${f3(s.a)} ${MS2}`, lit: true },
+        s.N >= 0 ? `<i>N</i> = <i>W</i>${s.th > 0.5 ? ` − <i>F</i> sin ${plain(s.th)}°` : ''} = ${f3(s.N)} N` : 'The pull’s upward part is larger than the weight: the box would leave the floor.']);
+    }
+    function words2(st) {
+      const P = P2;
+      if (P.kind === 'puck') return P.v > 0 ? `The net force is zero, so the puck keeps sliding at ${f3(P.v)} ${MS1} in a straight line: Newton’s First Law.` : 'The net force is zero and the puck is at rest, so it stays at rest: Newton’s First Law.';
+      if (P.kind === 'trolley') {
+        if (sim.t < P.tHit - 1e-9) return `The box rides on the smooth trolley at ${f3(P.u)} ${MS1}. No net force acts on it, so its velocity stays the same.`;
+        if (st.v > 1e-9) return `The trolley has stopped at the wall, but the box keeps moving: its inertia resists the change. On the rough surface friction is the only horizontal force, so it slows down at ${f3(P.dec)} ${MS2}.`;
+        return `Friction has stopped the box, ${f3(st.x)} m from where it started. At rest, the net force is zero again.`;
+      }
+      if (sim.t < 10 - 1e-9) return 'The velocity is rising, so there is an acceleration: a net force acts, in the direction of the motion.';
+      if (sim.t < 30 - 1e-9) return 'Constant velocity: no acceleration, so no net force. Newton’s First Law applies.';
+      if (sim.t < 35 - 1e-9) return 'The velocity is falling: the acceleration and the net force point against the motion (to the left).';
+      return 'The object has stopped.';
+    }
+    function words3(st) {
+      const P = P3;
+      if (st.never) return 'The push is not larger than the friction, so the block does not start to slide. Make the push larger, or give it a starting velocity.';
+      if (st.stopped) return `Friction stopped the block at <i>t</i> = ${tx(st.ts)} s, after ${f3(st.x)} m. The run ends here.`;
+      if (Math.abs(st.net) < 1e-9) return 'The forces along the motion balance, so the net force is zero: the velocity stays the same.';
+      const dir = st.net > 0 ? 'to the right' : 'to the left';
+      const done = sim.t >= runEnd() - 1e-9 ? ` The ${P.tEnd} s run has finished: <i>v</i> = ${f3(st.v)} ${MS1}.` : '';
+      return `The net force is ${f3(Math.abs(st.net))} N ${dir}, so the acceleration is ${f3(Math.abs(st.a))} ${MS2} ${dir}: the same direction as the net force.${done}`;
+    }
+    function stepText4() {
+      const P = P4;
+      const lines = {
+        1: 'Draw the free-body diagram of each block: weight down, the string’s tension pulling away from the block along the string' + (P.lay !== 'hang' ? ', and the normal force on a block on a surface.' : '.'),
+        2: 'Write Σ<i>F</i> = <i>ma</i> for block A, along its motion.',
+        3: 'Write Σ<i>F</i> = <i>ma</i> for block B. Both blocks have the same acceleration <i>a</i>.',
+        4: 'Add the two equations: the tension cancels. Solve for <i>a</i>.',
+        5: 'Put <i>a</i> back into one equation to find the tension <i>T</i>.'
+      };
+      return lines[S.step];
+    }
+    function work4(sol) {
+      if (S.step < 2) return '';
+      const P = P4, n = v => plain(v), WA = P.mA * G, WB = P.mB * G, aS = f3(Math.abs(sol.a)), L = [];
+      if (P.lay === 'floor') {
+        L.push(`For A: &nbsp;${n(P.P)} − <i>T</i> = ${n(P.mA)}<i>a</i> &nbsp; ....(1)`);
+        if (S.step >= 3) L.push(`For B: &nbsp;<i>T</i> = ${n(P.mB)}<i>a</i> &nbsp; ....(2)`);
+        if (S.step >= 4) L.push({ h: `(1) + (2): &nbsp;${n(P.P)} = ${n(P.mA + P.mB)}<i>a</i>, &nbsp;<i>a</i> = ${aS} ${MS2}`, lit: S.step === 4 });
+        if (S.step >= 5) L.push({ h: `Sub into (2): &nbsp;<i>T</i> = ${n(P.mB)}(${aS}) = ${f3(sol.T)} N`, lit: true });
+      } else if (P.lay === 'table') {
+        L.push(`For A: &nbsp;<i>T</i> = ${n(P.mA)}<i>a</i> &nbsp; ....(1)`);
+        if (S.step >= 3) L.push(`For B: &nbsp;${n(WB)} − <i>T</i> = ${n(P.mB)}<i>a</i> &nbsp; ....(2)`);
+        if (S.step >= 4) L.push({ h: `(1) + (2): &nbsp;${n(WB)} = ${n(P.mA + P.mB)}<i>a</i>, &nbsp;<i>a</i> = ${aS} ${MS2}`, lit: S.step === 4 });
+        if (S.step >= 5) L.push({ h: `Sub into (1): &nbsp;<i>T</i> = ${n(P.mA)}(${aS}) = ${f3(sol.T)} N`, lit: true });
+      } else {
+        const Adown = sol.a >= 0;
+        L.push(Adown ? `For A: &nbsp;${n(WA)} − <i>T</i> = ${n(P.mA)}<i>a</i> &nbsp; ....(1)` : `For A: &nbsp;<i>T</i> − ${n(WA)} = ${n(P.mA)}<i>a</i> &nbsp; ....(1)`);
+        if (S.step >= 3) L.push(Adown ? `For B: &nbsp;<i>T</i> − ${n(WB)} = ${n(P.mB)}<i>a</i> &nbsp; ....(2)` : `For B: &nbsp;${n(WB)} − <i>T</i> = ${n(P.mB)}<i>a</i> &nbsp; ....(2)`);
+        if (S.step >= 4) L.push({ h: `(1) + (2): &nbsp;${n(Math.abs(WA - WB))} = ${n(P.mA + P.mB)}<i>a</i>, &nbsp;<i>a</i> = ${aS} ${MS2}`, lit: S.step === 4 });
+        if (S.step >= 5) L.push({ h: Adown ? `Sub into (1): &nbsp;${n(WA)} − <i>T</i> = ${n(P.mA)}(${aS}), &nbsp;<i>T</i> = ${f3(sol.T)} N` : `Sub into (1): &nbsp;<i>T</i> − ${n(WA)} = ${n(P.mA)}(${aS}), &nbsp;<i>T</i> = ${f3(sol.T)} N`, lit: true });
+      }
+      return eq(L);
+    }
+    function words4(sol, t, v) {
+      const P = P4;
+      if (Math.abs(sol.a) < 1e-9) return 'The two weights are equal, so the net force on each box is zero: they stay at rest.';
+      const who = P.lay === 'hang' ? (sol.a > 0 ? 'A goes down and B goes up' : 'B goes down and A goes up') : P.lay === 'table' ? 'B falls and pulls A along the table' : 'P pulls A, and the string pulls B';
+      if (t < 1e-9) return `Press Start: ${who}, both with the same acceleration.`;
+      return `${who.charAt(0).toUpperCase() + who.slice(1)}. After ${tx(t)} s each block moves at ${S.step >= 4 ? f3(v) + ' ' + MS1 : 'the same speed'}.`;
+    }
+
+    function update() {
+      draw(); readouts(); syncInputs();
+      const end = runEnd(), mid = sim.t > 1e-9 && sim.t < end - 1e-9;
+      $('pauseBtn').textContent = !sim.running && mid ? 'Play' : 'Pause';
+      $('pauseBtn').disabled = !sim.running && !mid;
+      $('startBtn').disabled = sim.running;
+      $('prevStep').disabled = S.step <= 1; $('nextStep').disabled = S.step >= (STEPS[currentTab] || 1);
+      const km = keyMoments();
+      $('prevMoment').disabled = !km.some(m => m < sim.t - 1e-6); $('nextMoment').disabled = !km.some(m => m > sim.t + 1e-6);
+    }
+    function setStep(n) { S.step = Math.max(1, Math.min(STEPS[currentTab] || 1, n)); clearFeat(); update(); }
+    $('prevStep').addEventListener('click', () => setStep(S.step - 1));
+    $('nextStep').addEventListener('click', () => setStep(S.step + 1));
+    $('resetSteps').addEventListener('click', () => chooseScenario(presetEl.value));
+    function chooseScenario(id) {
+      loadScenario(id === 'custom' ? 'custom' : id);
+      if (id === 'custom' && currentTab === 1) { fillGaps1(); S.step = 6; }
+      // "Your own trolley run" starts from the trolley, whichever scenario was open
+      if (id === 'custom' && currentTab === 2 && P2.kind !== 'trolley') P2 = Object.assign({}, PRESETS.trolley);
+      $('question').style.minHeight = '';
+      view = null; clearFeat(); buildInputs(); update();
+    }
+    presetEl.addEventListener('change', () => chooseScenario(presetEl.value));
+
+    /* ---------------- the tabs ---------------- */
+    const TABS = {
+      1: { strip: 'Answer Predict first. Then press Next step to draw the free-body diagram one force at a time, and use Newton’s 2nd law on the last step.',
+        presets: ['ex13', 'ex14', 'b4'], hint: 'Drag the tip of the applied force or of the friction arrow in the free-body diagram, or type the values (θ is the angle above the horizontal).',
+        key: [[COL.W, 'Weight W'], [COL.N, 'Normal force N'], [COL.F, 'Applied force F (pull P)'], [COL.f, 'Friction f (Q)'], [COL.R, 'Net force ΣF']],
+        notes: ['In a free-body diagram, the object of interest is drawn “free” with only the forces acting on it (notes p. 3-48).', 'We do not include forces that the object of interest exerts on other bodies.',
+          'Weight, normal reaction force, frictional force and tension are often drawn in free-body diagrams.', 'The normal force is equal to the magnitude of the weight only if the object is on a horizontal surface and there are no other vertical forces acting on it (p. 3-5).'] },
+      2: { strip: 'Answer Predict first. Then press Start, or step through the key moments, and watch the net force and the graph.',
+        presets: ['rest', 'slide', 'trolley', 'b3'], hint: 'Press Start. The graph builds as the object moves.',
+        key: [[COL.v, 'Velocity v'], [COL.R, 'Net force ΣF'], [COL.f, 'Friction'], [COL.N, 'Upward force'], [COL.W, 'Downward force']],
+        notes: ['Newton’s First Law: every object continues in a state of rest or uniform speed in a straight line unless acted upon by a non-zero net force (notes p. 3-16).',
+          'Inertia is the tendency of an object to resist changes in its state of motion. Objects with more mass have more inertia (p. 3-18).',
+          'If the net force acting on an object is zero, it does not mean that the speed of the object is zero (p. 3-19).'] },
+      3: { strip: 'Answer Predict first. Then press Start for one run, change the forces or drag the tip of the blue arrow, and compare the acceleration with the net force.',
+        presets: ['ex11', 'ex2a', 'ex2b', 'a3', 'b4m'], hint: 'Drag the tip of the blue force arrow, or type the values. A change restarts the run.',
+        key: [[COL.F, 'Force to the right F'], [COL.f, 'Force to the left'], ['#d97706', 'Friction f'], [COL.R, 'Net force ΣF'], [COL.v, 'Velocity v']],
+        notes: ['Newton’s Second Law: Σ<i>F</i> = <i>ma</i>. The acceleration is directly proportional to the net force and inversely proportional to the mass (notes p. 3-37).',
+          'The net force is the larger force minus the smaller force, in the direction of the larger force (p. 3-40).', 'The acceleration is in the same direction as the net force (p. 3-40).',
+          'Friction acts only while the block slides, against its motion: it can stop the block but never push it backwards.'] },
+      4: { strip: 'Answer Predict first. Then press Next step to write Newton’s 2nd law for each block, and Start to watch them move together.',
+        presets: ['ex17', 'ex18', 'ex19', 'b9'], hint: 'Press Next step to work out a and T, and Start to run the motion for 2 s. Arrow lengths are not to scale.',
+        key: [[COL.T, 'Tension T'], [COL.W, 'Weight W'], [COL.N, 'Normal force N'], [COL.F, 'Pull P'], [COL.a, 'Acceleration a']],
+        notes: ['Blocks joined by a light string move together: they have the same acceleration.', 'If a pulley is frictionless, the tension (<i>T</i>) in the string on both sides of the pulley are the same (notes p. 3-54).',
+          'Write Σ<i>F</i> = <i>ma</i> for each block, then add the two equations: the tension cancels (p. 3-53).', 'Tension points away from the object, along the string (p. 3-6).'] },
+      5: { strip: 'Answer every question, then read the summary.', key: [] }
+    };
+
+    const PREDICT = {
+      1: { q: 'Example 13: an object of mass 5 kg rests on a horizontal surface. Which forces act on it?',
+        opts: ['Its weight only', 'Its weight and the normal force', 'Its weight, the normal force and friction', 'No forces: it is at rest'], ans: 1,
+        why: 'Weight acts on every object, and the surface pushes back on it with the normal force. Nothing pushes it sideways, so there is no friction. The two forces cancel, which is why it stays at rest. Press Next step to draw them.' },
+      2: { q: 'Try it! (p. 3-46): a box rides on a smooth trolley at 3.0 m s<sup>−1</sup>. The trolley strikes a wall at <i>t</i> = 2 s. What does the box do straight after?',
+        opts: ['Stops with the trolley', 'Keeps moving at 3.0 m s<sup>−1</sup>, then slows down on the rough surface', 'Speeds up', 'Moves backwards'], ans: 1,
+        why: 'Inertia: the box keeps moving at 3.0 m s<sup>−1</sup> when the trolley stops. On the rough surface, friction is a net force against its motion, so it slows down at 1 m s<sup>−2</sup> and stops at 5 s. Choose the trolley scenario and press Start to check.' },
+      3: { q: 'Example 11: a resultant force of 4500 N gives a 1500 kg car an acceleration of 3 m s<sup>−2</sup>. What is the acceleration if the force is doubled?',
+        opts: ['3 m s<sup>−2</sup>', '6 m s<sup>−2</sup>', '1.5 m s<sup>−2</sup>', '9 m s<sup>−2</sup>'], ans: 1,
+        why: '<i>a</i> = <i>F</i> / <i>m</i> = 9000 / 1500 = 6 m s<sup>−2</sup>. For the same mass, double the net force gives double the acceleration. Type 9000 into the force box and press Start to check.' },
+      4: { q: 'Example 18: boxes A (30 kg) and B (20 kg) hang on a light string over a frictionless pulley. The tension <i>T</i> in the string is …',
+        opts: ['300 N, equal to the weight of A', '200 N, equal to the weight of B', 'Between 200 N and 300 N', '500 N, the sum of both weights'], ans: 2,
+        why: 'A accelerates down, so its weight (300 N) is larger than <i>T</i>. B accelerates up, so <i>T</i> is larger than its weight (200 N). The working gives <i>T</i> = 240 N. Choose Example 18 and press Next step to check.' }
+    };
+
+    const FEATS = {
+      1: [['free', 'Drawn “free”'], ['weight', 'Weight W = mg'], ['normal', 'N less than W'], ['law', 'ΣF = ma along x']],
+      2: [['rest', 'At rest: ΣF = 0'], ['steady', 'Constant velocity: ΣF = 0'], ['inertia', 'Inertia: the box keeps moving'], ['area', 'Area = distance']],
+      3: [['net', 'ΣF = larger − smaller'], ['dir', 'a in the direction of ΣF'], ['double', 'Double F, double a'], ['grad', 'Gradient of v–t = a']],
+      4: [['same', 'Same a for both'], ['tension', 'Same T on both sides'], ['add', 'Add the two equations'], ['between', 'T between the two weights']]
+    };
+    const PROMPTS = {
+      1: ['Why is friction left out of the free-body diagram in Example 13?', 'In Example 14, why is the normal force less than the weight?', 'Tutorial B4: how many forces act on the box, and which two cancel?'],
+      2: ['The puck slides with no net force on it. Why does it not slow down?', 'Why must passengers in a car wear seat-belts (p. 3-18)?', 'From the trolley’s graph, how far does the box slide on the rough surface?'],
+      3: ['Exercise 2: how do you find the direction of the net force?', 'Double the mass and keep the force: what happens to the acceleration?', 'The block in Tutorial A3 moves, yet the net force is zero. Explain.'],
+      4: ['Why do the two blocks have the same acceleration?', 'Example 17: why is the tension so much smaller than <i>P</i>?', 'What happens to <i>a</i> and <i>T</i> if the two hanging boxes have the same mass?'],
+      5: ['Which question did most of the class get wrong, and why?', 'Pick one wrong option: what mistake would lead a student to choose it?']
+    };
+
+    let predictPick = null;
+    function clearFeat() { feat = {}; hl = {}; graphFeat = null; syncFeatButtons(); $('featNote').textContent = ''; }
+    function syncFeatButtons() { document.querySelectorAll('#feats .feat').forEach(b => b.classList.toggle('on', !!feat[b.dataset.f])); }
+    // a key feature shows itself: it picks the scenario (if needed) and the step or the moment that shows it
+    function tapFeat(id) {
+      const on = !feat[id];
+      const want = scen => { if (S.base === scen && !S.custom) return; presetEl.value = scen; chooseScenario(scen); };
+      clearFeat();
+      if (on) {
+        ({
+          free: () => { want('ex13'); S.step = 1; },
+          weight: () => { want('ex13'); S.step = 2; hl = { rW: true }; },
+          normal: () => { want('ex14'); S.step = 5; hl = { rN: true }; },
+          law: () => { want('b4'); S.step = 6; hl = { rNet: true, rf: true }; },
+          rest: () => { want('rest'); sim.t = 2; },
+          steady: () => { want('slide'); sim.t = 2; hl = { rNet: true, rV: true }; },
+          inertia: () => { want('trolley'); sim.t = P2.tHit + 0.5; hl = { rV: true }; },
+          area: () => { want('trolley'); sim.t = profile().tEnd; graphFeat = 'area'; hl = { rX: true }; },
+          net: () => { want('ex2b'); sim.t = 0; hl = { rNet: true }; },
+          dir: () => { want('ex2b'); sim.t = 2; hl = { rNet: true, rA: true, rV: true }; },
+          double: () => { want('ex11'); P3.F = 9000; S.custom = true; S.scen = 'custom'; presetEl.value = 'custom'; $('question').innerHTML = 'Example 11 (b): the resultant force doubled to 9000 N.'; sim.t = 0; hl = { rA: true }; },
+          grad: () => { want('b4m'); sim.t = stop3(); graphFeat = 'grad'; hl = { rA: true }; },
+          same: () => { want('ex19'); S.step = 4; sim.t = 2; hl = { rA: true }; },
+          tension: () => { want('ex18'); S.step = 1; },
+          add: () => { want('ex17'); S.step = 4; hl = { rA: true }; },
+          between: () => { want('ex18'); S.step = 5; hl = { rT: true }; }
+        })[id]();
+        sim.running = false;
+      }
+      feat = on ? { [id]: true } : {};
+      if (!on) graphFeat = null;
+      syncFeatButtons(); buildInputs(); update();
+      $('featNote').innerHTML = on ? featNote(id) : '';
+    }
+    function featNote(id) {
+      const s = currentTab === 1 ? fbd() : null, q = currentTab === 4 ? solve4() : null;
+      switch (id) {
+        case 'free': return 'The object is drawn “free”, as a dot, with only the forces acting on it. Forces the object exerts on other bodies (the box pushing down on the floor) are not included (notes p. 3-48).';
+        case 'weight': return 'The weight is the gravitational force exerted by Earth on the object. It acts vertically down: <i>W</i> = <i>mg</i> = ' + `${plain(s.m)} × ${plain(G)} = ${f3(s.W)} N (p. 3-4).`;
+        case 'normal': return 'The pull <i>P</i> has an upward part, so the floor does not need to push up as hard: <i>N</i> is less than <i>W</i>. The normal force equals the weight only when no other vertical force acts (p. 3-5).';
+        case 'law': return `The box accelerates at ${s.a.toFixed(1)} m s<sup>−2</sup>, so the net force is <i>ma</i> = ${f3(s.net)} N, in the direction of the acceleration. The push (${f3(s.F)} N) is larger than the friction by ${f3(s.net)} N: <i>f</i> = ${f3(s.f)} N. The weight and the normal force cancel.`;
+        case 'rest': return 'Upward force = downward force, so the net force is zero. An object at rest with no net force stays at rest.';
+        case 'steady': return `The puck slides at a constant ${f3(P2.v)} ${MS1}. The net force is zero, yet it is moving: a zero net force does not mean the speed is zero (p. 3-19).`;
+        case 'inertia': return 'The trolley stopped at the wall, but nothing stopped the box at that moment: it carries on at 3.0 m s<sup>−1</sup>. This is inertia (p. 3-18). The same happens to passengers when a car suddenly stops, which is why they wear seat-belts.';
+        case 'area': return 'The area under a velocity-time graph is the distance moved. On the rough surface: <i>A</i><sub>1</sub> = 2.5 m, <i>A</i><sub>2</sub> = 1.5 m, <i>A</i><sub>3</sub> = 0.5 m (notes p. 3-46): 4.5 m. With the 6 m before the wall, the box moves 10.5 m in all.';
+        case 'net': return 'Exercise 2: the larger force (10 N, left) minus the smaller force (5 N, right) gives a net force of 5 N, in the direction of the larger force: to the left (p. 3-40).';
+        case 'dir': return '<i>a</i> = Σ<i>F</i> / <i>m</i> = 5 / 4 = 1.25 m s<sup>−2</sup>, to the left: the same direction as the net force. The velocity and the displacement come out negative because left is the negative direction.';
+        case 'double': return 'Example 11 (b): <i>F</i> = 2 × 4500 = 9000 N, so <i>a</i> = <i>F</i> / <i>m</i> = 9000 / 1500 = 6 m s<sup>−2</sup>. Twice the force on the same mass gives twice the acceleration. Press Start.';
+        case 'grad': return 'The gradient of the velocity-time graph is the acceleration: Δ<i>v</i> / Δ<i>t</i> = 4 / 4 = 1 m s<sup>−2</sup>, the same as Σ<i>F</i> / <i>m</i> = 2 / 2.0 for Tutorial B4.';
+        case 'same': return 'The string does not stretch, so A and B always move the same distance in the same time: they share one acceleration (here ' + `${f3(q.a)} m s<sup>−2</sup>, Example 19).`;
+        case 'tension': return 'The pulley is frictionless, so the tension is the same on both sides: the same <i>T</i> pulls A up and B up (notes p. 3-54).';
+        case 'add': return `Example 17: For A, 10 − <i>T</i> = 50<i>a</i>; for B, <i>T</i> = 10<i>a</i>. Adding them cancels <i>T</i>: 10 = 60<i>a</i>, so <i>a</i> = ${f3(q.a)} m s<sup>−2</sup>. It is as if the 10 N force pulled both blocks (60 kg) together.`;
+        case 'between': return `Example 18: <i>T</i> = ${f3(q.T)} N. A (${f3(P4.mA * G)} N weight) accelerates down, so its weight is larger than <i>T</i>; B (${f3(P4.mB * G)} N weight) accelerates up, so <i>T</i> is larger than its weight.`;
+      }
+      return '';
+    }
+
+    function renderPredict(tab) {
+      const P = PREDICT[tab], box = $('predictBox');
+      predictPick = null;
+      if (!P) { box.hidden = true; return; }
+      box.hidden = false; box.classList.remove('done');
+      $('predictQ').innerHTML = P.q;
+      $('predictFb').innerHTML = '';
+      const opts = $('predictOpts');
+      opts.innerHTML = '';
+      P.opts.forEach((o, i) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.innerHTML = o;
+        b.addEventListener('click', () => {
+          if (opts.dataset.done) return;
+          predictPick = i; opts.querySelectorAll('.opt').forEach((x, j) => x.classList.toggle('picked', j === i));
+        });
+        opts.appendChild(b);
+      });
+      delete opts.dataset.done;
+      $('predictCheck').textContent = 'Check my answer';
+    }
+    $('predictCheck').addEventListener('click', () => {
+      const P = PREDICT[currentTab], opts = $('predictOpts'), fb = $('predictFb');
+      if (!P) return;
+      if (opts.dataset.done) { renderPredict(currentTab); return; }
+      if (predictPick === null) { fb.innerHTML = '<span class="verdict no">Pick an answer first.</span>'; return; }
+      opts.dataset.done = '1';
+      const ok = predictPick === P.ans;
+      opts.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === P.ans) x.classList.add('right'); else if (j === predictPick) x.classList.add('wrong'); });
+      // the options fold away: the result line names the pick (and the right answer), then the explanation
+      $('predictBox').classList.add('done');
+      fb.innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> Your prediction: ${P.opts[predictPick]}.`
+        + (ok ? '' : ` The answer: <b>${P.opts[P.ans]}</b>.`) + ` <span class="why">${P.why}</span>`;
+      $('predictCheck').textContent = 'Try again';
+    });
+
+    // symbols in a plain label made italic in one pass: F, f, W, N, T, P, Q, a, v, ΣF, m
+    const italic = s => s.replace(/\b([FfWNTPQavm])\b/g, '<i>$1</i>');
+    function renderFeats(tab) {
+      const list = FEATS[tab] || [], el = $('feats');
+      $('featBox').hidden = !list.length;
+      el.innerHTML = '';
+      list.forEach(([id, lab]) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'feat'; b.dataset.f = id;
+        b.innerHTML = italic(lab);
+        b.addEventListener('click', () => tapFeat(id));
+        el.appendChild(b);
+      });
+      $('featNote').textContent = '';
+      syncFeatButtons();
+    }
+    function renderKey(tab) {
+      // the label sits in its own span: as direct children of the inline-flex entry, <i> would become a flex item
+      $('ckey').innerHTML = (TABS[tab].key || []).map(([c, lab]) => `<span><b style="background:${c}"></b><span>${italic(lab)}</span></span>`).join('');
+    }
+    function fillPresets(list, tab) {
+      presetEl.innerHTML = '';
+      [...list, 'custom'].forEach(id => { const o = document.createElement('option'); o.value = id; o.textContent = id === 'custom' ? CUSTOM_NAME[tab] : PRESETS[id].name; presetEl.appendChild(o); });
+      presetEl.value = list[0];
+    }
+
+    function showTab(tab) {
+      currentTab = tab;
+      sim.running = false;
+      document.querySelectorAll('#tabs .tab').forEach(b => { const on = +b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+      $('stepLabel').textContent = `Step ${tab} of 5`;
+      document.querySelectorAll('#stepBar i').forEach((i, n) => i.classList.toggle('on', n < tab));
+      $('strip').innerHTML = TABS[tab].strip;
+      renderKey(tab);
+      $('pageSim').hidden = tab === 5;
+      $('page5').hidden = tab !== 5;
+      if (tab <= 4) {
+        const T = TABS[tab];
+        canvas.className = 't' + tab;
+        $('stepGroup').hidden = !(tab === 1 || tab === 4);
+        $('resetSteps').hidden = tab !== 1;
+        $('simGroup').hidden = tab === 1;
+        $('moments').hidden = tab === 1;
+        $('sceneHint').textContent = T.hint;
+        $('notes').innerHTML = '<ul>' + T.notes.map(n => `<li>${n}</li>`).join('') + '</ul>';
+        fillPresets(T.presets, tab);
+        chooseScenario(T.presets[0]);
+      }
+      if (tab === 5) renderQuiz();
+      renderPredict(tab);
+      renderFeats(tab);
+      $('tPrompts').innerHTML = PROMPTS[tab].map(p => `<li>${p}</li>`).join('');
+    }
+    document.querySelectorAll('#tabs .tab').forEach(b => b.addEventListener('click', () => showTab(+b.dataset.tab)));
+
+    /* ---------------- Tab 5: Challenge ---------------- */
+    // every answer recomputed and matched to the lecturer's copy or Tutorial 3's answer key
+    // A question whose parts share one situation is one screen: the situation once, then its parts
+    const QUIZ = [
+      { src: 'Example 11, notes p. 3-38', stem: 'A car has a mass of 1500 kg.', parts: [
+        { lab: '(a)', q: 'Calculate the resultant force <i>F</i> required to give the car an acceleration of 3 m s<sup>−2</sup>.', opts: ['500 N', '4500 N', '1503 N', '45 000 N'], ans: 1,
+          why: '<i>F</i> = <i>ma</i> = 1500 × 3 = 4500 N. (500 N divides instead of multiplying.)' },
+        { lab: '(b)', q: 'Calculate the acceleration if <i>F</i> is doubled.', opts: ['3 m s<sup>−2</sup>', '6 m s<sup>−2</sup>', '1.5 m s<sup>−2</sup>', '12 m s<sup>−2</sup>'], ans: 1,
+          why: '<i>F</i> = 2 × 4500 = 9000 N, so <i>a</i> = <i>F</i> / <i>m</i> = 9000 / 1500 = 6 m s<sup>−2</sup>.' }] },
+      { src: 'Exercise 2, notes p. 3-39', stem: 'A 10 N force acts to the left and a 5 N force acts to the right on a 4 kg block.', parts: [
+        { q: 'The net force on the block:', opts: ['5 N to the left', '15 N to the left', '5 N to the right', '2.5 N to the left'], ans: 0,
+          why: 'The larger force minus the smaller force: 10 − 5 = 5 N, in the direction of the larger force: to the left.' },
+        { q: 'The acceleration of the block:', opts: ['1.25 m s<sup>−2</sup> to the left', '1.25 m s<sup>−2</sup> to the right', '3.75 m s<sup>−2</sup> to the left', '20 m s<sup>−2</sup> to the left'], ans: 0,
+          why: '<i>a</i> = Σ<i>F</i> / <i>m</i> = 5 / 4 = 1.25 m s<sup>−2</sup>, in the same direction as the net force: to the left.' }] },
+      { src: 'Exercise 3, notes p. 3-41', stem: 'A 3 kg block has an unknown force <i>F</i> acting to the left and a 7 N force acting to the right. It accelerates at 1.5 m s<sup>−2</sup> to the right.', parts: [
+        { q: 'Find <i>F</i>.', opts: ['2.5 N', '11.5 N', '4.5 N', '5.5 N'], ans: 0,
+          why: 'The acceleration is to the right, so the 7 N force is the larger one: 7 − <i>F</i> = 3(1.5), so <i>F</i> = 7 − 4.5 = 2.5 N. (11.5 N adds 4.5 instead of subtracting it.)' }] },
+      { src: 'Example 12, notes p. 3-45', stem: 'A car of mass 1000 kg travelling at 20 m s<sup>−1</sup> crashes into a brick wall and comes to rest in 0.5 s. Assume uniform deceleration.', parts: [
+        { lab: '(a)', q: 'The average force exerted by the wall on the car has a magnitude of …', opts: ['40 kN', '10 kN', '20 kN', '400 N'], ans: 0,
+          why: '<i>a</i> = (0 − 20) / 0.5 = −40 m s<sup>−2</sup>, so Σ<i>F</i> = <i>ma</i> = 1000 × (−40) = −40 000 N: 40 kN. (10 kN multiplies by 0.5 instead of dividing.)' },
+        { lab: '(b)', q: 'The working gives Σ<i>F</i> = −40 000 N. The minus sign means …', opts: ['the force is opposite to the direction of motion', 'the force is less than zero newtons', 'the car speeds up', 'the force acts for a negative time'], ans: 0,
+          why: 'The minus sign indicates the direction: the force and the acceleration are opposite to the direction of motion. A force that slows the car down is a retarding force.' }] },
+      { src: 'Tutorial 3, A4', stem: 'A constant force applied to an object on a smooth surface causes it to accelerate at 5.0 m s<sup>−2</sup>. Calculate the acceleration of the object when the force is …', parts: [
+        { lab: '(a)', q: '… doubled.', opts: ['10 m s<sup>−2</sup>', '2.5 m s<sup>−2</sup>', '5.0 m s<sup>−2</sup>', '25 m s<sup>−2</sup>'], ans: 0,
+          why: 'Same mass: the acceleration is directly proportional to the net force. 2 × 5.0 = 10 m s<sup>−2</sup>.' },
+        { lab: '(b)', q: '… halved.', opts: ['10 m s<sup>−2</sup>', '2.5 m s<sup>−2</sup>', '5.0 m s<sup>−2</sup>', '0.4 m s<sup>−2</sup>'], ans: 1,
+          why: 'Half the force on the same mass: 5.0 ÷ 2 = 2.5 m s<sup>−2</sup>.' }] },
+      { src: 'Tutorial 3, A5', stem: 'A net force of 5.0 N acts on an object at rest and causes it to reach a velocity of 4.0 m s<sup>−1</sup> in 2.5 s.', parts: [
+        { q: 'What is the mass of the object?', opts: ['3.13 kg', '12.5 kg', '0.320 kg', '2.00 kg'], ans: 0,
+          why: '<i>a</i> = (4.0 − 0) / 2.5 = 1.6 m s<sup>−2</sup>, so <i>m</i> = Σ<i>F</i> / <i>a</i> = 5.0 / 1.6 = 3.13 kg.' }] },
+      { src: 'Tutorial 3, B4', stem: 'A 2.0 kg box is being pushed horizontally along a rough surface by a 30 N force at a constant acceleration of 1.0 m s<sup>−2</sup>.', parts: [
+        { lab: '(a)', q: 'What is the net force acting on the box?', opts: ['30 N', '2 N', '0 N', '32 N'], ans: 1,
+          why: 'Σ<i>F</i> = <i>ma</i> = 2.0 × 1.0 = 2 N, in the same direction as the acceleration.' },
+        { lab: '(b)', q: 'What is the frictional force between the box and the surface?', opts: ['30 N', '2 N', '28 N', '32 N'], ans: 2,
+          why: '30 − <i>f</i> = 2, so <i>f</i> = 28 N, opposing the push. (30 N is Tutorial A3, where the box moves at constant velocity.)' }] },
+      { src: 'Example 14, notes p. 3-50', stem: 'A box is pulled on a horizontal surface at uniform velocity by a force <i>P</i> at 30° above the horizontal. The frictional force <i>Q</i> between the box and the surface is 17.6 N.', parts: [
+        { q: 'Find the magnitude of <i>P</i>.', opts: ['17.6 N', '20.3 N', '35.2 N', '15.2 N'], ans: 1,
+          why: 'Uniform velocity, so Σ<i>F</i><sub><i>x</i></sub> = 0: <i>P</i> cos 30° = <i>Q</i>, so <i>P</i> = 17.6 / cos 30° = 20.3 N. (35.2 N uses sin 30°; 15.2 N multiplies by cos 30°.)' }] },
+      { src: 'Tutorial 3, B6', stem: 'A light string connects a 20 kg block to a 40 kg block on a frictionless floor. A force <i>F</i> pulls the 40 kg block to the right.', parts: [
+        { lab: '(b)(i)', q: 'The blocks accelerate to the right at 1 m s<sup>−2</sup>. Find the tension in the string.', opts: ['20 N', '40 N', '60 N', '1 N'], ans: 0,
+          why: 'Only the tension pulls the 20 kg block: <i>T</i> = 20 × 1 = 20 N.' },
+        { lab: '(b)(ii)', q: '… and the force <i>F</i>.', opts: ['40 N', '20 N', '60 N', '80 N'], ans: 2,
+          why: 'For the 40 kg block: <i>F</i> − <i>T</i> = 40 × 1, so <i>F</i> = 40 + 20 = 60 N. (Or: 60 kg × 1 m s<sup>−2</sup> for both blocks.)' },
+        { lab: '(c)', q: 'The force <i>F</i> is now 180 N. Find the acceleration.', opts: ['3 m s<sup>−2</sup>', '4.5 m s<sup>−2</sup>', '9 m s<sup>−2</sup>', '6 m s<sup>−2</sup>'], ans: 0,
+          why: '<i>a</i> = 180 / (20 + 40) = 3 m s<sup>−2</sup>, and then <i>T</i> = 20 × 3 = 60 N. (4.5 m s<sup>−2</sup> uses only the 40 kg block.)' }] },
+      { src: 'Tutorial 3, B9', stem: 'A 40 kg mass is initially at rest on a smooth bench, and a 10 kg mass hanging over the edge is attached to it by a string over a pulley.', parts: [
+        { lab: '(b)', q: 'What is the acceleration of the system?', opts: ['2 m s<sup>−2</sup>', '2.5 m s<sup>−2</sup>', '10 m s<sup>−2</sup>', '0.25 m s<sup>−2</sup>'], ans: 0,
+          why: 'For the 10 kg mass: 100 − <i>T</i> = 10<i>a</i>; for the 40 kg mass: <i>T</i> = 40<i>a</i>. Adding: 100 = 50<i>a</i>, so <i>a</i> = 2 m s<sup>−2</sup> (and <i>T</i> = 80 N). (2.5 m s<sup>−2</sup> divides by 40 kg only.)' },
+        { lab: '(c)', q: 'What is the speed of the 10 kg mass after 2 s after the masses start moving?', opts: ['4 m s<sup>−1</sup>', '2 m s<sup>−1</sup>', '8 m s<sup>−1</sup>', '20 m s<sup>−1</sup>'], ans: 0,
+          why: '<i>v</i> = <i>u</i> + <i>at</i> = 0 + 2 × 2 = 4 m s<sup>−1</sup>.' }] },
+      { src: 'Tutorial 3, B3', stem: 'An object of mass 2.0 kg: its velocity rises steadily from 0 to 2 m s<sup>−1</sup> between 0 and 10 s, stays at 2 m s<sup>−1</sup> until 30 s, then falls steadily to 0 at 35 s.', parts: [
+        { lab: '(b)', q: 'The net forces between 0 and 10 s and between 30 and 35 s are …', opts: ['0.4 N to the right and 0.8 N to the left', '0.2 N to the right and 0.4 N to the left', '0.8 N to the right and 0.4 N to the left', 'the same: 0.4 N each'], ans: 0,
+          why: '<i>a</i> = 2 / 10 = 0.2 m s<sup>−2</sup>, so Σ<i>F</i> = 2.0 × 0.2 = 0.4 N to the right; then <i>a</i> = −2 / 5 = −0.4 m s<sup>−2</sup>, so Σ<i>F</i> = 0.8 N to the left. (0.2 N and 0.4 N are the accelerations, not the forces.)' },
+        { lab: '(c)', q: 'Which Newton’s law of motion is applicable between 10 s and 30 s?', opts: ['The first law: constant velocity, no net force', 'The second law: Σ<i>F</i> = 0.4 N', 'The third law', 'None: the object is at rest'], ans: 0,
+          why: 'Between 10 s and 30 s the velocity is constant: no acceleration, so no net force. Newton’s First Law.' }] }
+    ];
+    const QUIZ_MARKS = QUIZ.reduce((n, Q) => n + Q.parts.length, 0);
+    const partLabel = (Q, k) => Q.parts[k].lab ? Q.parts[k].lab + ' ' : Q.parts.length > 1 ? `(${'abcdefgh'[k]}) ` : '';
+    let quiz = { i: 0, score: 0, picks: [], done: false, missed: [] };
+    function resetQuiz() { quiz = { i: 0, score: 0, picks: [], done: false, missed: [] }; renderQuiz(); }
+    function renderQuiz() {
+      const el = $('quiz'), N = QUIZ.length;
+      if (quiz.i >= N) {
+        const list = quiz.missed.length
+          ? `<p>Go back over these:</p><ul>${quiz.missed.map(([n, k]) => { const Q = QUIZ[n];
+              return `<li>Question ${n + 1}${partLabel(Q, k).trim()} (${Q.src}): ${(Q.stem ? Q.stem + ' ' : '') + Q.parts[k].q}</li>`; }).join('')}</ul>`
+          : '<p>Every answer right. Well done.</p>';
+        el.innerHTML = `<div class="quiz-top"><span>Summary</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div><div class="quiz-bar"><i style="width:100%"></i></div>
+          <div class="quiz-sum"><div class="quiz-q">You scored ${quiz.score} out of ${QUIZ_MARKS}.</div>${list}</div>
+          <div class="row-btns"><button type="button" id="qAgain">Try the quiz again</button></div>`;
+        $('qAgain').addEventListener('click', resetQuiz);
+        return;
+      }
+      const Q = QUIZ[quiz.i], many = Q.parts.length > 1;
+      quiz.picks = Q.parts.map(() => null);
+      el.innerHTML = `<div class="quiz-top"><span>Question ${quiz.i + 1} of ${N}</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div>
+        <div class="quiz-bar"><i style="width:${(quiz.i / N) * 100}%"></i></div>
+        ${Q.stem ? `<div class="quiz-q" id="qStem">${Q.stem}</div>` : ''}<div class="quiz-src">${Q.src}${many ? ` · ${Q.parts.length} parts, answer them all` : ''}</div>
+        ${Q.parts.map((P, k) => `<div class="qpart" data-k="${k}">
+          <div class="${Q.stem ? 'qpart-q' : 'quiz-q'}">${partLabel(Q, k)}${P.q}</div>
+          <div class="opts">${P.opts.map((o, j) => `<button type="button" class="opt" data-j="${j}">${o}</button>`).join('')}</div>
+          <div class="feedback"></div></div>`).join('')}
+        <div class="row-btns"><button type="button" id="qSubmit">${many ? 'Submit answers' : 'Submit answer'}</button><button type="button" class="secondary" id="qReset">Reset quiz</button></div>
+        <div class="feedback" id="qFb"></div>`;
+      el.querySelectorAll('.qpart').forEach(part => {
+        const k = +part.dataset.k;
+        part.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+          if (quiz.done) return;
+          quiz.picks[k] = +b.dataset.j; part.querySelectorAll('.opt').forEach(x => x.classList.toggle('picked', x === b));
+        }));
+      });
+      $('qReset').addEventListener('click', resetQuiz);
+      $('qSubmit').addEventListener('click', () => {
+        const fb = $('qFb');
+        if (quiz.done) { quiz.i++; quiz.done = false; renderQuiz(); return; }
+        const left = quiz.picks.map((p, k) => p === null ? partLabel(Q, k).trim() || `part ${k + 1}` : null).filter(x => x !== null);
+        if (left.length) { fb.innerHTML = `<span class="verdict no">${many ? `Pick an answer for every part first (still to do: ${left.join(', ')}).` : 'Pick an answer first.'}</span>`; return; }
+        quiz.done = true; fb.innerHTML = '';
+        el.querySelectorAll('.qpart').forEach(part => {
+          const k = +part.dataset.k, P = Q.parts[k], ok = quiz.picks[k] === P.ans;
+          if (ok) quiz.score++; else quiz.missed.push([quiz.i, k]);
+          part.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === P.ans) x.classList.add('right'); else if (j === quiz.picks[k]) x.classList.add('wrong'); });
+          part.querySelector('.feedback').innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> <span class="why">${P.why}</span>`;
+        });
+        el.querySelector('.quiz-top span:last-child').textContent = `Score: ${quiz.score} of ${QUIZ_MARKS}`;
+        $('qSubmit').textContent = quiz.i + 1 < N ? 'Next question' : 'See the summary';
+      });
+    }
+
+    /* ---------------- Teacher mode ---------------- */
+    // Only the teacher link (this page's address + ?teacher) shows the button; students and the
+    // Brightspace embed use the plain address. Not a lock: the panel only changes this screen.
+    const teacher = $('teacher');
+    if (new URLSearchParams(location.search).has('teacher')) $('teacherBtn').hidden = false;
+    $('teacherBtn').addEventListener('click', () => { teacher.hidden = !teacher.hidden; });
+    $('tClose').addEventListener('click', () => { teacher.hidden = true; });
+    $('tExplain').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-explain');
+      e.target.textContent = on ? 'Show explanations' : 'Hide explanations'; e.target.classList.toggle('on', on);
+    });
+    $('tAnswers').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-answers');
+      e.target.textContent = on ? 'Show answer labels' : 'Hide answer labels'; e.target.classList.toggle('on', on);
+    });
+    // free exploration: every step shown at once, no Predict first
+    $('tFree').addEventListener('click', e => {
+      freeMode = !freeMode; document.body.classList.toggle('free-mode', freeMode);
+      e.target.textContent = freeMode ? 'Back to the guided steps' : 'Switch to free exploration'; e.target.classList.toggle('on', freeMode);
+      showTab(currentTab);
+    });
+    const fullBtn = $('tFull');
+    if (!document.fullscreenEnabled) fullBtn.hidden = true;
+    fullBtn.addEventListener('click', () => {
+      if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {});
+    });
+    document.addEventListener('fullscreenchange', () => { fullBtn.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
+    $('tReset').addEventListener('click', () => { resetQuiz(); showTab(1); });
+
+    window.addEventListener('resize', () => { if (currentTab <= 4) { view = null; update(); } });
+    showTab(1);
+  </script>
+  <script>
+    // Embedded (Brightspace): tell the page around the frame how tall this page is, so a resize script in the
+    // embed code can fit the frame to it (no blank space, no inner scrollbar). Measured from the content, not
+    // scrollHeight, which never drops below the frame's own height and so could never shrink it.
+    (function () {
+      if (window.parent === window) return;
+      let last = 0;
+      function height() {
+        const c = document.querySelector('.container'), cs = getComputedStyle(document.body);
+        return Math.ceil(c.getBoundingClientRect().bottom + window.scrollY + parseFloat(cs.paddingBottom) + parseFloat(cs.marginBottom) + 4);
+      }
+      function send(force) {
+        const h = height();
+        if (!force && Math.abs(h - last) < 2) return;
+        last = h;
+        window.parent.postMessage({ type: 'pim-height', page: location.pathname.split('/').pop(), height: h }, '*');
+      }
+      new ResizeObserver(() => send(false)).observe(document.querySelector('.container'));
+      window.addEventListener('load', () => send(true));
+      // the embed's script asks once it is listening, in case this page loaded first
+      window.addEventListener('message', e => { if (e.data && e.data.type === 'pim-height?') send(true); });
+      send(true);
+    })();
   </script>
   <script>
     // Phones: a swipe that starts on an empty part of a drawing scrolls the page (touch-action: pan-y),
     // and a touch the page grabbed for a drag (its own setPointerCapture call) keeps the page still.
     // (hasPointerCapture can't tell: a touch is always captured implicitly.)
-    // The kinematics graphs are left out: a sideways drag scrubs them and an up-down one scrolls.
     document.querySelectorAll('canvas:not(.graph-canvas)').forEach(c => {
       let grabbed = false;
       const capture = c.setPointerCapture;
