@@ -18,39 +18,179 @@
   <!-- pim-meta:end -->
   <style>
     * { box-sizing: border-box; }
+    /* the hidden attribute must win over every display rule below */
+    [hidden] { display: none !important; }
     body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
     .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
-    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    h1 { margin: 0; font-size: 1.1rem; }
     .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
-    .controls { display: grid; grid-template-columns: 1.8fr repeat(4, 1fr); gap: 10px; align-items: end; }
-    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-    label { font-size: 0.8rem; font-weight: 600; }
-    .val { font-weight: normal; color: #334155; }
-    select { font-size: 0.9rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
-    input[type=range] { width: 100%; }
-    .buttons { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
-    button { font-size: 0.88rem; padding: 7px 12px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; }
-    button.go { background: #2563eb; }
+
+    /* controls: the scenario menu, the steps and the simulation buttons; then the variables */
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 110px; }
+    .control-group.scen-group { flex: 2.2 1 260px; }
+    .control-group.button-group { flex: 2 1 280px; }
+    .control-group select { width: 100%; max-width: 100%; }
+    .controls input, .controls select, .controls button { height: 34px; }
+    label { font-size: 0.82rem; font-weight: 600; line-height: 1.2; }
+    label sub { line-height: 0; }
+    input, select, button { font-size: 0.95rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; }
+    input[type=number] { width: 100%; max-width: 120px; }
+    .buttons { display: flex; gap: 6px; flex-wrap: nowrap; }
+    button { cursor: pointer; background: #2563eb; color: white; border: none; min-width: 0; flex: 1; }
+    button:hover { background: #1d4ed8; }
+    button:disabled { background: #94a3b8; cursor: default; }
+    button.secondary { background: #475569; }
+    button.secondary:hover { background: #334155; }
+    button.secondary:disabled { background: #cbd5e1; color: #475569; }
+    button.danger { background: #dc2626; }
+    button.danger:hover { background: #b91c1c; }
+    .moments { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
+    .moments button { flex: none; padding: 6px 12px; }
+    .speed { font-size: 0.8rem; color: #475569; }
+    .speed:empty { display: none; }
+    .group-title { font-size: 0.78rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.03em; margin: 10px 0 4px; }
+    .inputs { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: flex-end; }
+    .inputs .control-group { flex: 0 1 auto; }
+    .inputs .none { font-size: 0.82rem; color: #475569; }
+    .label-row label { white-space: nowrap; }
+    .question { margin-top: 8px; font-size: 0.84rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 6px 10px; color: #7c2d12; }
+    .question:empty { display: none; }
+    .step-text { margin-top: 8px; font-size: 0.9rem; font-weight: 700; color: #1e293b; }
+    .step-text:empty { display: none; }
+    .step-text .n { display: inline-block; background: #1e293b; color: white; border-radius: 999px; padding: 1px 8px; margin-right: 6px; font-size: 0.78rem; }
+
     .readout { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout.n4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .readout.n6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
     .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card.hl { box-shadow: inset 0 0 0 2px #dc2626; }
+    .readout-card.ok { background: #ecfdf5; }
     .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
     .readout-card .value { font-size: 1rem; font-weight: bold; }
-    .layout { display: grid; grid-template-columns: 1fr; gap: 8px; }
-    @media (min-width: 900px) { .layout { grid-template-columns: 1fr 1.3fr; } }
-    canvas { display: block; width: 100%; border-radius: 10px; touch-action: pan-y; }
-    #sceneCanvas { height: 380px; border: 1px solid #dbeafe; background: #f8fbff; }
-    #energyCanvas { height: 380px; border: 1px solid #e5e7eb; background: #fbfdff; }
-    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
-    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    .words { margin-top: 8px; font-size: 0.86rem; font-weight: 600; color: #1e3a8a; background: #eef4ff; border-radius: 8px; padding: 6px 10px; }
+    .words:empty { display: none; }
+
+    .scene-wrap { margin-top: 8px; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 0 0 4px; }
+    .note { margin-top: 6px; font-size: 0.8rem; color: #475569; }
     .note ul { margin: 2px 0 0; padding-left: 18px; }
     .note li { margin: 2px 0; }
-    .question { margin-top: 8px; font-size: 0.85rem; font-weight: 700; color: #7c2d12; background: #fff7ed; border-radius: 7px; padding: 6px 8px; }
-    .question:empty { display: none; }
-    button:disabled { opacity: 0.45; cursor: default; }
+    canvas { display: block; width: 100%; border-radius: 10px; background: white; }
+    #scene { height: 400px; border: 1px solid #dbeafe; touch-action: pan-y; }
+    #scene.t3 { height: 340px; }
+    .graph-title { font-weight: 700; margin: 8px 0 4px; font-size: 0.88rem; }
+    #graph { height: 210px; border: 1px solid #e5e7eb; touch-action: pan-y; }
+
+    /* the working, set like the notes: italic symbols, stacked fractions */
+    .work { margin-top: 8px; }
+    .work:empty { display: none; }
+    .math { font-family: 'Times New Roman', Times, serif; font-size: 1.06rem; color: #1f2937; }
+    /* a block line, not flex: inside flex every <sub> would become its own item and lose its drop */
+    .math .eq { display: block; margin: 4px 0; line-height: 2.1; }
+    .math .eq.lit { background: #fef9c3; border-radius: 4px; padding: 0 4px; }
+    .math .frac { display: inline-flex; flex-direction: column; text-align: center; vertical-align: middle; line-height: 1.15; }
+    .math .frac > span:first-child { border-bottom: 1px solid currentColor; padding: 0 3px; }
+    .math .frac > span:last-child { padding: 0 3px; }
+    .math b { font-family: Arial, Helvetica, sans-serif; }
+
+    /* ---- the step-by-step frame: header, numbered tabs, colour key, instruction strip ---- */
+    .app-head { background: #1e293b; color: #f8fafc; border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+    .head-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .head-row h1 { flex: 1 1 260px; }
+    .steps { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #cbd5e1; }
+    .step-bar { display: flex; gap: 3px; }
+    .step-bar i { display: block; width: 18px; height: 5px; border-radius: 3px; background: #475569; }
+    .step-bar i.on { background: #fbbf24; }
+    button.teacher-btn { flex: none; background: transparent; border: 1px solid #94a3b8; color: #f8fafc; font-size: 0.82rem; padding: 5px 10px; }
+    button.teacher-btn:hover { background: #334155; }
+    /* every tab always visible: equal columns, and a long name wraps onto a second line (never a sideways scroll) */
+    .tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; margin-top: 8px; }
+    button.tab { min-width: 0; background: #f1f5f9; color: #1e293b; font-size: 0.85rem; font-weight: 600; padding: 7px 8px; border-radius: 8px; line-height: 1.2; white-space: normal; text-align: center; }
+    button.tab:hover { background: #e2e8f0; }
+    button.tab.active, button.tab.active:hover { background: #2563eb; color: white; }
+    .tab .ts { display: none; }
+    .nw { white-space: nowrap; }
+    .ckey { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 7px; font-size: 0.76rem; color: #e2e8f0; }
+    .ckey > span { display: inline-flex; align-items: center; gap: 5px; }
+    .ckey b { display: inline-block; width: 14px; height: 4px; border-radius: 2px; }
+    .strip { background: #fef9c3; border-left: 4px solid #eab308; border-radius: 6px; padding: 7px 10px; font-size: 0.86rem; margin-bottom: 8px; }
+
+    /* Predict first (above the controls), key features */
+    .learn { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 8px; }
+    .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; }
+    .box-title { font-weight: 700; font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-q { font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-box { margin-bottom: 8px; }
+    .opts { display: grid; gap: 5px; }
+    #predictOpts { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    .predict-box.done #predictOpts { display: none; }
+    .predict-box.done .predict-q { margin-bottom: 0; }
+    button.opt { flex: none; width: 100%; text-align: left; background: white; color: #1f2937; border: 1px solid #cbd5e1; font-size: 0.86rem; padding: 7px 10px; }
+    button.opt:hover { background: #f1f5f9; }
+    button.opt.picked, button.opt.picked:hover { border-color: #2563eb; background: #eff6ff; box-shadow: inset 0 0 0 1px #2563eb; }
+    button.opt.right, button.opt.right:hover { border-color: #16a34a; background: #dcfce7; box-shadow: inset 0 0 0 1px #16a34a; }
+    button.opt.wrong, button.opt.wrong:hover { border-color: #dc2626; background: #fee2e2; box-shadow: inset 0 0 0 1px #dc2626; }
+    .row-btns { display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+    .row-btns button { flex: none; padding: 6px 12px; }
+    .feedback { font-size: 0.84rem; margin-top: 7px; }
+    .feedback:empty { display: none; }
+    .feedback .verdict { font-weight: 700; }
+    .feedback .verdict.ok { color: #15803d; }
+    .feedback .verdict.no { color: #b91c1c; }
+    .feats { display: flex; flex-wrap: wrap; gap: 6px; }
+    button.feat { flex: none; background: white; color: #1e293b; border: 1px solid #cbd5e1; font-size: 0.84rem; padding: 6px 11px; border-radius: 999px; }
+    button.feat:hover { background: #f1f5f9; }
+    button.feat.on, button.feat.on:hover { background: #1e293b; color: white; border-color: #1e293b; }
+    .feat-note { font-size: 0.82rem; color: #334155; margin-top: 6px; }
+    .feat-note:empty { display: none; }
+
+    /* Challenge */
+    .quiz { max-width: 760px; margin: 0 auto; }
+    .quiz-top { display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 700; margin-bottom: 4px; }
+    .quiz-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+    .quiz-bar i { display: block; height: 100%; background: #2563eb; width: 0; }
+    .quiz-q { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+    .quiz-src { font-size: 0.76rem; color: #475569; margin-bottom: 8px; }
+    .qpart { margin-top: 12px; }
+    .qpart + .qpart { border-top: 1px solid #e2e8f0; padding-top: 10px; }
+    .qpart-q { font-size: 0.92rem; font-weight: 600; margin-bottom: 6px; }
+    .quiz-sum ul { padding-left: 18px; font-size: 0.86rem; }
+    .quiz-sum li { margin: 4px 0; }
+
+    /* Teacher mode */
+    .teacher { position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 92vw); background: white; box-shadow: -4px 0 18px rgba(0,0,0,0.18); padding: 12px; overflow-y: auto; z-index: 20; }
+    .teacher h2 { font-size: 1rem; margin: 0 0 8px; }
+    .teacher .tbtns { display: grid; gap: 6px; }
+    .teacher .tbtns button { background: white; color: #1e293b; border: 1px solid #cbd5e1; flex: none; }
+    .teacher .tbtns button:hover { background: #f1f5f9; }
+    .teacher .tbtns button.on { background: #1e293b; color: white; }
+    .teacher h3 { font-size: 0.9rem; margin: 14px 0 4px; }
+    .teacher ul { padding-left: 18px; margin: 0; font-size: 0.84rem; }
+    .teacher li { margin: 4px 0; }
+    body.no-explain .strip, body.no-explain .words, body.no-explain .feedback .why, body.no-explain .feat-note { display: none; }
+    body.no-answers .readout-card .value, body.no-answers .work { filter: blur(6px); }
+    body.free-mode .predict-box { display: none; }
+
     @media (max-width: 900px) {
-      .controls { grid-template-columns: 1fr 1fr; }
-      .controls .control-group:first-child { grid-column: 1 / -1; }
-      .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .readout, .readout.n6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .readout.n4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 700px) {
+      h1 { font-size: 1rem; }
+      #scene { height: 380px; }
+      #scene.t3 { height: 360px; }
+      #graph { height: 200px; }
+      .readout, .readout.n6, .readout.n4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .tab .tl { display: none; }
+      .tab .ts { display: inline; }
+      /* phones: short names in rows that wrap, so all five tabs show without scrolling */
+      .tabs { display: flex; flex-wrap: wrap; }
+      button.tab { flex: 1 1 auto; white-space: nowrap; }
+    }
+    @media (max-width: 420px) {
+      .buttons button { padding: 6px 4px; }
+      .inputs .control-group { flex: 1 1 40%; }
     }
     /* Touch screens (phones, tablets; Samsung Internet reports hover: hover on a phone, so only pointer is tested):
        16 px form fields stop an iPhone zooming the page in when one is
@@ -59,6 +199,7 @@
       input:not([type=range]):not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
       button { min-height: 36px; }
       input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
+      .controls input, .controls select, .controls button { height: 36px; }
     }
   </style>
   <!-- pim-nav-style:start (generated by scripts/pim-nav.ts) -->
@@ -87,259 +228,1184 @@
     <a class="pim-nav-btn pim-nav-next" href="energy-conservation-pendulum.html" title="Next: Conservation of Energy: A Swinging Pendulum (Chapter 5)" aria-label="Next: Conservation of Energy: A Swinging Pendulum (Chapter 5)"><span class="pim-nav-text"><span class="pim-nav-kicker">Next<span class="pim-nav-ch"> &middot; Chapter 5</span></span><span class="pim-nav-name">Conservation of Energy: A Swinging Pendulum</span></span><span class="pim-nav-arrow" aria-hidden="true">&rsaquo;</span></a>
   </nav>
   <!-- pim-nav:end -->
-    <h1>Power and Efficiency of a Lifting Machine</h1>
 
-    <div class="panel">
-      <div class="controls">
-        <div class="control-group">
-          <label for="preset">Scenarios</label>
-          <select id="preset">
-            <option value="ex5" selected>Example 5: 50 kg up 2.0 m in 1 min</option>
-            <option value="c2">Tutorial C2: 32 kg up 12 m per min</option>
-            <option value="c3">Tutorial C3: 500 N up 3 m in 2 s</option>
-            <option value="custom">Custom</option>
-          </select>
+    <header class="app-head">
+      <div class="head-row">
+        <h1>Power and Efficiency of a Lifting Machine</h1>
+        <div class="steps"><span id="stepLabel">Step 1 of 5</span><span class="step-bar" id="stepBar"><i></i><i></i><i></i><i></i><i></i></span></div>
+        <button class="teacher-btn" id="teacherBtn" type="button" hidden>Teacher mode</button>
+      </div>
+      <div class="tabs" role="tablist" id="tabs">
+        <button class="tab" role="tab" data-tab="1" type="button"><span class="tl">1. Power = work ÷ time</span><span class="ts">1. <span class="nw"><i>P</i> = <i>W</i> ÷ <i>t</i></span></span></button>
+        <button class="tab" role="tab" data-tab="2" type="button"><span class="tl">2. Lift it yourself</span><span class="ts">2. Lift it</span></button>
+        <button class="tab" role="tab" data-tab="3" type="button"><span class="tl">3. Efficiency</span><span class="ts">3. Efficiency</span></button>
+        <button class="tab" role="tab" data-tab="4" type="button"><span class="tl">4. Energy flow bars</span><span class="ts">4. Energy flow</span></button>
+        <button class="tab" role="tab" data-tab="5" type="button"><span class="tl">5. Challenge</span><span class="ts">5. Challenge</span></button>
+      </div>
+      <div class="ckey" id="ckey"></div>
+    </header>
+
+    <div class="strip" id="strip"></div>
+
+    <!-- tabs 1 to 4: Predict first comes first, above the controls and the picture -->
+    <div class="box predict-box" id="predictBox">
+      <div class="box-title">Predict first</div>
+      <div class="predict-q" id="predictQ"></div>
+      <div class="opts" id="predictOpts"></div>
+      <div class="feedback" id="predictFb"></div>
+      <div class="row-btns" id="predictBtns"><button id="predictCheck" type="button">Check my answer</button></div>
+    </div>
+
+    <!-- Tabs 1 to 4 share one drawing -->
+    <section class="tab-page" id="pageSim">
+      <div class="panel">
+        <div class="controls">
+          <div class="control-group scen-group">
+            <label for="preset">Scenarios</label>
+            <select id="preset"></select>
+          </div>
+          <div class="control-group button-group" id="stepGroup">
+            <label>Steps</label>
+            <div class="buttons">
+              <button id="prevStep" class="secondary" type="button" aria-label="Previous step">&lsaquo; Previous</button>
+              <button id="nextStep" type="button" aria-label="Next step">Next &rsaquo;</button>
+              <button id="resetSteps" class="danger" type="button">Reset</button>
+            </div>
+          </div>
+          <div class="control-group button-group" id="simGroup">
+            <label>Simulation controls</label>
+            <div class="buttons">
+              <button id="startBtn" type="button">Start</button>
+              <button id="pauseBtn" class="secondary" type="button">Pause</button>
+              <button id="resetBtn" class="danger" type="button">Reset</button>
+            </div>
+          </div>
+          <div class="control-group button-group" id="handGroup">
+            <label>Your lifts</label>
+            <div class="buttons">
+              <button id="downBtn" class="secondary" type="button">Put it down</button>
+              <button id="clearBtn" class="danger" type="button">Clear my lifts</button>
+            </div>
+          </div>
         </div>
-        <div class="control-group"><label for="mass">Load mass <span class="val" id="massVal"></span></label><input id="mass" type="range" min="1" max="100" step="1" /></div>
-        <div class="control-group"><label for="height">Height <i>h</i> <span class="val" id="heightVal"></span></label><input id="height" type="range" min="0.5" max="15" step="0.5" /></div>
-        <div class="control-group"><label for="time">Time <i>t</i> <span class="val" id="timeVal"></span></label><input id="time" type="range" min="1" max="120" step="1" /></div>
-        <div class="control-group"><label for="eff">Efficiency <span class="val" id="effVal"></span></label><input id="eff" type="range" min="5" max="100" step="any" /></div>
-      </div>
-      <div class="buttons">
-        <button id="liftBtn" class="go">Run the motor</button>
-        <button id="pauseBtn">Pause</button>
-        <button id="resetBtn">Lower the load</button>
-        <span style="font-size:0.8rem;color:#475569;align-self:center" id="speedNote"></span>
-      </div>
-      <div class="question" id="question"></div>
-      <div class="readout">
-        <div class="readout-card"><div class="title">Work done on the load so far = GPE gained = <i>mgh</i></div><div class="value" id="gpe">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Useful power output = work done &divide; time</div><div class="value" id="pout">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Power input = output &divide; efficiency</div><div class="value" id="pin">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Power wasted (heat, sound)</div><div class="value" id="pwaste">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Lifting power right now = <i>mgv</i></div><div class="value" id="plive">&mdash;</div></div>
-      </div>
-    </div>
+        <div class="moments" id="moments">
+          <button id="prevMoment" class="secondary" type="button">&lsaquo; Previous key moment</button>
+          <button id="nextMoment" class="secondary" type="button">Next key moment &rsaquo;</button>
+          <span class="speed" id="speedNote"></span>
+        </div>
+        <div class="question" id="question"></div>
+        <div class="group-title" id="expTitle">Experimental controls</div>
+        <div class="inputs" id="inputs"></div>
 
-    <div class="layout">
-      <div class="panel">
-        <div class="hint">Run the motor &mdash; or grab the load and lift it yourself. Lift faster and see your power go up.</div>
-        <canvas id="sceneCanvas"></canvas>
+        <div class="step-text" id="stepText"></div>
+
+        <!-- the readouts go under the drawing: nothing above the canvas may change height while a finger drags -->
+        <div class="scene-wrap">
+          <div class="hint" id="sceneHint"></div>
+          <canvas id="scene"></canvas>
+          <div class="readout" id="readout"></div>
+          <div class="words" id="words"></div>
+          <div id="graphWrap">
+            <div class="graph-title" id="graphTitle"></div>
+            <canvas id="graph"></canvas>
+          </div>
+          <div class="work" id="work"></div>
+          <div class="note" id="notes"></div>
+        </div>
       </div>
-      <div class="panel">
-        <canvas id="energyCanvas"></canvas>
-        <div class="note"><ul>
-          <li>Efficiency = useful energy output &divide; total energy input &times; 100%, which is the same as useful power output &divide; power input &times; 100%.</li>
-          <li>The motor must take in more energy than the load gains. The difference is wasted, mostly as heat and sound.</li>
-          <li>Power is the rate of doing work, <i>P</i> = <i>W</i>/<i>t</i>. The same lift done in less time needs more power.</li>
-          <li><i>g</i> = 10 m s<sup>-2</sup>.</li>
-        </ul></div>
+
+      <div class="learn">
+        <div class="box" id="featBox">
+          <div class="box-title">Key features (tap one)</div>
+          <div class="feats" id="feats"></div>
+          <div class="feat-note" id="featNote"></div>
+        </div>
       </div>
-    </div>
+    </section>
+
+    <!-- Tab 5: Challenge -->
+    <section class="tab-page" id="page5" hidden>
+      <div class="panel">
+        <div class="quiz" id="quiz"></div>
+      </div>
+    </section>
   </div>
 
+  <aside class="teacher" id="teacher" hidden aria-label="Teacher mode">
+    <h2>Teacher mode</h2>
+    <div class="tbtns">
+      <button id="tExplain" type="button">Hide explanations</button>
+      <button id="tFree" type="button">Switch to free exploration</button>
+      <button id="tAnswers" type="button">Hide answer labels</button>
+      <button id="tFull" type="button">Full screen</button>
+      <button id="tReset" type="button">Reset whole applet</button>
+      <button id="tClose" type="button">Close</button>
+    </div>
+    <h3>Suggested prompts</h3>
+    <ul id="tPrompts"></ul>
+  </aside>
+
   <script>
-    const G = 10;
-    const el = id => document.getElementById(id);
+    const $ = id => document.getElementById(id);
+    const canvas = $('scene'), graphCv = $('graph'), presetEl = $('preset');
+    let currentTab = 1, freeMode = false;
+
+    /* ---------------- numbers and symbols ---------------- */
+    const G = 10; // g = 10 m s^-2, as the notes and Tutorial 5 take it
+    const clean = v => (Math.abs(v) < 1e-9 ? 0 : v);
+    // 3 significant figures, as the lecturer's copy gives them (16.7 W, 53.3%); exact whole numbers stay
+    // whole (64 W, 1250 W); a 1e-12 nudge so a binary half rounds up; a true minus sign
+    const f3 = v => {
+      const x = clean(v);
+      if (Math.abs(x - Math.round(x)) < 1e-9) return String(Math.round(x)).replace('-', '−');
+      const t = (x * (1 + 1e-12)).toPrecision(3);
+      // an exact value keeps its own figures (0.5 m, 2.5 W); only a rounded one is padded to 3 (16.7, 0.833)
+      if (Math.abs(+t - x) < 1e-9 || Math.abs(x) >= 100) return String(+t).replace('-', '−');
+      return t.replace('-', '−');
+    };
+    // one more figure, for a worked line's intermediate steps (16.67 × 100% ÷ 50% = 33.3, not 16.7 × 2 = 33.4)
+    const f4 = v => { const x = clean(v); if (Math.abs(x - Math.round(x)) < 1e-9) return String(Math.round(x)).replace('-', '−'); return String(+(x * (1 + 1e-12)).toPrecision(4)).replace('-', '−'); };
+    const plain = v => String(+(+v).toFixed(2)).replace('-', '−'); // a typed value as typed: 10, 0.5
+    const tx = t => (Math.round(t * 100) / 100).toFixed(2);      // a time on the clock: 2.00 s
+    const J = v => Math.abs(v) >= 100000 ? `${f3(v / 1000)} kJ` : `${f3(v)} J`;
+    const Wt = v => `${f3(v)} W`;
+    const pct = v => `${f3(v)}%`;
+    const COL = { F: '#2563eb', W: '#ea580c', in: '#0891b2', use: '#16a34a', heat: '#dc2626', P: '#7c3aed', tot: '#0f172a' };
+
+    /* ---------------- scenarios (every number from the notes, the lecturer's copy or Tutorial 5) ---------------- */
+    // tabs 1 and 4: a motor lifts a load (mass m, or a weight wN in newtons as Tutorial C3 gives it) by h metres at
+    // constant speed in T seconds. Tab 4 adds the efficiency eff (%), or the power input Pin (W) to solve it from.
+    // tab 2: the student lifts the load by hand. tab 3: the useful output and the input of a machine (W), or of a
+    // light bulb (J); unknown = what the example asks for.
     const PRESETS = {
-      ex5: { m: 50, h: 2, t: 60, eff: 50 },
-      c2: { m: 32, h: 12, t: 60, eff: 3840 / 60 / 120 * 100 }, // 64 W out of 120 W in = 53.3%
-      c3: { m: 50, h: 3, t: 2, eff: 60 }                       // 500 N load = 50 kg with g = 10
+      ex5a: { tab: 1, name: '50 kg up 2.0 m in 1 minute', m: 50, h: 2, T: 60, txt: { h: '2.0' },
+        q: 'Example 5 (notes p. 5-14): (a) determine how much power is required to lift a mass of 50 kg to a height of 2.0 m at constant speed if the whole process takes 1 minute.' },
+      c2ab: { tab: 1, name: '32 kg up 12 m in 1 minute', m: 32, h: 12, T: 60,
+        q: 'Tutorial 5, C2: A motor has to lift 32 kg of load per minute to a vertical height of 12 m. (a) Find the work done in lifting the load. (b) Find the power output of the motor.' },
+      c3a: { tab: 1, name: '500 N up 3 m in 2 s', wN: 500, h: 3, T: 2,
+        q: 'Tutorial 5, C3: A machine lifts a load of 500 N through a vertical height of 3 m in 2 s. (a) Find the useful power output of the machine.' },
+
+      a2: { tab: 2, name: '10 kg box up 0.50 m', m: 10, h: 0.5, txt: { h: '0.50' },
+        q: 'Tutorial 5, A2: A man lifts a 10 kg box to a height of 0.50 m. Lift it yourself: once slowly, once quickly. Is the work done the same? Is the power?' },
+      ex4: { tab: 2, name: '50 kg up 2.0 m', m: 50, h: 2, txt: { h: '2.0' },
+        q: 'Example 4 (notes p. 5-10): a mass of 50 kg is lifted to a height of 2.0 m. Lift it yourself and find your power.' },
+
+      bulb: { tab: 3, name: 'Light bulb', kind: 'bulb', unit: 'J', out: 20, inp: 100,
+        q: 'Notes p. 5-12: In the case of a light bulb, only some of the electricity consumed is converted into visible light. Most of the electricity is actually converted into heat. (Values chosen for this page: the bulb takes in 100 J of electricity and gives out 20 J of light.)' },
+      ex5b: { tab: 3, name: 'Motor at 50% efficiency', kind: 'motor', m: 50, h: 2, T: 60, eff: 50,
+        q: 'Example 5 (notes p. 5-14): (b) Calculate the power input of the motor if it works at 50% efficiency. (In part (a) it lifts 50 kg to a height of 2.0 m in 1 minute.)' },
+      c2c: { tab: 3, name: 'Motor with 120 W input', kind: 'motor', m: 32, h: 12, T: 60, inp: 120,
+        q: 'Tutorial 5, C2: A motor has to lift 32 kg of load per minute to a vertical height of 12 m. (c) Find the efficiency of the motor if the input power is 120 W.' },
+      c3b: { tab: 3, name: 'Machine at 60% efficiency', kind: 'machine', wN: 500, h: 3, T: 2, eff: 60,
+        q: 'Tutorial 5, C3: A 60% efficient machine lifts a load of 500 N through a vertical height of 3 m in 2 s. (b) Find the power input of the machine.' },
+
+      ex5: { tab: 4, name: '50 kg, 1 minute, 50% efficient', m: 50, h: 2, T: 60, eff: 50, txt: { h: '2.0' },
+        q: 'Example 5 (notes p. 5-14): (a) determine how much power is required to lift a mass of 50 kg to a height of 2.0 m at constant speed if the whole process takes 1 minute. Then, (b) Calculate the power input of the motor if it works at 50% efficiency.' },
+      c2: { tab: 4, name: '32 kg up 12 m, 120 W input', m: 32, h: 12, T: 60, Pin: 120,
+        q: 'Tutorial 5, C2: A motor has to lift 32 kg of load per minute to a vertical height of 12 m. (a) Find the work done in lifting the load. (b) Find the power output of the motor. (c) Find the efficiency of the motor if the input power is 120 W.' },
+      c3: { tab: 4, name: '500 N up 3 m, 60% efficient', wN: 500, h: 3, T: 2, eff: 60,
+        q: 'Tutorial 5, C3: A 60% efficient machine lifts a load of 500 N through a vertical height of 3 m in 2 s. (a) Find the useful power output of the machine. (b) Find the power input of the machine.' }
     };
-    const P = () => ({ m: +el('mass').value, h: +el('height').value, t: +el('time').value, eff: +el('eff').value / 100 });
-    const QUESTIONS = {
-      ex5: 'Example 5: (a) How much power is needed to lift a 50 kg mass to a height of 2.0 m at constant speed if the lift takes 1 minute? (b) What is the power input of the motor if it is 50% efficient?',
-      c2: 'Tutorial C2: a motor lifts 32 kg of load per minute to a height of 12 m. Find (a) the work done, (b) the power output, and (c) the efficiency if the input power is 120 W.',
-      c3: 'Tutorial C3: a 60% efficient machine lifts a 500 N load through a height of 3 m in 2 s. Find (a) the useful power output and (b) the power input.',
-    };
-    const st = { y: 0, mode: 'idle', clock: 0, Ein: 0, Eout: 0, vLive: 0, lastY: 0, dragging: false, dragT: 0, paused: false };
+    const CUSTOM_NAME = { 1: 'Your own lift', 2: 'Your own load', 3: 'Your own machine', 4: 'Your own machine' };
 
-    function applyPreset() {
-      el('question').textContent = QUESTIONS[el('preset').value] || '';
-      const p = PRESETS[el('preset').value]; if (!p) return;
-      el('mass').value = p.m; el('height').value = p.h; el('time').value = p.t; el('eff').value = p.eff;
-      lower();
-    }
-    function lower() { st.y = 0; st.mode = 'idle'; st.clock = 0; st.Ein = 0; st.Eout = 0; st.vLive = 0; st.paused = false; st.byHand = false; }
-    const playRate = () => Math.max(1, P().t / 6); // show any lift in about 6 real seconds
+    /* ---------------- the state ---------------- */
+    // L: the lift in use on tabs 1, 2 and 4 (a copy of the scenario, changed by the inputs); M: tab 3's machine
+    let S = { scen: 'ex5a', base: 'ex5a', step: 1, custom: false };
+    let L = {}, M = {};
+    const sim = { t: 0, running: false, last: null };
+    const hand = { y: 0, dragging: false, t0: null, t: 0, done: false, attempts: [], msg: '' };
+    const STEPS = { 3: 5 };
+    let hl = {}, feat = {};
 
-    function step(dt) {
-      const p = P();
-      const yPrev = st.y;
-      if (st.mode === 'motor' && !st.paused) {
-        st.clock += dt * playRate();
-        st.y = Math.min(p.h, p.h * st.clock / p.t);
-        if (st.y >= p.h) st.mode = 'done';
-      }
-      // a lift by hand is timed in real time, from the moment the load is grabbed
-      if (st.mode === 'hand' && st.dragging) st.clock += dt;
-      // energy bookkeeping for motor and hand alike: GPE gained, and input = GPE / efficiency
-      if (st.dragging && performance.now() - st.dragT > 120) st.vLive *= 0.8; // holding still: no power
-      const dy = st.y - yPrev;
-      if (!st.dragging) {
-        if (dy > 0) { st.Eout += p.m * G * dy; st.Ein += p.m * G * dy / p.eff; }
-        st.vLive = st.mode === 'motor' && !st.paused ? p.h / p.t : 0;
-      }
-    }
+    const weight = P => (P.wN !== undefined ? P.wN : P.m * G);
+    // the useful power output of a lift at constant speed: the work done (weight × height) over the time
+    const usefulP = P => weight(P) * P.h / P.T;
 
-    function setup(c) {
-      const r = c.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
-      const cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
-      if (c.width !== cw || c.height !== ch) { c.width = cw; c.height = ch; }
-      const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      return { ctx, w: r.width, h: r.height };
+    function loadScenario(id) {
+      const P = PRESETS[id];
+      S.scen = id; S.custom = id === 'custom';
+      if (!S.custom) {
+        S.base = id;
+        if (P.tab === 3) {
+          M = Object.assign({ unit: 'W' }, P);
+          // solve the machine from the example's data: the useful output from the lift, the unknown from the rest
+          if (P.kind !== 'bulb') M.out = usefulP(P);
+          if (P.inp !== undefined) { M.eff = M.out / M.inp * 100; M.unknown = 'eff'; }
+          else if (P.eff !== undefined) { M.inp = M.out / (P.eff / 100); M.unknown = 'inp'; }
+          if (P.kind === 'bulb') { M.eff = M.out / M.inp * 100; M.unknown = 'eff'; }
+        } else {
+          L = Object.assign({}, P);
+          // Tutorial C2 gives the power input: the efficiency follows from the useful power output
+          if (P.tab === 4 && P.Pin !== undefined) L.eff = usefulP(P) / P.Pin * 100;
+        }
+        $('question').innerHTML = P.q;
+      } else $('question').innerHTML = 'Your own values. Choose a scenario from the menu to go back to an example from the notes.';
+      S.step = freeMode ? (STEPS[currentTab] || 1) : 1;
+      sim.t = 0; sim.running = false; sim.last = null;
+      resetHand(true);
     }
-    function tag(ctx, t, x, y, color, align = 'center') {
-      ctx.font = 'bold 12px Arial'; ctx.textAlign = align; ctx.textBaseline = 'middle';
-      const tw = ctx.measureText(t).width, x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
-      ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(x0 - 3, y - 8, tw + 6, 16);
-      ctx.fillStyle = color; ctx.fillText(t, x, y); ctx.textBaseline = 'alphabetic';
-    }
+    // a value as the notes write it (2.0 m) while on the scenario; as typed once changed
+    const gv = (P, k) => (!S.custom && P.txt && P.txt[k] !== undefined ? P.txt[k] : plain(P[k]));
 
-    let geo = null;
-    function drawScene() {
-      const { ctx, w, h } = setup(el('sceneCanvas'));
-      ctx.clearRect(0, 0, w, h);
-      const p = P();
-      const floorY = h - 34, topY = 70;
-      const boxH = 26 + Math.sqrt(p.m) * 3.2, boxW = boxH * 1.25;
-      const pxPerM = (floorY - topY - boxH - 16) / p.h;
-      const cx = w * 0.45;
-      // floor and target height
-      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, floorY, w, h - floorY);
-      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, floorY); ctx.lineTo(w, floorY); ctx.stroke();
-      const targetY = floorY - p.h * pxPerM;
-      ctx.setLineDash([6, 5]); ctx.strokeStyle = '#16a34a'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(cx - 90, targetY); ctx.lineTo(cx + 110, targetY); ctx.stroke(); ctx.setLineDash([]);
-      tag(ctx, `target: ${p.h} m up`, cx + 112, targetY, '#15803d', 'left');
-      // height ruler
-      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1; ctx.fillStyle = '#64748b'; ctx.font = '10px Arial'; ctx.textAlign = 'right';
-      const stepM = p.h > 8 ? 2 : p.h > 3 ? 1 : 0.5;
-      for (let m = 0; m <= p.h + 1e-9; m += stepM) { const y = floorY - m * pxPerM; ctx.beginPath(); ctx.moveTo(26, y); ctx.lineTo(34, y); ctx.stroke(); ctx.fillText(`${m} m`, 24, y + 3); }
-      // motor and drum on a beam
-      ctx.fillStyle = '#334155'; ctx.fillRect(cx - 80, topY - 50, 160, 10);
-      ctx.fillStyle = '#1f2937'; ctx.fillRect(cx - 70, topY - 40, 52, 34);
-      ctx.fillStyle = 'white'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center'; ctx.fillText('motor', cx - 44, topY - 19);
-      const spin = (st.y / 0.12) % (Math.PI * 2);
-      ctx.fillStyle = '#64748b'; ctx.beginPath(); ctx.arc(cx, topY - 22, 16, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, topY - 22); ctx.lineTo(cx + Math.cos(spin) * 14, topY - 22 + Math.sin(spin) * 14); ctx.stroke();
-      // load
-      const loadTop = floorY - boxH - st.y * pxPerM;
-      ctx.strokeStyle = '#475569'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx + 16, topY - 22); ctx.lineTo(cx + 16, loadTop); ctx.stroke();
-      ctx.fillStyle = st.dragging ? '#1d4ed8' : '#2563eb';
-      ctx.beginPath(); ctx.roundRect ? ctx.roundRect(cx + 16 - boxW / 2, loadTop, boxW, boxH, 5) : ctx.rect(cx + 16 - boxW / 2, loadTop, boxW, boxH); ctx.fill();
-      ctx.fillStyle = 'white'; ctx.font = 'bold 12px Arial'; ctx.fillText(`${p.m} kg`, cx + 16, loadTop + boxH / 2 + 4);
-      geo = { cx: cx + 16, loadTop, boxW, boxH, floorY, pxPerM };
-      tag(ctx, `height ${st.y.toFixed(2)} m`, cx + 16 + boxW / 2 + 10, loadTop + boxH / 2, '#334155', 'left');
-      const shownT = st.mode === 'idle' ? 0 : Math.min(p.t, st.clock);
-      tag(ctx, st.dragging ? 'lifting by hand' : `time ${shownT.toFixed(1)} s of ${p.t} s${playRate() > 1 ? ` (shown ×${playRate().toFixed(0)} speed)` : ''}`, w / 2, 14, '#334155');
+    /* ---------------- tabs 1 and 4: a lift at constant speed ---------------- */
+    function lift(t) {
+      const P = L, mg = weight(P), k = Math.max(0, Math.min(1, t / P.T)), y = P.h * k;
+      const Wd = mg * y, Pout = usefulP(P), eff = (P.eff || 100) / 100;
+      return { y, mg, Wd, Pout, eff, Ein: Wd / eff, heat: Wd / eff - Wd, Pin: Pout / eff, started: t > 1e-9, done: t >= P.T - 1e-9 };
+    }
+    // show a long lift faster than real time, so it takes about 6 real seconds (a 2 s lift runs in real time)
+    const playRate = () => Math.max(1, L.T / 6);
+
+    /* ---------------- tab 2: the hand lift ---------------- */
+    function resetHand(clearAll) {
+      hand.y = 0; hand.dragging = false; hand.t0 = null; hand.t = 0; hand.done = false; hand.msg = '';
+      if (clearAll) hand.attempts = [];
+    }
+    const handNow = () => (hand.dragging && hand.t0 !== null ? (performance.now() - hand.t0) / 1000 : hand.t);
+    function finishLift(t) {
+      // the time as the clock shows it (0.01 s), so the working's W ÷ t gives exactly the power printed beside it
+      t = Math.max(0.01, Math.round(t * 100) / 100);
+      hand.dragging = false; hand.done = true; hand.y = L.h; hand.t = t;
+      const Wd = weight(L) * L.h;
+      hand.attempts.push({ t, W: Wd, P: Wd / t, m: L.m, h: L.h });
+      if (hand.attempts.length > 6) hand.attempts.shift();
     }
 
-    function drawEnergy() {
-      const { ctx, w, h } = setup(el('energyCanvas'));
-      ctx.clearRect(0, 0, w, h);
-      const p = P();
-      const EoutFull = p.m * G * p.h, EinFull = EoutFull / p.eff;
-      ctx.fillStyle = '#0f172a'; ctx.font = 'bold 14px Arial'; ctx.textAlign = 'left'; ctx.fillText('Energy flow so far in this lift', 14, 24);
-      // Sankey-style: one input bar splitting into useful and wasted. It starts empty and fills as the load rises:
-      // the faint outline is the size it reaches at the top, the solid part is the energy so far.
-      const x0 = 20, x1 = w - 30, fullH = 110, y0 = 50;
-      const frac = Math.max(0, Math.min(1, st.Ein / Math.max(EinFull, 1e-9)));
-      const sankey = (barH, alpha) => {
-        const usefulH = barH * p.eff;
-        ctx.save(); ctx.globalAlpha = alpha;
-        ctx.fillStyle = '#f59e0b'; ctx.fillRect(x0, y0, (x1 - x0) * 0.32, barH);
-        ctx.fillStyle = '#16a34a';
-        ctx.beginPath(); ctx.moveTo(x0 + (x1 - x0) * 0.32, y0); ctx.bezierCurveTo(x0 + (x1 - x0) * 0.55, y0, x0 + (x1 - x0) * 0.55, y0 - 6, x1, y0 - 6); ctx.lineTo(x1, y0 - 6 + usefulH); ctx.bezierCurveTo(x0 + (x1 - x0) * 0.55, y0 - 6 + usefulH, x0 + (x1 - x0) * 0.55, y0 + usefulH, x0 + (x1 - x0) * 0.32, y0 + usefulH); ctx.closePath(); ctx.fill();
-        ctx.fillStyle = '#dc2626';
-        // wasted band turns down: its upper edge is the OUTSIDE of the bend, so it ends at the right-hand side
-        { const xs = x0 + (x1 - x0) * 0.32, xe = x0 + (x1 - x0) * 0.62, ww = barH - usefulH, ye = y0 + fullH + 60;
-          ctx.beginPath(); ctx.moveTo(xs, y0 + usefulH);
-          ctx.bezierCurveTo(xe + ww, y0 + usefulH, xe + ww, y0 + usefulH, xe + ww, ye);
-          ctx.lineTo(xe, ye);
-          ctx.bezierCurveTo(xe, y0 + barH, xe, y0 + barH, xs, y0 + barH);
-          ctx.closePath(); ctx.fill(); }
-        ctx.restore();
-      };
-      sankey(fullH, 0.12);
-      if (frac > 0) sankey(fullH * frac, 1);
-      // the numbers run with the lift (they are 0 J before it starts)
-      const Ein = st.Ein, Eout = st.Eout, Ewaste = Math.max(0, st.Ein - st.Eout);
-      tag(ctx, `input ${Ein.toFixed(0)} J`, x0 + (x1 - x0) * 0.16, y0 + fullH / 2, '#92400e');
-      tag(ctx, `useful: GPE ${Eout.toFixed(0)} J`, x1 - 6, y0 - 6 + fullH * p.eff / 2, '#166534', 'right');
-      // on a phone the full label runs past the right edge, so drop the "as heat & sound" ending there
-      tag(ctx, `wasted ${Ewaste.toFixed(0)} J${w < 520 ? '' : ' as heat & sound'}`, x0 + (x1 - x0) * (w < 520 ? 0.45 : 0.62), y0 + fullH + 74, '#991b1b', 'left');
-      ctx.fillStyle = '#334155'; ctx.font = '12px Arial'; ctx.textAlign = 'left';
-      // two short lines, so they fit on a phone
-      const msg = st.mode === 'idle' ? ['Run the motor, or lift the load yourself,', 'to see the energy flow.']
-        : st.mode === 'done' ? ['The lift is finished:', `${Eout.toFixed(0)} J of the ${Ein.toFixed(0)} J taken in is useful.`] : [];
-      msg.forEach((line, i) => ctx.fillText(line, x0, h - 34 + i * 16));
+    /* ---------------- tab 3: the machine ---------------- */
+    function machine() {
+      const P = M, st = S.step, out = P.out, inp = P.inp, eff = P.eff, heat = inp - out;
+      // what the student has found so far: the useful output (step 1), what else is given (2), the unknown (4), the heat (5)
+      const known = { out: st >= 1, inp: P.unknown === 'inp' ? st >= 4 : st >= 2, eff: P.unknown === 'eff' ? st >= 4 : st >= 2, heat: st >= 5 };
+      return { out, inp, eff, heat, known, toScale: st >= 4 };
     }
 
-    function updateReadout() {
-      const p = P();
-      el('massVal').innerHTML = `(${p.m} kg, <i>W</i> = ${p.m * G} N)`; el('heightVal').textContent = `(${p.h} m)`;
-      el('timeVal').textContent = `(${p.t} s)`; el('effVal').textContent = `(${(p.eff * 100).toFixed(1)}%)`;
-      // Nothing is worked out before the load moves: the numbers run as the lift happens.
-      // Power = energy so far / time so far (for the motor that time is capped at the lift time t).
-      const tSoFar = st.byHand ? st.clock : Math.min(st.clock, p.t);
-      el('gpe').textContent = `${st.Eout.toFixed(0)} J`;
-      if (tSoFar > 1e-6 && st.Ein > 0) {
-        const out = st.Eout / tSoFar, inp = st.Ein / tSoFar;
-        el('pout').textContent = `${out.toFixed(2)} W`; el('pin').textContent = `${inp.toFixed(2)} W`; el('pwaste').textContent = `${(inp - out).toFixed(2)} W`;
-      } else ['pout', 'pin', 'pwaste'].forEach(id => { el(id).textContent = '—'; });
-      el('plive').textContent = `${(p.m * G * st.vLive).toFixed(1)} W`;
-      el('speedNote').textContent = playRate() > 1 ? `The animation runs ${playRate().toFixed(0)}× faster than real time.` : '';
-      el('pauseBtn').disabled = st.mode !== 'motor';
-      el('pauseBtn').textContent = st.mode === 'motor' && st.paused ? 'Play' : 'Pause';
-    }
-
-    // lift by hand
-    let dragOff = 0;
-    const sc = el('sceneCanvas');
-    function pos(e) { const r = sc.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
-    const onLoad = q => geo && q.x > geo.cx - geo.boxW / 2 - 10 && q.x < geo.cx + geo.boxW / 2 + 10 && q.y > geo.loadTop - 10 && q.y < geo.loadTop + geo.boxH + 10;
-    sc.addEventListener('pointerdown', e => {
-      const q = pos(e); if (!onLoad(q)) return;
-      if (st.mode === 'done' || st.mode === 'motor') lower();
-      st.mode = 'hand'; st.byHand = true; st.dragging = true; st.lastY = st.y; st.dragT = performance.now();
-      dragOff = q.y - geo.loadTop; sc.setPointerCapture(e.pointerId); e.preventDefault();
-    });
-    sc.addEventListener('pointermove', e => {
-      const q = pos(e);
-      if (!st.dragging) { sc.style.cursor = onLoad(q) ? 'grab' : 'default'; return; }
-      const p = P();
-      const top = q.y - dragOff;
-      const y = Math.max(0, Math.min(p.h, (geo.floorY - geo.boxH - top) / geo.pxPerM));
-      const now = performance.now(), dtt = Math.max(0.016, (now - st.dragT) / 1000);
-      const dy = y - st.y;
-      if (dy > 0) { st.Eout += p.m * G * dy; st.Ein += p.m * G * dy / p.eff; }
-      st.vLive = Math.max(0, dy / dtt) * 0.5 + st.vLive * 0.5;
-      st.y = y; st.dragT = now;
-    });
-    const end = () => { if (st.dragging) { st.dragging = false; st.vLive = 0; if (st.y >= P().h - 1e-6) st.mode = 'done'; } };
-    sc.addEventListener('pointerup', end); sc.addEventListener('pointercancel', end);
-
-    el('liftBtn').addEventListener('click', () => { lower(); st.mode = 'motor'; });
-    el('pauseBtn').addEventListener('click', () => { if (st.mode === 'motor') st.paused = !st.paused; });
-    el('resetBtn').addEventListener('click', lower);
-    el('preset').addEventListener('change', applyPreset);
-    ['mass', 'height', 'time', 'eff'].forEach(id => el(id).addEventListener('input', () => { el('preset').value = 'custom'; el('question').textContent = ''; lower(); }));
-
-    applyPreset();
-    let last = null;
+    /* ---------------- the clock (tabs 1 and 4) ---------------- */
+    function runEnd() { return currentTab === 1 || currentTab === 4 ? L.T : 0; }
     function frame(ts) {
-      if (last === null) last = ts;
-      const dt = Math.max(0, Math.min(0.05, (ts - last) / 1000)); last = ts;
-      step(dt); drawScene(); drawEnergy(); updateReadout();
-      requestAnimationFrame(frame);
+      if (!sim.running) return;
+      if (sim.last === null) sim.last = ts;
+      // a first rAF timestamp can be earlier than the one stored: never step backwards
+      const dt = Math.max(0, Math.min(0.05, (ts - sim.last) / 1000)); sim.last = ts;
+      const end = runEnd();
+      sim.t = Math.min(end, sim.t + dt * playRate());
+      if (sim.t >= end - 1e-9) { sim.t = end; sim.running = false; }
+      update();
+      if (sim.running) requestAnimationFrame(frame);
     }
-    requestAnimationFrame(frame);
+    function start() {
+      const end = runEnd();
+      if (end <= 0) { update(); return; }
+      if (sim.t >= end - 1e-9) sim.t = 0;
+      sim.running = true; sim.last = null; clearFeatNoteOnly(); update(); requestAnimationFrame(frame);
+    }
+    function setTime(t) { sim.running = false; sim.last = null; sim.t = Math.max(0, Math.min(runEnd(), t)); update(); }
+    function resetRun() { sim.running = false; sim.last = null; sim.t = 0; update(); }
+    function runToEnd() { setTime(runEnd()); }
+    // key moments: every quarter of the lift, and its end
+    function keyMoments() { const end = runEnd(); return end > 0 ? [0, end / 4, end / 2, 3 * end / 4, end] : []; }
+    $('startBtn').addEventListener('click', start);
+    $('pauseBtn').addEventListener('click', () => {
+      if (sim.running) { sim.running = false; sim.last = null; update(); }
+      else if (sim.t > 0 && sim.t < runEnd()) start();
+    });
+    $('resetBtn').addEventListener('click', resetRun);
+    $('nextMoment').addEventListener('click', () => { const n = keyMoments().find(m => m > sim.t + 1e-6); if (n !== undefined) setTime(n); });
+    $('prevMoment').addEventListener('click', () => { const p = keyMoments().filter(m => m < sim.t - 1e-6).pop(); if (p !== undefined) setTime(p); });
+    $('downBtn').addEventListener('click', () => { resetHand(false); update(); });
+    $('clearBtn').addEventListener('click', () => { resetHand(true); clearFeat(); update(); });
+
+    /* ---------------- drawing helpers ---------------- */
+    // what the canvas drew, for the checks: every label's box, every arrow, the panes and the drag handles
+    window.__pim = { labels: [], arrows: [], panes: [], handles: [] };
+    function setup(cv) {
+      const r = cv.getBoundingClientRect();
+      if (r.width < 20 || r.height < 20) return null; // hidden: never draw at no size
+      const dpr = window.devicePixelRatio || 1, cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
+      if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+      const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, r.width, r.height);
+      return { ctx, W: r.width, H: r.height };
+    }
+    // Canvas text with <i>, <sub> and <sup> runs, so symbols of physical quantities are italic, as in the notes.
+    // Honours ctx.textAlign; returns the width. measureOnly = true draws nothing.
+    function richText(ctx, s, x, y, measureOnly) {
+      const base = ctx.font, m = base.match(/([\d.]+)px/), size = m ? +m[1] : 12;
+      const runs = []; let it = false, sub = 0;
+      for (const tok of String(s).split(/(<\/?(?:i|sub|sup)>)/)) {
+        if (tok === '<i>') it = true; else if (tok === '</i>') it = false;
+        else if (tok === '<sub>') sub = 1; else if (tok === '<sup>') sub = -1;
+        else if (tok === '</sub>' || tok === '</sup>') sub = 0;
+        else if (tok) {
+          let f = sub ? base.replace(/[\d.]+px/, (size * 0.75).toFixed(1) + 'px') : base;
+          if (it) f = 'italic ' + f;
+          ctx.font = f; runs.push({ t: tok, f, sub, w: ctx.measureText(tok).width });
+        }
+      }
+      ctx.font = base;
+      const w = runs.reduce((a, r) => a + r.w, 0);
+      if (measureOnly) return w;
+      const align = ctx.textAlign;
+      let cx = align === 'center' ? x - w / 2 : (align === 'right' || align === 'end') ? x - w : x;
+      ctx.textAlign = 'left';
+      for (const r of runs) { ctx.font = r.f; ctx.fillText(r.t, cx, y + (r.sub === 1 ? size * 0.3 : r.sub === -1 ? -size * 0.4 : 0)); cx += r.w; }
+      ctx.textAlign = align; ctx.font = base;
+      return w;
+    }
+    let PANE = 'scene', CW = 1e9, CH = 1e9; // the pane name for the checks; the canvas size a label must stay inside
+    function arrow(ctx, x1, y1, x2, y2, color, lw = 3.5, head = 11, dash = null, record = true) {
+      const len = Math.hypot(x2 - x1, y2 - y1); if (len < 1.5) return;
+      if (record) __pim.arrows.push({ pane: PANE, x1, y1, x2, y2 });
+      const a = Math.atan2(y2 - y1, x2 - x1), hd = Math.min(head, len * 0.6);
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
+      if (dash) ctx.setLineDash(dash);
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - Math.cos(a) * hd * 0.8, y2 - Math.sin(a) * hd * 0.8); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - hd * Math.cos(a - 0.45), y2 - hd * Math.sin(a - 0.45)); ctx.lineTo(x2 - hd * Math.cos(a + 0.45), y2 - hd * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill();
+    }
+    // a label's box before it is drawn: x/y is the middle of the card's left, centre or right edge
+    function labelBox(ctx, lines, x, y, align, size) {
+      ctx.font = `bold ${size}px Arial`;
+      const w = Math.max(...lines.map(t => richText(ctx, t, 0, 0, true))), lh = size * 1.6 + 1, h = lines.length * lh - 1;
+      const x0 = Math.max(4, Math.min(CW - w - 4, align === 'center' ? x - w / 2 : align === 'right' ? x - w : x));
+      const y0 = Math.max(2, Math.min(CH - h - 2, y - size * 0.8));
+      return { x: x0 - 3, y: y0, w: w + 6, h, lh, tx: x0, size };
+    }
+    const hitBox = (a, b, pad = 1) => Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) > pad && Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) > pad;
+    function crossesArrow(box) {
+      return __pim.arrows.some(a => { if (a.pane !== PANE) return false; for (let k = 0; k <= 24; k++) { const px = a.x1 + (a.x2 - a.x1) * k / 24, py = a.y1 + (a.y2 - a.y1) * k / 24;
+        if (px > box.x + 2 && px < box.x + box.w - 2 && py > box.y + 2 && py < box.y + box.h - 2) return true; } return false; });
+    }
+    // labels on white cards, one card per line; nudge: +1 moves down, −1 up, to dodge labels and arrows already drawn
+    function label(ctx, lines, x, y, color, align = 'center', size = 12, nudge = 0) {
+      if (!Array.isArray(lines)) lines = [lines];
+      let b = labelBox(ctx, lines, x, y, align, size);
+      if (nudge) for (let i = 0; i < 14 && (__pim.labels.some(l => l.pane === PANE && hitBox(l, b)) || crossesArrow(b)); i++) b = labelBox(ctx, lines, x, b.y + size * 0.8 + nudge * 8, align, size);
+      lines.forEach((t, i) => {
+        const card = { pane: PANE, text: t.replace(/<[^>]+>/g, ''), x: b.x, y: b.y + i * b.lh, w: b.w, h: size * 1.6 };
+        ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fillRect(card.x, card.y, card.w, card.h);
+        ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.font = `bold ${size}px Arial`; richText(ctx, t, b.tx, card.y + size * 0.8);
+        ctx.textBaseline = 'alphabetic';
+        __pim.labels.push(card);
+      });
+      return b;
+    }
+    function title(ctx, text, x, y) {
+      ctx.fillStyle = '#334155'; ctx.font = '12px Arial'; ctx.textAlign = 'left';
+      richText(ctx, text, x, y);
+      __pim.labels.push({ pane: PANE, text: text.replace(/<[^>]+>/g, ''), x: x - 2, y: y - 10, w: richText(ctx, text, 0, 0, true) + 4, h: 18, title: true });
+    }
+    function roundRect(ctx, x, y, w, h, r, fill, stroke) {
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
+      if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+      if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke(); }
+    }
+    function dashLine(ctx, x1, y1, x2, y2, color = '#94a3b8') {
+      ctx.strokeStyle = color; ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
+    }
+    // a "nice" gridline step: 1, 2, 2.5 or 5 times a power of ten, giving at most `max` steps
+    function niceStep(range, max) {
+      const raw = range / max, p = Math.pow(10, Math.floor(Math.log10(raw)));
+      for (const k of [1, 2, 2.5, 5, 10]) if (k * p >= raw - 1e-12) return k * p;
+      return 10 * p;
+    }
+    function pane(r, name) { PANE = name; __pim.panes.push(Object.assign({ name }, r)); return r; }
+
+    /* ---------------- drawing: the scene ---------------- */
+    function draw() {
+      __pim = window.__pim = { labels: [], arrows: [], panes: [], handles: [] };
+      const c = setup(canvas); if (!c) return;
+      const { ctx, W, H } = c;
+      CW = W; CH = H;
+      if (currentTab === 3) drawFlow(ctx, W, H);
+      else drawLift(ctx, W, H);
+      drawGraph();
+    }
+
+    // The lift's layout: one function, used by the drawing AND the hand drag, so both agree where the load is
+    // (skill: the drawing and the drag handler share one geometry)
+    function liftGeom(W, H, P, motor) {
+      const floorY = H - 34, bw = 70, bh = 44, mx = W * 0.45, my = 58;
+      const bx = motor ? mx - 30 : W * 0.45;
+      const top = motor ? my + 30 : 30;       // room above: the motor, or the top margin
+      const k = (floorY - top - bh - 62) / Math.max(P.h, 1e-6); // pixels per metre: the lifted load keeps 62 px above it
+      return { floorY, bw, bh, mx, my, bx, k };
+    }
+    let lg = null;
+    function drawLift(ctx, W, H) {
+      const P = L, motor = currentTab !== 2, mg = weight(P);
+      pane({ x: 0, y: 0, w: W, h: H }, 'scene');
+      if (!lg || !hand.dragging) lg = liftGeom(W, H, P, motor);
+      const g = lg, { floorY, bw, bh, mx, my, bx, k } = g;
+      const y = currentTab === 2 ? hand.y : lift(sim.t).y;
+      ctx.fillStyle = '#eef2f7'; ctx.fillRect(0, floorY, W, H - floorY);
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, floorY); ctx.lineTo(W, floorY); ctx.stroke();
+      // a height scale at the left
+      const step = niceStep(P.h, 5);
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1; ctx.fillStyle = '#64748b'; ctx.font = '10px Arial'; ctx.textAlign = 'right';
+      // (0 m sits just above the floor line, not on it)
+      for (let v = 0; v <= P.h + 1e-9; v += step) { const yy = floorY - v * k; ctx.beginPath(); ctx.moveTo(34, yy); ctx.lineTo(42, yy); ctx.stroke(); ctx.fillText(`${f3(v)} m`, 32, v === 0 ? yy - 5 : yy + 3); }
+      // the target height, dashed, and where the load starts
+      const tY = floorY - P.h * k;
+      dashLine(ctx, bx - bw / 2 - 20, tY, bx + bw / 2 + 96, tY, '#16a34a');
+      ctx.setLineDash([5, 4]); ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5; ctx.strokeRect(bx - bw / 2, floorY - bh, bw, bh); ctx.setLineDash([]);
+      const yb = floorY - y * k;
+      if (motor) {
+        ctx.fillStyle = '#e2e8f0'; ctx.beginPath(); ctx.arc(mx, my, 30, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#334155'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.beginPath(); ctx.arc(mx, my, 9, 0, Math.PI * 2); ctx.stroke();
+        // the drum turns as the rope winds in
+        const spin = y * k / 30;
+        ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(mx + Math.cos(spin) * 26, my + Math.sin(spin) * 26); ctx.stroke();
+        label(ctx, 'Motor', mx + 36, my, '#334155', 'left', 12);
+        ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(bx, my); ctx.lineTo(bx, yb - bh); ctx.stroke();
+      }
+      // the load: light orange with a black label
+      roundRect(ctx, bx - bw / 2, yb - bh, bw, bh, 4, hand.dragging ? '#fb923c' : '#fdba74', '#9a3412');
+      __pim.labels.push({ pane: PANE, text: '', x: bx - bw / 2, y: yb - bh, w: bw, h: bh, obstacle: true });
+      ctx.fillStyle = '#0f172a'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(P.wN !== undefined ? `${plain(P.wN)} N` : `${plain(P.m)} kg`, bx, yb - bh / 2); ctx.textBaseline = 'alphabetic';
+      if (currentTab === 2) __pim.handles.push({ id: 'load', x: bx, y: yb - bh / 2, r: 30 });
+      const kf = 52 / mg;
+      // the motor's force up along the rope, the weight down: equal, so the speed is constant
+      if (motor) {
+        arrow(ctx, bx + 18, yb - bh, bx + 18, yb - bh - mg * kf, COL.F, 3.5, 11);
+        label(ctx, `<i>F</i> = ${f3(mg)} N`, bx + 26, yb - bh - mg * kf + 8, COL.F, 'left', 12, -1);
+      }
+      // (left of the load's own text, "50 kg" or "500 N", so the arrow never runs through it)
+      ctx.font = 'bold 12px Arial'; const wx = bx - ctx.measureText(P.wN !== undefined ? `${plain(P.wN)} N` : `${plain(P.m)} kg`).width / 2 - 7;
+      arrow(ctx, wx, yb - bh / 2, wx, yb - bh / 2 + mg * kf, COL.W, 3.5, 11);
+      label(ctx, `<i>mg</i> = ${f3(mg)} N`, wx - 8, yb - bh / 2 + mg * kf - 8, COL.W, 'right', 12, 1);
+      // the target's label, then the height so far
+      label(ctx, `${gv(P, 'h')} m`, bx + bw / 2 + 98, tY, '#15803d', 'left', 11);
+      const hx = bx + bw / 2 + 56;
+      if (y * k > 4) { arrow(ctx, hx, floorY, hx, yb, '#475569', 1.8, 8); arrow(ctx, hx, yb, hx, floorY, '#475569', 1.8, 8, null, false); }
+      label(ctx, `<i>h</i> = ${f3(y)} m`, hx + 8, Math.min(floorY - 12, (floorY + yb) / 2), '#334155', 'left', 12, 1);
+      // the clock
+      const t = currentTab === 2 ? handNow() : sim.t;
+      title(ctx, `<i>t</i> = ${tx(t)} s`, 10, 18);
+      if (currentTab === 2 && !hand.dragging && !hand.done) label(ctx, 'Drag me up', bx, yb - bh - 14, '#9a3412', 'center', 11);
+      if (currentTab === 2 && hand.done) label(ctx, 'At the line: lift done', W - 8, 18, '#15803d', 'right', 11);
+    }
+
+    /* tab 3: the energy flow: a machine with arrows in and out, then (once the unknown is found) drawn to scale */
+    function flowNames() {
+      const bulb = M.kind === 'bulb';
+      return bulb ? { dev: 'Light bulb', inp: 'Electricity', out: 'Light (useful)', heat: 'Heat (unintended)' }
+        : { dev: M.kind === 'motor' ? 'Motor' : 'Machine', inp: 'Power input', out: 'Useful power output', heat: 'Heat (unintended)' };
+    }
+    const unitV = v => (M.unit === 'J' ? J(v) : Wt(v));
+    let flowGeo = null;
+    function drawFlow(ctx, W, H) {
+      const P = M, s = machine(), nm = flowNames(), narrow = W < 560;
+      pane({ x: 0, y: 0, w: W, h: H }, 'scene');
+      const val = (k, v) => (s.known[k] ? unitV(v) : '?');
+      const pc = (k, v) => (s.known[k] && s.known.eff && s.known.inp ? ` (${pct(v / s.inp * 100)})` : '');
+      const lines = (name, text) => (narrow ? [name, text] : [`${name}: ${text}`]);
+      // (on a narrow canvas a label above a thin useful band takes two lines: the bands start lower, clear of the title)
+      const x0 = 16, x1 = W - 16, y0 = narrow ? 84 : 64, fullH = Math.min(130, H * 0.34), xs = x0 + (x1 - x0) * 0.34;
+      if (!s.toScale) {
+        // not to scale yet: equal arrows, so the drawing does not give the efficiency away
+        title(ctx, `${nm.dev}: not drawn to scale yet`, 10, 18);
+        const cx = W * 0.5, cy = y0 + 40, bw = Math.min(150, W * 0.3), bh = 60;
+        arrow(ctx, x0 + 4, cy, cx - bw / 2 - 2, cy, COL.in, 10, 18);
+        arrow(ctx, cx + bw / 2 + 2, cy, x1 - 4, cy, COL.use, 10, 18);
+        arrow(ctx, cx, cy + bh / 2 + 2, cx, H - 60, COL.heat, 10, 18);
+        roundRect(ctx, cx - bw / 2, cy - bh / 2, bw, bh, 8, '#f1f5f9', '#334155');
+        ctx.fillStyle = '#0f172a'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(nm.dev, cx, cy); ctx.textBaseline = 'alphabetic';
+        __pim.labels.push({ pane: PANE, text: '', x: cx - bw / 2, y: cy - bh / 2, w: bw, h: bh, obstacle: true });
+        label(ctx, [nm.inp, val('inp', s.inp)], x0 + 4, cy - 46, COL.in, 'left', 12, -1);
+        label(ctx, [nm.out, val('out', s.out)], x1 - 4, cy - 46, COL.use, 'right', 12, -1);
+        label(ctx, [nm.heat, val('heat', s.heat)], cx + 14, H - 80, COL.heat, 'left', 12, -1);
+        flowGeo = null;
+        return;
+      }
+      title(ctx, `${nm.dev}: energy flow, drawn to scale`, 10, 18);
+      const usefulH = fullH * Math.max(0, Math.min(1, s.out / s.inp)), ye = H - 46;
+      // the input band, splitting at xs into the useful band (straight on) and the heat band (turning down)
+      ctx.fillStyle = COL.in; ctx.fillRect(x0, y0, xs - x0, fullH);
+      ctx.fillStyle = COL.use; ctx.fillRect(xs, y0, x1 - xs, usefulH);
+      const xe = x0 + (x1 - x0) * 0.6, ww = fullH - usefulH;
+      if (ww > 0.5) {
+        ctx.fillStyle = COL.heat;
+        ctx.beginPath(); ctx.moveTo(xs, y0 + usefulH);
+        ctx.bezierCurveTo(xe + ww, y0 + usefulH, xe + ww, y0 + usefulH, xe + ww, ye);
+        ctx.lineTo(xe, ye);
+        ctx.bezierCurveTo(xe, y0 + fullH, xe, y0 + fullH, xs, y0 + fullH);
+        ctx.closePath(); ctx.fill();
+        arrow(ctx, xe + ww / 2, ye - 2, xe + ww / 2, ye + 14, COL.heat, 3, 10, null, false);
+      }
+      // the split, a white line the student can drag to change the efficiency
+      ctx.strokeStyle = 'white'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(xs - 14, y0 + usefulH); ctx.lineTo(xs + 14, y0 + usefulH); ctx.stroke();
+      ctx.fillStyle = 'white'; ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(xs, y0 + usefulH, 6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      flowGeo = { xs, y0, fullH };
+      __pim.handles.push({ id: 'split', x: xs, y: y0 + usefulH, r: 16 });
+      // the obstacles first, so the labels move off the bands' edges, not onto them
+      label(ctx, lines(nm.inp, `${val('inp', s.inp)}${s.known.inp ? ' (100%)' : ''}`), x0 + (xs - x0) / 2, y0 + fullH / 2 - (narrow ? 10 : 0), '#0e7490', 'center', 11);
+      label(ctx, lines(nm.out, `${val('out', s.out)}${pc('out', s.out)}`), x1 - 6, usefulH >= 44 ? y0 + usefulH / 2 - (narrow ? 10 : 0) : y0 - 16 - (narrow ? 18 : 0), '#166534', 'right', 11, -1);
+      if (ww > 0.5) label(ctx, lines(nm.heat, `${val('heat', s.heat)}${s.known.heat ? pc('heat', s.heat) : ''}`), xe - 8, (y0 + fullH + ye) / 2 + 10, '#991b1b', 'right', 11, 1);
+    }
+
+    /* ---------------- the graph under the drawing ---------------- */
+    function axes(ctx, W, H, xr, yr, xLab, yLab, xstep, ystep, xfmt) {
+      const Lm = 52, Rm = 16, Tm = 14, Bm = 30, pw = W - Lm - Rm, ph = H - Tm - Bm;
+      const X = v => Lm + (v - xr[0]) / (xr[1] - xr[0]) * pw, Y = v => Tm + (yr[1] - v) / (yr[1] - yr[0]) * ph;
+      ctx.font = '11px Arial'; ctx.fillStyle = '#475569'; ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      for (let v = Math.ceil(yr[0] / ystep - 1e-9) * ystep; v <= yr[1] + 1e-9; v += ystep) { ctx.beginPath(); ctx.moveTo(Lm, Y(v)); ctx.lineTo(W - Rm, Y(v)); ctx.stroke(); ctx.fillText(f3(v), Lm - 5, Y(v)); }
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      for (let v = xr[0]; v <= xr[1] + 1e-9; v += xstep) { ctx.beginPath(); ctx.moveTo(X(v), Tm); ctx.lineTo(X(v), H - Bm); ctx.stroke(); ctx.fillText(xfmt ? xfmt(v) : f3(v), X(v), H - Bm + 5); }
+      ctx.textBaseline = 'alphabetic';
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(Lm, Tm); ctx.lineTo(Lm, H - Bm); ctx.moveTo(Lm, Y(0)); ctx.lineTo(W - Rm, Y(0)); ctx.stroke();
+      ctx.fillStyle = '#334155'; ctx.font = '12px Arial'; ctx.textAlign = 'right'; richText(ctx, xLab, W - Rm, H - 4);
+      ctx.save(); ctx.translate(13, Tm + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; richText(ctx, yLab, 0, 0); ctx.restore();
+      return { X, Y };
+    }
+    // bars from a common floor; items: [name, value, colour]; fmt writes the value
+    function bars(ctx, W, H, items, reach, fmt) {
+      const top = 26, bottom = H - 40, scale = (bottom - top - 6) / Math.max(reach, 1e-9);
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(6, bottom); ctx.lineTo(W - 6, bottom); ctx.stroke();
+      const gap = W / Math.max(items.length, 1), bw = Math.min(46, gap * 0.5);
+      items.forEach(([name, v, col], i) => {
+        const x = gap * (i + 0.5) - bw / 2, hh = Math.max(0, v) * scale;
+        ctx.fillStyle = col; ctx.fillRect(x, bottom - hh, bw, hh);
+        ctx.fillStyle = '#0f172a'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center';
+        ctx.fillText(fmt(v), x + bw / 2, bottom - hh - 5);
+        ctx.fillStyle = col; ctx.font = '11px Arial';
+        richText(ctx, name, x + bw / 2, H - 22 + (items.length > 3 ? (i % 2) * 13 : 6));
+      });
+    }
+    function drawGraph() {
+      const show = currentTab !== 3;
+      $('graphWrap').hidden = !show;
+      if (!show) return;
+      const c = setup(graphCv); if (!c) return;
+      const { ctx, W, H } = c;
+      PANE = 'graph'; CW = W; CH = H;
+      __pim.panes.push({ name: 'graph', x: 0, y: 0, w: W, h: H });
+      if (currentTab === 1) {
+        // W against t: a straight line from the origin, drawn as the lift goes; its gradient is the power
+        const P = L, s = lift(sim.t), Wmax = weight(P) * P.h;
+        const ys = niceStep(Wmax, 4), ytop = Math.ceil(Wmax / ys - 1e-9) * ys;
+        const { X, Y } = axes(ctx, W, H, [0, P.T], [0, ytop], '<i>t</i> (s)', '<i>W</i> (J)', niceStep(P.T, W < 500 ? 5 : 8), ys);
+        if (s.started) {
+          ctx.strokeStyle = COL.P; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(X(0), Y(0)); ctx.lineTo(X(sim.t), Y(s.Wd)); ctx.stroke();
+          ctx.fillStyle = COL.tot; ctx.beginPath(); ctx.arc(X(sim.t), Y(s.Wd), 4.5, 0, Math.PI * 2); ctx.fill();
+          if (s.done) label(ctx, `gradient = <i>W</i> ÷ <i>t</i> = ${Wt(s.Pout)}`, X(P.T * 0.5) + 10, Y(s.Wd * 0.5) + 16, COL.P, 'left', 11, 1);
+        }
+        return;
+      }
+      if (currentTab === 2) {
+        const A = hand.attempts;
+        if (!A.length) { ctx.fillStyle = '#475569'; ctx.font = '13px Arial'; ctx.textAlign = 'center'; ctx.fillText('Your lifts will appear here.', W / 2, H / 2); return; }
+        bars(ctx, W, H, A.map((a, i) => [`lift ${i + 1}: ${tx(a.t)} s`, a.P, COL.P]), Math.max(...A.map(a => a.P)), Wt);
+        return;
+      }
+      const s = lift(sim.t), fin = lift(L.T);
+      bars(ctx, W, H, [['Energy input', s.Ein, COL.in], ['Useful (GPE)', s.Wd, COL.use], ['Heat (unintended)', s.heat, COL.heat]], Math.max(fin.Ein, 1e-9), J);
+    }
+
+    /* ---------------- the inputs ---------------- */
+    const loadIn = () => (L.wN !== undefined ? [['wN', 'Load (weight) (N)', L.wN, 1, 10]] : [['m', 'Mass <i>m</i> (kg)', L.m, 0.5, 0.5]]);
+    const INPUTS = {
+      1: () => loadIn().concat([['h', 'Height <i>h</i> (m)', L.h, 0.1, 0.1], ['T', 'Time <i>t</i> (s)', L.T, 0.5, 0.5]]),
+      2: () => loadIn().concat([['h', 'Height <i>h</i> (m)', L.h, 0.1, 0.1]]),
+      3: () => [['out', M.unit === 'J' ? 'Useful energy output (J)' : 'Useful power output (W)', M.out, 0.1, 1], ['inp', M.unit === 'J' ? 'Energy input (J)' : 'Power input (W)', M.inp, 0.1, 1]],
+      4: () => loadIn().concat([['h', 'Height <i>h</i> (m)', L.h, 0.1, 0.1], ['T', 'Time <i>t</i> (s)', L.T, 0.5, 0.5], ['eff', 'Efficiency (%)', L.eff, 1, 1]])
+    };
+    const LIMITS = { eff: [1, 99], h: [0.1, 50] };
+    function buildInputs() {
+      const list = INPUTS[currentTab](), el = $('inputs');
+      el.innerHTML = list.map(([k, lab, v, min, step]) => `<div class="control-group label-row"><label for="in_${k}">${lab}</label>
+        <input id="in_${k}" type="number" data-k="${k}" min="${min}" step="${step}" value="${plain(v)}" /></div>`).join('');
+      el.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => readInput(inp)));
+    }
+    function syncInputs() {
+      document.querySelectorAll('#inputs input').forEach(inp => {
+        if (document.activeElement === inp) return;
+        const k = inp.dataset.k, P = currentTab === 3 ? M : L, want = plain(P[k]);
+        if (inp.value !== want) inp.value = want;
+      });
+    }
+    function readInput(inp) {
+      const k = inp.dataset.k, raw = parseFloat(inp.value);
+      if (!isFinite(raw)) return;
+      const min = parseFloat(inp.min) || 0, lim = LIMITS[k];
+      let v = Math.max(min, raw); if (lim) v = Math.min(lim[1], Math.max(lim[0], v));
+      if (currentTab === 3) {
+        M[k] = v;
+        // the useful output can never reach the input (notes p. 5-12): keep it below
+        if (M.out > M.inp * 0.99) { if (k === 'out') M.inp = M.out / 0.99; else M.out = M.inp * 0.99; }
+        M.eff = M.out / M.inp * 100; M.unknown = 'eff';
+        toCustom();
+      } else { L[k] = v; delete L.Pin; lg = null; toCustom(); resetRun(); resetHand(false); }
+      update();
+    }
+    function toCustom() {
+      if (S.custom) return;
+      S.custom = true; S.scen = 'custom'; presetEl.value = 'custom';
+      if (currentTab === 3) S.step = 5;
+      // the question box keeps its height: nothing above the canvas may move while a finger drags
+      const q = $('question'); q.style.minHeight = q.offsetHeight + 'px';
+      q.innerHTML = 'Your own values. Choose a scenario from the menu to go back to an example from the notes.';
+      clearFeat();
+    }
+
+    /* ---------------- dragging: the load (tab 2), the split of the energy flow (tab 3) ---------------- */
+    function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    const handleAt = p => __pim.handles.find(h => Math.hypot(p.x - h.x, p.y - h.y) < (h.r || 16) + 6);
+    let dragging = null, dragOff = 0, handRaf = false;
+    canvas.addEventListener('pointerdown', e => {
+      if (currentTab !== 2 && currentTab !== 3) return;
+      // a canvas press ends typing in a box, so the box shows the dragged value afterwards
+      if (document.activeElement && document.activeElement.tagName === 'INPUT') document.activeElement.blur();
+      const p = pos(e), h = handleAt(p); if (!h) return;
+      if (h.id === 'load') {
+        if (hand.done) return; // lifted: "Put it down" first
+        dragging = 'load'; hand.dragging = true; clearFeat();
+        // the clock starts as the load leaves the floor
+        if (hand.y < 1e-9) { hand.t0 = performance.now(); hand.t = 0; }
+        hand.msg = '';
+        dragOff = p.y - (lg.floorY - hand.y * lg.k - lg.bh / 2);
+        tickHand();
+      } else dragging = h.id;
+      canvas.setPointerCapture(e.pointerId); e.preventDefault();
+      update();
+    });
+    // while the load is held the clock runs, so the drawing is redrawn every frame
+    function tickHand() {
+      if (handRaf) return; handRaf = true;
+      requestAnimationFrame(function loop() { if (!hand.dragging) { handRaf = false; return; } update(); requestAnimationFrame(loop); });
+    }
+    canvas.addEventListener('pointermove', e => {
+      const p = pos(e);
+      if (!dragging) { canvas.style.cursor = handleAt(p) ? 'grab' : 'default'; return; }
+      if (dragging === 'load') {
+        if (!hand.dragging) return;
+        const g = lg, y = (g.floorY - (p.y - dragOff) - g.bh / 2) / g.k;
+        hand.y = Math.max(0, Math.min(L.h, y));
+        if (hand.y >= L.h - 1e-9) finishLift((performance.now() - hand.t0) / 1000);
+      } else if (dragging === 'split' && flowGeo) {
+        const eff = Math.round(Math.max(0.01, Math.min(0.99, (p.y - flowGeo.y0) / flowGeo.fullH)) * 100);
+        M.eff = eff; M.out = M.inp * eff / 100; M.unknown = 'eff';
+        toCustom();
+      }
+      update();
+    });
+    const endDrag = () => {
+      if (!dragging) return;
+      if (dragging === 'load' && hand.dragging) {
+        // let go below the line: the lift does not count, and the load goes back down
+        hand.dragging = false; hand.y = 0; hand.t0 = null; hand.t = 0; hand.msg = 'Lift it all the way to the dashed line: the lift only counts when it gets there.';
+      }
+      dragging = null; update();
+    };
+    canvas.addEventListener('pointerup', endDrag);
+    canvas.addEventListener('pointercancel', endDrag);
+
+    /* ---------------- readouts, words and working ---------------- */
+    function cards(list) {
+      const el = $('readout');
+      el.className = 'readout' + (list.length === 6 ? ' n6' : list.length === 4 ? ' n4' : '');
+      el.innerHTML = list.map(([id, t, value, cls]) => `<div class="readout-card${cls ? ' ' + cls : ''}${hl[id] ? ' hl' : ''}" id="${id}"><div class="title">${t}</div><div class="value">${value}</div></div>`).join('');
+    }
+    function eq(lines) { return '<div class="math">' + lines.map(l => `<span class="eq${l.lit ? ' lit' : ''}">${l.h || l}</span>`).join('') + '</div>'; }
+    const loadTxt = P => (P.wN !== undefined ? `${plain(P.wN)} N` : `${plain(P.m)} kg`);
+    function readouts() {
+      const words = $('words'), work = $('work');
+      $('stepText').innerHTML = '';
+      if (currentTab === 1) {
+        const P = L, s = lift(sim.t);
+        cards([['rT', 'Time <i>t</i>', `${tx(sim.t)} s`], ['rH', 'Height <i>h</i>', `${f3(s.y)} m`], ['rF', 'Force <i>F</i> = weight <i>mg</i>', `${f3(s.mg)} N`],
+          ['rW', 'Work done so far <i>W</i> = <i>F</i> × <i>h</i>', J(s.Wd)], ['rP', 'Power <i>P</i> = <i>W</i> ÷ <i>t</i>', s.started ? Wt(s.Pout) : '—', s.done ? 'ok' : '']]);
+        // (the power from the one function the working and the graph use; at a constant rate it equals the work so far ÷ the time so far)
+        words.innerHTML = !s.started ? 'Press Start: the motor lifts the load at constant speed.'
+          : s.done ? `Done: <i>W</i> = ${J(s.Wd)} in ${plain(P.T)} s, so <i>P</i> = ${J(s.Wd)} ÷ ${plain(P.T)} s = ${Wt(s.Pout)}: ${f3(s.Pout)} J of work every second.`
+          : `So far: <i>W</i> = ${J(s.Wd)} in ${tx(sim.t)} s, so <i>P</i> = ${Wt(s.Pout)}. The work is done at a constant rate, so the power stays the same all the way.`;
+        work.innerHTML = s.done ? work1(s) : '';
+        return;
+      }
+      if (currentTab === 2) {
+        const P = L, mg = weight(P), t = handNow(), A = hand.attempts, last = A[A.length - 1];
+        cards([['rH', 'Height <i>h</i>', `${f3(hand.y)} m`], ['rT', 'Time <i>t</i>', `${tx(t)} s`], ['rW', 'Work done <i>W</i> = <i>mgh</i>', J(mg * hand.y)],
+          ['rP', 'Your power <i>P</i> = <i>W</i> ÷ <i>t</i>', hand.done && last ? Wt(last.P) : '—', hand.done ? 'ok' : '']]);
+        if (hand.msg) words.innerHTML = hand.msg;
+        else if (hand.dragging) words.innerHTML = 'Keep going up to the dashed line: the clock is running.';
+        else if (!A.length) words.innerHTML = `Drag the ${loadTxt(P)} load up to the dashed line. The clock starts when it leaves the floor.`;
+        else words.innerHTML = words2();
+        work.innerHTML = A.length ? eq(A.map((a, i) => ({ h: `Lift ${i + 1}: <i>P</i> = <span class="frac"><span><i>W</i></span><span><i>t</i></span></span> = <span class="frac"><span>${f3(a.W)}</span><span>${tx(a.t)}</span></span> = ${Wt(a.P)}`, lit: i === A.length - 1 }))) : '';
+        return;
+      }
+      if (currentTab === 3) {
+        const s = machine(), nm = flowNames(), u = M.unit === 'J';
+        cards([['rOut', u ? 'Useful energy output' : 'Useful power output', s.known.out ? unitV(s.out) : '?'], ['rIn', u ? 'Energy input' : 'Power input', s.known.inp ? unitV(s.inp) : '?'],
+          ['rEff', 'Efficiency', s.known.eff ? pct(s.eff) : '?', s.known.eff && S.step >= 4 ? 'ok' : ''], ['rHeat', 'Converted to heat (unintended)', s.known.heat ? unitV(s.heat) : '?']]);
+        $('stepText').innerHTML = `<span class="n">Step ${S.step} of 5</span>${stepText3(s, nm)}`;
+        words.innerHTML = S.step >= 5 ? `Only ${pct(s.eff)} of the ${u ? 'energy' : 'power'} input is useful. The rest, ${unitV(s.heat)}, is converted to an unintended form, heat, which dissipates into the environment.` : '';
+        work.innerHTML = S.step >= 3 ? work3(s) : '';
+        return;
+      }
+      const P = L, s = lift(sim.t);
+      cards([['rT', 'Time <i>t</i>', `${tx(sim.t)} s`], ['rU', 'Useful energy output so far (GPE gained)', J(s.Wd)], ['rIn', 'Energy input so far', J(s.Ein)],
+        ['rHt', 'Heat (unintended) so far', J(s.heat)], ['rPo', 'Useful power output', s.started ? Wt(s.Pout) : '—'], ['rPi', 'Power input', s.started ? Wt(s.Pin) : '—']]);
+      words.innerHTML = !s.started ? `Press Start: the energy taken in, the useful energy and the heat all grow from 0 J as the load rises.`
+        : `So far: ${J(s.Ein)} taken in = ${J(s.Wd)} useful (GPE) + ${J(s.heat)} heat. Efficiency = ${pct(P.eff)}${s.done ? '. The lift is done.' : ', the same at every moment.'}`;
+      work.innerHTML = s.done ? work4(s) : '';
+    }
+
+    function work1(s) {
+      const P = L, mg = f3(s.mg), h = gv(P, 'h'), T = plain(P.T);
+      const L1 = P.wN !== undefined ? `Force = weight of the load = ${mg} N` : `<i>F</i> = weight = <i>mg</i> = ${plain(P.m)} × ${plain(G)} = ${mg} N`;
+      return eq([L1, `Work done: <i>W</i> = <i>F</i> × <i>h</i> = ${mg} × ${h} = ${J(s.Wd)}`,
+        { h: `Power: <i>P</i> = <span class="frac"><span><i>W</i></span><span><i>t</i></span></span> = <span class="frac"><span>${f3(s.Wd)}</span><span>${T}</span></span> = ${Wt(s.Pout)}`, lit: true }]);
+    }
+    function words2() {
+      const A = hand.attempts, last = A[A.length - 1];
+      let s = `Your lift took ${tx(last.t)} s: <i>P</i> = ${J(last.W)} ÷ ${tx(last.t)} s = ${Wt(last.P)}.`;
+      if (A.length >= 2) {
+        const prev = A[A.length - 2];
+        if (Math.abs(prev.W - last.W) < 1e-9) s += last.t < prev.t ? ' Faster than the lift before: the same work in less time, so more power.' : last.t > prev.t ? ' Slower than the lift before: the same work in more time, so less power.' : '';
+        else s += ' A different load or height: a different amount of work.';
+      } else s += ' Press “Put it down” and lift it again, faster or slower.';
+      return s;
+    }
+    function stepText3(s, nm) {
+      const P = M, u = P.unit === 'J';
+      const outSrc = P.kind === 'bulb' || S.custom ? `${unitV(s.out)}.` : `work done ÷ time = ${J(weight(P) * P.h)} ÷ ${plain(P.T)} s = ${unitV(s.out)}.`;
+      switch (S.step) {
+        case 1: return P.kind === 'bulb' && !S.custom ? 'A light bulb is for light: the useful energy output is the light, 20 J.'
+          : `${S.custom ? 'The useful output' : `The ${nm.dev.toLowerCase()} is for lifting the load: the useful power output`} = ${outSrc}`;
+        case 2: return P.unknown === 'inp' ? `The efficiency is given: ${pct(s.eff)}. The power input is not known yet.`
+          : P.kind === 'bulb' && !S.custom ? 'The energy input: 100 J of electricity.' : `The ${u ? 'energy' : 'power'} input is given: ${unitV(s.inp)}.`;
+        case 3: return u ? 'Efficiency = useful energy output ÷ energy input × 100% (notes p. 5-13).' : 'Efficiency = useful power output ÷ power input × 100% (notes p. 5-13).';
+        case 4: return P.unknown === 'inp' ? `Power input = ${f4(s.out)} × 100% ÷ ${pct(s.eff)} = ${unitV(s.inp)}.` : `Efficiency = ${f4(s.out)} ÷ ${f4(s.inp)} × 100% = ${pct(s.eff)}.`;
+        case 5: return `The rest, ${f4(s.inp)} − ${f4(s.out)} = ${unitV(s.heat)}, is converted to an unintended form: heat.`;
+      }
+      return '';
+    }
+    function work3(s) {
+      const P = M, u = P.unit === 'J', o = u ? 'useful energy output' : 'useful power output', i = u ? 'energy input' : 'power input', L3 = [];
+      L3.push(`Efficiency = <span class="frac"><span>${o}</span><span>${i}</span></span> × 100%`);
+      if (P.unknown === 'inp') {
+        L3.push(`${pct(s.eff)} = <span class="frac"><span>${f4(s.out)}</span><span>${i}</span></span> × 100%`);
+        if (S.step >= 4) L3.push({ h: `${i} = ${f4(s.out)} × <span class="frac"><span>100%</span><span>${pct(s.eff)}</span></span> = ${unitV(s.inp)}`, lit: true });
+      } else if (S.step >= 4) L3.push({ h: `&nbsp;&nbsp;&nbsp;= <span class="frac"><span>${f4(s.out)}</span><span>${f4(s.inp)}</span></span> × 100% = ${pct(s.eff)}`, lit: true });
+      else L3.push(`&nbsp;&nbsp;&nbsp;= <span class="frac"><span>${f4(s.out)}</span><span>${f4(s.inp)}</span></span> × 100% = ?`);
+      if (S.step >= 5) L3.push(`Heat (unintended) = ${i} − ${o} = ${f4(s.inp)} − ${f4(s.out)} = ${unitV(s.heat)}`);
+      return eq(L3);
+    }
+    function work4(s) {
+      const P = L, mg = f3(s.mg), h = gv(P, 'h'), T = plain(P.T), Wd = weight(P) * P.h, L4 = [];
+      L4.push(P.wN !== undefined ? `Useful work: <i>W</i> = ${mg} × ${h} = ${J(Wd)}` : `Useful work: <i>W</i> = <i>mgh</i> = ${plain(P.m)} × ${plain(G)} × ${h} = ${J(Wd)}`);
+      L4.push({ h: `Useful power output = <span class="frac"><span><i>W</i></span><span><i>t</i></span></span> = <span class="frac"><span>${f3(Wd)}</span><span>${T}</span></span> = ${Wt(s.Pout)}`, lit: true });
+      if (P.Pin !== undefined && !S.custom) L4.push({ h: `Efficiency = <span class="frac"><span>${f4(s.Pout)}</span><span>${plain(P.Pin)}</span></span> × 100% = ${pct(P.eff)}`, lit: true });
+      else L4.push({ h: `Power input = ${f4(s.Pout)} × <span class="frac"><span>100%</span><span>${pct(P.eff)}</span></span> = ${Wt(s.Pin)}`, lit: true });
+      L4.push(`Energy input in ${T} s = ${f4(s.Pin)} × ${T} = ${J(s.Ein)}; heat = ${J(s.Ein)} − ${J(s.Wd)} = ${J(s.heat)}`);
+      return eq(L4);
+    }
+
+    function update() {
+      draw(); readouts(); syncInputs();
+      const end = runEnd(), mid = sim.t > 1e-9 && sim.t < end - 1e-9;
+      $('pauseBtn').textContent = !sim.running && mid ? 'Play' : 'Pause';
+      $('pauseBtn').disabled = !sim.running && !mid;
+      $('startBtn').disabled = sim.running || end <= 0;
+      $('prevStep').disabled = S.step <= 1; $('nextStep').disabled = S.step >= (STEPS[currentTab] || 1);
+      const km = keyMoments();
+      $('prevMoment').disabled = !km.some(m => m < sim.t - 1e-6); $('nextMoment').disabled = !km.some(m => m > sim.t + 1e-6);
+      $('speedNote').textContent = end > 0 && playRate() > 1 ? `The lift is shown ${f3(playRate())}× faster than real time.` : end > 0 ? 'The lift is shown in real time.' : '';
+      $('downBtn').disabled = hand.y < 1e-9 && !hand.done;
+      $('clearBtn').disabled = !hand.attempts.length;
+    }
+    function setStep(n) { S.step = Math.max(1, Math.min(STEPS[currentTab] || 1, n)); clearFeat(); update(); }
+    $('prevStep').addEventListener('click', () => setStep(S.step - 1));
+    $('nextStep').addEventListener('click', () => setStep(S.step + 1));
+    $('resetSteps').addEventListener('click', () => chooseScenario(presetEl.value));
+    function chooseScenario(id) {
+      if (id === 'custom') { if (!S.custom) { S.custom = true; S.scen = 'custom'; $('question').innerHTML = 'Your own values. Choose a scenario from the menu to go back to an example from the notes.'; } if (currentTab === 3) { S.step = 5; M.unknown = 'eff'; } sim.t = 0; sim.running = false; }
+      else loadScenario(id);
+      $('question').style.minHeight = '';
+      lg = null; clearFeat(); buildInputs(); update();
+    }
+    presetEl.addEventListener('change', () => chooseScenario(presetEl.value));
+
+    /* ---------------- the tabs ---------------- */
+    const TABS = {
+      1: { strip: 'Answer Predict first. Then press Start: the motor lifts the load at constant speed. Watch the work done grow, and work out the power.',
+        presets: ['ex5a', 'c2ab', 'c3a'], hint: 'Press Start, or step through the key moments. Type your own load, height or time.',
+        key: [[COL.F, 'Force <i>F</i>'], [COL.W, 'Weight <i>mg</i>'], [COL.P, 'Work done against time']],
+        notes: ['Power is defined as the rate at which work is done, or the rate at which energy is used or converted from one form to another (notes p. 5-11).',
+          'If the rate is constant, <i>P</i> = <i>W</i> ÷ <i>t</i> or <i>P</i> = <i>E</i> ÷ <i>t</i>: <i>W</i> = total work done in joules, <i>E</i> = total energy in joules, <i>t</i> = total time in seconds (p. 5-11).',
+          'The SI unit of power is J/s or watt (W). Power is a scalar quantity (p. 5-11).',
+          'Lifted at constant speed, the force equals the weight, so the work done is <i>mgh</i> (Example 4, p. 5-10).'],
+        graph: 'Work done against time, <i>W</i>–<i>t</i>' },
+      2: { strip: 'Answer Predict first. Then drag the load up to the dashed line yourself, once slowly and once quickly, and compare your power.',
+        presets: ['a2', 'ex4'], hint: 'Drag the load up to the dashed line. The clock starts when it leaves the floor and stops when it reaches the line.',
+        key: [[COL.W, 'Weight <i>mg</i>'], [COL.P, 'Your power']],
+        notes: ['Power tells us how fast work is done (notes p. 5-11).',
+          'The same load lifted to the same height always needs the same work, <i>mgh</i>. A faster lift does that work in less time, so it needs more power.',
+          'Your hand may speed up and slow down. <i>P</i> = <i>W</i> ÷ <i>t</i> gives the power as if the work were done at a constant rate, the only case the notes deal with (p. 5-11).'],
+        graph: 'Your power in each lift (W)' },
+      3: { strip: 'Answer Predict first. Then press Next step to find the efficiency or the input, one piece at a time.',
+        presets: ['bulb', 'ex5b', 'c2c', 'c3b'], hint: 'Press Next to work through the steps. On the last steps, drag the white dot where the bands split to change the efficiency.',
+        key: [[COL.in, 'Input'], [COL.use, 'Useful output'], [COL.heat, 'Heat (unintended)']],
+        notes: ['Although energy can be converted from one form to another, some of the energy is converted to an unintended form (notes p. 5-12).',
+          'In a light bulb, only some of the electricity consumed is converted into visible light. Most of it is converted into heat, which dissipates into the environment (p. 5-12).',
+          'Efficiency = useful energy output ÷ energy input × 100% = useful power output ÷ power input × 100% (p. 5-13).',
+          'The useful energy output is always less than the energy input (p. 5-12).'] },
+      4: { strip: 'Answer Predict first. Then press Start: watch the energy input, the useful energy and the heat grow together as the load rises.',
+        presets: ['ex5', 'c2', 'c3'], hint: 'Press Start, or step through the key moments. Type your own load, height, time or efficiency.',
+        key: [[COL.in, 'Energy input'], [COL.use, 'Useful (GPE)'], [COL.heat, 'Heat (unintended)'], [COL.F, 'Force <i>F</i>']],
+        notes: ['The law of conservation of energy: energy cannot be created or destroyed. It can only be converted from one form to another (notes p. 5-15).',
+          'So the energy input = the useful energy output + the energy converted to an unintended form (heat).',
+          'At a constant rate, each energy grows in step with the time, so each power stays the same all the way.',
+          'Efficiency from the energies or from the powers gives the same answer (p. 5-13).'],
+        graph: 'Energy so far (J)' },
+      5: { strip: 'Answer every question, then read the summary.', key: [] }
+    };
+
+    const PREDICT = {
+      1: { q: 'Example 5(a): a motor lifts 50 kg to a height of 2.0 m in 1 minute. If it did the same lift in 30 s instead, the power needed would be …',
+        opts: ['half as much', 'the same', 'twice as much', 'four times as much'], ans: 2,
+        why: 'The work done is the same, 1000 J, but in half the time: <i>P</i> = 1000 ÷ 30 = 33.3 W, twice 16.7 W. Tap “Half the time, twice the power” to check.' },
+      2: { q: 'You lift the 10 kg box to 0.50 m slowly, in 2 s, then quickly, in 0.5 s. The work done in the quick lift is …',
+        opts: ['the same, 50 J', 'four times as much', 'a quarter as much', 'zero'], ans: 0,
+        why: 'Work done = <i>mgh</i> = 10 × 10 × 0.50 = 50 J however fast you lift. The power is what changes: 50 ÷ 2 = 25 W, 50 ÷ 0.5 = 100 W. Lift it twice to check.' },
+      3: { q: 'A motor works at 50% efficiency. Compared with its useful power output, its power input is …',
+        opts: ['twice as much', 'half as much', 'the same', '50 W more'], ans: 0,
+        why: 'Only half of the power input is useful, so the power input is twice the useful power output: in Example 5(b), 16.7 W useful needs 33.3 W in. Choose “Motor at 50% efficiency” and press Next step to the end.' },
+      4: { q: 'Tutorial C2: the motor’s useful power output is 64 W and its power input is 120 W. Each second, how much energy is converted to heat?',
+        opts: ['56 J', '64 J', '120 J', '184 J'], ans: 0,
+        why: 'Each second 120 J goes in and 64 J becomes useful energy (GPE), so 120 − 64 = 56 J is converted to heat. Choose “32 kg up 12 m, 120 W input” and press Start.' }
+    };
+
+    const FEATS = {
+      1: [['unit', '1 W = 1 J every second'], ['steady', 'The same power all the way'], ['gradient', 'Power = gradient of <i>W</i>–<i>t</i>'], ['half', 'Half the time, twice the power']],
+      2: [['fastslow', 'Same work, fast or slow'], ['onesec', '50 J in 1 s = 50 W'], ['heavy', 'More work in the same time']],
+      3: [['bulb20', 'A bulb: 20% light'], ['halfEff', '50% efficient: input twice the output'], ['never100', 'Useful output < input'], ['lower', 'Less efficient, more input']],
+      4: [['sum', 'Input = useful + heat'], ['twoWays', 'Efficiency from energy or power'], ['steadyP', 'Powers stay the same'], ['faster', 'Faster lift, same efficiency']]
+    };
+    const PROMPTS = {
+      1: ['Why does the power stay the same all through a lift at constant speed?', 'What does the gradient of the <i>W</i>–<i>t</i> graph tell you?', 'Example 5: how much power would the same lift need in 30 s?'],
+      2: ['You lifted the same box twice. Why was the work done the same?', 'Why did the faster lift need more power?', 'Which lift felt harder? How does that match the numbers?'],
+      3: ['Why can the useful energy output never be more than the energy input?', 'Where does the rest of the energy go in a light bulb?', 'A motor is 60% efficient. What happens to the other 40%?'],
+      4: ['Why does the energy input always equal the useful energy plus the heat?', 'Does a faster lift change the efficiency? Why not?', 'Tutorial C2: how much energy is converted to heat in one minute?'],
+      5: ['Which question did most of the class get wrong, and why?', 'Pick one wrong option: what mistake would lead a student to choose it?']
+    };
+
+    let predictPick = null;
+    function clearFeat() { feat = {}; hl = {}; syncFeatButtons(); $('featNote').textContent = ''; }
+    function clearFeatNoteOnly() { if (Object.keys(feat).length) clearFeat(); }
+    function syncFeatButtons() { document.querySelectorAll('#feats .feat').forEach(b => b.classList.toggle('on', !!feat[b.dataset.f])); }
+    // a key feature shows itself: it always reloads its scenario, then sets the step, the moment or the values that show it
+    function tapFeat(id) {
+      const on = !feat[id];
+      const want = scen => { presetEl.value = scen; chooseScenario(scen); };
+      const own = q => { S.custom = true; S.scen = 'custom'; presetEl.value = 'custom'; $('question').innerHTML = q; };
+      const demo = times => { times.forEach(t => finishLift(t)); hand.attempts.forEach(a => { a.demo = true; }); };
+      clearFeat();
+      if (on) {
+        ({
+          unit: () => { want('c2ab'); sim.t = L.T / 4; hl = { rP: true }; },
+          steady: () => { want('ex5a'); sim.t = L.T / 2; hl = { rW: true, rP: true }; },
+          gradient: () => { want('ex5a'); sim.t = L.T; hl = { rP: true }; },
+          half: () => { want('ex5a'); L.T = 30; own('Example 5’s lift done in 30 s instead of 1 minute: 50 kg to a height of 2.0 m.'); sim.t = L.T; hl = { rP: true }; },
+          fastslow: () => { want('a2'); demo([2, 0.5]); hl = { rP: true }; },
+          onesec: () => { want('a2'); demo([1]); hl = { rP: true }; },
+          heavy: () => { want('a2'); demo([2]); L = Object.assign({}, PRESETS.ex4); presetEl.value = 'ex4'; S.scen = 'ex4'; S.base = 'ex4'; $('question').innerHTML = PRESETS.ex4.q; lg = null; demo([2]); hl = { rP: true }; },
+          bulb20: () => { want('bulb'); S.step = 5; hl = { rEff: true, rHeat: true }; },
+          halfEff: () => { want('ex5b'); S.step = 5; hl = { rIn: true, rOut: true }; },
+          never100: () => { want('c2c'); S.step = 5; hl = { rHeat: true }; },
+          lower: () => { want('c3b'); M.eff = 30; M.inp = M.out / 0.3; M.unknown = 'inp'; own('Tutorial C3’s machine at 30% efficiency instead of 60%: the same 750 W useful power output.'); S.step = 5; hl = { rIn: true }; },
+          sum: () => { want('c3'); sim.t = L.T / 2; hl = { rU: true, rIn: true, rHt: true }; },
+          twoWays: () => { want('c2'); sim.t = L.T; hl = { rU: true, rIn: true, rPo: true, rPi: true }; },
+          steadyP: () => { want('ex5'); sim.t = L.T / 4; hl = { rPo: true, rPi: true }; },
+          faster: () => { want('ex5'); L.T = 30; own('Example 5’s motor (50% efficient) doing the lift in 30 s instead of 1 minute.'); sim.t = L.T; hl = { rPo: true, rPi: true }; }
+        })[id]();
+        sim.running = false;
+      }
+      feat = on ? { [id]: true } : {};
+      syncFeatButtons(); buildInputs(); update();
+      $('featNote').innerHTML = on ? featNote(id) : '';
+    }
+    function featNote(id) {
+      switch (id) {
+        case 'unit': { const s = lift(sim.t); return `The SI unit of power is J/s or watt (W) (notes p. 5-11). After ${tx(sim.t)} s the motor has done ${J(s.Wd)} of work: ${f3(s.Pout)} J every second, so <i>P</i> = ${Wt(s.Pout)}.`; }
+        case 'steady': { const s = lift(sim.t); return `Halfway: ${J(s.Wd)} of work in ${tx(sim.t)} s, so <i>P</i> = ${Wt(s.Wd / sim.t)}: the same as for the whole lift. The work is done at a constant rate (p. 5-11).`; }
+        case 'gradient': return `The <i>W</i>–<i>t</i> graph is a straight line. Its gradient, work done ÷ time = 1000 J ÷ 60 s = ${Wt(lift(sim.t).Pout)}, is the power.`;
+        case 'half': return `The same 1000 J of work in 30 s: <i>P</i> = 1000 ÷ 30 = ${Wt(lift(sim.t).Pout)}, twice the 16.7 W needed in 1 minute. Half the time, twice the power.`;
+        case 'fastslow': { const A = hand.attempts; return `Lift 1 took 2.00 s and lift 2 took 0.50 s. Both did the same work, 50 J. Power: 50 ÷ 2.00 = ${Wt(A[0].P)}, and 50 ÷ 0.50 = ${Wt(A[1].P)}. The faster lift needed four times the power.`; }
+        case 'onesec': return 'Lifting the box takes 50 J of work. Done in 1.00 s, that is 50 J every second: 50 W. 1 W = 1 J/s.';
+        case 'heavy': { const A = hand.attempts; return `Both lifts took 2.00 s. The 10 kg box up 0.50 m needed 50 J: ${Wt(A[0].P)}. The 50 kg mass up 2.0 m needs 1000 J: ${Wt(A[1].P)}. More work in the same time needs more power.`; }
+        case 'bulb20': return 'Of the 100 J of electricity, only 20 J becomes light: efficiency = 20 ÷ 100 × 100% = 20%. The other 80 J, 80%, is converted to heat (notes p. 5-12).';
+        case 'halfEff': return `At 50% efficiency, only half of the power input is useful: the power input, ${Wt(machine().inp)}, is twice the useful power output, ${Wt(machine().out)} (Example 5(b)).`;
+        case 'never100': return 'Some energy is always converted to an unintended form, so the useful output is always less than the input and the efficiency is less than 100% (notes p. 5-12). Here 120 − 64 = 56 W becomes heat.';
+        case 'lower': return `The same 750 W of useful power at 30% efficiency needs 750 × 100% ÷ 30% = ${Wt(machine().inp)} of power input: twice the 1250 W at 60%. A less efficient machine takes in more for the same useful output.`;
+        case 'sum': { const s = lift(sim.t); return `After ${tx(sim.t)} s: ${J(s.Ein)} taken in = ${J(s.Wd)} useful (GPE) + ${J(s.heat)} heat. No energy is created or destroyed: it is only converted (p. 5-15).`; }
+        case 'twoWays': { const s = lift(sim.t); return `From the energies: ${J(s.Wd)} ÷ ${J(s.Ein)} × 100% = ${pct(s.Wd / s.Ein * 100)}. From the powers: 64 ÷ 120 × 100% = ${pct(s.Pout / s.Pin * 100)}. The same efficiency either way (p. 5-13).`; }
+        case 'steadyP': { const s = lift(sim.t); return `After a quarter of the lift (${tx(sim.t)} s): useful power output ${J(s.Wd)} ÷ ${tx(sim.t)} s = ${Wt(s.Wd / sim.t)}, power input ${J(s.Ein)} ÷ ${tx(sim.t)} s = ${Wt(s.Ein / sim.t)}: the same as for the whole lift.`; }
+        case 'faster': { const s = lift(sim.t); return `In 30 s the motor needs twice the power: useful ${Wt(s.Pout)}, input ${Wt(s.Pin)}. The efficiency is still 50%: the same 1000 J of useful work for 2000 J taken in.`; }
+      }
+      return '';
+    }
+
+    function renderPredict(tab) {
+      const P = PREDICT[tab], box = $('predictBox');
+      predictPick = null;
+      if (!P) { box.hidden = true; return; }
+      box.hidden = false; box.classList.remove('done');
+      $('predictQ').innerHTML = P.q;
+      $('predictFb').innerHTML = '';
+      const opts = $('predictOpts');
+      opts.innerHTML = '';
+      P.opts.forEach((o, i) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.innerHTML = o;
+        b.addEventListener('click', () => {
+          if (opts.dataset.done) return;
+          predictPick = i; opts.querySelectorAll('.opt').forEach((x, j) => x.classList.toggle('picked', j === i));
+        });
+        opts.appendChild(b);
+      });
+      delete opts.dataset.done;
+      $('predictCheck').textContent = 'Check my answer';
+    }
+    $('predictCheck').addEventListener('click', () => {
+      const P = PREDICT[currentTab], opts = $('predictOpts'), fb = $('predictFb');
+      if (!P) return;
+      if (opts.dataset.done) { renderPredict(currentTab); return; }
+      if (predictPick === null) { fb.innerHTML = '<span class="verdict no">Pick an answer first.</span>'; return; }
+      opts.dataset.done = '1';
+      const ok = predictPick === P.ans;
+      opts.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === P.ans) x.classList.add('right'); else if (j === predictPick) x.classList.add('wrong'); });
+      // the options fold away: the result line names the pick (and the right answer), then the explanation
+      $('predictBox').classList.add('done');
+      fb.innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> Your prediction: ${P.opts[predictPick]}.`
+        + (ok ? '' : ` The answer: <b>${P.opts[P.ans]}</b>.`) + ` <span class="why">${P.why}</span>`;
+      $('predictCheck').textContent = 'Try again';
+    });
+
+    function renderFeats(tab) {
+      const list = FEATS[tab] || [], el = $('feats');
+      $('featBox').hidden = !list.length;
+      el.innerHTML = '';
+      list.forEach(([id, lab]) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'feat'; b.dataset.f = id;
+        b.innerHTML = lab;
+        b.addEventListener('click', () => tapFeat(id));
+        el.appendChild(b);
+      });
+      $('featNote').textContent = '';
+      syncFeatButtons();
+    }
+    function renderKey(tab) {
+      // the label sits in its own span: as direct children of the inline-flex entry, <i> would become a flex item
+      $('ckey').innerHTML = (TABS[tab].key || []).map(([c, lab]) => `<span><b style="background:${c}"></b><span>${lab}</span></span>`).join('');
+    }
+    function fillPresets(list, tab) {
+      presetEl.innerHTML = '';
+      [...list, 'custom'].forEach(id => { const o = document.createElement('option'); o.value = id; o.textContent = id === 'custom' ? CUSTOM_NAME[tab] : PRESETS[id].name; presetEl.appendChild(o); });
+      presetEl.value = list[0];
+    }
+
+    function showTab(tab) {
+      currentTab = tab;
+      sim.running = false;
+      document.querySelectorAll('#tabs .tab').forEach(b => { const on = +b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+      $('stepLabel').textContent = `Step ${tab} of 5`;
+      document.querySelectorAll('#stepBar i').forEach((i, n) => i.classList.toggle('on', n < tab));
+      $('strip').innerHTML = TABS[tab].strip;
+      renderKey(tab);
+      $('pageSim').hidden = tab === 5;
+      $('page5').hidden = tab !== 5;
+      if (tab <= 4) {
+        const T = TABS[tab];
+        canvas.className = 't' + tab;
+        $('stepGroup').hidden = tab !== 3;
+        $('simGroup').hidden = tab !== 1 && tab !== 4;
+        $('handGroup').hidden = tab !== 2;
+        $('moments').hidden = tab !== 1 && tab !== 4;
+        $('sceneHint').textContent = T.hint;
+        $('graphTitle').innerHTML = T.graph || '';
+        $('notes').innerHTML = '<ul>' + T.notes.map(n => `<li>${n}</li>`).join('') + '</ul>';
+        fillPresets(T.presets, tab);
+        chooseScenario(T.presets[0]);
+      }
+      if (tab === 5) renderQuiz();
+      renderPredict(tab);
+      renderFeats(tab);
+      $('tPrompts').innerHTML = PROMPTS[tab].map(p => `<li>${p}</li>`).join('');
+    }
+    document.querySelectorAll('#tabs .tab').forEach(b => b.addEventListener('click', () => showTab(+b.dataset.tab)));
+
+    /* ---------------- Tab 5: Challenge ---------------- */
+    // every answer recomputed and matched to the lecturer's copy or Tutorial 5's answer key
+    // A question whose parts share one situation is one screen: the situation once, then its parts
+    const QUIZ = [
+      { src: 'Notes p. 5-11', stem: 'Power …', parts: [
+        { lab: '(a)', q: 'Power is defined as …', opts: ['the rate at which work is done', 'the total work done', 'the force times the distance moved', 'the energy stored in an object'], ans: 0,
+          why: 'Power is the rate at which work is done, or the rate at which energy is used or converted from one form to another: how fast the work is done.' },
+        { lab: '(b)', q: 'The SI unit of power is …', opts: ['J/s, the watt (W)', 'the joule (J)', 'N m', 'the newton (N)'], ans: 0,
+          why: 'The SI unit of power is J/s or watt (W). The joule and the newton metre are units of work and energy.' }] },
+      { src: 'Example 5, notes p. 5-14', stem: 'A motor lifts a mass of 50 kg to a height of 2.0 m at constant speed. The whole process takes 1 minute.', parts: [
+        { lab: '(a)', q: 'How much power is required?', opts: ['16.7 W', '1000 W', '500 W', '8.33 W'], ans: 0,
+          why: '<i>W</i> = <i>mgh</i> = 50 × 10 × 2.0 = 1000 J, and 1 minute = 60 s: <i>P</i> = 1000 ÷ 60 = 16.7 W. (1000 W forgets to divide by the time; 500 W is the weight.)' },
+        { lab: '(b)', q: 'What is the power input of the motor if it works at 50% efficiency?', opts: ['33.3 W', '8.33 W', '16.7 W', '66.7 W'], ans: 0,
+          why: 'Power input = useful power output × 100% ÷ efficiency = 16.67 × 100% ÷ 50% = 33.3 W. (8.33 W multiplies by 50% instead of dividing. The lecturer’s copy writes 33.4 W because it doubles the rounded 16.7.)' }] },
+      { src: 'Tutorial 5, C2', stem: 'A motor has to lift 32 kg of load per minute to a vertical height of 12 m.', parts: [
+        { lab: '(a)', q: 'Find the work done in lifting the load.', opts: ['3840 J', '384 J', '2.67 J', '38 400 J'], ans: 0,
+          why: 'Force = weight = 32 × 10 = 320 N, so <i>W</i> = 320 × 12 = 3840 J. (384 J leaves out <i>g</i>.)' },
+        { lab: '(b)', q: 'Find the power output of the motor.', opts: ['64 W', '3840 W', '230 400 W', '320 W'], ans: 0,
+          why: 'Power output = work done ÷ time = 3840 J ÷ 60 s = 64 W. (3840 W treats a minute as one second; 230 400 W multiplies by 60.)' },
+        { lab: '(c)', q: 'Find the efficiency of the motor if the input power is 120 W.', opts: ['53.3%', '187.5%', '46.7%', '64%'], ans: 0,
+          why: 'Efficiency = power output ÷ power input × 100% = 64 ÷ 120 × 100% = 53.3%. (187.5% divides the wrong way: an efficiency is never more than 100%.)' }] },
+      { src: 'Tutorial 5, C3', stem: 'A 60% efficient machine lifts a load of 500 N through a vertical height of 3 m in 2 s.', parts: [
+        { lab: '(a)', q: 'Find the useful power output of the machine.', opts: ['750 W', '1500 W', '3000 W', '450 W'], ans: 0,
+          why: 'Work done = 500 × 3 = 1500 J, so useful power output = 1500 ÷ 2 = 750 W. (1500 W forgets the time; 450 W takes 60% of the useful output.)' },
+        { lab: '(b)', q: 'Find the power input of the machine.', opts: ['1250 W', '450 W', '750 W', '1200 W'], ans: 0,
+          why: 'Efficiency = output ÷ input, so 60% = 750 ÷ power input: power input = 750 ÷ 0.6 = 1250 W. (450 W multiplies by 0.6 instead of dividing.)' }] },
+      { src: 'Notes p. 5-13', stem: 'Efficiency is defined as …', parts: [
+        { q: 'Which is right?', opts: ['the ratio of the useful energy output to the total energy input', 'the ratio of the energy input to the useful energy output', 'the useful energy output minus the energy input', 'the energy converted to heat'], ans: 0,
+          why: 'Efficiency is defined as the ratio of the useful energy output to the total energy input, usually expressed as a percentage: useful energy output ÷ energy input × 100%.' }] },
+      { src: 'Notes p. 5-12', stem: 'A light bulb converts 100% of the electricity it takes in: 20% into light and 80% into heat.', parts: [
+        { lab: '(a)', q: 'What is the efficiency of the bulb?', opts: ['20%', '80%', '100%', '25%'], ans: 0,
+          why: 'Only the light is useful: efficiency = 20 ÷ 100 × 100% = 20%. (80% is the heat; 25% divides the light by the heat.)' },
+        { lab: '(b)', q: 'What happens to the heat?', opts: ['It dissipates into the environment', 'It is converted back into electricity', 'It is destroyed', 'It becomes extra light'], ans: 0,
+          why: 'Most of the electricity is converted into heat, which dissipates into the environment (notes p. 5-12). Energy cannot be destroyed (p. 5-15).' }] },
+      { src: 'Notes p. 5-12', stem: 'The useful energy output of a machine is always …', parts: [
+        { q: 'Which is right?', opts: ['less than the energy input', 'equal to the energy input', 'more than the energy input', 'zero'], ans: 0,
+          why: 'Some of the energy is always converted to an unintended form (mostly heat), so the useful energy output is always less than the energy input.' }] },
+      { src: 'Tutorial 5, A2, lifted twice', stem: 'Two students each lift a 10 kg box to a height of 0.50 m. A takes 2.0 s and B takes 0.50 s.', parts: [
+        { lab: '(a)', q: 'Compare the work done by A and by B.', opts: ['The same, 50 J each', 'B does four times as much', 'A does four times as much', 'B does no work'], ans: 0,
+          why: 'Work done = <i>mgh</i> = 10 × 10 × 0.50 = 50 J for both: the same load to the same height.' },
+        { lab: '(b)', q: 'What is B’s power?', opts: ['100 W', '25 W', '50 W', '10 W'], ans: 0,
+          why: '<i>P</i> = <i>W</i> ÷ <i>t</i> = 50 ÷ 0.50 = 100 W. (25 W is A’s power: 50 ÷ 2.0.)' }] },
+      { src: 'Tutorial 5, C2, one minute', stem: 'The motor in Tutorial C2 takes in 120 W and gives a useful power output of 64 W.', parts: [
+        { q: 'How much energy is converted to heat in one minute?', opts: ['3360 J', '56 J', '7200 J', '3840 J'], ans: 0,
+          why: 'Each second, 120 − 64 = 56 J becomes heat; in 60 s that is 56 × 60 = 3360 J. (7200 J is the whole energy input; 3840 J is the useful work.)' }] },
+      { src: 'Notes p. 5-11, values chosen for this question', stem: 'A lamp converts 600 J of electrical energy in 10 s, at a constant rate.', parts: [
+        { q: 'What is its power?', opts: ['60 W', '6000 W', '600 W', '0.0167 W'], ans: 0,
+          why: '<i>P</i> = <i>E</i> ÷ <i>t</i> = 600 ÷ 10 = 60 W. (6000 W multiplies; 0.0167 W divides the wrong way.)' }] }
+    ];
+    // the options are written with the right one first; turn each part's list round by a fixed amount so the right
+    // answer is not always in the same place (positions 4, 1, 2, 3, 4, ... down the quiz)
+    { let pc = 0; QUIZ.forEach(Q => Q.parts.forEach(P => { const n = P.opts.length, r = (pc++ * 3 + 1) % n;
+      P.opts = P.opts.slice(r).concat(P.opts.slice(0, r)); P.ans = (P.ans - r + n) % n; })); }
+    const QUIZ_MARKS = QUIZ.reduce((n, Q) => n + Q.parts.length, 0);
+    const partLabel = (Q, k) => Q.parts[k].lab ? Q.parts[k].lab + ' ' : Q.parts.length > 1 ? `(${'abcdefgh'[k]}) ` : '';
+    let quiz = { i: 0, score: 0, picks: [], done: false, missed: [] };
+    function resetQuiz() { quiz = { i: 0, score: 0, picks: [], done: false, missed: [] }; renderQuiz(); }
+    function renderQuiz() {
+      const el = $('quiz'), N = QUIZ.length;
+      if (quiz.i >= N) {
+        const list = quiz.missed.length
+          ? `<p>Go back over these:</p><ul>${quiz.missed.map(([n, k]) => { const Q = QUIZ[n];
+              return `<li>Question ${n + 1}${partLabel(Q, k).trim()} (${Q.src}): ${(Q.stem ? Q.stem + ' ' : '') + Q.parts[k].q}</li>`; }).join('')}</ul>`
+          : '<p>Every answer right. Well done.</p>';
+        el.innerHTML = `<div class="quiz-top"><span>Summary</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div><div class="quiz-bar"><i style="width:100%"></i></div>
+          <div class="quiz-sum"><div class="quiz-q">You scored ${quiz.score} out of ${QUIZ_MARKS}.</div>${list}</div>
+          <div class="row-btns"><button type="button" id="qAgain">Try the quiz again</button></div>`;
+        $('qAgain').addEventListener('click', resetQuiz);
+        return;
+      }
+      const Q = QUIZ[quiz.i], many = Q.parts.length > 1;
+      quiz.picks = Q.parts.map(() => null);
+      el.innerHTML = `<div class="quiz-top"><span>Question ${quiz.i + 1} of ${N}</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div>
+        <div class="quiz-bar"><i style="width:${(quiz.i / N) * 100}%"></i></div>
+        ${Q.stem ? `<div class="quiz-q" id="qStem">${Q.stem}</div>` : ''}<div class="quiz-src">${Q.src}${many ? ` · ${Q.parts.length} parts, answer them all` : ''}</div>
+        ${Q.parts.map((P, k) => `<div class="qpart" data-k="${k}">
+          <div class="${Q.stem ? 'qpart-q' : 'quiz-q'}">${partLabel(Q, k)}${P.q}</div>
+          <div class="opts">${P.opts.map((o, j) => `<button type="button" class="opt" data-j="${j}">${o}</button>`).join('')}</div>
+          <div class="feedback"></div></div>`).join('')}
+        <div class="row-btns"><button type="button" id="qSubmit">${many ? 'Submit answers' : 'Submit answer'}</button><button type="button" class="secondary" id="qReset">Reset quiz</button></div>
+        <div class="feedback" id="qFb"></div>`;
+      el.querySelectorAll('.qpart').forEach(part => {
+        const k = +part.dataset.k;
+        part.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+          if (quiz.done) return;
+          quiz.picks[k] = +b.dataset.j; part.querySelectorAll('.opt').forEach(x => x.classList.toggle('picked', x === b));
+        }));
+      });
+      $('qReset').addEventListener('click', resetQuiz);
+      $('qSubmit').addEventListener('click', () => {
+        const fb = $('qFb');
+        if (quiz.done) { quiz.i++; quiz.done = false; renderQuiz(); return; }
+        const left = quiz.picks.map((p, k) => p === null ? partLabel(Q, k).trim() || `part ${k + 1}` : null).filter(x => x !== null);
+        if (left.length) { fb.innerHTML = `<span class="verdict no">${many ? `Pick an answer for every part first (still to do: ${left.join(', ')}).` : 'Pick an answer first.'}</span>`; return; }
+        quiz.done = true; fb.innerHTML = '';
+        el.querySelectorAll('.qpart').forEach(part => {
+          const k = +part.dataset.k, P = Q.parts[k], ok = quiz.picks[k] === P.ans;
+          if (ok) quiz.score++; else quiz.missed.push([quiz.i, k]);
+          part.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === P.ans) x.classList.add('right'); else if (j === quiz.picks[k]) x.classList.add('wrong'); });
+          part.querySelector('.feedback').innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> <span class="why">${P.why}</span>`;
+        });
+        el.querySelector('.quiz-top span:last-child').textContent = `Score: ${quiz.score} of ${QUIZ_MARKS}`;
+        $('qSubmit').textContent = quiz.i + 1 < N ? 'Next question' : 'See the summary';
+      });
+    }
+
+    /* ---------------- Teacher mode ---------------- */
+    // Only the teacher link (this page's address + ?teacher) shows the button; students and the
+    // Brightspace embed use the plain address. Not a lock: the panel only changes this screen.
+    const teacher = $('teacher');
+    if (new URLSearchParams(location.search).has('teacher')) $('teacherBtn').hidden = false;
+    $('teacherBtn').addEventListener('click', () => { teacher.hidden = !teacher.hidden; });
+    $('tClose').addEventListener('click', () => { teacher.hidden = true; });
+    $('tExplain').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-explain');
+      e.target.textContent = on ? 'Show explanations' : 'Hide explanations'; e.target.classList.toggle('on', on);
+    });
+    $('tAnswers').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-answers');
+      e.target.textContent = on ? 'Show answer labels' : 'Hide answer labels'; e.target.classList.toggle('on', on);
+    });
+    // free exploration: every step shown at once, no Predict first
+    $('tFree').addEventListener('click', e => {
+      freeMode = !freeMode; document.body.classList.toggle('free-mode', freeMode);
+      e.target.textContent = freeMode ? 'Back to the guided steps' : 'Switch to free exploration'; e.target.classList.toggle('on', freeMode);
+      showTab(currentTab);
+    });
+    const fullBtn = $('tFull');
+    if (!document.fullscreenEnabled) fullBtn.hidden = true;
+    fullBtn.addEventListener('click', () => {
+      if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {});
+    });
+    document.addEventListener('fullscreenchange', () => { fullBtn.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
+    $('tReset').addEventListener('click', () => { resetQuiz(); showTab(1); });
+
+    // for the checks: the state behind the drawing
+    window.__pimState = () => ({ tab: currentTab, step: S.step, scen: S.scen, t: sim.t, end: runEnd(), rate: runEnd() > 0 ? playRate() : 0, L, M, lift: lift(sim.t), machine: machine(), hand: JSON.parse(JSON.stringify(hand)), moments: keyMoments() });
+    window.__pimRunToEnd = runToEnd;
+    window.addEventListener('resize', () => { if (currentTab <= 4) { lg = null; update(); } });
+    showTab(1);
+  </script>
+  <script>
+    // Embedded (Brightspace): tell the page around the frame how tall this page is, so a resize script in the
+    // embed code can fit the frame to it (no blank space, no inner scrollbar). Measured from the content, not
+    // scrollHeight, which never drops below the frame's own height and so could never shrink it.
+    (function () {
+      if (window.parent === window) return;
+      let last = 0;
+      function height() {
+        const c = document.querySelector('.container'), cs = getComputedStyle(document.body);
+        return Math.ceil(c.getBoundingClientRect().bottom + window.scrollY + parseFloat(cs.paddingBottom) + parseFloat(cs.marginBottom) + 4);
+      }
+      function send(force) {
+        const h = height();
+        if (!force && Math.abs(h - last) < 2) return;
+        last = h;
+        window.parent.postMessage({ type: 'pim-height', page: location.pathname.split('/').pop(), height: h }, '*');
+      }
+      new ResizeObserver(() => send(false)).observe(document.querySelector('.container'));
+      window.addEventListener('load', () => send(true));
+      // the embed's script asks once it is listening, in case this page loaded first
+      window.addEventListener('message', e => { if (e.data && e.data.type === 'pim-height?') send(true); });
+      send(true);
+    })();
   </script>
   <script>
     // Phones: a swipe that starts on an empty part of a drawing scrolls the page (touch-action: pan-y),
     // and a touch the page grabbed for a drag (its own setPointerCapture call) keeps the page still.
     // (hasPointerCapture can't tell: a touch is always captured implicitly.)
-    // The kinematics graphs are left out: a sideways drag scrubs them and an up-down one scrolls.
     document.querySelectorAll('canvas:not(.graph-canvas)').forEach(c => {
       let grabbed = false;
       const capture = c.setPointerCapture;
