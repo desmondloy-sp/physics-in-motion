@@ -18,43 +18,188 @@
   <!-- pim-meta:end -->
   <style>
     * { box-sizing: border-box; }
+    /* the hidden attribute must win over every display rule below */
+    [hidden] { display: none !important; }
     body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
     .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
-    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    h1 { margin: 0; font-size: 1.1rem; }
     .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
-    .controls { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1.4fr; gap: 10px; align-items: end; }
-    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-    .control-group input { max-width: 130px; }
-    .checkbox-row { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 600; padding-bottom: 6px; }
-    .checkbox-row input { width: auto; max-width: none; }
-    label { font-size: 0.8rem; font-weight: 600; }
-    input, button { font-size: 0.9rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
-    .buttons { display: flex; gap: 6px; }
-    button { cursor: pointer; background: #2563eb; color: white; border: none; }
+
+    /* controls: the scenario menu and the simulation buttons; then the variables */
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 110px; }
+    .control-group.scen-group { flex: 2.2 1 260px; }
+    .control-group.button-group { flex: 2 1 280px; }
+    .control-group select { width: 100%; max-width: 100%; }
+    .controls input, .controls select, .controls button { height: 34px; }
+    label { font-size: 0.82rem; font-weight: 600; line-height: 1.2; }
+    label sub { line-height: 0; }
+    input, select, button { font-size: 0.95rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; }
+    input[type=number] { width: 100%; max-width: 120px; }
+    .buttons { display: flex; gap: 6px; flex-wrap: nowrap; }
+    button { cursor: pointer; background: #2563eb; color: white; border: none; min-width: 0; flex: 1; }
     button:hover { background: #1d4ed8; }
+    button:disabled { background: #94a3b8; cursor: default; }
     button.secondary { background: #475569; }
+    button.secondary:hover { background: #334155; }
+    button.secondary:disabled { background: #cbd5e1; color: #475569; }
     button.danger { background: #dc2626; }
+    button.danger:hover { background: #b91c1c; }
+    .moments { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
+    .moments button { flex: none; padding: 6px 12px; }
+    .speed { font-size: 0.8rem; color: #475569; }
+    .speed:empty { display: none; }
+    .group-title { font-size: 0.78rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.03em; margin: 10px 0 4px; }
+    .inputs { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: flex-end; }
+    .inputs .control-group { flex: 0 1 auto; }
+    .label-row label { white-space: nowrap; }
+    .question { margin-top: 8px; font-size: 0.84rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 6px 10px; color: #7c2d12; }
+    .question:empty { display: none; }
+
     .readout { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout.n6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
     .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card.hl { box-shadow: inset 0 0 0 2px #dc2626; }
+    .readout-card.ok { background: #ecfdf5; }
     .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
     .readout-card .value { font-size: 1rem; font-weight: bold; }
-    .layout { display: grid; grid-template-columns: 1fr; gap: 8px; }
-    @media (min-width: 900px) { .layout { grid-template-columns: 1.6fr 1fr; } }
-    canvas { display: block; width: 100%; border-radius: 10px; background: white; }
-    #sceneCanvas { height: 300px; border: 1px solid #dbeafe; background: #f8fbff; touch-action: pan-y; cursor: grab; }
-    #barCanvas { height: 300px; border: 1px solid #e5e7eb; background: #fbfdff; }
-    #energyGraph { height: 190px; }
-    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
-    .legend { display: flex; gap: 14px; font-size: 0.78rem; color: #334155; margin: 0 0 4px; flex-wrap: wrap; }
-    .legend span::before { content: ''; display: inline-block; width: 14px; height: 3px; margin-right: 5px; vertical-align: middle; background: var(--c); }
-    .legend span.dash::before { background: repeating-linear-gradient(90deg, var(--c) 0 4px, transparent 4px 7px); }
-    .graph-title { font-weight: 700; margin: 0 0 4px; font-size: 0.88rem; }
-    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    .words { margin-top: 8px; font-size: 0.86rem; font-weight: 600; color: #1e3a8a; background: #eef4ff; border-radius: 8px; padding: 6px 10px; }
+    .words:empty { display: none; }
+
+    .scene-wrap { margin-top: 8px; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 0 0 4px; }
+    .note { margin-top: 6px; font-size: 0.8rem; color: #475569; }
     .note ul { margin: 2px 0 0; padding-left: 18px; }
     .note li { margin: 2px 0; }
+    canvas { display: block; width: 100%; border-radius: 10px; background: white; }
+    #scene { height: 400px; border: 1px solid #dbeafe; touch-action: pan-y; }
+    #scene.t4 { height: 300px; }
+    .graph-title { font-weight: 700; margin: 8px 0 4px; font-size: 0.88rem; }
+    .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.76rem; font-weight: 400; color: #334155; margin-top: 3px; }
+    .legend > span { display: inline-flex; align-items: center; gap: 5px; }
+    .legend b { display: inline-block; width: 14px; height: 3px; border-radius: 2px; }
+    .legend b.dash { background: repeating-linear-gradient(90deg, #7c3aed 0 4px, transparent 4px 7px) !important; }
+    #graph { height: 210px; border: 1px solid #e5e7eb; touch-action: pan-y; }
+
+    /* the working, set like the notes: italic symbols, stacked fractions, a root sign with a bar */
+    .work { margin-top: 8px; }
+    .work:empty { display: none; }
+    .math { font-family: 'Times New Roman', Times, serif; font-size: 1.06rem; color: #1f2937; }
+    /* a block line, not flex: inside flex every <sub> would become its own item and lose its drop */
+    .math .eq { display: block; margin: 4px 0; line-height: 2.1; }
+    .math .eq.lit { background: #fef9c3; border-radius: 4px; padding: 0 4px; }
+    .math .frac { display: inline-flex; flex-direction: column; text-align: center; vertical-align: middle; line-height: 1.15; }
+    .math .frac > span:first-child { border-bottom: 1px solid currentColor; padding: 0 3px; }
+    .math .frac > span:last-child { padding: 0 3px; }
+    .math .root { display: inline-flex; align-items: flex-end; line-height: 1.25; vertical-align: middle; }
+    .math .root > i.rs { font-style: normal; font-size: 1.3em; line-height: 1; }
+    .math .root > span { border-top: 1px solid currentColor; padding: 1px 2px 0; }
+    .math b { font-family: Arial, Helvetica, sans-serif; }
+
+    /* ---- the step-by-step frame: header, numbered tabs, colour key, instruction strip ---- */
+    .app-head { background: #1e293b; color: #f8fafc; border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+    .head-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .head-row h1 { flex: 1 1 260px; }
+    .steps { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #cbd5e1; }
+    .step-bar { display: flex; gap: 3px; }
+    .step-bar i { display: block; width: 18px; height: 5px; border-radius: 3px; background: #475569; }
+    .step-bar i.on { background: #fbbf24; }
+    button.teacher-btn { flex: none; background: transparent; border: 1px solid #94a3b8; color: #f8fafc; font-size: 0.82rem; padding: 5px 10px; }
+    button.teacher-btn:hover { background: #334155; }
+    /* every tab always visible: equal columns, and a long name wraps onto a second line (never a sideways scroll) */
+    .tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; margin-top: 8px; }
+    button.tab { min-width: 0; background: #f1f5f9; color: #1e293b; font-size: 0.85rem; font-weight: 600; padding: 7px 8px; border-radius: 8px; line-height: 1.2; white-space: normal; text-align: center; }
+    button.tab:hover { background: #e2e8f0; }
+    button.tab.active, button.tab.active:hover { background: #2563eb; color: white; }
+    .tab .ts { display: none; }
+    .nw { white-space: nowrap; }
+    .ckey { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 7px; font-size: 0.76rem; color: #e2e8f0; }
+    .ckey > span { display: inline-flex; align-items: center; gap: 5px; }
+    .ckey b { display: inline-block; width: 14px; height: 4px; border-radius: 2px; }
+    .strip { background: #fef9c3; border-left: 4px solid #eab308; border-radius: 6px; padding: 7px 10px; font-size: 0.86rem; margin-bottom: 8px; }
+
+    /* Predict first (above the controls), key features */
+    .learn { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 8px; }
+    .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; }
+    .box-title { font-weight: 700; font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-q { font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-box { margin-bottom: 8px; }
+    .opts { display: grid; gap: 5px; }
+    #predictOpts, #gameOpts { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    .predict-box.done #predictOpts { display: none; }
+    .predict-box.done .predict-q { margin-bottom: 0; }
+    button.opt { flex: none; width: 100%; text-align: left; background: white; color: #1f2937; border: 1px solid #cbd5e1; font-size: 0.86rem; padding: 7px 10px; }
+    button.opt:hover { background: #f1f5f9; }
+    button.opt:disabled { background: white; color: #1f2937; cursor: default; }
+    button.opt.picked, button.opt.picked:hover { border-color: #2563eb; background: #eff6ff; box-shadow: inset 0 0 0 1px #2563eb; }
+    button.opt.right, button.opt.right:hover { border-color: #16a34a; background: #dcfce7; box-shadow: inset 0 0 0 1px #16a34a; }
+    button.opt.wrong, button.opt.wrong:hover { border-color: #dc2626; background: #fee2e2; box-shadow: inset 0 0 0 1px #dc2626; }
+    .row-btns { display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+    .row-btns button { flex: none; padding: 6px 12px; }
+    .feedback { font-size: 0.84rem; margin-top: 7px; }
+    .feedback:empty { display: none; }
+    .feedback .verdict { font-weight: 700; }
+    .feedback .verdict.ok { color: #15803d; }
+    .feedback .verdict.no { color: #b91c1c; }
+    .feats { display: flex; flex-wrap: wrap; gap: 6px; }
+    button.feat { flex: none; background: white; color: #1e293b; border: 1px solid #cbd5e1; font-size: 0.84rem; padding: 6px 11px; border-radius: 999px; }
+    button.feat:hover { background: #f1f5f9; }
+    button.feat.on, button.feat.on:hover { background: #1e293b; color: white; border-color: #1e293b; }
+    .feat-note { font-size: 0.82rem; color: #334155; margin-top: 6px; }
+    .feat-note:empty { display: none; }
+
+    /* tab 4: one card at a time, to sort */
+    .game { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; }
+    .game-top { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 0.8rem; font-weight: 700; color: #9a3412; }
+    .game-src { font-size: 0.76rem; color: #7c2d12; margin-top: 4px; }
+    .game-q { font-size: 0.95rem; font-weight: 600; margin: 6px 0 6px; }
+
+    /* Challenge */
+    .quiz { max-width: 760px; margin: 0 auto; }
+    .quiz-top { display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 700; margin-bottom: 4px; }
+    .quiz-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+    .quiz-bar i { display: block; height: 100%; background: #2563eb; width: 0; }
+    .quiz-q { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+    .quiz-src { font-size: 0.76rem; color: #475569; margin-bottom: 8px; }
+    .qpart { margin-top: 12px; }
+    .qpart + .qpart { border-top: 1px solid #e2e8f0; padding-top: 10px; }
+    .qpart-q { font-size: 0.92rem; font-weight: 600; margin-bottom: 6px; }
+    .quiz-sum ul { padding-left: 18px; font-size: 0.86rem; }
+    .quiz-sum li { margin: 4px 0; }
+
+    /* Teacher mode */
+    .teacher { position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 92vw); background: white; box-shadow: -4px 0 18px rgba(0,0,0,0.18); padding: 12px; overflow-y: auto; z-index: 20; }
+    .teacher h2 { font-size: 1rem; margin: 0 0 8px; }
+    .teacher .tbtns { display: grid; gap: 6px; }
+    .teacher .tbtns button { background: white; color: #1e293b; border: 1px solid #cbd5e1; flex: none; }
+    .teacher .tbtns button:hover { background: #f1f5f9; }
+    .teacher .tbtns button.on { background: #1e293b; color: white; }
+    .teacher h3 { font-size: 0.9rem; margin: 14px 0 4px; }
+    .teacher ul { padding-left: 18px; margin: 0; font-size: 0.84rem; }
+    .teacher li { margin: 4px 0; }
+    body.no-explain .strip, body.no-explain .words, body.no-explain .feedback .why, body.no-explain .feat-note { display: none; }
+    body.no-answers .readout-card .value, body.no-answers .work { filter: blur(6px); }
+    body.free-mode .predict-box { display: none; }
+
     @media (max-width: 900px) {
-      .controls { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
-      .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .readout, .readout.n6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 700px) {
+      h1 { font-size: 1rem; }
+      /* the energy bars sit under the picture on a phone */
+      #scene { height: 560px; }
+      #scene.t4 { height: 300px; }
+      #graph { height: 200px; }
+      .readout, .readout.n6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .tab .tl { display: none; }
+      .tab .ts { display: inline; }
+      /* phones: short names in rows that wrap, so all five tabs show without scrolling */
+      .tabs { display: flex; flex-wrap: wrap; }
+      button.tab { flex: 1 1 auto; white-space: nowrap; }
+    }
+    @media (max-width: 420px) {
+      .buttons button { padding: 6px 4px; }
+      .inputs .control-group { flex: 1 1 40%; }
     }
     /* Touch screens (phones, tablets; Samsung Internet reports hover: hover on a phone, so only pointer is tested):
        16 px form fields stop an iPhone zooming the page in when one is
@@ -63,6 +208,7 @@
       input:not([type=range]):not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
       button { min-height: 36px; }
       input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
+      .controls input, .controls select, .controls button { height: 36px; }
     }
   </style>
   <!-- pim-nav-style:start (generated by scripts/pim-nav.ts) -->
@@ -91,319 +237,1375 @@
     <a class="pim-nav-btn pim-nav-next" href="coulombs-law-field.html" title="Next: Coulomb's Law and Electric Field Lines (Chapter 6)" aria-label="Next: Coulomb's Law and Electric Field Lines (Chapter 6)"><span class="pim-nav-text"><span class="pim-nav-kicker">Next<span class="pim-nav-ch"> &middot; Chapter 6</span></span><span class="pim-nav-name">Coulomb's Law and Electric Field Lines</span></span><span class="pim-nav-arrow" aria-hidden="true">&rsaquo;</span></a>
   </nav>
   <!-- pim-nav:end -->
-    <h1>Conservation of Energy: A Swinging Pendulum</h1>
 
-    <div class="panel">
-      <div class="controls">
-        <div class="control-group"><label for="mass">Mass <i>m</i> (kg)</label><input id="mass" type="number" value="1" min="0.1" step="0.1" /></div>
-        <div class="control-group"><label for="length">Length <i>L</i> (m)</label><input id="length" type="number" value="1.2" min="0.3" step="0.1" /></div>
-        <div class="control-group"><label for="amplitude">Release angle &theta;<sub>0</sub> (°)</label><input id="amplitude" type="number" value="35" min="-80" max="80" step="1" /></div>
-        <div class="control-group"><label class="checkbox-row" for="friction"><input id="friction" type="checkbox" /> Air resistance</label></div>
-        <div class="control-group">
-          <div class="buttons">
-            <button id="startBtn">Start</button>
-            <button id="pauseBtn" class="secondary">Pause</button>
-            <button id="resetBtn" class="danger">Reset</button>
+    <header class="app-head">
+      <div class="head-row">
+        <h1>Conservation of Energy: A Swinging Pendulum</h1>
+        <div class="steps"><span id="stepLabel">Step 1 of 5</span><span class="step-bar" id="stepBar"><i></i><i></i><i></i><i></i><i></i></span></div>
+        <button class="teacher-btn" id="teacherBtn" type="button" hidden>Teacher mode</button>
+      </div>
+      <div class="tabs" role="tablist" id="tabs">
+        <button class="tab" role="tab" data-tab="1" type="button"><span class="tl">1. KE and GPE</span><span class="ts">1. KE, GPE</span></button>
+        <button class="tab" role="tab" data-tab="2" type="button"><span class="tl">2. Conservation of energy</span><span class="ts">2. Conservation</span></button>
+        <button class="tab" role="tab" data-tab="3" type="button"><span class="tl">3. Friction and air resistance (heat)</span><span class="ts">3. Heat</span></button>
+        <button class="tab" role="tab" data-tab="4" type="button"><span class="tl">4. Energy conversion</span><span class="ts">4. Conversion</span></button>
+        <button class="tab" role="tab" data-tab="5" type="button"><span class="tl">5. Challenge</span><span class="ts">5. Challenge</span></button>
+      </div>
+      <div class="ckey" id="ckey"></div>
+    </header>
+
+    <div class="strip" id="strip"></div>
+
+    <!-- tabs 1 to 4: Predict first comes first, above the controls and the picture -->
+    <div class="box predict-box" id="predictBox">
+      <div class="box-title">Predict first</div>
+      <div class="predict-q" id="predictQ"></div>
+      <div class="opts" id="predictOpts"></div>
+      <div class="feedback" id="predictFb"></div>
+      <div class="row-btns" id="predictBtns"><button id="predictCheck" type="button">Check my answer</button></div>
+    </div>
+
+    <!-- Tabs 1 to 4 share one drawing -->
+    <section class="tab-page" id="pageSim">
+      <div class="panel">
+        <!-- tab 4: one card at a time -->
+        <div class="game" id="gameBox" hidden>
+          <div class="game-top"><span id="gameCard"></span><span id="gameScore"></span></div>
+          <div class="game-src" id="gameSrc"></div>
+          <div class="game-q" id="gameQ"></div>
+          <div class="opts" id="gameOpts"></div>
+          <div class="feedback" id="gameFb"></div>
+          <div class="row-btns">
+            <button id="gCheck" type="button">Check</button>
+            <button id="gPrev" class="secondary" type="button">&lsaquo; Previous card</button>
+            <button id="gNext" class="secondary" type="button">Next card &rsaquo;</button>
+            <button id="gReset" class="danger" type="button">Start again</button>
           </div>
+        </div>
+
+        <div id="simBlock">
+          <div class="controls">
+            <div class="control-group scen-group">
+              <label for="preset">Scenarios</label>
+              <select id="preset"></select>
+            </div>
+            <div class="control-group button-group" id="simGroup">
+              <label>Simulation controls</label>
+              <div class="buttons">
+                <button id="startBtn" type="button">Start</button>
+                <button id="pauseBtn" class="secondary" type="button">Pause</button>
+                <button id="resetBtn" class="danger" type="button">Reset</button>
+              </div>
+            </div>
+          </div>
+          <div class="moments" id="moments">
+            <button id="prevMoment" class="secondary" type="button">&lsaquo; Previous key moment</button>
+            <button id="nextMoment" class="secondary" type="button">Next key moment &rsaquo;</button>
+            <span class="speed" id="speedNote"></span>
+          </div>
+          <div class="question" id="question"></div>
+          <div class="group-title">Experimental controls</div>
+          <div class="inputs" id="inputs"></div>
+        </div>
+
+        <!-- the readouts go under the drawing: nothing above the canvas may change height while a finger drags -->
+        <div class="scene-wrap">
+          <div class="hint" id="sceneHint"></div>
+          <canvas id="scene"></canvas>
+          <div class="readout" id="readout"></div>
+          <div class="words" id="words"></div>
+          <div id="graphWrap">
+            <div class="graph-title" id="graphTitle"></div>
+            <canvas id="graph"></canvas>
+          </div>
+          <div class="work" id="work"></div>
+          <div class="note" id="notes"></div>
         </div>
       </div>
 
-      <div class="readout">
-        <div class="readout-card"><div class="title">Kinetic energy, KE = &frac12;<i>mv</i><sup>2</sup></div><div class="value" id="keValue">0.00 J</div></div>
-        <div class="readout-card"><div class="title">Gravitational PE = <i>mgh</i></div><div class="value" id="gpeValue">0.00 J</div></div>
-        <div class="readout-card"><div class="title">Heat (from air resistance)</div><div class="value" id="heatValue">0.00 J</div></div>
-        <div class="readout-card"><div class="title">Total energy = KE + GPE + heat</div><div class="value" id="totalValue">0.00 J</div></div>
-        <div class="readout-card"><div class="title">Speed of bob</div><div class="value" id="speedValue">0.00 m/s</div></div>
+      <div class="learn">
+        <div class="box" id="featBox">
+          <div class="box-title">Key features (tap one)</div>
+          <div class="feats" id="feats"></div>
+          <div class="feat-note" id="featNote"></div>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <div class="layout">
+    <!-- Tab 5: Challenge -->
+    <section class="tab-page" id="page5" hidden>
       <div class="panel">
-        <div class="hint">Grab the bob, pull it to one side and let go.</div>
-        <canvas id="sceneCanvas"></canvas>
-        <div class="note">With air resistance off, the total mechanical energy (GPE + KE) stays constant &mdash; energy just converts back and forth between the two forms. Switch on air resistance to see the total mechanical energy slowly fall as it is lost to heat, and the swing's amplitude shrink. Energy is not destroyed: the total energy, including the heat, stays the same.</div>
+        <div class="quiz" id="quiz"></div>
       </div>
-      <div class="panel">
-        <canvas id="barCanvas"></canvas>
-        <div class="note">One bar for each form of energy. The <b>Total</b> bar is the other three stacked together, so its height never changes.</div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="graph-title">Energy vs. time</div>
-      <div class="legend"><span style="--c:#16a34a">Kinetic energy</span><span style="--c:#2563eb">Gravitational PE</span><span style="--c:#7c3aed" class="dash">KE + GPE</span><span style="--c:#db2777" id="fitLegend" hidden>Exponential decay of KE + GPE</span><span style="--c:#ea580c">Heat</span><span style="--c:#111827">Total</span></div>
-      <canvas id="energyGraph"></canvas>
-      <div class="note"><ul>
-        <li>With air resistance on, the <b>pink curve</b> shows the smooth exponential decay of KE + GPE. It passes through the dots, which mark KE + GPE at the end of each swing: each dot is the same fraction smaller than the one before.</li>
-        <li>The dashed KE + GPE line itself falls in small steps around that curve: energy is lost fastest at the bottom of each swing, where the bob moves fastest, and not at all at the ends, where it stops for an instant.</li>
-      </ul></div>
-    </div>
+    </section>
   </div>
 
+  <aside class="teacher" id="teacher" hidden aria-label="Teacher mode">
+    <h2>Teacher mode</h2>
+    <div class="tbtns">
+      <button id="tExplain" type="button">Hide explanations</button>
+      <button id="tFree" type="button">Switch to free exploration</button>
+      <button id="tAnswers" type="button">Hide answer labels</button>
+      <button id="tFull" type="button">Full screen</button>
+      <button id="tReset" type="button">Reset whole applet</button>
+      <button id="tClose" type="button">Close</button>
+    </div>
+    <h3>Suggested prompts</h3>
+    <ul id="tPrompts"></ul>
+  </aside>
+
   <script>
-    const G = 10;
-    const DT = 0.002;          // RK4 step (s): the total energy stays constant to better than 1e-6 J
-    const SIM_DURATION = 20;
-    const DAMPING = 0.2;       // air resistance, as a fraction of the bob's speed per second (1/s)
-    const COL = { ke: '#16a34a', gpe: '#2563eb', mech: '#7c3aed', heat: '#ea580c', total: '#111827', fit: '#db2777' };
+    const $ = id => document.getElementById(id);
+    const canvas = $('scene'), graphCv = $('graph'), presetEl = $('preset');
+    let currentTab = 1, freeMode = false;
 
-    const el = id => document.getElementById(id);
-    const massEl = el('mass'), lengthEl = el('length'), amplitudeEl = el('amplitude'), frictionEl = el('friction');
-    const sceneCanvas = el('sceneCanvas'), barCanvas = el('barCanvas'), energyGraph = el('energyGraph');
+    /* ---------------- numbers and symbols ---------------- */
+    const G = 10;          // g = 10 m s^-2, as the notes and Tutorial 5 take it
+    const TRACK_R = 1.2;   // the curved track (Examples 7 and 8) is drawn as part of a circle of radius 1.2 m
+    const LIP = 100 * Math.PI / 180; // E, the lip of the track, 100° round from the bottom (1.41 m up)
+    const DT = 0.0005;     // RK4 step for the track and the pendulum (s)
+    const clean = v => (Math.abs(v) < 1e-9 ? 0 : v);
+    // 3 significant figures, as the lecturer's copy gives them (4.47 m/s); exact whole numbers stay whole (108 J);
+    // an exact value keeps its own figures (0.4 m); a 1e-12 nudge so a binary half rounds up; a true minus sign
+    const f3 = v => {
+      const x = clean(v);
+      if (Math.abs(x - Math.round(x)) < 1e-9) return String(Math.round(x)).replace('-', '−');
+      const t = (x * (1 + 1e-12)).toPrecision(3);
+      if (Math.abs(+t - x) < 1e-9 || Math.abs(x) >= 100) return String(+t).replace('-', '−');
+      return t.replace('-', '−');
+    };
+    const plain = v => String(+(+v).toFixed(3)).replace('-', '−'); // a typed value as typed: 10, 0.5
+    const tx = t => (Math.round(t * 100) / 100).toFixed(2);      // a time on the clock: 0.62 s
+    const J = v => Math.abs(v) >= 100000 ? `${f3(v / 1000)} kJ` : `${f3(v)} J`;
+    const ms = v => `${f3(v)} m/s`;
+    const m_ = v => `${f3(v)} m`;
+    const rt = s => `<span class="root"><i class="rs">&radic;</i><span>${s}</span></span>`;
+    const COL = { KE: '#16a34a', GPE: '#2563eb', heat: '#ea580c', tot: '#111827', mech: '#7c3aed', fit: '#db2777', v: '#0d9488', h: '#475569' };
 
-    const sim = { running: false, lastFrameTime: null, accumulator: 0, t: 0, theta: 0, omega: 0, heat: 0, e0: 0, points: [], peaks: [] };
+    /* ---------------- scenarios (every number from the notes, the lecturer's copy or Tutorial 5) ---------------- */
+    // fall: a mass m starts at height h (m) moving upwards at u (m/s), and falls to the ground.
+    // track: a sphere on a curved track, released from rest at A, h = hA; loss = energy lost to friction from A to B.
+    // pend: a pendulum bob of mass m on a string L, released at a0 degrees; b = air resistance (1/s).
+    // bounce: a ball dropped from h (m) rebounds to h2 (m).
+    const PRESETS = {
+      b1: { tab: 1, kind: 'fall', name: '0.50 kg dropped from 10 m', m: 0.5, h: 10, u: 0, marks: [4], txt: { m: '0.50' },
+        q: 'Tutorial 5, B1: A mass of 0.50 kg falls from a height of 10 m above the ground. Ignoring air resistance, calculate the potential energy, the kinetic energy and the speed of the mass as it falls past the following heights, measured from the ground. (a) 10 m (b) 4 m (c) 0 m (just before it hits the ground)' },
+      ex6: { tab: 1, kind: 'fall', name: '1.0 kg thrown up from a 10 m tower', m: 1, h: 10, u: 4, points: true, txt: { m: '1.0', u: '4.0' },
+        q: 'Example 6 (notes p. 5-18): A 1.0 kg mass is thrown up from A with velocity 4.0 m/s. It reaches point B, then falls down and hits the ground at C. Calculate the kinetic and gravitational potential energy of the mass at points A, B and C. Ignore air resistance.' },
+      ex7: { tab: 2, kind: 'track', name: 'Smooth track, released from A', m: 1, hA: 1, loss: 0, letters: true, txt: { m: '1.0', hA: '1.0' },
+        q: 'Example 7 (notes p. 5-19): A stationary sphere on a smooth track is released from A as shown. (a) State where (B, C, D, E) the sphere will come to rest momentarily. (b) Calculate the velocity of the sphere at B. (c) Calculate the velocity of the sphere at C. (The notes give no mass: this page uses 1.0 kg. The speeds do not depend on it.)' },
+      pend: { tab: 2, kind: 'pend', name: 'Pendulum pulled to 35°', m: 1, L: 1.2, a0: 35, b: 0, txt: { m: '1.0' },
+        q: 'A pendulum bob is released from rest and swings with no air resistance. (Values chosen for this page: 1.0 kg on a 1.2 m string, pulled 35° to one side.)' },
+      ex8: { tab: 3, kind: 'track', name: 'Rough track, 50 J lost to friction', m: 10, hA: 1, loss: 50, txt: { hA: '1' },
+        q: 'Example 8 (notes p. 5-20): A sphere is released from rest at A and moves down a rough track as shown. Calculate the kinetic energy of the sphere at B if the gravitational potential energy at A is 100 J and energy loss due to friction is 50 J. (GPE at A = 100 J at a height of 1 m, so the page takes m = 100 ÷ (10 × 1) = 10 kg. It spreads the 50 J of friction evenly along the track from A to B.)' },
+      b2: { tab: 3, kind: 'bounce', name: 'Tennis ball: 3.6 m, then 2.4 m', m: 0.06, h: 3.6, h2: 2.4, txt: { m: '0.060' },
+        q: 'Tutorial 5, B2: A tennis ball is dropped from a height of 3.6 m. It rebounds to a height of 2.4 m. (a) What is the speed of the ball just before hitting the ground? (b) What is the speed of the ball just after leaving the ground? (c) Account for the failure of the tennis ball to reach the original height of 3.6 m. (The mass is not given: this page uses 0.060 kg. The speeds do not depend on it.)' },
+      air: { tab: 3, kind: 'pend', name: 'Pendulum with air resistance', m: 1, L: 1.2, a0: 35, b: 0.2, dur: 20, txt: { m: '1.0' },
+        q: 'The same pendulum (1.0 kg on a 1.2 m string, released at 35°), now with air resistance. (Value chosen for this page: the air resistance takes away 0.2 of the bob’s speed every second.)' }
+    };
+    const OWN = 'Your own values. Choose a scenario from the menu to go back to an example from the notes.';
 
-    const deg2rad = d => (d * Math.PI) / 180;
-    function params() {
-      const m = Math.max(0.1, parseFloat(massEl.value) || 0.1);
-      const L = Math.max(0.2, parseFloat(lengthEl.value) || 0.2);
-      const theta0 = deg2rad(Math.max(-80, Math.min(80, parseFloat(amplitudeEl.value) || 0)));
-      const b = frictionEl.checked ? DAMPING : 0;
-      return { m, L, theta0, b };
+    /* ---------------- the state ---------------- */
+    let S = { scen: 'b1', custom: false };
+    let P = {};            // the scenario in use (a copy, changed by the inputs and the drags)
+    let traj = null;       // the track or pendulum run, worked out once per change
+    const sim = { t: 0, running: false, last: null };
+    let hl = {}, feat = {};
+    const gvTxt = k => (!S.custom && P.txt && P.txt[k] !== undefined ? P.txt[k] : plain(P[k])); // a value as the notes write it
+    const isSwing = () => P.kind === 'track' || P.kind === 'pend';
+    const heatName = () => (P.kind === 'bounce' ? 'Sound and heat' : P.kind === 'pend' ? 'Heat (air resistance)' : 'Heat (friction)');
+
+    /* ---------------- the fall (tab 1): closed form, up is positive ---------------- */
+    function fallEnd() { return (P.u + Math.sqrt(P.u * P.u + 2 * G * P.h)) / G; }
+    function fallAt(t) {
+      const y = Math.max(0, P.h + P.u * t - 0.5 * G * t * t), vy = P.u - G * t;
+      return { y, vy };
     }
 
-    function energies() {
-      const { m, L } = params();
-      const v = Math.abs(sim.omega) * L;
-      const h = L * (1 - Math.cos(sim.theta));
-      const ke = 0.5 * m * v * v, gpe = m * G * h, heat = sim.heat;
-      return { v, h, ke, gpe, heat, mech: ke + gpe, total: ke + gpe + heat };
+    /* ---------------- the bounce (Tutorial B2): closed form ---------------- */
+    // "just after leaving the ground" is a moment of its own, AFTER seconds after "just before": the ball sits on the
+    // ground for that instant with its new upward speed, so both readings are exact
+    const AFTER = 2e-5;
+    function bounceTimes() { const t1 = Math.sqrt(2 * P.h / G), vUp = Math.sqrt(2 * G * P.h2); return { t1, vUp, end: t1 + AFTER + vUp / G }; }
+    function bounceAt(t) {
+      const { t1, vUp } = bounceTimes();
+      if (t <= t1) return { y: Math.max(0, P.h - 0.5 * G * t * t), vy: -G * t, lost: 0 };
+      const s = Math.max(0, t - t1 - AFTER);
+      return { y: Math.max(0, vUp * s - 0.5 * G * s * s), vy: vUp - G * s, lost: P.m * G * (P.h - P.h2) };
     }
 
-    function resetSimulation() {
-      const { theta0 } = params();
-      Object.assign(sim, { running: false, lastFrameTime: null, accumulator: 0, t: 0, theta: theta0, omega: 0, heat: 0 });
-      const e = energies();
-      sim.e0 = e.total;
-      sim.points = [{ t: 0, ...e }];
-      sim.peaks = [{ t: 0, mech: e.mech }];
-      redrawAll();
+    /* ---------------- the track and the pendulum: one equation, RK4 ---------------- */
+    // The sphere on a curved track (a circle of radius R) and the bob on a string of length L move the same way:
+    // θ'' = −(g/R) sin θ − b θ' − (friction f along the track) / (mR). The heat is integrated on its own
+    // (dHeat/dt = m b R² θ'² + f R |θ'|), so the total staying constant is a real check, not something forced.
+    function swingParams() {
+      const R = P.kind === 'pend' ? P.L : TRACK_R, side = P.side || -1;
+      const th0 = side * (P.kind === 'pend' ? P.a0 * Math.PI / 180 : Math.acos(1 - P.hA / TRACK_R));
+      const f = P.loss ? P.loss / (R * Math.abs(th0)) : 0;
+      return { R, m: P.m, b: P.b || 0, f, th0 };
+    }
+    function deriv(s, q) {
+      const [th, w] = s;
+      // at rest the friction acts against the way the sphere is about to move
+      const dir = w > 0 ? 1 : w < 0 ? -1 : -Math.sign(Math.sin(th));
+      return [w, -(G / q.R) * Math.sin(th) - q.b * w - dir * q.f / (q.m * q.R), q.m * q.b * q.R * q.R * w * w + q.f * q.R * Math.abs(w)];
+    }
+    function rk4(s, h, q) {
+      const k1 = deriv(s, q), k2 = deriv(s.map((v, j) => v + h / 2 * k1[j]), q);
+      const k3 = deriv(s.map((v, j) => v + h / 2 * k2[j]), q), k4 = deriv(s.map((v, j) => v + h * k3[j]), q);
+      return s.map((v, j) => v + h / 6 * (k1[j] + 2 * k2[j] + 2 * k3[j] + k4[j]));
+    }
+    function swingAt(t) {
+      const T = traj, k = Math.max(0, Math.min(T.samples.length - 1, Math.floor(t / 0.01 + 1e-9)));
+      let s = T.samples[k]; const rem = t - k * 0.01, n = Math.ceil(rem / DT - 1e-9);
+      for (let i = 0; i < n; i++) s = rk4(s, rem / n, T.q);
+      return s;
+    }
+    function buildSwing() {
+      const q = swingParams(), samples = [[q.th0, 0, 0]], brackets = [];
+      const thC = Math.acos(1 - 0.4 / TRACK_R), wantC = P.kind === 'track' && P.letters && P.hA > 0.4 + 1e-9;
+      const cons = !q.b && !q.f;
+      traj = { q, samples, events: [], end: 0, thC };
+      let s = samples[0], turns = 0, i = 0;
+      const cap = P.dur || 40;
+      while (i * DT < cap - 1e-12) {
+        const s1 = rk4(s, DT, q), ta = i * DT, tb = (i + 1) * DT;
+        if ((i + 1) % 20 === 0) samples.push(s1);
+        if (s[0] * s1[0] < 0) brackets.push(['B', ta, tb]);
+        if (wantC && (s[0] - thC) * (s1[0] - thC) < 0) brackets.push(['C', ta, tb]);
+        if (i > 0 && s[1] * s1[1] < 0) { brackets.push(['turn', ta, tb]); turns++; }
+        s = s1; i++;
+        if ((cons && turns >= 2) || (q.f && turns >= 1)) break;
+      }
+      const fn = { B: t => swingAt(t)[0], C: t => swingAt(t)[0] - thC, turn: t => swingAt(t)[1] };
+      for (const [kind, a0, b0] of brackets) {
+        let a = a0, b = b0; const fa = fn[kind](a);
+        for (let k = 0; k < 60; k++) { const m = (a + b) / 2; if (fn[kind](m) * fa > 0) a = m; else b = m; }
+        traj.events.push({ t: (a + b) / 2, kind });
+      }
+      const turnsT = traj.events.filter(e => e.kind === 'turn');
+      traj.end = P.dur ? P.dur : turnsT.length ? turnsT[turnsT.length - 1].t : i * DT;
+      traj.events = traj.events.filter(e => e.t <= traj.end + 1e-9);
+      // the end of every swing, for the dots and the decay curve on the energy graph
+      traj.peaks = [0, ...turnsT.map(e => e.t)].map(t => ({ t, mech: energyOf(swingAt(t), q).mech }));
+    }
+    function energyOf(s, q) {
+      const v = Math.abs(s[1]) * q.R, h = q.R * (1 - Math.cos(s[0]));
+      const KE = 0.5 * q.m * v * v, GPE = q.m * G * h;
+      return { v, h, KE, GPE, heat: s[2], mech: KE + GPE, total: KE + GPE + s[2] };
     }
 
-    // State: angle, angular velocity, heat produced. Air resistance is a force m*b*v against the motion,
-    // so it turns energy into heat at the rate (force x speed) = m b v^2. The heat is integrated on its own,
-    // so the total staying constant is a real check, not something forced to be true.
-    function deriv(theta, omega, heat, p) {
-      return [omega, -(G / p.L) * Math.sin(theta) - p.b * omega, p.m * p.b * p.L * p.L * omega * omega];
+    /* ---------------- one state for whatever is on screen ---------------- */
+    function stateAt(t) {
+      if (P.kind === 'fall') { const f = fallAt(t), v = Math.abs(f.vy), KE = 0.5 * P.m * v * v, GPE = P.m * G * f.y;
+        return { y: f.y, h: f.y, v, vy: f.vy, KE, GPE, heat: 0, mech: KE + GPE, total: KE + GPE }; }
+      if (P.kind === 'bounce') { const f = bounceAt(t), v = Math.abs(f.vy), KE = 0.5 * P.m * v * v, GPE = P.m * G * f.y;
+        return { y: f.y, h: f.y, v, vy: f.vy, KE, GPE, heat: f.lost, mech: KE + GPE, total: KE + GPE + f.lost }; }
+      const s = swingAt(t), e = energyOf(s, traj.q);
+      return Object.assign(e, { th: s[0], w: s[1] });
     }
-    function physicsStep() {
-      const p = params(), s = [sim.theta, sim.omega, sim.heat];
-      const k1 = deriv(...s, p);
-      const k2 = deriv(...s.map((v, j) => v + DT / 2 * k1[j]), p);
-      const k3 = deriv(...s.map((v, j) => v + DT / 2 * k2[j]), p);
-      const k4 = deriv(...s.map((v, j) => v + DT * k3[j]), p);
-      const prevOmega = sim.omega;
-      [sim.theta, sim.omega, sim.heat] = s.map((v, j) => v + DT / 6 * (k1[j] + 2 * k2[j] + 2 * k3[j] + k4[j]));
-      sim.t += DT;
-      const e = energies();
-      if (prevOmega * sim.omega < 0) sim.peaks.push({ t: sim.t, mech: e.mech }); // end of a swing: the bob stops for an instant
-      if (Math.round(sim.t / DT) % 10 === 0) sim.points.push({ t: sim.t, ...e });
-      if (sim.t >= SIM_DURATION - 1e-9) sim.running = false;
+    const now = () => stateAt(sim.t);
+    function runEnd() {
+      if (P.kind === 'fall') return fallEnd();
+      if (P.kind === 'bounce') return bounceTimes().end;
+      return traj ? traj.end : 0;
     }
+    // falls and bounces are over in under 2 s: shown at half speed; the track and the pendulum in real time
+    const playRate = () => (isSwing() ? 1 : 0.5);
 
-    function animationLoop(timestamp) {
+    /* ---------------- key moments, each with its name ---------------- */
+    function keyList() {
+      const end = runEnd(), L = [];
+      if (P.kind === 'fall') {
+        const ex6 = P.points && !S.custom;
+        L.push({ t: 0, name: ex6 ? 'A' : `the start (${m_(P.h)} up)` });
+        if (P.u > 0) L.push({ t: P.u / G, name: ex6 ? 'B, the top' : 'the top' });
+        (P.marks || []).forEach(hm => { if (hm < P.h) L.push({ t: (P.u + Math.sqrt(P.u * P.u + 2 * G * (P.h - hm))) / G, name: `${m_(hm)} above the ground` }); });
+        L.push({ t: end, name: ex6 ? 'C, just before hitting the ground' : 'just before it hits the ground' });
+      } else if (P.kind === 'bounce') {
+        const { t1 } = bounceTimes();
+        L.push({ t: 0, name: 'the start' }, { t: t1, name: 'just before hitting the ground' }, { t: t1 + AFTER, name: 'just after leaving the ground' }, { t: end, name: 'the top of the rebound' });
+      } else {
+        const tr = P.kind === 'track', ex8 = tr && P.loss > 0;
+        L.push({ t: 0, name: tr ? 'A' : 'the release point' });
+        let turn = 0;
+        traj.events.forEach(e => {
+          if (e.kind === 'B') L.push({ t: e.t, name: tr ? 'B, the lowest point' : 'the lowest point' });
+          else if (e.kind === 'C') L.push({ t: e.t, name: 'C' });
+          else { turn++;
+            L.push({ t: e.t, name: ex8 ? 'its highest point on the far side' : tr ? (turn === 1 ? 'D' : 'A again') : P.b ? `the end of swing ${turn}` : turn === 1 ? 'the other side' : 'the release point again' }); }
+        });
+        if (P.dur && !L.some(k => Math.abs(k.t - end) < 1e-6)) L.push({ t: end, name: `${tx(end)} s, the end of the run` });
+      }
+      return L.sort((a, b) => a.t - b.t);
+    }
+    const keyMoments = () => keyList().map(k => k.t);
+    function atKey() { if (sim.running) return null; return keyList().find(k => Math.abs(k.t - sim.t) < 1e-7) || null; }
+
+    function loadScenario(id) {
+      S.scen = id; S.custom = false;
+      P = JSON.parse(JSON.stringify(PRESETS[id]));
+      $('question').innerHTML = P.q;
+      rebuild();
+    }
+    function rebuild() { traj = null; if (isSwing()) buildSwing(); sim.t = 0; sim.running = false; sim.last = null; geo = null; }
+
+    /* ---------------- the clock ---------------- */
+    function frame(ts) {
       if (!sim.running) return;
-      if (sim.lastFrameTime == null) sim.lastFrameTime = timestamp;
-      const frameSeconds = Math.max(0, Math.min((timestamp - sim.lastFrameTime) / 1000, 0.05));
-      sim.lastFrameTime = timestamp;
-      sim.accumulator += frameSeconds;
-      while (sim.accumulator >= DT && sim.running) { physicsStep(); sim.accumulator -= DT; }
-      redrawAll();
-      if (sim.running) requestAnimationFrame(animationLoop);
+      if (sim.last === null) sim.last = ts;
+      // a first rAF timestamp can be earlier than the one stored: never step backwards
+      const dt = Math.max(0, Math.min(0.05, (ts - sim.last) / 1000)); sim.last = ts;
+      const end = runEnd();
+      sim.t = Math.min(end, sim.t + dt * playRate());
+      if (sim.t >= end - 1e-9) { sim.t = end; sim.running = false; }
+      update();
+      if (sim.running) requestAnimationFrame(frame);
     }
-
-    function setup(c) {
-      const r = c.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
-      const cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
-      if (c.width !== cw || c.height !== ch) { c.width = cw; c.height = ch; }
-      const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      return { ctx, w: r.width, h: r.height };
+    function start() {
+      const end = runEnd();
+      if (end <= 0) { update(); return; }
+      if (sim.t >= end - 1e-9) sim.t = 0;
+      sim.running = true; sim.last = null; clearFeatNoteOnly(); update(); requestAnimationFrame(frame);
     }
+    function setTime(t) { sim.running = false; sim.last = null; sim.t = Math.max(0, Math.min(runEnd(), t)); update(); }
+    function resetRun() { sim.running = false; sim.last = null; sim.t = 0; update(); }
+    function runToEnd() { setTime(runEnd()); }
+    $('startBtn').addEventListener('click', start);
+    $('pauseBtn').addEventListener('click', () => {
+      if (sim.running) { sim.running = false; sim.last = null; update(); }
+      else if (sim.t > 0 && sim.t < runEnd()) start();
+    });
+    $('resetBtn').addEventListener('click', resetRun);
+    $('nextMoment').addEventListener('click', () => { const n = keyMoments().find(m => m > sim.t + 1e-6); if (n !== undefined) setTime(n); });
+    $('prevMoment').addEventListener('click', () => { const p = keyMoments().filter(m => m < sim.t - 1e-6).pop(); if (p !== undefined) setTime(p); });
 
-    let dragging = false, sceneGeo = null;
-    function drawScene() {
-      const { ctx, w, h } = setup(sceneCanvas);
-      ctx.clearRect(0, 0, w, h);
-      const { L } = params();
-      const pivotX = w / 2, pivotY = h * 0.1;
-      const pxPerM = Math.min(h * 0.72, w * 0.4) / L;
-      const bobX = pivotX + L * pxPerM * Math.sin(sim.theta), bobY = pivotY + L * pxPerM * Math.cos(sim.theta);
-      const r = 16;
-
-      ctx.fillStyle = '#64748b'; ctx.fillRect(pivotX - 40, pivotY - 6, 80, 6);
-      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.setLineDash([4, 4]);
-      ctx.beginPath(); ctx.moveTo(pivotX, pivotY); ctx.lineTo(pivotX, pivotY + L * pxPerM); ctx.stroke(); ctx.setLineDash([]);
-      ctx.strokeStyle = '#334155'; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(pivotX, pivotY); ctx.lineTo(bobX, bobY); ctx.stroke();
-      ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.arc(pivotX, pivotY, 5, 0, Math.PI * 2); ctx.fill();
-
-      // height h of the bob above its lowest point
-      const lowY = pivotY + L * pxPerM;
-      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5; ctx.setLineDash([3, 3]);
-      ctx.beginPath(); ctx.moveTo(pivotX - L * pxPerM * 0.9, lowY + r); ctx.lineTo(pivotX + L * pxPerM * 0.9, lowY + r); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle = '#64748b'; ctx.font = '11px Arial'; ctx.textAlign = 'left'; ctx.fillText('lowest point (h = 0)', pivotX + L * pxPerM * 0.9 - 110, lowY + r + 14);
-      const hPx = lowY - bobY;
-      if (hPx > 6) {
-        const side = sim.theta >= 0 ? 1 : -1, hx = bobX + side * (r + 14);
-        ctx.strokeStyle = COL.gpe; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(hx, bobY); ctx.lineTo(hx, lowY); ctx.moveTo(hx - 5, bobY); ctx.lineTo(hx + 5, bobY); ctx.moveTo(hx - 5, lowY); ctx.lineTo(hx + 5, lowY); ctx.stroke();
-        ctx.fillStyle = '#1d4ed8'; ctx.font = 'bold 13px Arial'; ctx.textAlign = side > 0 ? 'left' : 'right';
-        ctx.fillText(`h = ${(L * (1 - Math.cos(sim.theta))).toFixed(2)} m`, hx + side * 8, (bobY + lowY) / 2 + 4);
+    /* ---------------- drawing helpers ---------------- */
+    // what the canvas drew, for the checks: every label's box, every arrow, the panes and the drag handles
+    window.__pim = { labels: [], arrows: [], panes: [], handles: [] };
+    function setup(cv) {
+      const r = cv.getBoundingClientRect();
+      if (r.width < 20 || r.height < 20) return null; // hidden: never draw at no size
+      const dpr = window.devicePixelRatio || 1, cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
+      if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+      const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, r.width, r.height);
+      return { ctx, W: r.width, H: r.height };
+    }
+    // Canvas text with <i>, <sub> and <sup> runs, so symbols of physical quantities are italic, as in the notes.
+    // Honours ctx.textAlign; returns the width. measureOnly = true draws nothing.
+    function richText(ctx, s, x, y, measureOnly) {
+      const base = ctx.font, m = base.match(/([\d.]+)px/), size = m ? +m[1] : 12;
+      const runs = []; let it = false, sub = 0;
+      for (const tok of String(s).split(/(<\/?(?:i|sub|sup)>)/)) {
+        if (tok === '<i>') it = true; else if (tok === '</i>') it = false;
+        else if (tok === '<sub>') sub = 1; else if (tok === '<sup>') sub = -1;
+        else if (tok === '</sub>' || tok === '</sup>') sub = 0;
+        else if (tok) {
+          let f = sub ? base.replace(/[\d.]+px/, (size * 0.75).toFixed(1) + 'px') : base;
+          if (it) f = 'italic ' + f;
+          ctx.font = f; runs.push({ t: tok, f, sub, w: ctx.measureText(tok).width });
+        }
       }
-      // velocity arrow, tangent to the swing
-      const ev = energies();
-      if (ev.v > 0.05) {
-        const dir = Math.sign(sim.omega);
-        const ux = Math.cos(sim.theta) * dir, uy = -Math.sin(sim.theta) * dir;
-        const len = Math.min(90, 18 * ev.v);
-        const ax = bobX + ux * r, ay = bobY + uy * r, bx = ax + ux * len, by = ay + uy * len;
-        ctx.strokeStyle = COL.ke; ctx.fillStyle = COL.ke; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
-        const an = Math.atan2(by - ay, bx - ax), hl = 11;
-        ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx - hl * Math.cos(an - 0.45), by - hl * Math.sin(an - 0.45)); ctx.lineTo(bx - hl * Math.cos(an + 0.45), by - hl * Math.sin(an + 0.45)); ctx.closePath(); ctx.fill();
-        ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
-        const nx = -uy * dir * Math.sign(sim.theta || 1), ny = ux * dir * Math.sign(sim.theta || 1);
-        ctx.fillText(`v = ${ev.v.toFixed(2)} m/s`, (ax + bx) / 2 + nx * 22, (ay + by) / 2 + ny * 22 + 4);
-      }
-      ctx.fillStyle = dragging ? '#1d4ed8' : COL.gpe;
-      ctx.beginPath(); ctx.arc(bobX, bobY, r, 0, Math.PI * 2); ctx.fill();
-      sceneGeo = { pivotX, pivotY, bobX, bobY, r };
-      ctx.fillStyle = '#334155'; ctx.font = '12px Arial'; ctx.textAlign = 'center';
-      ctx.fillText(`θ = ${(sim.theta * 180 / Math.PI).toFixed(1)}°   t = ${sim.t.toFixed(2)} s`, pivotX, h - 8);
+      ctx.font = base;
+      const w = runs.reduce((a, r) => a + r.w, 0);
+      if (measureOnly) return w;
+      const align = ctx.textAlign;
+      let cx = align === 'center' ? x - w / 2 : (align === 'right' || align === 'end') ? x - w : x;
+      ctx.textAlign = 'left';
+      for (const r of runs) { ctx.font = r.f; ctx.fillText(r.t, cx, y + (r.sub === 1 ? size * 0.3 : r.sub === -1 ? -size * 0.4 : 0)); cx += r.w; }
+      ctx.textAlign = align; ctx.font = base;
+      return w;
     }
-
-    // PhET-style bar chart: KE, GPE, Heat, and Total = the three stacked
-    function drawBars() {
-      const { ctx, w, h } = setup(barCanvas);
-      ctx.clearRect(0, 0, w, h);
-      const e = energies();
-      const top = 34, baseY = h - 34;
-      const scale = (baseY - top) / Math.max(sim.e0, 1e-6);
-      const slots = 4, gap = w / slots, barW = Math.min(46, gap * 0.55);
-      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(8, baseY); ctx.lineTo(w - 8, baseY); ctx.stroke();
-      const items = [
-        { name: 'KE', parts: [['ke', e.ke]] },
-        { name: 'GPE', parts: [['gpe', e.gpe]] },
-        { name: 'Heat', parts: [['heat', e.heat]] },
-        { name: 'Total', parts: [['gpe', e.gpe], ['ke', e.ke], ['heat', e.heat]] }
-      ];
-      items.forEach((it, i) => {
-        const x = gap * (i + 0.5) - barW / 2;
-        let y = baseY, sum = 0;
-        it.parts.forEach(([k, v]) => { const hh = Math.max(0, v) * scale; ctx.fillStyle = COL[k]; ctx.fillRect(x, y - hh, barW, hh); y -= hh; sum += v; });
-        if (it.name === 'Total') { ctx.strokeStyle = COL.total; ctx.lineWidth = 2; ctx.strokeRect(x, y, barW, baseY - y); }
-        ctx.fillStyle = it.name === 'Total' ? COL.total : COL[it.parts[0][0]];
-        ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
-        ctx.fillText(it.name, x + barW / 2, baseY + 16);
-        ctx.fillStyle = '#334155'; ctx.font = '11px Arial';
-        ctx.fillText(`${sum.toFixed(2)} J`, x + barW / 2, Math.max(top - 6, y - 6));
+    let PANE = 'scene', CW = 1e9, CH = 1e9, CX0 = 0, CY0 = 0; // the pane name for the checks; the area a label must stay inside
+    function arrow(ctx, x1, y1, x2, y2, color, lw = 3.5, head = 11, record = true) {
+      const len = Math.hypot(x2 - x1, y2 - y1); if (len < 1.5) return;
+      if (record) __pim.arrows.push({ pane: PANE, x1, y1, x2, y2 });
+      const a = Math.atan2(y2 - y1, x2 - x1), hd = Math.min(head, len * 0.6);
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - Math.cos(a) * hd * 0.8, y2 - Math.sin(a) * hd * 0.8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - hd * Math.cos(a - 0.45), y2 - hd * Math.sin(a - 0.45)); ctx.lineTo(x2 - hd * Math.cos(a + 0.45), y2 - hd * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill();
+    }
+    // a label's box before it is drawn: x/y is the middle of the card's left, centre or right edge
+    function labelBox(ctx, lines, x, y, align, size) {
+      ctx.font = `bold ${size}px Arial`;
+      const w = Math.max(...lines.map(t => richText(ctx, t, 0, 0, true))), lh = size * 1.6 + 1, h = lines.length * lh - 1;
+      const x0 = Math.max(CX0 + 4, Math.min(CW - w - 4, align === 'center' ? x - w / 2 : align === 'right' ? x - w : x));
+      const y0 = Math.max(CY0 + 2, Math.min(CH - h - 2, y - size * 0.8));
+      return { x: x0 - 3, y: y0, w: w + 6, h, lh, tx: x0, size };
+    }
+    const hitBox = (a, b, pad = 1) => Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) > pad && Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) > pad;
+    function crossesArrow(box) {
+      return __pim.arrows.some(a => { if (a.pane !== PANE) return false; for (let k = 0; k <= 24; k++) { const px = a.x1 + (a.x2 - a.x1) * k / 24, py = a.y1 + (a.y2 - a.y1) * k / 24;
+        if (px > box.x + 0.5 && px < box.x + box.w - 0.5 && py > box.y + 0.5 && py < box.y + box.h - 0.5) return true; } return false; });
+    }
+    // labels on white cards, one card per line; nudge: +1 moves down, −1 up, to dodge labels and arrows already drawn
+    function label(ctx, lines, x, y, color, align = 'center', size = 12, nudge = 0) {
+      if (!Array.isArray(lines)) lines = [lines];
+      let b = labelBox(ctx, lines, x, y, align, size);
+      if (nudge) for (let i = 0; i < 14 && (__pim.labels.some(l => l.pane === PANE && hitBox(l, b)) || crossesArrow(b)); i++) b = labelBox(ctx, lines, x, b.y + size * 0.8 + nudge * 8, align, size);
+      lines.forEach((t, i) => {
+        const card = { pane: PANE, text: t.replace(/<[^>]+>/g, ''), x: b.x, y: b.y + i * b.lh, w: b.w, h: size * 1.6 };
+        ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fillRect(card.x, card.y, card.w, card.h);
+        ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.font = `bold ${size}px Arial`; richText(ctx, t, b.tx, card.y + size * 0.8);
+        ctx.textBaseline = 'alphabetic';
+        __pim.labels.push(card);
       });
-      ctx.fillStyle = '#334155'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'left';
-      ctx.fillText('Energy (J)', 8, 14);
+      return b;
+    }
+    // a label at the first of several spots that is clear of every label and arrow already drawn
+    // (cands: [x, y, align]; if none is clear the label is left out: its value is always in the readout cards)
+    function labelAt(ctx, text, cands, color, size = 12) {
+      for (const [x, y, al] of cands) {
+        const b = labelBox(ctx, [text], x, y, al, size);
+        if (!__pim.labels.some(l => l.pane === PANE && hitBox(l, b)) && !crossesArrow(b)) return label(ctx, text, x, y, color, al, size);
+      }
+      return null;
+    }
+    function title(ctx, text, x, y) {
+      ctx.fillStyle = '#334155'; ctx.font = '12px Arial'; ctx.textAlign = 'left';
+      richText(ctx, text, x, y);
+      __pim.labels.push({ pane: PANE, text: text.replace(/<[^>]+>/g, ''), x: x - 2, y: y - 10, w: richText(ctx, text, 0, 0, true) + 4, h: 18, title: true });
+    }
+    function roundRect(ctx, x, y, w, h, r, fill, stroke) {
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
+      if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+      if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke(); }
+    }
+    function dashLine(ctx, x1, y1, x2, y2, color = '#94a3b8') {
+      ctx.strokeStyle = color; ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
+    }
+    // a "nice" gridline step: 1, 2, 2.5 or 5 times a power of ten, giving at most `max` steps
+    function niceStep(range, max) {
+      const raw = range / max, p = Math.pow(10, Math.floor(Math.log10(raw)));
+      for (const k of [1, 2, 2.5, 5, 10]) if (k * p >= raw - 1e-12) return k * p;
+      return 10 * p;
+    }
+    function pane(r, name) { PANE = name; CX0 = r.x; CY0 = r.y; CW = r.x + r.w; CH = r.y + r.h; __pim.panes.push(Object.assign({ name }, r)); return r; }
+    // a dimension line with a label, like the notes' figures ("1.0 m")
+    function dim(ctx, x, y1, y2, text, color = '#334155', side = 'left') {
+      if (Math.abs(y2 - y1) < 8) return;
+      ctx.strokeStyle = color; ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.moveTo(x - 5, y1); ctx.lineTo(x + 5, y1); ctx.moveTo(x - 5, y2); ctx.lineTo(x + 5, y2); ctx.stroke();
+      arrow(ctx, x, (y1 + y2) / 2, x, y1, color, 1.3, 7, false); arrow(ctx, x, (y1 + y2) / 2, x, y2, color, 1.3, 7, false);
+      label(ctx, text, side === 'left' ? x - 6 : x + 6, (y1 + y2) / 2, color, side === 'left' ? 'right' : 'left', 11);
     }
 
-    function niceStep(range) {
-      const mag = Math.pow(10, Math.floor(Math.log10(range))), n = range / mag;
-      return (n <= 1.5 ? 0.2 : n <= 3 ? 0.5 : n <= 7 ? 1 : 2) * mag;
+    /* ---------------- drawing ---------------- */
+    let geo = null, NARROW = false; // the picture's layout, frozen while a finger drags; a phone-width canvas
+    function draw() {
+      __pim = window.__pim = { labels: [], arrows: [], panes: [], handles: [] };
+      // a phone: the canvas is the picture's height plus a 190 px strip of bars (a track is only as tall as its width
+      // allows, so a fixed height left a band of empty space under the bars); wider screens keep the CSS height
+      const W0 = canvas.getBoundingClientRect().width, narrow0 = W0 > 0 && W0 < 560 && currentTab <= 3;
+      const picH = narrow0 ? (P.kind === 'track' ? Math.round(1.21 * (W0 * 0.5 - 62) + 96) : 370) : 0;
+      const css = narrow0 ? `${picH + 190}px` : '';
+      if (canvas.style.height !== css) canvas.style.height = css;
+      const c = setup(canvas); if (!c) return;
+      const { ctx, W, H } = c;
+      if (currentTab === 4) { pane({ x: 0, y: 0, w: W, h: H }, 'scene'); drawCard(ctx, W, H); return; }
+      // wide: the bars beside the picture; narrow (phones): the bars under it, so the picture keeps the full width
+      const narrow = W < 560, xp = narrow ? W : Math.round(W * 0.66), hp = narrow ? H - 190 : H;
+      NARROW = narrow;
+      const s = now();
+      const bar = narrow ? { x: 0, y: hp, w: W, h: H - hp } : { x: xp, y: 0, w: W - xp, h: H };
+      pane(bar, 'bars');
+      drawBars(ctx, bar, s);
+      pane({ x: 0, y: 0, w: xp, h: hp }, 'scene');
+      if (P.kind === 'fall' || P.kind === 'bounce') drawFall(ctx, xp, hp, s);
+      else drawSwing(ctx, xp, hp, s);
+      title(ctx, `<i>t</i> = ${tx(sim.t)} s`, 10, 18);
+      drawGraph();
     }
-    function drawEnergyGraph() {
-      const { ctx, w, h } = setup(energyGraph);
-      ctx.clearRect(0, 0, w, h);
-      const m = { left: 50, right: 12, top: 10, bottom: 32 };
-      const pw = w - m.left - m.right, ph = h - m.top - m.bottom;
-      const step = niceStep(Math.max(sim.e0 * 1.1, 0.1)), yMax = Math.ceil(Math.max(sim.e0 * 1.1, 0.1) / step) * step;
-      const tx = t => m.left + (t / SIM_DURATION) * pw, ty = v => m.top + (1 - v / yMax) * ph;
-      ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1; ctx.fillStyle = '#334155'; ctx.font = '11px Arial';
+
+    // energy bars beside (or under) the picture: KE, GPE, (heat), and the total, the others stacked
+    function drawBars(ctx, r, s) {
+      const x0 = r.x, W = r.x + r.w, Y0 = r.y, H = r.y + r.h;
+      roundRect(ctx, x0 + 4, Y0 + 4, r.w - 8, r.h - 8, 8, '#f8fafc', '#e2e8f0');
+      ctx.fillStyle = '#334155'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'left'; ctx.fillText('Energy (J)', x0 + 12, Y0 + 22);
+      __pim.labels.push({ pane: PANE, text: 'Energy (J)', x: x0 + 10, y: Y0 + 10, w: ctx.measureText('Energy (J)').width + 4, h: 16, title: true });
+      const heat = currentTab === 3;
+      const items = [['KE', [[s.KE, COL.KE]]], ['GPE', [[s.GPE, COL.GPE]]]];
+      if (heat) items.push([P.kind === 'bounce' ? 'Sound<br>+ heat' : 'Heat', [[s.heat, COL.heat]]]);
+      items.push(['Total', [[s.GPE, COL.GPE], [s.KE, COL.KE]].concat(heat ? [[s.heat, COL.heat]] : [])]);
+      const reach = Math.max(1e-9, stateAt(0).total), top = Y0 + 44, bottom = H - 40, sc = (bottom - top) / reach;
+      const gap = (W - x0 - 16) / items.length, bw = Math.min(40, gap * 0.6);
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x0 + 10, bottom); ctx.lineTo(W - 10, bottom); ctx.stroke();
+      __pim.bars = {};
+      items.forEach(([name, parts], i) => {
+        const cx = x0 + 8 + gap * (i + 0.5), x = cx - bw / 2;
+        let y = bottom, sum = 0;
+        parts.forEach(([v, col]) => { const hh = Math.max(0, v) * sc; ctx.fillStyle = col; ctx.fillRect(x, y - hh, bw, hh); y -= hh; sum += v; });
+        if (name === 'Total') { ctx.strokeStyle = COL.tot; ctx.lineWidth = 2; ctx.strokeRect(x, y, bw, bottom - y); }
+        __pim.bars[name.replace('<br>', ' ')] = { value: sum, top: y };
+        ctx.fillStyle = '#0f172a'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center';
+        ctx.fillText(f3(sum), cx, Math.max(top - 4, y - 5));
+        ctx.fillStyle = name === 'Total' ? COL.tot : parts[0][1]; ctx.font = 'bold 11px Arial';
+        name.split('<br>').forEach((ln, k) => ctx.fillText(ln, cx, bottom + 15 + k * 13));
+      });
+    }
+
+    // tab 1 and the bounce: the mass rises and falls along one vertical line; a height scale on the left
+    function drawFall(ctx, xp, H, s) {
+      const gy = H - 34, ex6 = P.points && !S.custom;
+      const top = P.kind === 'bounce' ? P.h : P.h + P.u * P.u / (2 * G);
+      if (!geo) geo = { k: (gy - 56) / Math.max(top, 0.5) };
+      const k = geo.k, xb = Math.round(xp * 0.55), br = 10;
+      ctx.fillStyle = '#eef2f7'; ctx.fillRect(0, gy, xp, H - gy);
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(xp, gy); ctx.stroke();
+      const step = niceStep(top, 5);
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1; ctx.fillStyle = '#64748b'; ctx.font = '10px Arial'; ctx.textAlign = 'right';
+      for (let v = 0; v <= top + 1e-9; v += step) { const yy = gy - v * k; ctx.beginPath(); ctx.moveTo(34, yy); ctx.lineTo(42, yy); ctx.stroke(); ctx.fillText(`${f3(v)} m`, 32, v === 0 ? yy - 5 : yy + 3); }
+      if (ex6) {
+        // the tower of Example 6's figure, 10 m tall
+        const tx0 = xb - 34, tw = 16, ty = gy - P.h * k;
+        ctx.fillStyle = '#dbeafe'; ctx.fillRect(tx0, ty, tw, gy - ty); ctx.strokeStyle = '#1d4ed8'; ctx.lineWidth = 1.2; ctx.strokeRect(tx0, ty, tw, gy - ty);
+        ctx.strokeStyle = '#93c5fd'; ctx.lineWidth = 0.8; for (let yy = ty + 6; yy < gy; yy += 6) { ctx.beginPath(); ctx.moveTo(tx0, yy); ctx.lineTo(tx0 + tw, yy); ctx.stroke(); }
+        dashLine(ctx, xb, gy - P.h * k, xb, gy - top * k, '#db2777');
+        // B and C to the left of the path, so the ball and its velocity arrow (on the right) never cover them
+        label(ctx, 'A', tx0 - 4, ty, '#0f172a', 'right', 13);
+        label(ctx, 'B', xb - 16, gy - top * k - 10, '#0f172a', 'right', 13);
+        label(ctx, 'C', xb - 16, gy - 12, '#0f172a', 'right', 13);
+      }
+      // the heights the question asks about
+      const marks = P.kind === 'bounce' ? [[P.h, `${gvTxt('h')} m`], [P.h2, `${gvTxt('h2')} m`]] : ex6 ? [] : [[P.h, `${f3(P.h)} m`]].concat((P.marks || []).map(hm => [hm, `${f3(hm)} m`]));
+      marks.forEach(([hm, t]) => { const yy = gy - hm * k; dashLine(ctx, 46, yy, xp - 8, yy, '#94a3b8'); label(ctx, t, xp - 8, yy - 10, '#475569', 'right', 11); });
+      const yb = gy - s.y * k - br;
+      // sound and heat at the bounce
+      if (P.kind === 'bounce' && sim.t > bounceTimes().t1) {
+        ctx.strokeStyle = COL.heat; ctx.lineWidth = 2;
+        for (let j = 0; j < 7; j++) { const a = Math.PI + j * Math.PI / 6; ctx.beginPath(); ctx.moveTo(xb + Math.cos(a) * 16, gy + Math.sin(a) * 16); ctx.lineTo(xb + Math.cos(a) * 26, gy + Math.sin(a) * 26); ctx.stroke(); }
+        label(ctx, ['Converted to sound', `and heat: ${J(s.heat)}`], xb + 30, gy - 30, COL.heat, 'left', 11, -1);
+      }
+      ctx.fillStyle = P.kind === 'bounce' ? '#d9f99d' : '#fb923c'; ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(xb, yb, br, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      __pim.labels.push({ pane: PANE, text: '', x: xb - br, y: yb - br, w: 2 * br, h: 2 * br, obstacle: true });
+      // the velocity arrow (up or down), scaled to the fastest speed in the run
+      const vmax = Math.max(1e-9, ...[0, runEnd()].map(t => stateAt(t).v), P.kind === 'bounce' ? stateAt(bounceTimes().t1).v : 0);
+      // (beside the ball and centred on it, kept above the ground: an arrow from the ball's bottom ran into the floor)
+      if (s.v > 1e-6) {
+        const len = 70 * s.v / vmax, dir = s.vy > 0 ? -1 : 1, ax = xb + br + 12;
+        let y1 = yb - dir * len / 2; const y2 = () => y1 + dir * len;
+        const low = Math.max(y1, y2()); if (low > gy - 4) y1 -= low - (gy - 4);
+        arrow(ctx, ax, y1, ax, y2(), COL.v, 3, 10);
+        label(ctx, `<i>v</i> = ${ms(s.v)}`, ax + 8, (y1 + y2()) / 2, COL.v, 'left', 12, -1);
+      }
+      // the height above the ground
+      const hx = xb - 60;
+      if (s.y * k > 6) { arrow(ctx, hx, gy, hx, yb, COL.h, 1.6, 8); arrow(ctx, hx, yb, hx, gy, COL.h, 1.6, 8, false); }
+      label(ctx, `<i>h</i> = ${m_(s.y)}`, hx - 6, Math.min(gy - 12, (gy + yb) / 2), COL.h, 'right', 12, 1);
+    }
+
+    // tabs 2 and 3: the track (a circle of radius 1.2 m) or the pendulum
+    function swingGeom(xp, H) {
+      const tr = P.kind === 'track', R = traj.q.R;
+      if (tr) {
+        const thL = Math.max(Math.abs(traj.q.th0), Math.acos(1 - 1 / TRACK_R)), band = 14, br = 10;
+        // room for the "1.0 m" mark on the left and the "0.4 m" mark on the right of the track
+        // (on a phone the 0.4 m goes into C's own label, so the track takes the width)
+        const rp = Math.max(40, Math.min((H - 92) / (1 + 0.18 + 0.03), xp * 0.5 - (NARROW ? 62 : 104)));
+        return { tr, cx: Math.round(xp * 0.5 + 18), cy: 52 + 0.18 * rp, rp, br, band, thL, pxm: rp / TRACK_R };
+      }
+      const rpMax = Math.min(H - 110, (xp - 70) / (2 * Math.sin(80 * Math.PI / 180)) * 0.98);
+      const pxm = rpMax / Math.max(R, 1.2);
+      return { tr, cx: Math.round(xp * 0.5), cy: 46, rp: R * pxm, br: 13, pxm };
+    }
+    function drawSwing(ctx, xp, H, s) {
+      if (!geo) geo = swingGeom(xp, H);
+      const g = geo, { cx, cy, rp, br } = g, q = traj.q;
+      const at = th => ({ x: cx + rp * Math.sin(th), y: cy + rp * Math.cos(th) });
+      const lowY = cy + rp;
+      if (g.tr) {
+        // the track: gold, from the left wall (at least as high as A) to E, the lip, as in the notes' figure
+        const r1 = rp + br, r2 = rp + br + g.band, a0 = Math.PI / 2 - LIP, a1 = Math.PI / 2 + g.thL;
+        ctx.fillStyle = P.loss ? '#f59e0b' : '#fbbf24'; ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(cx, cy, r2, a0, a1); ctx.arc(cx, cy, r1, a1, a0, true); ctx.closePath(); ctx.fill(); ctx.stroke();
+        if (P.loss) { // a rough surface
+          ctx.strokeStyle = '#92400e'; ctx.lineWidth = 1;
+          for (let a = a0 + 0.03; a < a1; a += 0.05) { ctx.beginPath(); ctx.moveTo(cx + r1 * Math.cos(a), cy + r1 * Math.sin(a)); ctx.lineTo(cx + (r1 + 4) * Math.cos(a + 0.02), cy + (r1 + 4) * Math.sin(a + 0.02)); ctx.stroke(); }
+        }
+        // the lowest line and the heights
+        dashLine(ctx, cx - rp - 50, lowY, cx + rp + 40, lowY);
+        const hA = q.R * (1 - Math.cos(q.th0)), A = at(q.th0);
+        dashLine(ctx, Math.min(A.x, cx - rp) - 40, A.y, cx + rp + 40, A.y);
+        dim(ctx, cx - rp - 46, A.y, lowY, `${S.custom ? f3(hA) : gvTxt('hA')} m`);
+        label(ctx, 'A', A.x + (q.th0 < 0 ? -br - 6 : br + 6), A.y - 16, '#0f172a', q.th0 < 0 ? 'right' : 'left', 13);
+        const B = at(0); label(ctx, 'B', B.x, B.y - br - 16, '#0f172a', 'center', 13);
+        if (P.letters && !P.loss) {
+          const D = at(-q.th0), side = q.th0 < 0 ? 1 : -1;
+          label(ctx, 'D', D.x - side * (br + 8), D.y - 2, '#0f172a', side > 0 ? 'right' : 'left', 13);
+          // (released near the lip, D would sit on E: E's label goes then)
+          const E = at(LIP); if (TRACK_R * (1 - Math.cos(LIP)) - hA > 0.25) label(ctx, 'E', E.x - br - 10, E.y - 10, '#0f172a', 'right', 13);
+          if (hA > 0.4 + 1e-9) {
+            const C = at(traj.thC);
+            dashLine(ctx, C.x - 30, C.y, cx + rp + 40, C.y);
+            if (!NARROW) dim(ctx, cx + rp + 34, C.y, lowY, '0.4 m', '#334155', 'right');
+            label(ctx, NARROW ? 'C (0.4 m up)' : 'C', C.x - br - 8, C.y - 12, '#0f172a', 'right', 13);
+          }
+        }
+      } else {
+        ctx.fillStyle = '#64748b'; ctx.fillRect(cx - 40, cy - 6, 80, 6);
+        dashLine(ctx, cx, cy, cx, lowY + br + 6);
+        dashLine(ctx, cx - rp * 0.9, lowY + br, cx + rp * 0.9, lowY + br);
+        label(ctx, 'lowest point (<i>h</i> = 0)', cx + rp * 0.9, lowY + br + 12, '#64748b', 'right', 11);
+        const p = at(s.th);
+        ctx.strokeStyle = '#334155'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(p.x, p.y); ctx.stroke();
+        ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI * 2); ctx.fill();
+        // the angle from the vertical
+        if (Math.abs(s.th) > 0.05) {
+          ctx.strokeStyle = '#64748b'; ctx.lineWidth = 1.2; ctx.beginPath();
+          ctx.arc(cx, cy, 34, Math.PI / 2 - Math.max(0, s.th), Math.PI / 2 - Math.min(0, s.th)); ctx.stroke();
+          // inside the angle, along its bisector (a fixed height beside the string ran off the canvas at 80°)
+          label(ctx, `<i>θ</i> = ${f3(Math.abs(s.th) * 180 / Math.PI)}°`, cx + 62 * Math.sin(s.th / 2), cy + 62 * Math.cos(s.th / 2), '#475569', 'center', 11);
+        }
+      }
+      const p = at(s.th);
+      // the height above the lowest point: outside the ball on the track; on the pendulum, on the side towards the
+      // vertical (outside, a bob pulled far over put the arrow off the canvas)
+      const side = (s.th >= 0 ? 1 : -1) * (g.tr ? 1 : -1), hx = p.x + side * (br + 16), showH = lowY - p.y > 12;
+      if (showH) { arrow(ctx, hx, lowY, hx, p.y, COL.h, 1.6, 8); arrow(ctx, hx, p.y, hx, lowY, COL.h, 1.6, 8, false); }
+      // the ball or bob
+      ctx.fillStyle = drag ? '#1d4ed8' : P.kind === 'pend' ? COL.GPE : '#db2777'; ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(p.x, p.y, br, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      __pim.labels.push({ pane: PANE, text: '', x: p.x - br, y: p.y - br, w: 2 * br, h: 2 * br, obstacle: true });
+      __pim.handles.push({ id: 'ball', x: p.x, y: p.y, r: br + 8 });
+      // the velocity arrow, along the track
+      const ringV = []; for (let k = 0; k < 16; k++) { const a = k * Math.PI / 8; ringV.push([p.x + Math.cos(a) * (br + 56), p.y + Math.sin(a) * (br + 34), 'center']); }
+      const vmax = Math.max(1e-9, ...[stateAt(0)].concat(traj.events.filter(e => e.kind === 'B').map(e => stateAt(e.t))).map(x => x.v));
+      if (s.v > 1e-3) {
+        const dir = Math.sign(s.w), ux = Math.cos(s.th) * dir, uy = -Math.sin(s.th) * dir, len = 64 * s.v / vmax;
+        const ax = p.x + ux * br, ay = p.y + uy * br;
+        arrow(ctx, ax, ay, ax + ux * len, ay + uy * len, COL.v, 3, 10);
+        // beyond the arrow's tip, or beside it on either side, wherever is clear
+        const tx2 = ax + ux * len, ty2 = ay + uy * len, mx = ax + ux * len / 2, my = ay + uy * len / 2, nx = -uy, ny = ux;
+        labelAt(ctx, `<i>v</i> = ${ms(s.v)}`, [[tx2 + ux * 8, ty2 + uy * 8, ux >= 0 ? 'left' : 'right'], [mx + nx * 18, my + ny * 18, 'center'], [mx - nx * 18, my - ny * 18, 'center'],
+          [tx2 + nx * 16, ty2 + ny * 16, 'center'], [tx2 - nx * 16, ty2 - ny * 16, 'center'], [p.x, p.y - br - 30, 'center'], [p.x, p.y + br + 22, 'center']].concat(ringV), COL.v);
+      }
+      // (only when the arrow has room: a few millimetres up, the reading is in the card below)
+      // last resort for both labels: a ring of spots round the ball
+      const ring = []; for (let k = 0; k < 16; k++) { const a = k * Math.PI / 8; ring.push([p.x + Math.cos(a) * (br + 44), p.y + Math.sin(a) * (br + 26), 'center']); }
+      if (showH) {
+        const al = side > 0 ? 'left' : 'right', ol = side > 0 ? 'right' : 'left', mid = Math.min(lowY - 10, (lowY + p.y) / 2);
+        labelAt(ctx, `<i>h</i> = ${m_(s.h)}`, [[hx + side * 6, mid, al], [hx + side * 6, p.y + (lowY - p.y) * 0.25, al], [hx + side * 6, lowY - 10, al],
+          [p.x - side * (br + 8), mid, ol], [p.x - side * (br + 8), p.y + br + 14, ol]].concat(ring), COL.h);
+      }
+      if (!sim.running && sim.t === 0 && !drag) label(ctx, 'Drag me', p.x, p.y + br + 14, '#1d4ed8', 'center', 11, 1);
+    }
+
+    /* tab 4: the conversion on the card, drawn like the notes' diagram on p. 5-15: in, device, out */
+    function drawCard(ctx, W, H) {
+      const C = CARDS[game.i], a = game.ans[game.i], shown = a !== null;
+      title(ctx, `Card ${game.i + 1}: ${C.dev}`, 10, 18);
+      const ok = shown && a === C.ans, bw = Math.min(260, W - 40), cx = W / 2;
+      const box = (y, text, col, fill) => { roundRect(ctx, cx - bw / 2, y, bw, 34, 6, fill, col); ctx.fillStyle = '#0f172a'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, cx, y + 17); ctx.textBaseline = 'alphabetic';
+        __pim.labels.push({ pane: PANE, text, x: cx - bw / 2, y, w: bw, h: 34 }); };
+      const ins = shown ? C.from : '? energy in', outs = shown ? C.to : ['? energy out'];
+      const fillC = !shown ? '#f1f5f9' : ok ? '#dcfce7' : '#fee2e2';
+      box(36, ins, '#334155', fillC);
+      arrow(ctx, cx, 72, cx, 104, '#db2777', 3, 10);
+      roundRect(ctx, cx - bw / 2 + 20, 108, bw - 40, 40, 10, '#fef3c7', '#b45309');
+      ctx.fillStyle = '#7c2d12'; ctx.font = 'bold 14px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(C.dev, cx, 128); ctx.textBaseline = 'alphabetic';
+      __pim.labels.push({ pane: PANE, text: C.dev, x: cx - bw / 2 + 20, y: 108, w: bw - 40, h: 40 });
+      if (outs.length === 1) { arrow(ctx, cx, 152, cx, 184, '#db2777', 3, 10); box(188, outs[0], '#334155', fillC); }
+      else {
+        const w2 = Math.min(bw, (W - 30) / 2), xs = [cx - w2 / 2 - 6, cx + w2 / 2 + 6];
+        outs.forEach((t, j) => { arrow(ctx, cx, 152, xs[j], 184, '#db2777', 3, 10); roundRect(ctx, xs[j] - w2 / 2, 188, w2, 34, 6, fillC, '#334155');
+          ctx.fillStyle = '#0f172a'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t, xs[j], 205); ctx.textBaseline = 'alphabetic';
+          __pim.labels.push({ pane: PANE, text: t, x: xs[j] - w2 / 2, y: 188, w: w2, h: 34 }); });
+      }
+      ctx.fillStyle = '#475569'; ctx.font = '12px Arial'; ctx.textAlign = 'center';
+      ctx.fillText(shown ? 'The total energy stays the same: it is only converted.' : 'Pick the conversion above this card, then press Check.', cx, H - 22);
+    }
+
+    /* ---------------- the energy graph under the drawing ---------------- */
+    function axes(ctx, W, H, xr, yr, xLab, yLab, xstep, ystep) {
+      const Lm = 52, Rm = 16, Tm = 14, Bm = 30, pw = W - Lm - Rm, ph = H - Tm - Bm;
+      const X = v => Lm + (v - xr[0]) / (xr[1] - xr[0]) * pw, Y = v => Tm + (yr[1] - v) / (yr[1] - yr[0]) * ph;
+      ctx.font = '11px Arial'; ctx.fillStyle = '#475569'; ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
       ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-      for (let v = 0; v <= yMax + step * 0.01; v += step) { const y = ty(v); ctx.beginPath(); ctx.moveTo(m.left, y); ctx.lineTo(w - m.right, y); ctx.stroke(); ctx.fillText(v.toFixed(step < 0.1 ? 2 : 1), m.left - 6, y); }
+      for (let v = 0; v <= yr[1] + 1e-9; v += ystep) { ctx.beginPath(); ctx.moveTo(Lm, Y(v)); ctx.lineTo(W - Rm, Y(v)); ctx.stroke(); ctx.fillText(f3(v), Lm - 5, Y(v)); }
       ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-      for (let t = 0; t <= SIM_DURATION; t += 2) ctx.fillText(String(t), tx(t), h - m.bottom + 5);
+      for (let v = 0; v <= xr[1] + 1e-9; v += xstep) { ctx.beginPath(); ctx.moveTo(X(v), Tm); ctx.lineTo(X(v), H - Bm); ctx.stroke(); ctx.fillText(f3(v), X(v), H - Bm + 5); }
       ctx.textBaseline = 'alphabetic';
-      ctx.fillText('time (s)', m.left + pw / 2, h - 2);
-      ctx.save(); ctx.translate(12, m.top + ph / 2); ctx.rotate(-Math.PI / 2); ctx.fillText('energy (J)', 0, 0); ctx.restore();
-      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.moveTo(m.left, m.top); ctx.lineTo(m.left, h - m.bottom); ctx.lineTo(w - m.right, h - m.bottom); ctx.stroke();
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(Lm, Tm); ctx.lineTo(Lm, H - Bm); ctx.lineTo(W - Rm, H - Bm); ctx.stroke();
+      ctx.fillStyle = '#334155'; ctx.font = '12px Arial'; ctx.textAlign = 'right'; richText(ctx, xLab, W - Rm, H - 4);
+      ctx.save(); ctx.translate(13, Tm + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; richText(ctx, yLab, 0, 0); ctx.restore();
+      return { X, Y };
+    }
+    let fitK = null;
+    function drawGraph() {
+      const c = setup(graphCv); if (!c) return;
+      const { ctx, W, H } = c;
+      PANE = 'graph'; CX0 = 0; CW = W; CH = H;
+      __pim.panes.push({ name: 'graph', x: 0, y: 0, w: W, h: H });
+      const end = runEnd(), E0 = stateAt(0).total, ys = niceStep(E0 * 1.08, 4), ytop = Math.ceil(E0 * 1.08 / ys - 1e-9) * ys;
+      const { X, Y } = axes(ctx, W, H, [0, end], [0, ytop], '<i>t</i> (s)', 'energy (J)', niceStep(end, W < 500 ? 5 : 8), ys);
+      // the lines grow with the run, up to the moment shown
+      const n = Math.max(2, Math.ceil(400 * sim.t / Math.max(end, 1e-9))), pts = [];
+      for (let i = 0; i <= n; i++) pts.push(stateAt(sim.t * i / n));
+      const times = pts.map((_, i) => sim.t * i / n);
       const line = (key, col, lw, dash) => {
         ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.setLineDash(dash || []);
-        ctx.beginPath(); sim.points.forEach((p, i) => { const x = tx(p.t), y = ty(p[key]); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }); ctx.stroke();
-        ctx.setLineDash([]);
+        ctx.beginPath(); for (let i = 0; i <= n; i++) { const x = X(times[i]), y = Y(pts[i][key]); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); } ctx.stroke(); ctx.setLineDash([]);
       };
-      // with air resistance the stepped KE + GPE line is drawn thinner, under the smooth decay curve
-      line('ke', COL.ke, 1.5); line('gpe', COL.gpe, 1.5); line('heat', COL.heat, 2.5); line('mech', COL.mech, frictionEl.checked ? 1.5 : 2, [6, 4]); line('total', COL.total, 2.5);
-      el('fitLegend').hidden = !frictionEl.checked;
-      if (frictionEl.checked) {
-        // The smooth exponential decay: the curve E = E0 e^(-kt) that best fits the end-of-swing dots
-        // (least squares on ln E, through the first dot). KE + GPE itself falls in steps, because energy
-        // is lost only while the bob moves; the dots, and this curve, show the smooth decay underneath.
-        const pk = sim.peaks, E0 = pk[0] && pk[0].mech;
-        if (pk.length >= 3 && E0 > 0) {
-          let num = 0, den = 0;
-          pk.slice(1).forEach(p => { if (p.mech > 0) { num += p.t * Math.log(p.mech / E0); den += p.t * p.t; } });
-          const kfit = den > 0 ? -num / den : 0;
-          sim.decayK = kfit;
+      const heat = currentTab === 3;
+      line('KE', COL.KE, 1.8); line('GPE', COL.GPE, 1.8);
+      if (heat) { line('heat', COL.heat, 2.5); line('mech', COL.mech, P.b ? 1.5 : 2, [6, 4]); }
+      line('total', COL.tot, 2.5);
+      fitK = null;
+      if (P.kind === 'pend' && P.b) {
+        // the smooth exponential decay: E = E0 e^(−kt) through the end-of-swing dots reached so far
+        // (least squares on ln E, through the first dot). KE + GPE itself falls in steps, because energy is
+        // lost only while the bob moves; the dots, and this curve, show the smooth decay underneath.
+        const pk = traj.peaks.filter(p => p.t <= sim.t + 1e-9), Ez = pk[0].mech;
+        if (pk.length >= 3) {
+          let num = 0, den = 0; pk.slice(1).forEach(p => { num += p.t * Math.log(p.mech / Ez); den += p.t * p.t; });
+          fitK = -num / den;
           ctx.strokeStyle = COL.fit; ctx.lineWidth = 3; ctx.beginPath();
-          const tEnd = pk[pk.length - 1].t;
-          for (let i = 0; i <= 200; i++) { const t = tEnd * i / 200, x = tx(t), y = ty(E0 * Math.exp(-kfit * t)); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+          const tE = pk[pk.length - 1].t;
+          for (let i = 0; i <= 200; i++) { const t = tE * i / 200, x = X(t), y = Y(Ez * Math.exp(-fitK * t)); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
           ctx.stroke();
-        } else sim.decayK = null;
-        ctx.fillStyle = COL.mech;
-        sim.peaks.forEach(p => { ctx.beginPath(); ctx.arc(tx(p.t), ty(p.mech), 3, 0, Math.PI * 2); ctx.fill(); });
+        }
+        ctx.fillStyle = COL.mech; pk.forEach(p => { ctx.beginPath(); ctx.arc(X(p.t), Y(p.mech), 3.2, 0, Math.PI * 2); ctx.fill(); });
       }
+      const s = now();
+      ctx.fillStyle = COL.tot; ctx.beginPath(); ctx.arc(X(sim.t), Y(s.total), 4, 0, Math.PI * 2); ctx.fill();
     }
 
-    function updateReadout() {
-      const e = energies();
-      el('keValue').textContent = `${e.ke.toFixed(2)} J`;
-      el('gpeValue').textContent = `${e.gpe.toFixed(2)} J`;
-      el('heatValue').textContent = `${e.heat.toFixed(2)} J`;
-      el('totalValue').textContent = `${e.total.toFixed(2)} J`;
-      el('speedValue').textContent = `${e.v.toFixed(2)} m/s`;
+    /* ---------------- the inputs ---------------- */
+    function inputList() {
+      const mIn = ['m', 'Mass <i>m</i> (kg)', 0.01, 0.1];
+      if (P.kind === 'fall') return [mIn, ['h', 'Starting height <i>h</i> (m)', 0.5, 0.5], ['u', 'Speed thrown upwards (m/s)', 0, 0.5]];
+      if (P.kind === 'track') return [mIn, ['hA', 'Height of A (m)', 0.1, 0.1]].concat(currentTab === 3 ? [['loss', 'Energy lost to friction, A to B (J)', 0, 1]] : []);
+      if (P.kind === 'pend') return [mIn, ['L', 'Length <i>L</i> (m)', 0.3, 0.1], ['a0', 'Released at <i>θ</i> (°)', 5, 1]];
+      return [mIn, ['h', 'Dropped from (m)', 0.5, 0.1], ['h2', 'Rebounds to (m)', 0, 0.1]];
+    }
+    const LIMITS = { m: [0.01, 1000], h: [0.5, 50], u: [0, 20], hA: [0.1, 1.4], L: [0.3, 2], a0: [5, 80], loss: [0, 1e9], h2: [0, 50] };
+    function buildInputs() {
+      const el = $('inputs');
+      el.innerHTML = inputList().map(([k, lab, min, step]) => `<div class="control-group label-row"><label for="in_${k}">${lab}</label>
+        <input id="in_${k}" type="number" data-k="${k}" min="${min}" step="${step}" value="${plain(P[k])}" /></div>`).join('');
+      el.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => readInput(inp)));
+    }
+    function syncInputs() {
+      document.querySelectorAll('#inputs input').forEach(inp => {
+        if (document.activeElement === inp) return;
+        const want = plain(P[inp.dataset.k]);
+        if (inp.value !== want) inp.value = want;
+      });
+    }
+    // keep the values possible: the friction can't take more than the GPE at A; a ball can't rebound higher
+    function limitValues() {
+      if (P.kind === 'track' && P.loss) P.loss = Math.min(P.loss, 0.95 * P.m * G * P.hA);
+      if (P.kind === 'bounce') P.h2 = Math.min(P.h2, P.h);
+    }
+    function readInput(inp) {
+      const k = inp.dataset.k, raw = parseFloat(inp.value);
+      if (!isFinite(raw)) return;
+      const lim = LIMITS[k];
+      P[k] = Math.min(lim[1], Math.max(lim[0], raw));
+      limitValues(); toCustom(); rebuild(); update();
+    }
+    function toCustom() {
+      if (S.custom) return;
+      S.custom = true; S.scen = 'custom'; presetEl.value = 'custom';
+      // the question box keeps its height: nothing above the canvas may move while a finger drags
+      const q = $('question'); q.style.minHeight = q.offsetHeight + 'px';
+      q.innerHTML = OWN;
+      clearFeat();
     }
 
-    function redrawAll() { drawScene(); drawBars(); drawEnergyGraph(); updateReadout(); }
-
-    [massEl, lengthEl, amplitudeEl].forEach(x => x.addEventListener('input', resetSimulation));
-    frictionEl.addEventListener('change', resetSimulation);
-
-    function toCss(e) { const r = sceneCanvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
-    sceneCanvas.addEventListener('pointerdown', e => {
-      if (!sceneGeo) return;
-      const p = toCss(e);
-      if (Math.hypot(p.x - sceneGeo.bobX, p.y - sceneGeo.bobY) > sceneGeo.r * 2.2) return;
-      dragging = true; sim.running = false; sim.lastFrameTime = null;
-      sceneCanvas.setPointerCapture(e.pointerId); sceneCanvas.style.cursor = 'grabbing'; e.preventDefault();
+    /* ---------------- dragging the ball or the bob to a new starting point ---------------- */
+    function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    const handleAt = p => __pim.handles.find(h => Math.hypot(p.x - h.x, p.y - h.y) < (h.r || 16) + 6);
+    let drag = false;
+    canvas.addEventListener('pointerdown', e => {
+      if (!isSwing() || currentTab > 3) return;
+      if (document.activeElement && document.activeElement.tagName === 'INPUT') document.activeElement.blur();
+      const p = pos(e); if (!handleAt(p)) return;
+      drag = true; sim.running = false; clearFeat();
+      canvas.setPointerCapture(e.pointerId); e.preventDefault(); update();
     });
-    sceneCanvas.addEventListener('pointermove', e => {
-      if (!dragging) return;
-      const p = toCss(e);
-      const ang = Math.max(-80, Math.min(80, Math.atan2(p.x - sceneGeo.pivotX, p.y - sceneGeo.pivotY) * 180 / Math.PI));
-      amplitudeEl.value = Math.round(ang);
-      resetSimulation();
+    canvas.addEventListener('pointermove', e => {
+      const p = pos(e);
+      if (!drag) { canvas.style.cursor = isSwing() && handleAt(p) ? 'grab' : 'default'; return; }
+      const g = geo; let th = Math.atan2(p.x - g.cx, p.y - g.cy);
+      const side = th < 0 ? -1 : 1;
+      if (P.kind === 'track') {
+        // from 0.1 m up to 1.4 m, below E
+        const lo = Math.acos(1 - 0.1 / TRACK_R), hi = Math.acos(1 - 1.4 / TRACK_R);
+        const a = Math.min(hi, Math.max(lo, Math.abs(th)));
+        P.hA = Math.round(TRACK_R * (1 - Math.cos(a)) * 100) / 100;
+      } else P.a0 = Math.round(Math.min(80, Math.max(5, Math.abs(th) * 180 / Math.PI)));
+      P.side = side;
+      limitValues(); toCustom();
+      const keep = geo; rebuild(); geo = keep; // the picture keeps its scale while the finger is down
+      update();
     });
-    function endBobDrag() {
-      if (!dragging) return;
-      dragging = false; sceneCanvas.style.cursor = 'grab';
-      if (Math.abs(parseFloat(amplitudeEl.value)) >= 1) { sim.running = true; sim.lastFrameTime = null; requestAnimationFrame(animationLoop); }
+    const endDrag = () => { if (!drag) return; drag = false; geo = null; start(); };
+    canvas.addEventListener('pointerup', endDrag);
+    canvas.addEventListener('pointercancel', endDrag);
+
+    /* ---------------- readouts, words and working ---------------- */
+    function cards(list) {
+      const el = $('readout');
+      el.className = 'readout' + (list.length === 6 ? ' n6' : '');
+      el.innerHTML = list.map(([id, t, value, cls]) => `<div class="readout-card${cls ? ' ' + cls : ''}${hl[id] ? ' hl' : ''}" id="${id}"><div class="title">${t}</div><div class="value">${value}</div></div>`).join('');
     }
-    sceneCanvas.addEventListener('pointerup', endBobDrag);
-    sceneCanvas.addEventListener('pointercancel', endBobDrag);
+    function eq(lines) { return '<div class="math">' + lines.map(l => `<span class="eq${l.lit ? ' lit' : ''}">${l.h || l}</span>`).join('') + '</div>'; }
+    function readouts() {
+      const s = now(), k = atKey(), words = $('words'), work = $('work');
+      if (currentTab === 4) { $('readout').innerHTML = ''; words.innerHTML = ''; work.innerHTML = ''; return; }
+      if (currentTab <= 2) cards([['rH', 'Height <i>h</i>', m_(s.h)], ['rV', 'Speed <i>v</i>', ms(s.v)], ['rKE', 'KE = ½<i>mv</i><sup>2</sup>', J(s.KE)],
+        ['rGPE', 'GPE = <i>mgh</i>', J(s.GPE)], ['rTot', '<i>E</i><sub>total</sub> = KE + GPE', J(s.total), 'ok']]);
+      else cards([['rV', 'Speed <i>v</i>', ms(s.v)], ['rKE', 'KE = ½<i>mv</i><sup>2</sup>', J(s.KE)], ['rGPE', 'GPE = <i>mgh</i>', J(s.GPE)],
+        ['rMech', 'KE + GPE', J(s.mech)], ['rHeat', heatName(), J(s.heat)], ['rTot', 'Total = KE + GPE + ' + (P.kind === 'bounce' ? 'sound and heat' : 'heat'), J(s.total), 'ok']]);
+      words.innerHTML = wordsFor(s, k);
+      work.innerHTML = k || sim.t >= runEnd() - 1e-9 ? workFor(s, k) : '';
+    }
+    function wordsFor(s, k) {
+      const E = stateAt(0).total, moving = s.v > 1e-6;
+      if (P.kind === 'fall' || P.kind === 'bounce') {
+        if (k && k.t === 0) return `At ${k.name}: KE = ${J(s.KE)} and GPE = ${J(s.GPE)}. Press Start.`;
+        if (P.kind === 'bounce' && sim.t > bounceTimes().t1) return `${J(s.heat)} was converted to sound and heat at the bounce. Now ${s.v < 1e-6 ? `at the top of the rebound, ${m_(s.h)} up: KE = 0` : 'rising: KE is being converted into GPE'}. KE + GPE = ${J(s.mech)}.`;
+        if (!moving) return `At ${k ? k.name : 'the top'}: it stops for an instant. KE = 0, so all ${J(E)} is GPE.`;
+        if (k && sim.t >= runEnd() - 1e-9) return `${k.name[0].toUpperCase() + k.name.slice(1)}: GPE = 0, so all ${J(s.total)} is KE.`;
+        return `${s.vy > 0 ? 'Rising: KE is being converted into GPE.' : 'Falling: GPE is being converted into KE.'} KE + GPE = ${J(s.KE)} + ${J(s.GPE)} = ${J(s.mech)}: the total stays the same.`;
+      }
+      if (k && k.t === 0) return `At ${k.name}, at rest: KE = 0 and GPE = ${J(s.GPE)}. Press Start, or drag ${P.kind === 'pend' ? 'the bob' : 'the sphere'} to a new starting point.`;
+      if (currentTab === 3) return `KE + GPE = ${J(s.mech)}. So far ${J(s.heat)} has been converted to heat. Total = ${J(s.mech)} + ${J(s.heat)} = ${J(s.total)}: the same as at the start.`;
+      if (!moving) return `At ${k ? k.name : 'the end of the swing'}: at rest for an instant, at the height it started from (${m_(s.h)}). KE = 0 and GPE = ${J(s.GPE)}.`;
+      if (s.h < 1e-6) return `At ${k ? k.name : 'the lowest point'}: GPE = 0, so all ${J(s.KE)} is KE. It is moving fastest here.`;
+      const down = Math.sign(s.w) !== Math.sign(s.th);
+      return `${down ? 'Moving down: GPE is being converted into KE.' : 'Moving up: KE is being converted into GPE.'} KE + GPE = ${J(s.KE)} + ${J(s.GPE)} = ${J(s.total)}.`;
+    }
+    function workFor(s, k) {
+      const m = gvTxt('m'), name = k ? k.name : '';
+      if (P.kind === 'fall') {
+        const s0 = stateAt(0);
+        if (k && k.t === 0) return eq([P.u > 0 ? `KE = ½<i>mv</i><sup>2</sup> = ½ × ${m} × ${gvTxt('u')}<sup>2</sup> = ${J(s0.KE)}` : 'KE = 0 (released from rest)', `GPE = <i>mgh</i> = ${m} × ${G} × ${gvTxt('h')} = ${J(s0.GPE)}`,
+          { h: `<i>E</i><sub>total</sub> = KE + GPE = ${f3(s0.KE)} + ${f3(s0.GPE)} = ${J(s0.total)}`, lit: true }]);
+        const L = [`<i>E</i><sub>total</sub> = ${J(s0.total)} at every height (law of conservation of energy)`];
+        // at the top KE = 0: the height follows from the GPE
+        if (s.v < 1e-6) return eq(L.concat([`KE = 0, so GPE = <i>E</i><sub>total</sub> = ${J(s.GPE)}`,
+          { h: `<i>h</i> = <span class="frac"><span>GPE</span><span><i>mg</i></span></span> = <span class="frac"><span>${f3(s.GPE)}</span><span>${m} × ${G}</span></span> = ${m_(s.h)}`, lit: true }]));
+        L.push(`GPE = <i>mgh</i> = ${m} × ${G} × ${f3(s.h)} = ${J(s.GPE)}`, `KE = <i>E</i><sub>total</sub> − GPE = ${f3(s0.total)} − ${f3(s.GPE)} = ${J(s.KE)}`);
+        L.push({ h:`<i>v</i> = ${rt(`<span class="frac"><span>2 × KE</span><span><i>m</i></span></span>`)} = ${rt(`<span class="frac"><span>2 × ${f3(s.KE)}</span><span>${m}</span></span>`)} = ${ms(s.v)}`, lit: true });
+        return eq(L);
+      }
+      if (P.kind === 'bounce') {
+        const { t1 } = bounceTimes(), h = gvTxt('h'), h2 = gvTxt('h2');
+        if (sim.t <= t1 + 1e-12) {
+          if (sim.t === 0) return eq([{ h: `GPE = <i>mgh</i> = ${m} × ${G} × ${h} = ${J(s.GPE)}, KE = 0`, lit: true }]);
+          return eq([`Decrease in GPE = increase in KE: <i>mgh</i> = ½<i>mv</i><sup>2</sup>`, { h: `<i>v</i> = ${rt('2<i>gh</i>')} = ${rt(`2 × ${G} × ${h}`)} = ${ms(s.v)}`, lit: true }]);
+        }
+        return eq([`Rising to ${h2} m, KE is converted into GPE: ½<i>mv</i><sup>2</sup> = <i>mgh</i>`, { h: `Just after leaving the ground: <i>v</i> = ${rt(`2 × ${G} × ${h2}`)} = ${ms(bounceTimes().vUp)}`, lit: true },
+          `Converted to sound and heat at the bounce = <i>mg</i>(${h} − ${h2}) = ${m} × ${G} × ${f3(P.h - P.h2)} = ${J(s.heat)}`]);
+      }
+      const q = traj.q, s0 = stateAt(0), hA = s0.h;
+      const hAt = P.kind === 'pend' ? `<i>h</i> = <i>L</i>(1 − cos <i>θ</i>) = ${plain(P.L)} × (1 − cos ${plain(P.a0)}°) = ${m_(hA)}` : null;
+      // at the start, at rest: the GPE is all there is
+      if (sim.t === 0) return eq((hAt ? [hAt] : []).concat([{ h: `At ${P.kind === 'track' ? 'A' : 'the release point'}: KE = 0, GPE = <i>mgh</i> = ${m} × ${G} × ${P.kind === 'track' && !S.custom ? gvTxt('hA') : f3(hA)} = ${J(s0.GPE)}`, lit: true }]));
+      if (currentTab === 3 && P.kind === 'track') {
+        const X = name.startsWith('B') ? 'B' : '';
+        const L = [`KE${X ? '<sub>B</sub>' : ''} + GPE${X ? '<sub>B</sub>' : ''} = KE<sub>A</sub> + GPE<sub>A</sub> − energy lost due to friction`,
+          `${X ? 'KE<sub>B</sub>' : f3(s.KE)} + ${f3(s.GPE)} = 0 + ${f3(s0.GPE)} − ${f3(s.heat)}`];
+        if (k && k.t > 0 && s.v < 1e-6) L.push({ h: `KE = 0, so GPE = ${J(s.GPE)}: it stops ${m_(s.h)} up, lower than A`, lit: true });
+        else L.push({ h: `KE${X ? '<sub>B</sub>' : ''} = ${J(s.KE)}`, lit: true });
+        return eq(L);
+      }
+      if (currentTab === 3) return eq([`Heat so far = ${J(s.heat)}`, `KE + GPE = ${f3(s.KE)} + ${f3(s.GPE)} = ${J(s.mech)}`,
+        { h: `Total = KE + GPE + heat = ${f3(s.mech)} + ${f3(s.heat)} = ${J(s.total)}`, lit: true }]);
+      // a smooth track or a pendulum with no air resistance: KE + GPE stays the same
+      const X = /^[BCD]/.test(name) ? name[0] : '', sub = X ? `<sub>${X}</sub>` : '', hTxt = P.kind === 'track' && !S.custom ? gvTxt('hA') : f3(hA);
+      const L = hAt ? [hAt] : [];
+      L.push(`KE${sub} + GPE${sub} = KE<sub>A</sub> + GPE<sub>A</sub>`);
+      if (s.v < 1e-6 && sim.t > 0) { L.push(`0 + <i>mgh</i> = 0 + <i>mg</i>(${hTxt})`); L.push({ h: `<i>h</i> = ${hTxt} m: the same height as ${P.kind === 'track' ? 'A' : 'the release point'}`, lit: true }); return eq(L); }
+      if (s.h < 1e-6) { L.push(`½<i>mv</i><sup>2</sup> + 0 = 0 + <i>mgh</i>`); L.push({ h: `<i>v</i> = ${rt('2<i>gh</i>')} = ${rt(`2 × ${G} × ${hTxt}`)} = ${ms(s.v)}`, lit: true }); return eq(L); }
+      L.push(`½<i>mv</i><sup>2</sup> + <i>mg</i>(${f3(s.h)}) = <i>mg</i>(${hTxt})`);
+      L.push({ h: `<i>v</i> = ${rt(`2 × ${G} × ${f3(hA - s.h)}`)} = ${ms(s.v)}`, lit: true });
+      return eq(L);
+    }
 
-    el('startBtn').addEventListener('click', () => {
-      if (sim.t >= SIM_DURATION - 1e-9 || sim.running) return;
-      sim.running = true; sim.lastFrameTime = null;
-      requestAnimationFrame(animationLoop);
+    function update() {
+      draw(); readouts(); syncInputs();
+      if (currentTab === 4) { renderGame(); return; }
+      const end = runEnd(), mid = sim.t > 1e-9 && sim.t < end - 1e-9;
+      $('pauseBtn').textContent = !sim.running && mid ? 'Play' : 'Pause';
+      $('pauseBtn').disabled = !sim.running && !mid;
+      $('startBtn').disabled = sim.running || end <= 0;
+      const km = keyMoments();
+      $('prevMoment').disabled = !km.some(m => m < sim.t - 1e-6); $('nextMoment').disabled = !km.some(m => m > sim.t + 1e-6);
+      $('speedNote').textContent = playRate() < 1 ? 'The motion is shown at half speed.' : 'The motion is shown in real time.';
+    }
+    function chooseScenario(id) {
+      if (id === 'custom') { if (!S.custom) { S.custom = true; S.scen = 'custom'; $('question').innerHTML = OWN; } rebuild(); }
+      else loadScenario(id);
+      $('question').style.minHeight = '';
+      clearFeat(); buildInputs(); update();
+    }
+    presetEl.addEventListener('change', () => chooseScenario(presetEl.value));
+
+    /* ---------------- tab 4: the energy conversion cards ---------------- */
+    const CARDS = [
+      { src: 'Notes p. 5-15', dev: 'Electric motor', from: 'electrical energy', to: ['mechanical energy'], q: 'An electric motor converts …',
+        opts: ['electrical energy into mechanical energy', 'mechanical energy into electrical energy', 'electrical energy into sound energy', 'heat energy into electrical energy'], ans: 0,
+        why: 'An electric motor takes in electrical energy and turns: mechanical energy (notes p. 5-15).' },
+      { src: 'Notes p. 5-15', dev: 'Hydroelectric generator', from: 'mechanical energy', to: ['electrical energy'], q: 'A hydroelectric generator converts …',
+        opts: ['mechanical energy into electrical energy', 'electrical energy into mechanical energy', 'heat energy into electrical energy', 'electrical energy into heat energy'], ans: 0,
+        why: 'Moving water turns the generator: mechanical energy into electrical energy. It does the reverse of an electric motor (p. 5-15).' },
+      { src: 'Notes p. 5-15', dev: 'Electric heater', from: 'electrical energy', to: ['heat energy'], q: 'An electric heater converts …',
+        opts: ['electrical energy into heat energy', 'heat energy into electrical energy', 'electrical energy into sound energy', 'mechanical energy into heat energy'], ans: 0,
+        why: 'An electric heater converts electrical energy into heat energy (p. 5-15).' },
+      { src: 'Notes p. 5-15', dev: 'Thermocouple', from: 'heat energy', to: ['electrical energy'], q: 'A thermocouple converts …',
+        opts: ['heat energy into electrical energy', 'electrical energy into heat energy', 'sound energy into electrical energy', 'heat energy into mechanical energy'], ans: 0,
+        why: 'A thermocouple does the reverse of an electric heater: heat energy into electrical energy (p. 5-15).' },
+      { src: 'Notes p. 5-15', dev: 'Loudspeaker', from: 'electrical energy', to: ['sound energy'], q: 'A loudspeaker converts …',
+        opts: ['electrical energy into sound energy', 'sound energy into electrical energy', 'electrical energy into heat energy', 'mechanical energy into sound energy'], ans: 0,
+        why: 'A loudspeaker converts electrical energy into sound energy (p. 5-15).' },
+      { src: 'Notes p. 5-15', dev: 'Microphone', from: 'sound energy', to: ['electrical energy'], q: 'A microphone converts …',
+        opts: ['sound energy into electrical energy', 'electrical energy into sound energy', 'heat energy into electrical energy', 'sound energy into heat energy'], ans: 0,
+        why: 'A microphone does the reverse of a loudspeaker: sound energy into electrical energy (p. 5-15).' },
+      { src: 'Notes p. 5-16', dev: 'An object falling freely', from: 'gravitational potential energy', to: ['kinetic energy'], q: 'As a stationary object falls freely, its energy is converted from …',
+        opts: ['gravitational potential energy into kinetic energy', 'kinetic energy into gravitational potential energy', 'kinetic energy into heat energy', 'electrical energy into kinetic energy'], ans: 0,
+        why: 'As it falls, its gravitational potential energy is converted into kinetic energy (notes p. 5-16). Air resistance is ignored.' },
+      { src: 'Tab 2 of this applet', dev: 'A pendulum swinging up', from: 'kinetic energy', to: ['gravitational potential energy'], q: 'As a pendulum bob swings up from its lowest point, its energy is converted from …',
+        opts: ['kinetic energy into gravitational potential energy', 'gravitational potential energy into kinetic energy', 'kinetic energy into sound energy', 'heat energy into kinetic energy'], ans: 0,
+        why: 'Going up, the bob slows down and rises: its KE is converted into GPE. At the end of the swing KE = 0 for an instant.' },
+      { src: 'Example 8, notes p. 5-20', dev: 'A sphere on a rough track', from: 'gravitational potential energy', to: ['kinetic energy', 'heat energy'], q: 'A sphere moves down a rough track from A to B. Its GPE is converted into …',
+        opts: ['kinetic energy and heat energy', 'kinetic energy only', 'heat energy only', 'electrical energy'], ans: 0,
+        why: 'Some of the GPE becomes KE and some is lost due to friction as heat: 100 J of GPE gives 50 J of KE at B and 50 J of heat.' },
+      { src: 'Tutorial 5, B2(c)', dev: 'A ball hitting the ground', from: 'kinetic energy', to: ['sound energy', 'heat energy'], q: 'When the tennis ball hits the ground, some of its kinetic energy is converted into …',
+        opts: ['sound energy and heat energy', 'gravitational potential energy only', 'electrical energy', 'nothing: it is destroyed'], ans: 0,
+        why: 'Kinetic energy of the tennis ball is converted to sound energy and heat energy at the bounce, so it cannot reach 3.6 m again. Energy is never destroyed.' }
+    ];
+    // the options are written with the right one first; turn each list round by a fixed amount
+    CARDS.forEach((C, i) => { const n = C.opts.length, r = (i * 3 + 1) % n; C.opts = C.opts.slice(r).concat(C.opts.slice(0, r)); C.ans = (C.ans - r + n) % n; });
+    let game = { i: 0, ans: CARDS.map(() => null), pick: null };
+    const gameScore = () => game.ans.filter((a, i) => a === CARDS[i].ans).length;
+    function renderGame() {
+      const C = CARDS[game.i], a = game.ans[game.i], sorted = game.ans.filter(x => x !== null).length;
+      $('gameCard').textContent = `Card ${game.i + 1} of ${CARDS.length}`;
+      $('gameScore').textContent = `Score: ${gameScore()} of ${CARDS.length} · sorted: ${sorted}`;
+      $('gameSrc').textContent = C.src;
+      $('gameQ').innerHTML = C.q;
+      const el = $('gameOpts');
+      el.innerHTML = C.opts.map((o, j) => `<button type="button" class="opt${a === null && game.pick === j ? ' picked' : ''}${a !== null && j === C.ans ? ' right' : ''}${a !== null && j === a && a !== C.ans ? ' wrong' : ''}" data-j="${j}"${a !== null ? ' disabled' : ''}>${o}</button>`).join('');
+      el.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => { if (game.ans[game.i] !== null) return; game.pick = +b.dataset.j; renderGame(); }));
+      $('gCheck').disabled = a !== null;
+      $('gPrev').disabled = game.i === 0; $('gNext').disabled = game.i === CARDS.length - 1;
+      if (a === null) { $('gameFb').innerHTML = ''; return; }
+      const ok = a === C.ans, done = sorted === CARDS.length ? ` <b>All ${CARDS.length} cards done: you scored ${gameScore()} of ${CARDS.length}.</b>` : '';
+      $('gameFb').innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> <span class="why">${C.why}</span>${done}`;
+    }
+    $('gCheck').addEventListener('click', () => {
+      if (game.ans[game.i] !== null) return;
+      if (game.pick === null) { $('gameFb').innerHTML = '<span class="verdict no">Pick an answer first.</span>'; return; }
+      game.ans[game.i] = game.pick; game.pick = null; clearFeat(); update();
     });
-    el('pauseBtn').addEventListener('click', () => { sim.running = false; sim.lastFrameTime = null; });
-    el('resetBtn').addEventListener('click', resetSimulation);
-    window.addEventListener('resize', redrawAll);
+    $('gPrev').addEventListener('click', () => { if (game.i > 0) { game.i--; game.pick = null; clearFeat(); update(); } });
+    $('gNext').addEventListener('click', () => { if (game.i < CARDS.length - 1) { game.i++; game.pick = null; clearFeat(); update(); } });
+    $('gReset').addEventListener('click', () => { game = { i: 0, ans: CARDS.map(() => null), pick: null }; clearFeat(); update(); });
 
-    resetSimulation();
+    /* ---------------- the tabs ---------------- */
+    const KEYS = { KE: [COL.KE, 'Kinetic energy (KE)'], GPE: [COL.GPE, 'Gravitational potential energy (GPE)'], heat: [COL.heat, 'Heat'], tot: [COL.tot, 'Total energy'], v: [COL.v, 'Velocity <i>v</i>'] };
+    const TABS = {
+      1: { strip: 'Answer Predict first. Then press Start: watch the GPE turn into KE as the mass falls. Step through the key moments to read the energies.',
+        presets: ['b1', 'ex6'], hint: 'Press Start, or step through the key moments. Type your own mass, height or upward speed.',
+        key: ['KE', 'GPE', 'tot', 'v'],
+        notes: ['Kinetic energy: KE = ½<i>mv</i><sup>2</sup>. Gravitational potential energy: GPE = <i>mgh</i>, with <i>h</i> measured from the ground (notes pp. 5-16, 5-17).',
+          'A stationary object of mass <i>m</i> falling freely from height <i>h</i> has only GPE at the start (position 1). As it falls, its GPE is converted into KE (p. 5-16).',
+          'Just before impact (position 2) it has only KE (p. 5-17).',
+          'The total energy at any height is constant: <i>E</i><sub>total</sub> = GPE<sub>1</sub> + KE<sub>1</sub> = GPE<sub>2</sub> + KE<sub>2</sub> (p. 5-17). Air resistance is ignored.',
+          'Thrown upwards (Example 6), the mass’s KE is converted into GPE on the way up. At the top, B, KE = 0 for an instant.'] },
+      2: { strip: 'Answer Predict first. Then press Start, or drag the sphere (or the bob) to a new starting point and let go. Watch KE and GPE trade places while the total stays the same.',
+        presets: ['ex7', 'pend'], hint: 'Press Start, or drag the sphere or the bob to a new starting point and let go.',
+        key: ['KE', 'GPE', 'tot', 'v'],
+        notes: ['The law of conservation of energy: energy cannot be created or destroyed. It can only be converted from one form to another. The total energy needs to remain constant (notes p. 5-15).',
+          'On a smooth track, or a pendulum with no air resistance, only KE and GPE change, so KE + GPE stays the same (p. 5-17).',
+          'So the sphere comes to rest momentarily at the height it was released from: D, level with A (Example 7).',
+          'The speed at any height: ½<i>mv</i><sup>2</sup> + <i>mgh</i> = <i>mgh</i><sub>A</sub>. The mass <i>m</i> cancels, so the speed does not depend on it.',
+          'A pendulum bob swings on part of a circle, just like the sphere on the curved track: the same energy story.'] },
+      3: { strip: 'Answer Predict first. Then press Start: some energy is converted to heat (and sound). KE + GPE falls, but the total stays the same.',
+        presets: ['ex8', 'b2', 'air'], hint: 'Press Start, or step through the key moments. Drag the sphere or the bob to a new starting point and let go.',
+        key: ['KE', 'GPE', 'heat', 'tot'],
+        notes: ['Some energy is converted to an unintended form, mostly heat (notes p. 5-12): by friction, by air resistance, and as sound and heat at a bounce.',
+          'KE + GPE then falls, but the total energy, including the heat, stays the same: energy is not destroyed (p. 5-15).',
+          'Example 8: KE<sub>B</sub> + GPE<sub>B</sub> = KE<sub>A</sub> + GPE<sub>A</sub> − energy lost due to friction (p. 5-20).',
+          'With air resistance, energy is lost fastest at the bottom of each swing, where the bob moves fastest, and not at all at the ends, where it stops for an instant.',
+          'On the pendulum graph, the pink curve is the smooth exponential decay through the end-of-swing dots: each dot is the same fraction smaller than the one before.'] },
+      4: { strip: 'Answer Predict first. Then sort each card: which energy goes in, and which comes out? Press Check, then Next card.',
+        key: [], notes: ['Examples of energy conversion (notes p. 5-15): a hydroelectric generator converts mechanical energy into electrical energy; an electric motor does the reverse.',
+          'An electric heater converts electrical energy into heat energy; a thermocouple does the reverse.',
+          'A loudspeaker converts electrical energy into sound energy; a microphone does the reverse.',
+          'In every conversion the total energy remains constant (p. 5-15).'] },
+      5: { strip: 'Answer every question, then read the summary.', key: [] }
+    };
+
+    const PREDICT = {
+      1: { q: 'Tutorial B1: the 0.50 kg mass falls from 10 m. As it falls past 4 m above the ground, its kinetic energy is …',
+        opts: ['20 J', '30 J', '50 J', '0 J'], ans: 1,
+        why: 'The total stays 50 J (GPE at the start: 0.50 × 10 × 10). At 4 m, GPE = 0.50 × 10 × 4 = 20 J, so KE = 50 − 20 = 30 J. Press Next key moment to check.' },
+      2: { q: 'Example 7(a): the sphere is released from A on a smooth track. Where will it come to rest momentarily?',
+        opts: ['D', 'B', 'C', 'E'], ans: 0,
+        why: 'On a smooth track no energy is lost, so the sphere rises to the height it started from: D, level with A. At B and C it is still moving, and E is higher than A. Press Start to check.' },
+      3: { q: 'With air resistance, the pendulum’s KE + GPE gets smaller every swing. The total energy (KE + GPE + heat) …',
+        opts: ['gets smaller too', 'gets larger', 'stays the same', 'falls to zero'], ans: 2,
+        why: 'Energy cannot be created or destroyed (p. 5-15): the KE + GPE that is lost becomes heat, so the total stays the same. Choose “Pendulum with air resistance” and press Start.' },
+      4: { q: 'A loudspeaker takes in 10 J of electrical energy. The sound energy it gives out is …',
+        opts: ['more than 10 J', '20 J', 'exactly 0 J', 'less than 10 J'], ans: 3,
+        why: 'Energy cannot be created (p. 5-15), so the sound can never be more than 10 J; some of the electrical energy is converted to an unintended form, heat (p. 5-12). Now sort the cards.' }
+    };
+
+    const FEATS = {
+      1: [['allGPE', 'At the start: all GPE'], ['sum', 'KE + GPE stays the same'], ['allKE', 'Just before the ground: all KE'], ['top', 'At the top: KE = 0'], ['mass', 'Twice the mass, the same speed']],
+      2: [['D', 'Back to the same height'], ['B', 'Fastest at the lowest point'], ['C', 'At C: part GPE, part KE'], ['pend', 'A pendulum does the same']],
+      3: [['ex8', '100 J − 50 J = 50 J'], ['lower', 'It stops lower than A'], ['bounce', 'Lost at the bounce'], ['heatGrows', 'Heat grows, the total stays'], ['decay', 'Each swing ends lower']],
+      4: [['reverse', 'Pairs that do the reverse'], ['two', 'One in, two out'], ['heatCard', 'Heat as the useful output']]
+    };
+    const PROMPTS = {
+      1: ['Where does the mass have the most KE? The most GPE?', 'Why does KE + GPE stay the same all the way down?', 'Does a heavier mass hit the ground faster? Why not?'],
+      2: ['Why does the sphere stop at D and not at E?', 'Where is the sphere fastest? Why there?', 'Why does the speed not depend on the mass?'],
+      3: ['Where did the “missing” energy go in each scenario?', 'Why does the pendulum lose energy fastest at the bottom of each swing?', 'Tutorial B2(c): why does the ball not reach 3.6 m again?'],
+      4: ['Name a device that does the reverse of a microphone.', 'Which conversions also produce heat that nobody wants?', 'Why can a device never give out more energy than it takes in?'],
+      5: ['Which question did most of the class get wrong, and why?', 'Pick one wrong option: what mistake would lead a student to choose it?']
+    };
+
+    let predictPick = null;
+    function clearFeat() { feat = {}; hl = {}; syncFeatButtons(); $('featNote').textContent = ''; }
+    function clearFeatNoteOnly() { if (Object.keys(feat).length) clearFeat(); }
+    function syncFeatButtons() { document.querySelectorAll('#feats .feat').forEach(b => b.classList.toggle('on', !!feat[b.dataset.f])); }
+    const keyT = name => (keyList().find(k => k.name.startsWith(name)) || { t: 0 }).t;
+    // a key feature shows itself: it always reloads its scenario, then sets the moment or the values that show it
+    function tapFeat(id) {
+      const on = !feat[id];
+      const want = scen => { presetEl.value = scen; chooseScenario(scen); };
+      clearFeat();
+      if (on) {
+        ({
+          allGPE: () => { want('b1'); sim.t = 0; hl = { rKE: true, rGPE: true }; },
+          sum: () => { want('b1'); sim.t = keyT('4 m'); hl = { rKE: true, rGPE: true, rTot: true }; },
+          allKE: () => { want('b1'); sim.t = runEnd(); hl = { rKE: true, rV: true }; },
+          top: () => { want('ex6'); sim.t = keyT('B'); hl = { rKE: true, rGPE: true }; },
+          mass: () => { want('b1'); P.m = 1; S.custom = true; S.scen = 'custom'; presetEl.value = 'custom'; $('question').innerHTML = 'Tutorial B1’s drop with twice the mass: 1.0 kg from 10 m.'; rebuild(); sim.t = runEnd(); hl = { rV: true, rKE: true }; },
+          D: () => { want('ex7'); sim.t = keyT('D'); hl = { rH: true, rKE: true }; },
+          B: () => { want('ex7'); sim.t = keyT('B'); hl = { rV: true, rKE: true }; },
+          C: () => { want('ex7'); sim.t = keyT('C'); hl = { rKE: true, rGPE: true, rV: true }; },
+          pend: () => { want('pend'); sim.t = keyT('the other side'); hl = { rH: true, rGPE: true }; },
+          ex8: () => { want('ex8'); sim.t = keyT('B'); hl = { rKE: true, rHeat: true }; },
+          lower: () => { want('ex8'); sim.t = runEnd(); hl = { rGPE: true, rHeat: true }; },
+          bounce: () => { want('b2'); sim.t = keyT('just after'); hl = { rV: true, rHeat: true }; },
+          heatGrows: () => { want('air'); const tt = traj.peaks.map(p => p.t); sim.t = tt[Math.min(9, tt.length - 1)]; hl = { rHeat: true, rTot: true }; },
+          decay: () => { want('air'); sim.t = runEnd(); hl = { rMech: true }; },
+          reverse: () => { game.i = 1; game.pick = null; },
+          two: () => { game.i = 8; game.pick = null; },
+          heatCard: () => { game.i = 2; game.pick = null; }
+        })[id]();
+        sim.running = false;
+      }
+      feat = on ? { [id]: true } : {};
+      syncFeatButtons(); if (currentTab <= 3) buildInputs(); update();
+      $('featNote').innerHTML = on ? featNote(id) : '';
+    }
+    function featNote(id) {
+      const s = currentTab <= 3 ? now() : null;
+      switch (id) {
+        case 'allGPE': return `Released from rest: KE = 0 and GPE = <i>mgh</i> = 0.50 × 10 × 10 = ${J(s.GPE)}. All of its energy is GPE (position 1, notes p. 5-16).`;
+        case 'sum': return `At 4 m: GPE = 0.50 × 10 × 4 = ${J(s.GPE)} and KE = ${J(s.KE)}: ${f3(s.GPE)} + ${f3(s.KE)} = ${J(s.total)}, the same total as at the start (p. 5-17).`;
+        case 'allKE': return `Just before the ground: GPE = 0 and KE = ${J(s.KE)}. All the GPE has been converted into KE: <i>v</i> = √(2 × 50 ÷ 0.50) = ${ms(s.v)}.`;
+        case 'top': return `At B the mass stops for an instant: KE = 0, so GPE = ${J(s.GPE)}, the whole 108 J. B is ${m_(s.h)} up: 1.0 × 10 × <i>h</i> = 108.`;
+        case 'mass': return `Twice the mass has twice the energy (${J(s.KE)}), but it hits the ground at the same speed, ${ms(s.v)}: ½<i>mv</i><sup>2</sup> = <i>mgh</i> gives <i>v</i> = √(2<i>gh</i>), with no <i>m</i> in it.`;
+        case 'D': return `At D the sphere stops for an instant, ${m_(s.h)} up: the same height as A. No energy was lost on the smooth track, so all ${J(s.GPE)} is GPE again (Example 7(a)).`;
+        case 'B': return `At B, the lowest point, GPE = 0 and KE = ${J(s.KE)}: the sphere moves fastest here, <i>v</i> = √(2 × 10 × 1.0) = ${ms(s.v)} (Example 7(b)).`;
+        case 'C': return `At C, 0.4 m up: GPE = ${J(s.GPE)} and KE = ${J(s.KE)}, still ${J(s.total)} in total. <i>v</i> = √(2 × 10 × 0.6) = ${ms(s.v)} (Example 7(c)).`;
+        case 'pend': return `The bob stops for an instant on the other side at ${m_(s.h)}, the height it was released from, just like the sphere at D.`;
+        case 'ex8': return `At B: KE<sub>B</sub> + 0 = 0 + 100 − 50, so KE<sub>B</sub> = ${J(s.KE)}. The other 50 J was converted to heat by friction (Example 8).`;
+        case 'lower': return `On the far side it stops ${m_(s.h)} up, lower than A: GPE = ${J(s.GPE)}, and ${J(s.heat)} is now heat. ${f3(s.GPE)} + ${f3(s.heat)} = 100 J.`;
+        case 'bounce': return `Just after the bounce: <i>v</i> = ${ms(s.v)}, KE = ${J(s.KE)}. Before it, KE was ${J(stateAt(bounceTimes().t1).KE)}. The ${J(s.heat)} difference was converted to sound and heat (Tutorial B2(c)).`;
+        case 'heatGrows': return `At the end of swing 9 (${tx(sim.t)} s): KE + GPE = ${J(s.mech)}, heat = ${J(s.heat)}. Total = ${J(s.total)}, the same as at the start.`;
+        case 'decay': return `The dots, KE + GPE at the end of each swing, fall by the same fraction each time: the pink curve <i>E</i> = ${f3(stateAt(0).mech)} e<sup>−${fitK === null ? '?' : f3(fitK)}<i>t</i></sup> J passes through them.`;
+        case 'reverse': return 'A hydroelectric generator (mechanical → electrical) and an electric motor (electrical → mechanical) do the reverse of each other. So do a thermocouple and an electric heater, and a microphone and a loudspeaker (notes p. 5-15).';
+        case 'two': return 'One energy in, two out: on a rough track the GPE becomes KE and heat. The two outputs add up to the input.';
+        case 'heatCard': return 'Heat is usually the unintended form (p. 5-12), but for an electric heater it is the whole point: the useful output.';
+      }
+      return '';
+    }
+
+    function renderPredict(tab) {
+      const Q = PREDICT[tab], box = $('predictBox');
+      predictPick = null;
+      if (!Q) { box.hidden = true; return; }
+      box.hidden = false; box.classList.remove('done');
+      $('predictQ').innerHTML = Q.q;
+      $('predictFb').innerHTML = '';
+      const opts = $('predictOpts');
+      opts.innerHTML = '';
+      Q.opts.forEach((o, i) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.innerHTML = o;
+        b.addEventListener('click', () => {
+          if (opts.dataset.done) return;
+          predictPick = i; opts.querySelectorAll('.opt').forEach((x, j) => x.classList.toggle('picked', j === i));
+        });
+        opts.appendChild(b);
+      });
+      delete opts.dataset.done;
+      $('predictCheck').textContent = 'Check my answer';
+    }
+    $('predictCheck').addEventListener('click', () => {
+      const Q = PREDICT[currentTab], opts = $('predictOpts'), fb = $('predictFb');
+      if (!Q) return;
+      if (opts.dataset.done) { renderPredict(currentTab); return; }
+      if (predictPick === null) { fb.innerHTML = '<span class="verdict no">Pick an answer first.</span>'; return; }
+      opts.dataset.done = '1';
+      const ok = predictPick === Q.ans;
+      opts.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === Q.ans) x.classList.add('right'); else if (j === predictPick) x.classList.add('wrong'); });
+      // the options fold away: the result line names the pick (and the right answer), then the explanation
+      $('predictBox').classList.add('done');
+      fb.innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> Your prediction: ${Q.opts[predictPick]}.`
+        + (ok ? '' : ` The answer: <b>${Q.opts[Q.ans]}</b>.`) + ` <span class="why">${Q.why}</span>`;
+      $('predictCheck').textContent = 'Try again';
+    });
+
+    function renderFeats(tab) {
+      const list = FEATS[tab] || [], el = $('feats');
+      $('featBox').hidden = !list.length;
+      el.innerHTML = '';
+      list.forEach(([id, lab]) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'feat'; b.dataset.f = id;
+        b.innerHTML = lab;
+        b.addEventListener('click', () => tapFeat(id));
+        el.appendChild(b);
+      });
+      $('featNote').textContent = '';
+      syncFeatButtons();
+    }
+    function renderKey(tab) {
+      // the label sits in its own span: as direct children of the inline-flex entry, <i> would become a flex item
+      $('ckey').innerHTML = (TABS[tab].key || []).map(k => `<span><b style="background:${KEYS[k][0]}"></b><span>${KEYS[k][1]}</span></span>`).join('');
+    }
+    function fillPresets(list) {
+      presetEl.innerHTML = '';
+      [...list, 'custom'].forEach(id => { const o = document.createElement('option'); o.value = id; o.textContent = id === 'custom' ? 'Your own values' : PRESETS[id].name; presetEl.appendChild(o); });
+      presetEl.value = list[0];
+    }
+    function graphTitle(tab) {
+      const it = [[COL.KE, 'KE'], [COL.GPE, 'GPE']];
+      if (tab === 3) it.push([COL.heat, 'Heat'], [COL.mech, 'KE + GPE', 'dash']);
+      it.push([COL.tot, 'Total']);
+      return `Energy against time<div class="legend">${it.map(([c, n, d]) => `<span><b class="${d || ''}" style="background:${c}"></b>${n}</span>`).join('')}${tab === 3 ? `<span><b style="background:${COL.fit}"></b>Exponential decay (pendulum)</span>` : ''}</div>`;
+    }
+
+    function showTab(tab) {
+      currentTab = tab;
+      sim.running = false;
+      document.querySelectorAll('#tabs .tab').forEach(b => { const on = +b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+      $('stepLabel').textContent = `Step ${tab} of 5`;
+      document.querySelectorAll('#stepBar i').forEach((i, n) => i.classList.toggle('on', n < tab));
+      $('strip').innerHTML = TABS[tab].strip;
+      renderKey(tab);
+      $('pageSim').hidden = tab === 5;
+      $('page5').hidden = tab !== 5;
+      if (tab <= 4) {
+        const T = TABS[tab];
+        canvas.className = 't' + tab;
+        $('gameBox').hidden = tab !== 4;
+        $('simBlock').hidden = tab === 4;
+        $('graphWrap').hidden = tab === 4;
+        $('sceneHint').textContent = T.hint || '';
+        $('graphTitle').innerHTML = graphTitle(tab);
+        $('notes').innerHTML = '<ul>' + T.notes.map(n => `<li>${n}</li>`).join('') + '</ul>';
+        if (tab <= 3) { fillPresets(T.presets); chooseScenario(T.presets[0]); }
+        else { game.pick = null; geo = null; update(); }
+      }
+      if (tab === 5) renderQuiz();
+      renderPredict(tab);
+      renderFeats(tab);
+      $('tPrompts').innerHTML = PROMPTS[tab].map(p => `<li>${p}</li>`).join('');
+    }
+    document.querySelectorAll('#tabs .tab').forEach(b => b.addEventListener('click', () => showTab(+b.dataset.tab)));
+
+    /* ---------------- Tab 5: Challenge ---------------- */
+    // every answer recomputed and matched to the lecturer's copy or Tutorial 5's answer key
+    // A question whose parts share one situation is one screen: the situation once, then its parts
+    const QUIZ = [
+      { src: 'Notes p. 5-15', stem: 'The law of conservation of energy.', parts: [
+        { lab: '(a)', q: 'Energy …', opts: ['cannot be created or destroyed. It can only be converted from one form to another.', 'can be created, but never destroyed.', 'is destroyed whenever a machine is used.', 'can only exist as kinetic energy.'], ans: 0,
+          why: 'The law of conservation of energy states that energy cannot be created or destroyed. It can only be converted from one form to another.' },
+        { lab: '(b)', q: 'So the total energy …', opts: ['remains constant', 'always decreases', 'always increases', 'is always zero'], ans: 0,
+          why: 'The total energy needs to remain constant (p. 5-15).' }] },
+      { src: 'Example 6, notes p. 5-18', stem: 'A 1.0 kg mass is thrown up from A, 10 m above the ground, with velocity 4.0 m/s. It reaches point B, then falls down and hits the ground at C. Ignore air resistance.', parts: [
+        { lab: '(a)', q: 'What is the kinetic energy at A?', opts: ['8.0 J', '16 J', '4.0 J', '108 J'], ans: 0,
+          why: 'KE = ½<i>mv</i><sup>2</sup> = ½ × 1.0 × 4.0<sup>2</sup> = 8.0 J. (16 J leaves out the ½.)' },
+        { lab: '(b)', q: 'What is the gravitational potential energy at B?', opts: ['108 J', '100 J', '8.0 J', '0 J'], ans: 0,
+          why: '<i>E</i><sub>total</sub> = 8.0 + 100 = 108 J at every point. At B the mass stops for an instant, KE = 0, so GPE = 108 J. (100 J is the GPE at A.)' },
+        { lab: '(c)', q: 'What is the kinetic energy at C, just before it hits the ground?', opts: ['108 J', '100 J', '8.0 J', '0 J'], ans: 0,
+          why: 'At C, GPE = 0, so all 108 J is KE.' }] },
+      { src: 'Example 7, notes p. 5-19', stem: 'A stationary sphere on a smooth track is released from A, 1.0 m above the lowest point B. C is 0.4 m above B.', parts: [
+        { lab: '(a)', q: 'Where (B, C, D, E) will the sphere come to rest momentarily?', opts: ['D', 'B', 'C', 'E'], ans: 0,
+          why: 'No energy is lost on a smooth track, so the sphere rises to the height of A: point D. E is higher than A.' },
+        { lab: '(b)', q: 'Calculate the velocity of the sphere at B.', opts: ['4.47 m/s', '20.0 m/s', '3.16 m/s', '3.46 m/s'], ans: 0,
+          why: '½<i>mv</i><sup>2</sup> + 0 = 0 + <i>mgh</i>, so <i>v</i> = √(2<i>gh</i>) = √(2 × 10 × 1) = 4.47 m/s. (20.0 forgets the square root; 3.16 forgets the 2; 3.46 is the speed at C.)' },
+        { lab: '(c)', q: 'Calculate the velocity of the sphere at C.', opts: ['3.46 m/s', '2.83 m/s', '4.47 m/s', '12.0 m/s'], ans: 0,
+          why: '½<i>mv</i><sup>2</sup> + <i>mg</i>(0.4) = <i>mg</i>(1), so <i>v</i> = √(2 × 10 × 0.6) = 3.46 m/s. (2.83 m/s uses 0.4 m instead of the 0.6 m drop.)' }] },
+      { src: 'Example 8, notes p. 5-20', stem: 'A sphere is released from rest at A and moves down a rough track to B, the lowest point. The gravitational potential energy at A is 100 J and the energy loss due to friction is 50 J.', parts: [
+        { q: 'Calculate the kinetic energy of the sphere at B.', opts: ['50 J', '150 J', '100 J', '0 J'], ans: 0,
+          why: 'KE<sub>B</sub> + GPE<sub>B</sub> = KE<sub>A</sub> + GPE<sub>A</sub> − energy lost due to friction: KE<sub>B</sub> + 0 = 0 + 100 − 50 = 50 J. (150 J adds the loss instead of taking it away.)' }] },
+      { src: 'Tutorial 5, B1', stem: 'A mass of 0.50 kg falls from a height of 10 m above the ground. Ignore air resistance.', parts: [
+        { lab: '(i)', q: 'What is its kinetic energy as it falls past 4 m?', opts: ['30 J', '20 J', '50 J', '0 J'], ans: 0,
+          why: 'Total = GPE at the start = 0.50 × 10 × 10 = 50 J. At 4 m, GPE = 0.50 × 10 × 4 = 20 J, so KE = 50 − 20 = 30 J. (20 J is the GPE.)' },
+        { lab: '(ii)', q: 'What is its speed as it falls past 4 m?', opts: ['11.0 m/s', '8.94 m/s', '14.1 m/s', '120 m/s'], ans: 0,
+          why: '<i>v</i> = √(2KE ÷ <i>m</i>) = √(2 × 30 ÷ 0.50) = 11.0 m/s. (8.94 m/s uses the GPE, 20 J; 120 m/s forgets the square root.)' },
+        { lab: '(iii)', q: 'What is its speed just before it hits the ground?', opts: ['14.1 m/s', '10.0 m/s', '200 m/s', '11.0 m/s'], ans: 0,
+          why: 'All 50 J is KE: <i>v</i> = √(2 × 50 ÷ 0.50) = √200 = 14.1 m/s.' }] },
+      { src: 'Tutorial 5, B2', stem: 'A tennis ball is dropped from a height of 3.6 m. It rebounds to a height of 2.4 m.', parts: [
+        { lab: '(a)', q: 'What is the speed of the ball just before hitting the ground?', opts: ['8.49 m/s', '6.00 m/s', '72.0 m/s', '6.93 m/s'], ans: 0,
+          why: 'Decrease in GPE = increase in KE: <i>mgh</i> = ½<i>mv</i><sup>2</sup>, so <i>v</i> = √(2 × 10 × 3.6) = √72 = 8.49 m/s. The mass cancels.' },
+        { lab: '(b)', q: 'What is the speed of the ball just after leaving the ground?', opts: ['6.93 m/s', '8.49 m/s', '4.90 m/s', '48.0 m/s'], ans: 0,
+          why: 'Its KE just after leaving the ground becomes GPE at 2.4 m: <i>v</i> = √(2 × 10 × 2.4) = √48 = 6.93 m/s.' },
+        { lab: '(c)', q: 'Why does the ball fail to reach the original height of 3.6 m?', opts: ['Some of its kinetic energy is converted to sound energy and heat energy at the bounce.', 'Energy is destroyed when the ball hits the ground.', 'The ground takes its gravitational potential energy away.', 'Its mass is smaller after the bounce.'], ans: 0,
+          why: 'Kinetic energy of the tennis ball is converted to sound energy and heat energy at the bounce, so less KE is left to become GPE. Energy is never destroyed.' }] },
+      { src: 'Notes p. 5-15', stem: 'Examples of energy conversion.', parts: [
+        { lab: '(a)', q: 'A microphone converts …', opts: ['sound energy into electrical energy', 'electrical energy into sound energy', 'heat energy into electrical energy', 'mechanical energy into electrical energy'], ans: 0,
+          why: 'A microphone converts sound energy into electrical energy; a loudspeaker does the reverse.' },
+        { lab: '(b)', q: 'Which converts electrical energy into mechanical energy?', opts: ['An electric motor', 'A hydroelectric generator', 'A thermocouple', 'A microphone'], ans: 0,
+          why: 'An electric motor. A hydroelectric generator does the reverse: mechanical energy into electrical energy.' }] },
+      { src: 'Notes pp. 5-16, 5-17', stem: 'A stationary object falls freely from height h to the ground.', parts: [
+        { q: 'Just before impact (position 2), its energy is …', opts: ['all kinetic energy: <i>E</i><sub>total</sub> = 0 + ½<i>mv</i><sup>2</sup>', 'all gravitational potential energy: <i>E</i><sub>total</sub> = <i>mgh</i> + 0', 'zero', 'half KE and half GPE'], ans: 0,
+          why: 'At position 2 (before impact) the object only has kinetic energy, ½<i>mv</i><sup>2</sup>, equal to the <i>mgh</i> it had at position 1.' }] },
+      { src: 'Values chosen for this question', stem: 'A pendulum bob is released from rest, pulled 35° to one side. Ignore air resistance.', parts: [
+        { lab: '(a)', q: 'Where is its kinetic energy greatest?', opts: ['At the lowest point', 'Where it is released', 'At the end of the swing on the other side', 'It is the same everywhere'], ans: 0,
+          why: 'At the lowest point GPE is smallest (zero), so KE = total − GPE is largest. At both ends of the swing KE = 0.' },
+        { lab: '(b)', q: 'How high does it swing on the other side?', opts: ['To the same height it was released from', 'Higher than where it was released', 'Lower, because energy is destroyed', 'Only to the lowest point'], ans: 0,
+          why: 'KE + GPE stays the same, so where it stops (KE = 0) its GPE, and so its height, is the same as at the release point.' }] },
+      { src: 'Tutorial 5, B3', stem: 'A car of mass 1200 kg moves at a speed of 90 km h⁻¹.', parts: [
+        { lab: '(b)', q: 'Using the law of conservation of energy, find the work done needed to bring the car to rest.', opts: ['375 kJ', '4860 kJ', '750 kJ', '15 kJ'], ans: 0,
+          why: '90 km h⁻¹ = 25 m/s. KE = ½ × 1200 × 25<sup>2</sup> = 375 000 J. All of it must be taken away, so the work done is 375 kJ. (4860 kJ uses 90 in place of 25 m/s; 750 kJ leaves out the ½.)' }] }
+    ];
+    // the options are written with the right one first; turn each part's list round by a fixed amount so the right
+    // answer is not always in the same place
+    { let pc = 0; QUIZ.forEach(Q => Q.parts.forEach(Pt => { const n = Pt.opts.length, r = (pc++ * 3 + 1) % n;
+      Pt.opts = Pt.opts.slice(r).concat(Pt.opts.slice(0, r)); Pt.ans = (Pt.ans - r + n) % n; })); }
+    const QUIZ_MARKS = QUIZ.reduce((n, Q) => n + Q.parts.length, 0);
+    const partLabel = (Q, k) => Q.parts[k].lab ? Q.parts[k].lab + ' ' : Q.parts.length > 1 ? `(${'abcdefgh'[k]}) ` : '';
+    let quiz = { i: 0, score: 0, picks: [], done: false, missed: [] };
+    function resetQuiz() { quiz = { i: 0, score: 0, picks: [], done: false, missed: [] }; renderQuiz(); }
+    function renderQuiz() {
+      const el = $('quiz'), N = QUIZ.length;
+      if (quiz.i >= N) {
+        const list = quiz.missed.length
+          ? `<p>Go back over these:</p><ul>${quiz.missed.map(([n, k]) => { const Q = QUIZ[n];
+              return `<li>Question ${n + 1}${partLabel(Q, k).trim()} (${Q.src}): ${(Q.stem ? Q.stem + ' ' : '') + Q.parts[k].q}</li>`; }).join('')}</ul>`
+          : '<p>Every answer right. Well done.</p>';
+        el.innerHTML = `<div class="quiz-top"><span>Summary</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div><div class="quiz-bar"><i style="width:100%"></i></div>
+          <div class="quiz-sum"><div class="quiz-q">You scored ${quiz.score} out of ${QUIZ_MARKS}.</div>${list}</div>
+          <div class="row-btns"><button type="button" id="qAgain">Try the quiz again</button></div>`;
+        $('qAgain').addEventListener('click', resetQuiz);
+        return;
+      }
+      const Q = QUIZ[quiz.i], many = Q.parts.length > 1;
+      quiz.picks = Q.parts.map(() => null);
+      el.innerHTML = `<div class="quiz-top"><span>Question ${quiz.i + 1} of ${N}</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div>
+        <div class="quiz-bar"><i style="width:${(quiz.i / N) * 100}%"></i></div>
+        ${Q.stem ? `<div class="quiz-q" id="qStem">${Q.stem}</div>` : ''}<div class="quiz-src">${Q.src}${many ? ` · ${Q.parts.length} parts, answer them all` : ''}</div>
+        ${Q.parts.map((Pt, k) => `<div class="qpart" data-k="${k}">
+          <div class="${Q.stem ? 'qpart-q' : 'quiz-q'}">${partLabel(Q, k)}${Pt.q}</div>
+          <div class="opts">${Pt.opts.map((o, j) => `<button type="button" class="opt" data-j="${j}">${o}</button>`).join('')}</div>
+          <div class="feedback"></div></div>`).join('')}
+        <div class="row-btns"><button type="button" id="qSubmit">${many ? 'Submit answers' : 'Submit answer'}</button><button type="button" class="secondary" id="qReset">Reset quiz</button></div>
+        <div class="feedback" id="qFb"></div>`;
+      el.querySelectorAll('.qpart').forEach(part => {
+        const k = +part.dataset.k;
+        part.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+          if (quiz.done) return;
+          quiz.picks[k] = +b.dataset.j; part.querySelectorAll('.opt').forEach(x => x.classList.toggle('picked', x === b));
+        }));
+      });
+      $('qReset').addEventListener('click', resetQuiz);
+      $('qSubmit').addEventListener('click', () => {
+        const fb = $('qFb');
+        if (quiz.done) { quiz.i++; quiz.done = false; renderQuiz(); return; }
+        const left = quiz.picks.map((p, k) => p === null ? partLabel(Q, k).trim() || `part ${k + 1}` : null).filter(x => x !== null);
+        if (left.length) { fb.innerHTML = `<span class="verdict no">${many ? `Pick an answer for every part first (still to do: ${left.join(', ')}).` : 'Pick an answer first.'}</span>`; return; }
+        quiz.done = true; fb.innerHTML = '';
+        el.querySelectorAll('.qpart').forEach(part => {
+          const k = +part.dataset.k, Pt = Q.parts[k], ok = quiz.picks[k] === Pt.ans;
+          if (ok) quiz.score++; else quiz.missed.push([quiz.i, k]);
+          part.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === Pt.ans) x.classList.add('right'); else if (j === quiz.picks[k]) x.classList.add('wrong'); });
+          part.querySelector('.feedback').innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> <span class="why">${Pt.why}</span>`;
+        });
+        el.querySelector('.quiz-top span:last-child').textContent = `Score: ${quiz.score} of ${QUIZ_MARKS}`;
+        $('qSubmit').textContent = quiz.i + 1 < N ? 'Next question' : 'See the summary';
+      });
+    }
+
+    /* ---------------- Teacher mode ---------------- */
+    // Only the teacher link (this page's address + ?teacher) shows the button; students and the
+    // Brightspace embed use the plain address. Not a lock: the panel only changes this screen.
+    const teacher = $('teacher');
+    if (new URLSearchParams(location.search).has('teacher')) $('teacherBtn').hidden = false;
+    $('teacherBtn').addEventListener('click', () => { teacher.hidden = !teacher.hidden; });
+    $('tClose').addEventListener('click', () => { teacher.hidden = true; });
+    $('tExplain').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-explain');
+      e.target.textContent = on ? 'Show explanations' : 'Hide explanations'; e.target.classList.toggle('on', on);
+    });
+    $('tAnswers').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-answers');
+      e.target.textContent = on ? 'Show answer labels' : 'Hide answer labels'; e.target.classList.toggle('on', on);
+    });
+    // free exploration: no Predict first
+    $('tFree').addEventListener('click', e => {
+      freeMode = !freeMode; document.body.classList.toggle('free-mode', freeMode);
+      e.target.textContent = freeMode ? 'Back to the guided steps' : 'Switch to free exploration'; e.target.classList.toggle('on', freeMode);
+      showTab(currentTab);
+    });
+    const fullBtn = $('tFull');
+    if (!document.fullscreenEnabled) fullBtn.hidden = true;
+    fullBtn.addEventListener('click', () => {
+      if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {});
+    });
+    document.addEventListener('fullscreenchange', () => { fullBtn.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
+    $('tReset').addEventListener('click', () => { resetQuiz(); game = { i: 0, ans: CARDS.map(() => null), pick: null }; showTab(1); });
+
+    // for the checks: the state behind the drawing
+    window.__pimState = () => ({ tab: currentTab, scen: S.scen, custom: S.custom, t: sim.t, end: runEnd(), rate: playRate(), P: JSON.parse(JSON.stringify(P)),
+      state: currentTab <= 3 ? now() : null, keys: currentTab <= 3 ? keyList() : [], fitK, game: JSON.parse(JSON.stringify(game)),
+      events: traj ? traj.events : [], peaks: traj ? traj.peaks : [], q: traj ? traj.q : null });
+    window.__pimRunToEnd = runToEnd;
+    window.__pimStateAt = t => stateAt(t);
+    window.addEventListener('resize', () => { if (currentTab <= 4) { geo = null; update(); } });
+    showTab(1);
+  </script>
+  <script>
+    // Embedded (Brightspace): tell the page around the frame how tall this page is, so a resize script in the
+    // embed code can fit the frame to it (no blank space, no inner scrollbar). Measured from the content, not
+    // scrollHeight, which never drops below the frame's own height and so could never shrink it.
+    (function () {
+      if (window.parent === window) return;
+      let last = 0;
+      function height() {
+        const c = document.querySelector('.container'), cs = getComputedStyle(document.body);
+        return Math.ceil(c.getBoundingClientRect().bottom + window.scrollY + parseFloat(cs.paddingBottom) + parseFloat(cs.marginBottom) + 4);
+      }
+      function send(force) {
+        const h = height();
+        if (!force && Math.abs(h - last) < 2) return;
+        last = h;
+        window.parent.postMessage({ type: 'pim-height', page: location.pathname.split('/').pop(), height: h }, '*');
+      }
+      new ResizeObserver(() => send(false)).observe(document.querySelector('.container'));
+      window.addEventListener('load', () => send(true));
+      // the embed's script asks once it is listening, in case this page loaded first
+      window.addEventListener('message', e => { if (e.data && e.data.type === 'pim-height?') send(true); });
+      send(true);
+    })();
   </script>
   <script>
     // Phones: a swipe that starts on an empty part of a drawing scrolls the page (touch-action: pan-y),
     // and a touch the page grabbed for a drag (its own setPointerCapture call) keeps the page still.
     // (hasPointerCapture can't tell: a touch is always captured implicitly.)
-    // The kinematics graphs are left out: a sideways drag scrubs them and an up-down one scrolls.
     document.querySelectorAll('canvas:not(.graph-canvas)').forEach(c => {
       let grabbed = false;
       const capture = c.setPointerCapture;
