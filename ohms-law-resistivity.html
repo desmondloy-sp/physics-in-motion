@@ -18,49 +18,198 @@
   <!-- pim-meta:end -->
   <style>
     * { box-sizing: border-box; }
+    /* the hidden attribute must win over every display rule below */
+    [hidden] { display: none !important; }
     body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
     .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
-    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    h1 { margin: 0; font-size: 1.1rem; }
     .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
-    .controls { display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: 10px; align-items: end; }
-    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-    label { font-size: 0.8rem; font-weight: 600; }
-    .val { font-weight: normal; color: #334155; }
-    select { font-size: 0.9rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
-    input[type=range] { width: 100%; }
-    .buttons { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; align-items: center; }
-    button { font-size: 0.88rem; padding: 7px 12px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; }
-    button.go { background: #2563eb; }
+
+    /* controls: the scenario menu and the simulation buttons (or the steps, or the readings); then the variables */
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 110px; }
+    .control-group.scen-group { flex: 2.2 1 260px; }
+    .control-group.button-group { flex: 2 1 280px; }
+    .control-group select { width: 100%; max-width: 100%; }
+    .controls input, .controls select, .controls button { height: 34px; }
+    label { font-size: 0.82rem; font-weight: 600; line-height: 1.2; }
+    label sub, label sup { line-height: 0; }
+    .step-no { font-weight: 400; color: #475569; }
+    input, select, button { font-size: 0.95rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; }
+    input[type=number], input.num { width: 100%; max-width: 120px; }
+    input[type=range] { padding: 0; border: none; height: 34px; width: 100%; min-width: 150px; }
+    .buttons { display: flex; gap: 6px; flex-wrap: nowrap; }
+    button { cursor: pointer; background: #2563eb; color: white; border: none; min-width: 0; flex: 1; }
+    button:hover { background: #1d4ed8; }
+    button:disabled { background: #94a3b8; cursor: default; }
+    button.secondary { background: #475569; }
+    button.secondary:hover { background: #334155; }
+    button.secondary:disabled { background: #cbd5e1; color: #475569; }
+    button.danger { background: #dc2626; }
+    button.danger:hover { background: #b91c1c; }
+    .moments { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
+    .moments button { flex: none; padding: 6px 12px; }
+    .speed { font-size: 0.8rem; color: #475569; }
+    .speed:empty { display: none; }
+    .group-title { font-size: 0.78rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.03em; margin: 10px 0 4px; }
+    .inputs { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: flex-end; }
+    .inputs .control-group { flex: 0 1 auto; }
+    .inputs .control-group.wide { flex: 1 1 220px; }
+    .inputs .tick { display: flex; align-items: center; gap: 6px; height: 34px; font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
+    .inputs select { height: 34px; }
+    .label-row label { white-space: nowrap; }
+    .question { margin-top: 8px; font-size: 0.84rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 6px 10px; color: #7c2d12; }
+    .question:empty { display: none; }
+    .rec-note { font-size: 0.8rem; color: #475569; margin-top: 6px; }
+    .rec-note:empty { display: none; }
+
     .readout { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .readout.n4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .readout.n6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
     .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card.hl { box-shadow: inset 0 0 0 2px #dc2626; }
+    .readout-card.ok { background: #ecfdf5; }
+    .readout-card.warn { background: #fef2f2; }
     .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
     .readout-card .value { font-size: 1rem; font-weight: bold; }
-    .readout-card.warn { background: #fef2f2; }
-    .readout.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .nw { white-space: nowrap; }
-    [hidden] { display: none !important; }
-    .exp-tabs { margin-bottom: 8px; }
-    .exp-tabs button { font-weight: 600; }
-    #ohmControls { grid-template-columns: 1.6fr 1fr; }
-    @media (max-width: 900px) { #ohmControls { grid-template-columns: 1fr; } }
-    .layout { display: grid; grid-template-columns: 1fr; gap: 8px; }
-    @media (min-width: 900px) { .layout { grid-template-columns: 1.4fr 1fr; } }
-    canvas { display: block; width: 100%; border-radius: 10px; touch-action: pan-y; }
-    #rigCanvas { height: 330px; border: 1px solid #dbeafe; background: #f8fbff; }
-    #graphCanvas { height: 330px; border: 1px solid #e5e7eb; background: #fff; }
-    .tabs { display: flex; gap: 4px; margin-bottom: 4px; }
-    .tabs button { background: #e2e8f0; color: #1f2937; }
-    .tabs button.on { background: #2563eb; color: white; }
-    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
-    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    .words { margin-top: 8px; font-size: 0.86rem; font-weight: 600; color: #1e3a8a; background: #eef4ff; border-radius: 8px; padding: 6px 10px; }
+    .words:empty { display: none; }
+
+    .scene-wrap { margin-top: 8px; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 0 0 4px; }
+    .note { margin-top: 6px; font-size: 0.8rem; color: #475569; }
     .note ul { margin: 2px 0 0; padding-left: 18px; }
     .note li { margin: 2px 0; }
+    canvas { display: block; width: 100%; border-radius: 10px; background: white; }
+    #scene { height: 360px; border: 1px solid #dbeafe; touch-action: pan-y; }
+    #scene.t2 { height: 330px; }
+    #scene.t3 { height: 330px; }
+    #scene.t4 { height: 290px; }
+    #scene.t5 { height: 340px; }
+    .graph-title { font-weight: 700; margin: 8px 0 4px; font-size: 0.88rem; }
+    .graph-opt { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 600; margin: 0 0 4px; }
+    #graph { height: 260px; border: 1px solid #e5e7eb; touch-action: pan-y; }
+
+    /* the working, set like the notes: italic symbols, stacked fractions, a root sign with a bar */
+    .work { margin-top: 8px; }
+    .work:empty { display: none; }
+    .math { font-family: 'Times New Roman', Times, serif; font-size: 1.06rem; color: #1f2937; }
+    /* a block line, not flex: inside flex every <sub> would become its own item and lose its drop */
+    .math .eq { display: block; margin: 4px 0; line-height: 2.1; }
+    .math .eq.lit { background: #fef9c3; border-radius: 4px; padding: 0 4px; }
+    .math .frac { display: inline-flex; flex-direction: column; text-align: center; vertical-align: middle; line-height: 1.15; }
+    .math .frac > span:first-child { border-bottom: 1px solid currentColor; padding: 0 3px; }
+    .math .frac > span:last-child { padding: 0 3px; }
+    .math .root { display: inline-flex; align-items: flex-end; line-height: 1.25; vertical-align: middle; }
+    .math .root > i.rs { font-style: normal; font-size: 1.3em; line-height: 1; }
+    .math .root > span { border-top: 1px solid currentColor; padding: 1px 2px 0; }
+    .math b { font-family: Arial, Helvetica, sans-serif; }
+
+    /* ---- the step-by-step frame: header, numbered tabs, colour key, instruction strip ---- */
+    .app-head { background: #1e293b; color: #f8fafc; border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+    .head-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .head-row h1 { flex: 1 1 260px; }
+    .steps { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #cbd5e1; }
+    .step-bar { display: flex; gap: 3px; }
+    .step-bar i { display: block; width: 18px; height: 5px; border-radius: 3px; background: #475569; }
+    .step-bar i.on { background: #fbbf24; }
+    button.teacher-btn { flex: none; background: transparent; border: 1px solid #94a3b8; color: #f8fafc; font-size: 0.82rem; padding: 5px 10px; }
+    button.teacher-btn:hover { background: #334155; }
+    /* every tab always visible: equal columns, and a long name wraps onto a second line (never a sideways scroll) */
+    .tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; margin-top: 8px; }
+    button.tab { min-width: 0; background: #f1f5f9; color: #1e293b; font-size: 0.85rem; font-weight: 600; padding: 7px 8px; border-radius: 8px; line-height: 1.2; white-space: normal; text-align: center; }
+    button.tab:hover { background: #e2e8f0; }
+    button.tab.active, button.tab.active:hover { background: #2563eb; color: white; }
+    .tab .ts { display: none; }
+    .nw { white-space: nowrap; }
+    .ckey { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 7px; font-size: 0.76rem; color: #e2e8f0; }
+    .ckey > span { display: inline-flex; align-items: center; gap: 5px; }
+    .ckey b { display: inline-block; width: 14px; height: 4px; border-radius: 2px; }
+    .ckey b.dot { width: 10px; height: 10px; border-radius: 50%; }
+    .strip { background: #fef9c3; border-left: 4px solid #eab308; border-radius: 6px; padding: 7px 10px; font-size: 0.86rem; margin-bottom: 8px; }
+
+    /* Predict first (above the controls), key features */
+    .learn { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 8px; }
+    .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; }
+    .box-title { font-weight: 700; font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-q { font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-box { margin-bottom: 8px; }
+    .opts { display: grid; gap: 5px; }
+    #predictOpts { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    .predict-box.done #predictOpts { display: none; }
+    .predict-box.done .predict-q { margin-bottom: 0; }
+    button.opt { flex: none; width: 100%; text-align: left; background: white; color: #1f2937; border: 1px solid #cbd5e1; font-size: 0.86rem; padding: 7px 10px; }
+    button.opt:hover { background: #f1f5f9; }
+    button.opt:disabled { background: white; color: #1f2937; cursor: default; }
+    button.opt.picked, button.opt.picked:hover { border-color: #2563eb; background: #eff6ff; box-shadow: inset 0 0 0 1px #2563eb; }
+    button.opt.right, button.opt.right:hover { border-color: #16a34a; background: #dcfce7; box-shadow: inset 0 0 0 1px #16a34a; }
+    button.opt.wrong, button.opt.wrong:hover { border-color: #dc2626; background: #fee2e2; box-shadow: inset 0 0 0 1px #dc2626; }
+    .row-btns { display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+    .row-btns button { flex: none; padding: 6px 12px; }
+    .feedback { font-size: 0.84rem; margin-top: 7px; }
+    .feedback:empty { display: none; }
+    .feedback .verdict { font-weight: 700; }
+    .feedback .verdict.ok { color: #15803d; }
+    .feedback .verdict.no { color: #b91c1c; }
+    .feats { display: flex; flex-wrap: wrap; gap: 6px; }
+    button.feat { flex: none; background: white; color: #1e293b; border: 1px solid #cbd5e1; font-size: 0.84rem; padding: 6px 11px; border-radius: 999px; }
+    button.feat:hover { background: #f1f5f9; }
+    button.feat.on, button.feat.on:hover { background: #1e293b; color: white; border-color: #1e293b; }
+    .feat-note { font-size: 0.82rem; color: #334155; margin-top: 6px; }
+    .feat-note:empty { display: none; }
+
+    /* Challenge */
+    .quiz { max-width: 760px; margin: 0 auto; }
+    .quiz-top { display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 700; margin-bottom: 4px; }
+    .quiz-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+    .quiz-bar i { display: block; height: 100%; background: #2563eb; width: 0; }
+    .quiz-q { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+    .quiz-src { font-size: 0.76rem; color: #475569; margin-bottom: 8px; }
+    .qpart { margin-top: 12px; }
+    .qpart + .qpart { border-top: 1px solid #e2e8f0; padding-top: 10px; }
+    .qpart-q { font-size: 0.92rem; font-weight: 600; margin-bottom: 6px; }
+    .quiz-sum ul { padding-left: 18px; font-size: 0.86rem; }
+    .quiz-sum li { margin: 4px 0; }
+
+    /* Teacher mode */
+    .teacher { position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 92vw); background: white; box-shadow: -4px 0 18px rgba(0,0,0,0.18); padding: 12px; overflow-y: auto; z-index: 20; }
+    .teacher h2 { font-size: 1rem; margin: 0 0 8px; }
+    .teacher .tbtns { display: grid; gap: 6px; }
+    .teacher .tbtns button { background: white; color: #1e293b; border: 1px solid #cbd5e1; flex: none; }
+    .teacher .tbtns button:hover { background: #f1f5f9; }
+    .teacher .tbtns button.on { background: #1e293b; color: white; }
+    .teacher h3 { font-size: 0.9rem; margin: 14px 0 4px; }
+    .teacher ul { padding-left: 18px; margin: 0; font-size: 0.84rem; }
+    .teacher li { margin: 4px 0; }
+    body.no-explain .strip, body.no-explain .words, body.no-explain .feedback .why, body.no-explain .feat-note { display: none; }
+    body.no-answers .readout-card .value, body.no-answers .work { filter: blur(6px); }
+    body.free-mode .predict-box { display: none; }
+
     @media (max-width: 900px) {
-      .controls { grid-template-columns: 1fr 1fr; }
-      .controls .control-group:first-child { grid-column: 1 / -1; }
-      .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .readout, .readout.n6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .readout.n4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
-    @media (max-width: 600px) { #rigCanvas { height: 360px; } } /* room for the short-circuit warning on two lines */
+    @media (max-width: 700px) {
+      h1 { font-size: 1rem; }
+      #scene { height: 380px; }
+      #scene.t2 { height: 360px; }
+      #scene.t3 { height: 340px; }
+      #scene.t4 { height: 300px; }
+      #scene.t5 { height: 360px; }
+      #graph { height: 230px; }
+      .readout, .readout.n3, .readout.n4, .readout.n6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .tab .tl { display: none; }
+      .tab .ts { display: inline; }
+      /* phones: short names in rows that wrap, so all six tabs show without scrolling */
+      .tabs { display: flex; flex-wrap: wrap; }
+      button.tab { flex: 1 1 auto; white-space: nowrap; }
+    }
+    @media (max-width: 420px) {
+      .buttons button { padding: 6px 4px; }
+      .inputs .control-group { flex: 1 1 40%; }
+      input[type=range] { min-width: 0; }
+    }
     /* Touch screens (phones, tablets; Samsung Internet reports hover: hover on a phone, so only pointer is tested):
        16 px form fields stop an iPhone zooming the page in when one is
        tapped, and buttons and tick boxes get a finger-sized target. */
@@ -68,6 +217,7 @@
       input:not([type=range]):not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
       button { min-height: 36px; }
       input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
+      .controls input, .controls select, .controls button, .inputs select, .inputs .tick { height: 36px; }
     }
   </style>
   <!-- pim-nav-style:start (generated by scripts/pim-nav.ts) -->
@@ -96,98 +246,489 @@
     <a class="pim-nav-btn pim-nav-next" href="series-parallel-circuits.html" title="Next: Series and Parallel Circuits (Chapter 7)" aria-label="Next: Series and Parallel Circuits (Chapter 7)"><span class="pim-nav-text"><span class="pim-nav-kicker">Next<span class="pim-nav-ch"> &middot; Chapter 7</span></span><span class="pim-nav-name">Series and Parallel Circuits</span></span><span class="pim-nav-arrow" aria-hidden="true">&rsaquo;</span></a>
   </nav>
   <!-- pim-nav:end -->
-    <h1>Ohm's Law and the Resistivity of a Wire</h1>
 
-    <div class="panel">
-      <div class="tabs exp-tabs"><button id="expOhm" class="on">Ohm's law</button><button id="expRes">Resistivity of a wire</button></div>
-      <div class="controls" id="ohmControls">
-        <div class="control-group">
-          <label for="component">Component</label>
-          <select id="component">
-            <option value="resistor" selected>Fixed resistor (15 &Omega;)</option>
-            <option value="lamp">Filament lamp (3.0 V, 0.60 W)</option>
-          </select>
-        </div>
-        <div class="control-group"><label for="voltO">Supply voltage <i>V</i> <span class="val" id="voltOVal"></span></label><input id="voltO" type="range" min="0" max="3" step="0.1" value="1.5" /></div>
+    <header class="app-head">
+      <div class="head-row">
+        <h1>Ohm's Law and the Resistivity of a Wire</h1>
+        <div class="steps"><span id="stepLabel">Step 1 of 6</span><span class="step-bar" id="stepBar"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+        <button class="teacher-btn" id="teacherBtn" type="button" hidden>Teacher mode</button>
       </div>
-      <div class="controls" id="resControls" hidden>
-        <div class="control-group">
-          <label for="material">Wire material (resistivity <i>&rho;</i> at 20 &deg;C, from the notes)</label>
-          <select id="material">
-            <option value="1.6e-8">Silver (1.6 &times; 10&#8315;&#8312; &Omega; m)</option>
-            <option value="1.7e-8">Copper (1.7 &times; 10&#8315;&#8312; &Omega; m)</option>
-            <option value="2.4e-8">Gold (2.4 &times; 10&#8315;&#8312; &Omega; m)</option>
-            <option value="2.8e-8">Aluminium (2.8 &times; 10&#8315;&#8312; &Omega; m)</option>
-            <option value="5.5e-8">Tungsten (5.5 &times; 10&#8315;&#8312; &Omega; m)</option>
-            <option value="1.0e-6" selected>Nichrome (100 &times; 10&#8315;&#8312; &Omega; m)</option>
-            <option value="mystery">Mystery wire: find &rho; yourself</option>
-          </select>
-        </div>
-        <div class="control-group"><label for="diam">Wire diameter <span class="val" id="diamVal"></span></label><input id="diam" type="range" min="0.2" max="1.2" step="0.02" value="0.5" /></div>
-        <div class="control-group"><label for="volt">Supply voltage <i>V</i> <span class="val" id="voltVal"></span></label><input id="volt" type="range" min="0" max="6" step="0.1" value="3" /></div>
+      <div class="tabs" role="tablist" id="tabs">
+        <button class="tab" role="tab" data-tab="1" type="button"><span class="tl">1. Current is flowing charge</span><span class="ts">1. Current</span></button>
+        <button class="tab" role="tab" data-tab="2" type="button"><span class="tl">2. Emf and potential difference</span><span class="ts">2. Emf, p.d.</span></button>
+        <button class="tab" role="tab" data-tab="3" type="button"><span class="tl">3. Ohm’s law</span><span class="ts">3. Ohm’s law</span></button>
+        <button class="tab" role="tab" data-tab="4" type="button"><span class="tl">4. Resistance of a wire</span><span class="ts">4. <span class="nw"><i>R</i> = <i>ρL</i>/<i>A</i></span></span></button>
+        <button class="tab" role="tab" data-tab="5" type="button"><span class="tl">5. Measure the resistivity</span><span class="ts">5. Measure <i>ρ</i></span></button>
+        <button class="tab" role="tab" data-tab="6" type="button"><span class="tl">6. Challenge</span><span class="ts">6. Challenge</span></button>
       </div>
-      <div class="buttons">
-        <button id="recBtn" class="go">Record this reading</button>
-        <button id="clearBtn">Clear the graphs</button>
-        <span style="font-size:0.8rem;color:#475569" id="recNote">Take readings at several voltages, then choose the other component and do the same.</span>
-      </div>
-      <div class="readout three" id="ohmReadout">
-        <div class="readout-card"><div class="title">Voltmeter <span class="nw">reading <i>V</i></span></div><div class="value" id="oV">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Ammeter <span class="nw">reading <i>I</i></span></div><div class="value" id="oI">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Resistance <span class="nw"><i>R</i> = <i>V</i>/<i>I</i></span></div><div class="value" id="oR">&mdash;</div></div>
-      </div>
-      <div class="readout" id="resReadout" hidden>
-        <div class="readout-card"><div class="title">Length in the circuit, <i>L</i></div><div class="value" id="lenV">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Cross-sectional area <i>A</i> = &pi;<i>d</i><sup>2</sup>/4</div><div class="value" id="areaV">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Resistance <i>R</i> = <i>&rho;</i><i>L</i>/<i>A</i></div><div class="value" id="resV">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Voltmeter reading <i>V</i></div><div class="value" id="vV">&mdash;</div></div>
-        <div class="readout-card" id="iCard"><div class="title">Ammeter reading <i>I</i> = <i>V</i>/<i>R</i></div><div class="value" id="iV">&mdash;</div></div>
-      </div>
+      <div class="ckey" id="ckey"></div>
+    </header>
+
+    <div class="strip" id="strip"></div>
+
+    <!-- tabs 1 to 5: Predict first comes first, above the controls and the picture -->
+    <div class="box predict-box" id="predictBox">
+      <div class="box-title">Predict first</div>
+      <div class="predict-q" id="predictQ"></div>
+      <div class="opts" id="predictOpts"></div>
+      <div class="feedback" id="predictFb"></div>
+      <div class="row-btns" id="predictBtns"><button id="predictCheck" type="button">Check my answer</button></div>
     </div>
 
-    <div class="layout">
+    <!-- Tabs 1 to 5 share one drawing -->
+    <section class="tab-page" id="pageSim">
       <div class="panel">
-        <div class="hint" id="rigHint">Set a voltage and press Record this reading. Repeat at several voltages, then choose the other component.</div>
-        <canvas id="rigCanvas"></canvas>
-        <div class="note" id="ohmNote"><ul>
-          <li>The ammeter is in <b>series</b> with the component. The voltmeter is connected <b>in parallel</b> across it.</li>
-          <li>Ohm's law: the current <i>I</i> is directly proportional to the voltage <i>V</i>, provided the physical conditions (e.g. temperature) of the conductor stay the same.</li>
-          <li>The lamp is rated 3.0 V, so the supply stops at 3.0 V (Tutorial B7).</li>
-        </ul></div>
-        <div class="note" id="resNote" hidden><ul>
-          <li>The ammeter is in <b>series</b> with the wire. The voltmeter is connected <b>in parallel</b> across the length of wire being tested.</li>
-          <li><i>R</i> = <i>&rho;</i><i>L</i>/<i>A</i>: a longer wire has more resistance, a thicker wire (bigger <i>A</i>) has less, and a material with a higher resistivity has more.</li>
-          <li>Low-resistivity metals (silver, copper) make good connecting wires. High-resistivity nichrome and tungsten are used in heating elements and filaments.</li>
-        </ul></div>
+        <div id="simBlock">
+          <div class="controls">
+            <div class="control-group scen-group">
+              <label for="preset">Scenarios</label>
+              <select id="preset"></select>
+            </div>
+            <div class="control-group button-group" id="simGroup">
+              <label>Simulation controls</label>
+              <div class="buttons">
+                <button id="startBtn" type="button">Start</button>
+                <button id="pauseBtn" class="secondary" type="button">Pause</button>
+                <button id="resetBtn" class="danger" type="button">Reset</button>
+              </div>
+            </div>
+            <div class="control-group button-group" id="stepGroup">
+              <label>Steps <span class="step-no" id="stepNo"></span></label>
+              <div class="buttons">
+                <button id="prevStep" class="secondary" type="button" aria-label="Previous step">&lsaquo; Previous</button>
+                <button id="nextStep" type="button" aria-label="Next step">Next &rsaquo;</button>
+                <button id="stepReset" class="danger" type="button">Reset</button>
+              </div>
+            </div>
+            <div class="control-group button-group" id="readGroup">
+              <label>Readings</label>
+              <div class="buttons">
+                <button id="recBtn" type="button">Record this reading</button>
+                <button id="clearBtn" class="danger" type="button">Clear</button>
+              </div>
+            </div>
+          </div>
+          <div class="moments" id="moments">
+            <button id="prevMoment" class="secondary" type="button">&lsaquo; Previous key moment</button>
+            <button id="nextMoment" class="secondary" type="button">Next key moment &rsaquo;</button>
+            <span class="speed" id="speedNote"></span>
+          </div>
+          <div class="rec-note" id="recNote"></div>
+          <div class="question" id="question"></div>
+          <div class="group-title">Experimental controls</div>
+          <div class="inputs" id="inputs"></div>
+        </div>
+
+        <!-- the readouts go under the drawing: nothing above the canvas may change height while a finger drags -->
+        <div class="scene-wrap">
+          <div class="hint" id="sceneHint"></div>
+          <canvas id="scene"></canvas>
+          <div class="readout" id="readout"></div>
+          <div class="words" id="words"></div>
+          <div id="graphWrap">
+            <div class="graph-title" id="graphTitle"></div>
+            <label class="graph-opt" id="ivWrap"><input type="checkbox" id="ivTick" /> Plot <i>I</i> against <i>V</i> instead</label>
+            <canvas id="graph"></canvas>
+          </div>
+          <div class="work" id="work"></div>
+          <div class="note" id="notes"></div>
+        </div>
       </div>
+
+      <div class="learn">
+        <div class="box" id="featBox">
+          <div class="box-title">Key features (tap one)</div>
+          <div class="feats" id="feats"></div>
+          <div class="feat-note" id="featNote"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 6: Challenge -->
+    <section class="tab-page" id="page6" hidden>
       <div class="panel">
-        <div class="tabs" id="graphTabs" hidden><button id="tabVI" class="on"><i>V</i>&ndash;<i>I</i> graph</button><button id="tabRL"><i>R</i>&ndash;<i>L</i> graph</button></div>
-        <canvas id="graphCanvas"></canvas>
-        <div class="note" id="graphNote"></div>
+        <div class="quiz" id="quiz"></div>
       </div>
-    </div>
+    </section>
   </div>
 
-  <script>
-    const el = id => document.getElementById(id);
-    const MYSTERY_RHO = 1.18e-6; // same as the notes' Example 6 wire (3.6 ohm, 0.64 mm, 98.5 cm)
-    const st = { L: 0.6, vi: [], rl: [], tab: 'VI', exp: 'ohm', ohm: { resistor: [], lamp: [] } };
-    // Ohm's law experiment. The resistor is 15 ohm at every voltage. The lamp is Tutorial B7's (0.60 W at 3.0 V, so
-    // 15 ohm when lit); its filament heats as the current grows, so its resistance rises from about 3 ohm cold
-    // (an illustrative value, not from the notes) to 15 ohm at 3.0 V. I = V/R still rises with V at every voltage.
-    const RES_R = 15;
-    const comp = () => el('component').value;
-    const VO = () => +el('voltO').value;
-    const RO = (v = VO()) => comp() === 'lamp' ? 3 + 12 * Math.pow(v / 3, 0.8) : RES_R;
-    const IO = (v = VO()) => v / RO(v);
-    const COMP_COLOR = { resistor: '#dc2626', lamp: '#d97706' };
-    const COMP_NAME = { resistor: 'resistor', lamp: 'filament lamp' };
-    const rho = () => el('material').value === 'mystery' ? MYSTERY_RHO : parseFloat(el('material').value);
-    const area = () => Math.PI * Math.pow(+el('diam').value * 1e-3, 2) / 4;
-    const R = () => rho() * st.L / area();
-    const V = () => +el('volt').value;
-    const I = () => V() / R();
+  <aside class="teacher" id="teacher" hidden aria-label="Teacher mode">
+    <h2>Teacher mode</h2>
+    <div class="tbtns">
+      <button id="tExplain" type="button">Hide explanations</button>
+      <button id="tFree" type="button">Switch to free exploration</button>
+      <button id="tAnswers" type="button">Hide answer labels</button>
+      <button id="tFull" type="button">Full screen</button>
+      <button id="tReset" type="button">Reset whole applet</button>
+      <button id="tClose" type="button">Close</button>
+    </div>
+    <h3>Suggested prompts</h3>
+    <ul id="tPrompts"></ul>
+  </aside>
 
+  <script>
+    const $ = id => document.getElementById(id);
+    const canvas = $('scene'), graphCv = $('graph'), presetEl = $('preset');
+    let currentTab = 1, freeMode = false;
+
+    /* ---------------- numbers and symbols ---------------- */
+    const EC = 1.60e-19;   // the size of the charge on an electron, C (lecturer's copy, Example 1, p. 7-5)
+    const clean = v => (Math.abs(v) < 1e-300 ? 0 : v);
+    // 3 significant figures, as the lecturer's copy gives them; exact whole numbers stay whole; an exact value keeps
+    // its own figures; a 1e-12 nudge so a binary half rounds up; a true minus sign
+    const f3 = v => {
+      const x = clean(v);
+      if (Math.abs(x - Math.round(x)) < 1e-9 * Math.max(1, Math.abs(x))) return String(Math.round(x)).replace('-', '−');
+      const t = (x * (1 + 1e-12)).toPrecision(3);
+      if (Math.abs(+t - x) < 1e-12 * Math.max(1, Math.abs(x)) || Math.abs(x) >= 100) return String(+t).replace('-', '−');
+      return t.replace('-', '−');
+    };
+    const ex = e => `10<sup>${String(e).replace('-', '−')}</sup>`;
+    // a number in 3 significant figures; very large or very small ones as a × 10^n, like the notes
+    function num(v, sf = 3) {
+      const x = clean(v); if (x === 0) return '0';
+      const a = Math.abs(x); let e = Math.floor(Math.log10(a) + 1e-12);
+      if (e >= -2 && e <= 3) return sf === 3 ? f3(x) : (x * (1 + 1e-12)).toPrecision(sf).replace('-', '−');
+      let m = (a / Math.pow(10, e) * (1 + 1e-12)).toPrecision(sf);
+      if (+m >= 10) { e++; m = (a / Math.pow(10, e) * (1 + 1e-12)).toPrecision(sf); }
+      if (e === 0) return (x < 0 ? '−' : '') + m;
+      return `${x < 0 ? '−' : ''}${m} × ${ex(e)}`;
+    }
+    const plain = v => String(+(+v).toFixed(4)).replace('-', '−');
+    // a value in an input box: big and small ones in calculator form (1.5e6)
+    const inTxt = v => { const a = Math.abs(v); return a !== 0 && (a >= 1e5 || a < 1e-3) ? (+(+v).toPrecision(6)).toExponential().replace('e+', 'e') : String(+(+v).toPrecision(6)); };
+    const frac = (a, b) => `<span class="frac"><span>${a}</span><span>${b}</span></span>`;
+    const rt = s => `<span class="root"><i class="rs">&radic;</i><span>${s}</span></span>`;
+    const ECtxt = `1.60 × ${ex(-19)}`;
+    const A_ = v => `${num(v)} A`, V_ = v => `${num(v)} V`, O_ = v => `${num(v)} Ω`, C_ = v => `${num(v)} C`, J_ = v => `${num(v)} J`;
+    const mA_ = v => (v > 0 && v < 0.01 ? `${f3(v * 1e3)} mA` : A_(v));  // a small current as the question gives it (1.6 mA)
+    const COL = { e: '#facc15', eD: '#a16207', conv: '#dc2626', wire: '#334155', amm: '#0891b2', volt: '#7c3aed', energy: '#16a34a', res: '#dc2626', lamp: '#d97706', wireTest: '#b45309' };
+    const areaOfD = d => Math.PI * d * d / 4;     // cross-sectional area of a round wire, A = πd²/4 = π(d/2)²
+
+    /* ---------------- scenarios (every number from the notes, the lecturer's copy or Tutorial 7) ---------------- */
+    // tab 1: findI (Q passes in t: find I) or findQ (I for t: find Q); closed: the switch
+    // tab 2: emf (energy given to Q coulombs by a battery of emf E); W (find the work done, W = QV); V (find V = W/Q)
+    // tab 3: exp (take readings, resistor or lamp); calc (V = IR: find V, I or R)
+    // tab 4: R = ρL/A, find R, ρ, L or d; cut (a wire cut into equal pieces)
+    // tab 5: the metre-rule rig (a wire of resistivity rho and diameter d)
+    const RHO6 = 3.6 * areaOfD(0.64e-3) / 0.985;  // Example 6's wire: 3.6 Ω at 98.5 cm, 0.64 mm across
+    const PRESETS = {
+      oneA: { tab: 1, kind: 'findQ', name: '1 A for 5 s', I: 1, Iu: 1, t: 5, closed: true, txt: { I: '1', t: '5' },
+        q: 'Notes p. 7-4: Electric current is defined as the quantity of charge passing a given point in one second, <i>I</i> = <i>Q</i>/<i>t</i>. One ampere is one coulomb per second: 1 A = 1 C s<sup>−1</sup>. (Values chosen for this page: 1 A for 5 s.)' },
+      ex1: { tab: 1, kind: 'findI', name: '3.0 C passes in 4.0 s', Q: 3, t: 4, closed: true, txt: { Q: '3.0', t: '4.0' },
+        q: 'Example 1 (notes p. 7-5): A charge of 3.0 C flows past a point in 4.0 s. Calculate the current and the number of electrons passing that point each second.' },
+      a1: { tab: 1, kind: 'findI', name: '30 C passes in 5 s', Q: 30, t: 5, closed: true, txt: { Q: '30', t: '5' },
+        q: 'Tutorial 7, A1: A charge of 30 C flow through a point in 5 s. What is the current?' },
+      a2: { tab: 1, kind: 'findQ', name: 'A current of 1.6 mA', I: 1.6e-3, Iu: 1e-3, t: 60, t2: 30, closed: true, txt: { I: '1.6', t: '60' },
+        q: 'Tutorial 7, A2: The current in a wire is 1.6 mA. For any point along the wire, (a) how much charge passes through in 1 minute? (b) how many electrons pass through every 30 s?' },
+      open: { tab: 1, kind: 'findQ', name: 'The switch is open', I: 0.75, Iu: 1, t: 4, closed: false, txt: { I: '0.75', t: '4' },
+        q: 'Notes p. 7-9: When the switch is closed, current flows through the circuit: a closed (or complete) circuit. When the switch is opened, no current flows through the circuit. This is called an open circuit. (Tick “Switch closed” to close it.)' },
+
+      emf3: { tab: 2, kind: 'emf', name: 'A battery of emf 3 V', E: 3, Q: 1, comp: 'lamp', txt: { E: '3', Q: '1' },
+        q: 'Notes p. 7-10: The electromotive force (emf) is the electrical energy given to each coulomb of charge as it passes through the battery or the generator. For example, a battery of emf 3 V gives 3 J of electrical energy to 1 C of charge passing through it.' },
+      pd10: { tab: 2, kind: 'W', name: '10 V across a resistor', V: 10, Q: 1, comp: 'resistor', txt: { V: '10', Q: '1' },
+        q: 'Notes p. 7-11: Potential difference (or voltage) is defined as the work done in moving one coulomb of charge between two points. If the potential difference across a resistor is 10 V, it means that 10 J of work must be done to move 1 C of charge through it.' },
+      ex3: { tab: 2, kind: 'W', name: '2 C through 8 V', V: 8, Q: 2, comp: 'resistor', txt: { V: '8', Q: '2' },
+        q: 'Example 3 (notes p. 7-12): When a charge of 2 C flows through a potential difference of 8 V, how much work is done by the charge?' },
+      a5: { tab: 2, kind: 'V', name: '120 J for 10 C through a bulb', W: 120, Q: 10, comp: 'lamp', txt: { W: '120', Q: '10' },
+        q: 'Tutorial 7, A5: 120 J of work is done when 10 C of charge passes through an electric bulb. What is the potential difference across the bulb?' },
+
+      res15: { tab: 3, kind: 'exp', comp: 'resistor', name: 'A 15 Ω resistor: take readings',
+        q: 'Notes p. 7-15: Ohm’s law states that current is directly proportional to the potential difference between the ends of a conductor, provided that the physical conditions (e.g. temperature) of the conductor remain unchanged. Set a voltage, record the reading, and repeat at several voltages.' },
+      ex4a: { tab: 3, kind: 'calc', find: 'V', name: '5.0 Ω carrying 1.2 A', R: 5, I: 1.2, txt: { R: '5.0', I: '1.2' },
+        q: 'Example 4(a) (notes p. 7-18): Calculate the voltage across a 5.0 Ω ohmic conductor carrying a current of 1.2 A.' },
+      ex4b: { tab: 3, kind: 'calc', find: 'I', name: '4.0 Ω with 6.0 V across it', R: 4, V: 6, txt: { R: '4.0', V: '6.0' },
+        q: 'Example 4(b) (p. 7-18): Calculate the current flowing through a 4.0 Ω ohmic conductor when a voltage of 6.0 V is applied across it.' },
+      a6: { tab: 3, kind: 'calc', find: 'R', name: '6.0 V gives 0.50 A', V: 6, I: 0.5, V2: 12, txt: { V: '6.0', I: '0.50', V2: '12' },
+        q: 'Tutorial 7, A6: When the potential difference across a conductor is 6.0 V, the current is 0.50 A. Calculate (a) the resistance of the conductor, (b) the current which would flow if the potential difference were 12 V.' },
+      lamp: { tab: 3, kind: 'exp', comp: 'lamp', name: 'A filament lamp (3.0 V, 0.60 W)',
+        q: 'Tutorial 7, B7: a filament lamp has a rating of 0.60 W, 3.0 V; at 3.0 V its resistance is 15 Ω. Take readings up to 3.0 V and compare them with the 15 Ω resistor’s. (Below 3.0 V the lamp’s resistance is a value chosen for this page: the notes give only 15 Ω at 3.0 V.)' },
+
+      ex5: { tab: 4, find: 'R', name: 'Nichrome wire, 14 m long', mat: 'Nichrome', rho: 1.0e-6, L: 14, A: 2.5e-7, area: 'A', Lf: 1, Af: 1,
+        txt: { rho: `1.0 × ${ex(-6)}`, L: '14', A: `2.5 × ${ex(-7)}` },
+        q: 'Example 5 (notes p. 7-21): A piece of nichrome wire is 14 m long and has a cross-sectional area of 2.5 × 10<sup>−7</sup> m<sup>2</sup>. If the resistivity of nichrome is 1.0 × 10<sup>−6</sup> Ω m, what is the resistance of the wire?' },
+      ex6: { tab: 4, find: 'rho', name: 'A metallic wire, 0.64 mm across', mat: '', d: 0.64e-3, L: 0.985, R: 3.6, area: 'd', Lf: 0.01, txt: { d: '0.64', L: '98.5', R: '3.6' },
+        q: 'Example 6 (notes p. 7-22): A metallic wire of diameter 0.64 mm is 98.5 cm long and has a resistance of 3.6 Ω. What is the resistivity of the wire?' },
+      a3: { tab: 4, find: 'R', name: 'A railway conductor rail', mat: '', rho: 12.0e-8, L: 1000, A: 6000e-6, area: 'A', Lf: 1, Af: 1e-6,
+        txt: { rho: `12.0 × ${ex(-8)}`, L: '1000', A: '6000' },
+        q: 'Tutorial 7, A3: The conductor rail of an electric railway has a cross-sectional area of 6000 mm<sup>2</sup>. The resistivity of the material is 12.0 × 10<sup>−8</sup> Ω m. Calculate the resistance of a 1000 m length of rail.' },
+      a4: { tab: 4, find: 'L', name: 'Nichrome for 1000 Ω', mat: 'Nichrome', rho: 110e-8, d: 0.08e-3, R: 1000, area: 'd', Lf: 1,
+        txt: { rho: `110 × ${ex(-8)}`, d: '0.08', R: '1000' },
+        q: 'Tutorial 7, A4: The resistivity of nichrome wire is 110 × 10<sup>−8</sup> Ω m. What length of wire of diameter 0.08 mm is required to provide a resistance of 1000 Ω?' },
+      b1: { tab: 4, find: 'd', name: 'A coil of 3.50 Ω', mat: '', rho: 1.70e-8, L: 25, R: 3.5, area: 'd', Lf: 1, turns: 500, turnLen: '50.0',
+        txt: { rho: `1.70 × ${ex(-8)}`, L: '25.0', R: '3.50' },
+        q: 'Tutorial 7, B1: A coil is to have a resistance of 3.50 Ω. It consists of 500 turns of wire and the mean length of a turn is 50.0 mm. Calculate a suitable wire diameter. The resistivity of the wire is 1.70 × 10<sup>−8</sup> Ω m.' },
+      b2: { tab: 4, find: 'cut', name: 'A 100 Ω wire cut in two', mat: '', R: 100, n: 2, txt: { R: '100', n: '2' },
+        q: 'Tutorial 7, B2(a): A wire of resistance 100 Ω is cut into 2 pieces of equal lengths. What is the resistance of each piece?' },
+
+      nich: { tab: 5, kind: 'rig', name: 'Nichrome wire, 0.50 mm', rho: 1.0e-6, mat: 'Nichrome', d: 0.5, V: 3,
+        q: 'Notes pp. 7-19, 7-20: for a uniform metallic wire, <i>R</i> = <i>ρL</i>/<i>A</i>. Nichrome’s resistivity is 100 × 10<sup>−8</sup> Ω m. Drag the crocodile clip to change the length <i>L</i> in the circuit, and record the resistance at several lengths.' },
+      w6: { tab: 5, kind: 'rig', name: 'Example 6’s wire: find ρ', rho: RHO6, mat: '', d: 0.64, V: 3, mystery: true,
+        q: 'Example 6’s wire (notes p. 7-22): diameter 0.64 mm; 98.5 cm of it has a resistance of 3.6 Ω. Its material is not named. Record the resistance at several lengths, then find its resistivity from the gradient of the <i>R</i>–<i>L</i> graph.' },
+      cu: { tab: 5, kind: 'rig', name: 'Copper wire, 0.50 mm', rho: 1.7e-8, mat: 'Copper', d: 0.5, V: 3,
+        q: 'Notes p. 7-20: materials with low resistivity such as silver, copper and gold are used as conductors or connectors. Copper’s resistivity is 1.7 × 10<sup>−8</sup> Ω m.' }
+    };
+    const OWN = 'Your own values. Choose a scenario from the menu to go back to an example from the notes.';
+    // the resistivity table, notes p. 7-20 (× 10^-8 Ω m at 20 °C)
+    const METALS = [['Silver', 1.6], ['Copper', 1.7], ['Gold', 2.4], ['Aluminium', 2.8], ['Tungsten', 5.5], ['Nichrome', 100]];
+
+    /* ---------------- the state ---------------- */
+    let S = { scen: 'oneA', custom: false, step: 0 };
+    let P = {};            // the scenario in use (a copy, changed by the inputs and the drags)
+    let hl = {}, feat = {};
+    const gv = (k, f) => (!S.custom && P.txt && P.txt[k] !== undefined ? P.txt[k] : f(P[k])); // a value as the notes write it
+    // tab 3's recorded readings stay while the tab is open, so the resistor's and the lamp's can be compared
+    let ohm = { resistor: [], lamp: [] }, vSet = 1.5, ivPlot = false;
+    // tab 5's clip position and readings
+    let rig = { L: 0.6, rl: [] };
+    const mode = () => currentTab === 1 ? 'run' : currentTab === 2 || currentTab === 4 ? 'steps' : currentTab === 3 ? (P.kind === 'calc' ? 'steps' : 'read') : currentTab === 5 ? 'read' : '';
+    const isRun = () => mode() === 'run';
+    const isSteps = () => mode() === 'steps';
+
+    /* ---------------- tab 1: current is flowing charge, I = Q/t ---------------- */
+    const t1I = () => (!P.closed ? 0 : P.kind === 'findI' ? P.Q / P.t : P.I);
+    const sim = { t: 0, running: false, last: null };
+    const runEnd = () => (isRun() ? P.t : 0);
+    // a long run is shown faster (A2's 60 s in 6 s), and the page says so
+    const speedUp = () => (P.t > 10 ? P.t / 6 : 1);
+    function keyMoments() {
+      if (!isRun()) return [];
+      const T = runEnd(), step = T > 10 ? 10 : 1, m = [];
+      for (let k = 0; k * step < T - 1e-9; k++) m.push(k * step);
+      if (P.t2 && !m.includes(P.t2)) m.push(P.t2);
+      m.push(T);
+      return m.sort((a, b) => a - b);
+    }
+    const ended = () => !sim.running && sim.t >= runEnd() - 1e-9 && runEnd() > 0;
+    function t1Steps() {
+      const I = t1I(), L = [];
+      const tT = gv('t', f3);
+      if (!P.closed) {
+        L.push('The switch is open: the circuit is broken, so no charge can flow round it.');
+        L.push({ h: `<i>I</i> = 0 A, so the charge passing P is <i>Q</i> = <i>It</i> = 0 × ${tT} = 0 C`, lit: true });
+        return L;
+      }
+      if (P.kind === 'findI') {
+        L.push(`<i>Q</i> = ${gv('Q', f3)} C passed P in <i>t</i> = ${tT} s`);
+        L.push({ h: `<i>I</i> = ${frac('<i>Q</i>', '<i>t</i>')} = ${frac(gv('Q', f3), tT)} = ${A_(I)}`, lit: true });
+        L.push({ h: `Each electron carries a charge of ${ECtxt} C, so the number of electrons passing P each second = ${frac(f3(I), ECtxt)} = ${num(I / EC)}`, lit: true });
+        return L;
+      }
+      const mA = P.Iu === 1e-3, Itxt = mA ? `${gv('I', v => f3(v / 1e-3))} mA = ${gv('I', v => f3(v / 1e-3))} × ${ex(-3)} A` : `${gv('I', f3)} A`;
+      const Isub = mA ? `${gv('I', v => f3(v / 1e-3))} × ${ex(-3)}` : gv('I', f3);
+      L.push(`<i>I</i> = ${Itxt}, <i>t</i> = ${tT} s`);
+      L.push({ h: `<i>Q</i> = <i>It</i> = ${Isub} × ${tT} = ${C_(I * P.t)}`, lit: true });
+      if (P.t2 && !S.custom) L.push({ h: `In ${P.t2} s: <i>Q</i> = ${Isub} × ${P.t2} = ${C_(I * P.t2)}; the number of electrons = ${frac(f3(I * P.t2), ECtxt)} = ${num(I * P.t2 / EC)}`, lit: true });
+      else if (P.I === 1 && P.Iu === 1) L.push('1 A is 1 coulomb every second: 1 C passes P each second.');
+      return L;
+    }
+
+    /* ---------------- tab 2: emf and potential difference, V = W/Q ---------------- */
+    function t2Values() {
+      if (P.kind === 'emf') return { W: P.E * P.Q, V: P.E };
+      if (P.kind === 'W') return { W: P.Q * P.V, V: P.V };
+      return { W: P.W, V: P.W / P.Q };
+    }
+    function t2Steps() {
+      const V = t2Values(), L = [];
+      if (P.kind === 'emf') {
+        L.push(`A battery of emf <i>E</i> = ${gv('E', f3)} V. A charge of ${gv('Q', f3)} C passes through it.`);
+        L.push(`Emf is the electrical energy given to each coulomb of charge: ${gv('E', f3)} J to every coulomb (1 V = 1 J C<sup>−1</sup>).`);
+        L.push({ h: `Energy given = emf × charge = ${gv('E', f3)} × ${gv('Q', f3)} = ${J_(V.W)}`, lit: true });
+        return L;
+      }
+      if (P.kind === 'W') {
+        L.push(`A charge <i>Q</i> = ${gv('Q', f3)} C flows through a potential difference <i>V</i> = ${gv('V', f3)} V.`);
+        L.push(`p.d. is the work done in moving one coulomb: ${gv('V', f3)} J for every coulomb (1 V = 1 J C<sup>−1</sup>).`);
+        L.push(`<i>V</i> = ${frac('<i>W</i>', '<i>Q</i>')}, so <i>W</i> = <i>QV</i>`);
+        L.push({ h: `<i>W</i> = <i>QV</i> = ${gv('Q', f3)}(${gv('V', f3)}) = ${J_(V.W)}`, lit: true });
+        return L;
+      }
+      L.push(`<i>W</i> = ${gv('W', f3)} J of work is done when <i>Q</i> = ${gv('Q', f3)} C passes through the bulb.`);
+      L.push(`Potential difference = work done ÷ charge: <i>V</i> = ${frac('<i>W</i>', '<i>Q</i>')}`);
+      L.push({ h: `<i>V</i> = ${frac(gv('W', f3), gv('Q', f3))} = ${V_(V.V)}`, lit: true });
+      return L;
+    }
+
+    /* ---------------- tab 3: Ohm's law, R = V/I ---------------- */
+    const RES_R = 15;
+    // Tutorial B7's lamp: 15 Ω at its rated 3.0 V; its filament heats as the current grows, so its resistance rises
+    // from about 3 Ω cold (a value chosen for this page) to 15 Ω at 3.0 V. I = V/R still rises with V.
+    const lampR = v => 3 + 12 * Math.pow(Math.max(0, v) / 3, 0.8);
+    const compR = (c, v) => (c === 'lamp' ? lampR(v) : RES_R);
+    const expI = (c, v) => v / compR(c, v);
+    function t3Values() {
+      if (P.find === 'V') return { R: P.R, I: P.I, V: P.I * P.R };
+      if (P.find === 'I') return { R: P.R, V: P.V, I: P.V / P.R };
+      const R = P.V / P.I; return { R, V: P.V, I: P.I, V2: P.V2, I2: P.V2 / R };
+    }
+    function t3Steps() {
+      const V = t3Values(), L = [];
+      if (P.find === 'V') {
+        L.push(`An ohmic conductor: <i>R</i> = ${gv('R', f3)} Ω, <i>I</i> = ${gv('I', f3)} A`);
+        L.push(`<i>R</i> = ${frac('<i>V</i>', '<i>I</i>')}, so <i>V</i> = <i>IR</i>`);
+        L.push({ h: `<i>V</i> = <i>IR</i> = ${gv('I', f3)}(${gv('R', f3)}) = ${V_(V.V)}`, lit: true });
+        return L;
+      }
+      if (P.find === 'I') {
+        L.push(`An ohmic conductor: <i>R</i> = ${gv('R', f3)} Ω, <i>V</i> = ${gv('V', f3)} V`);
+        L.push(`<i>R</i> = ${frac('<i>V</i>', '<i>I</i>')}, so <i>I</i> = ${frac('<i>V</i>', '<i>R</i>')}`);
+        L.push({ h: `<i>I</i> = ${frac(gv('V', f3), gv('R', f3))} = ${A_(V.I)}`, lit: true });
+        return L;
+      }
+      L.push(`<i>V</i> = ${gv('V', f3)} V, <i>I</i> = ${gv('I', f3)} A`);
+      L.push({ h: `(a) <i>R</i> = ${frac('<i>V</i>', '<i>I</i>')} = ${frac(gv('V', f3), gv('I', f3))} = ${O_(V.R)}`, lit: true });
+      L.push(`(b) The conductor’s resistance stays ${O_(V.R)} (an ohmic conductor), now with <i>V</i> = ${gv('V2', f3)} V.`);
+      L.push({ h: `<i>I</i> = ${frac('<i>V</i>', '<i>R</i>')} = ${frac(gv('V2', f3), f3(V.R))} = ${A_(V.I2)}`, lit: true });
+      return L;
+    }
+
+    /* ---------------- tab 4: the resistance of a uniform wire, R = ρL/A (notes p. 7-19) ---------------- */
+    function t4Values() {
+      if (P.find === 'cut') return { R: P.R, Rn: P.R / P.n };
+      if (P.find === 'R') { const A = P.area === 'd' ? areaOfD(P.d) : P.A; return { A, R: P.rho * P.L / A }; }
+      if (P.find === 'rho') { const A = areaOfD(P.d); return { A, rho: P.R * A / P.L }; }
+      if (P.find === 'L') { const A = areaOfD(P.d); return { A, L: P.R * A / P.rho }; }
+      const A = P.rho * P.L / P.R; return { A, d: Math.sqrt(4 * A / Math.PI) };
+    }
+    // a value keeps its unit on the same line on a phone (the working wraps between values, never before a unit)
+    const rhoTxt = () => `<span class="nw">${gv('rho', num)} Ω m</span>`;
+    const LTxt = () => (P.Lf === 0.01 ? `${gv('L', v => f3(v / 0.01))} cm = ${f3(P.L)} m` : `${gv('L', f3)} m`);
+    const dTxt = () => `${gv('d', v => f3(v / 1e-3))} mm`;
+    const ATxt = () => (P.Af === 1e-6 ? `${gv('A', v => f3(v / 1e-6))} mm<sup>2</sup> = ${gv('A', v => f3(v / 1e-6))} × ${ex(-6)} m<sup>2</sup> = <span class="nw">${num(P.A)} m<sup>2</sup></span>` : `<span class="nw">${gv('A', num)} m<sup>2</sup></span>`);
+    // the radius, d/2, in units of 10^-3 m (computed, never gv: gv would hand back the diameter as the notes write it)
+    const rMM = () => `${f3(P.d / 2e-3)} × ${ex(-3)}`;
+    function t4Steps() {
+      const V = t4Values(), L = [];
+      if (P.find === 'cut') {
+        L.push(`The whole wire: <i>R</i> = <i>ρ</i>${frac('<i>L</i>', '<i>A</i>')} = ${gv('R', f3)} Ω`);
+        L.push(`Cut into ${gv('n', f3)} pieces of equal length: each piece is <i>L</i>/${gv('n', f3)} long. <i>ρ</i> and <i>A</i> stay the same.`);
+        L.push({ h: `<i>R</i><sub>new</sub> = <i>ρ</i>${frac(`<i>L</i>/${gv('n', f3)}`, '<i>A</i>')} = ${frac('1', gv('n', f3))} × <i>ρ</i>${frac('<i>L</i>', '<i>A</i>')} = ${frac(gv('R', f3), gv('n', f3))} = ${O_(V.Rn)}`, lit: true });
+        return L;
+      }
+      if (P.find === 'R') {
+        L.push(`<i>ρ</i> = ${rhoTxt()}, <i>L</i> = ${LTxt()}, <i>A</i> = ${P.area === 'd' ? `π(<i>d</i>/2)<sup>2</sup> = π(${rMM()})<sup>2</sup> = ${num(V.A)} m<sup>2</sup>` : ATxt()}`);
+        L.push(`<i>R</i> = <i>ρ</i>${frac('<i>L</i>', '<i>A</i>')}`);
+        // substitute the values as the question writes them (2.5 × 10^-7, not 2.50 × 10^-7)
+        const Lsub = P.Lf === 1 ? gv('L', f3) : f3(P.L), Asub = P.area === 'A' && P.Af === 1 ? gv('A', num) : num(V.A);
+        L.push({ h: `<i>R</i> = ${gv('rho', num)} × ${frac(Lsub, Asub)} = ${O_(V.R)}`, lit: true });
+        return L;
+      }
+      if (P.find === 'rho') {
+        L.push(`<i>d</i> = ${dTxt()}, <i>L</i> = ${LTxt()}, <i>R</i> = ${gv('R', f3)} Ω`);
+        L.push(`<i>A</i> = π(<i>d</i>/2)<sup>2</sup> = π(${rMM()})<sup>2</sup> = ${num(V.A)} m<sup>2</sup>`);
+        L.push(`<i>R</i> = <i>ρ</i>${frac('<i>L</i>', '<i>A</i>')}, so <i>ρ</i> = ${frac('<i>RA</i>', '<i>L</i>')}`);
+        L.push({ h: `<i>ρ</i> = ${frac(`${gv('R', f3)} × ${num(V.A)}`, f3(P.L))} = ${num(V.rho)} Ω m`, lit: true });
+        return L;
+      }
+      if (P.find === 'L') {
+        L.push(`<i>ρ</i> = ${rhoTxt()}, <i>d</i> = ${dTxt()}, <i>R</i> = ${gv('R', f3)} Ω`);
+        L.push(`<i>A</i> = π(<i>d</i>/2)<sup>2</sup> = π(${rMM()})<sup>2</sup> = ${num(V.A)} m<sup>2</sup>`);
+        L.push(`<i>R</i> = <i>ρ</i>${frac('<i>L</i>', '<i>A</i>')}, so <i>L</i> = ${frac('<i>RA</i>', '<i>ρ</i>')}`);
+        L.push({ h: `<i>L</i> = ${frac(`${gv('R', f3)} × ${num(V.A)}`, gv('rho', num))} = ${num(V.L)} m`, lit: true });
+        return L;
+      }
+      const Lline = !S.custom && P.turns ? `${P.turns} × ${P.turnLen} mm = ${P.turns} × ${P.turnLen} × ${ex(-3)} m = ${gv('L', f3)} m` : `${gv('L', f3)} m`;
+      L.push(`<i>R</i> = ${gv('R', f3)} Ω, <i>ρ</i> = ${rhoTxt()}, <i>L</i> = ${Lline}`);
+      L.push(`<i>R</i> = <i>ρ</i>${frac('<i>L</i>', '<i>A</i>')}, so <i>A</i> = ${frac('<i>ρL</i>', '<i>R</i>')} = ${frac(`${gv('rho', num)} × ${gv('L', f3)}`, gv('R', f3))} = ${num(V.A)} m<sup>2</sup>`);
+      L.push(`<i>A</i> = π${frac('<i>d</i><sup>2</sup>', '4')}, so <i>d</i> = ${rt(frac('4<i>A</i>', 'π'))}`);
+      L.push({ h: `<i>d</i> = ${rt(frac(`4 × ${num(V.A)}`, 'π'))} = ${num(V.d)} m = ${f3(V.d / 1e-3)} mm`, lit: true });
+      return L;
+    }
+
+    /* ---------------- tab 5: the metre-rule rig ---------------- */
+    const rigA = () => areaOfD(P.d * 1e-3);
+    const rigR = (L = rig.L) => P.rho * L / rigA();
+    const rigI = () => P.V / rigR();
+    // the best straight line through the origin: gradient = Σxy / Σx²
+    function fit0(pts, xs, ys) { let sxy = 0, sxx = 0; pts.forEach(p => { sxy += p[xs] * p[ys]; sxx += p[xs] * p[xs]; }); return sxx > 0 ? sxy / sxx : null; }
+
+    /* ---------------- steps and the clock ---------------- */
+    const nSteps = () => (currentTab === 1 ? t1Steps().length : currentTab === 2 ? t2Steps().length : currentTab === 3 && P.kind === 'calc' ? t3Steps().length : currentTab === 4 ? t4Steps().length : 0);
+    function setStep(n) { S.step = Math.max(0, Math.min(nSteps(), n)); update(); }
+    $('prevStep').addEventListener('click', () => setStep(S.step - 1));
+    $('nextStep').addEventListener('click', () => { clearFeatNoteOnly(); setStep(S.step + 1); });
+    $('stepReset').addEventListener('click', () => { clearFeatNoteOnly(); setStep(0); });
+
+    function frame(ts) {
+      if (!sim.running) return;
+      if (sim.last === null) sim.last = ts;
+      // a first rAF timestamp can be earlier than the one stored: never step backwards
+      const dt = Math.max(0, Math.min(0.05, (ts - sim.last) / 1000)) * speedUp(); sim.last = ts;
+      const end = runEnd();
+      sim.t = Math.min(end, sim.t + dt);
+      if (sim.t >= end - 1e-9) { sim.t = end; sim.running = false; }
+      update();
+      if (sim.running) requestAnimationFrame(frame);
+    }
+    function start() {
+      const end = runEnd();
+      if (end <= 0) { update(); return; }
+      if (sim.t >= end - 1e-9) sim.t = 0;
+      sim.running = true; sim.last = null; clearFeatNoteOnly(); update(); requestAnimationFrame(frame);
+    }
+    function setTime(t) { sim.running = false; sim.last = null; sim.t = Math.max(0, Math.min(runEnd(), t)); update(); }
+    function resetRun() { sim.running = false; sim.last = null; sim.t = 0; update(); }
+    function runToEnd() { setTime(runEnd()); }
+    $('startBtn').addEventListener('click', start);
+    $('pauseBtn').addEventListener('click', () => {
+      if (sim.running) { sim.running = false; sim.last = null; update(); }
+      else if (sim.t > 0 && sim.t < runEnd()) start();
+    });
+    $('resetBtn').addEventListener('click', resetRun);
+    $('nextMoment').addEventListener('click', () => { const n = keyMoments().find(m => m > sim.t + 1e-6); if (n !== undefined) setTime(n); });
+    $('prevMoment').addEventListener('click', () => { const p = keyMoments().filter(m => m < sim.t - 1e-6).pop(); if (p !== undefined) setTime(p); });
+
+    // readings: tab 3 records (V, I) for the component in use; tab 5 records (L, R) at the clip's length
+    $('recBtn').addEventListener('click', () => {
+      clearFeatNoteOnly();
+      if (currentTab === 3) {
+        const set = ohm[P.comp], v = vSet, i = expI(P.comp, v);
+        const k = set.findIndex(p => Math.abs(p.V - v) < 1e-9); if (k >= 0) set.splice(k, 1); // the same voltage again replaces it
+        set.push({ V: v, I: i });
+        $('recNote').innerHTML = `Recorded for the ${P.comp === 'lamp' ? 'filament lamp' : 'resistor'}: <i>V</i> = ${v.toFixed(2)} V, <i>I</i> = ${i.toFixed(3)} A.`;
+      } else if (currentTab === 5) {
+        const k = rig.rl.findIndex(p => Math.abs(p.L - rig.L) < 1e-9); if (k >= 0) rig.rl.splice(k, 1);
+        rig.rl.push({ L: rig.L, R: rigR(), V: P.V, I: rigI() });
+        $('recNote').innerHTML = `Recorded: <i>L</i> = ${rig.L.toFixed(2)} m, <i>V</i> = ${P.V.toFixed(1)} V, <i>I</i> = ${A_(rigI())}, <i>R</i> = <i>V</i>/<i>I</i> = ${O_(rigR())}.`;
+      }
+      update();
+    });
+    $('clearBtn').addEventListener('click', () => {
+      clearFeatNoteOnly();
+      if (currentTab === 3) ohm = { resistor: [], lamp: [] }; else rig.rl = [];
+      $('recNote').innerHTML = REC_NOTE[currentTab] || '';
+      update();
+    });
+    const REC_NOTE = {
+      3: 'Set a voltage, press Record this reading, and repeat at several voltages. Then choose the other component and do the same.',
+      5: 'Drag the clip to a length, press Record this reading, and repeat at several lengths.'
+    };
+
+    function loadScenario(id) {
+      S.scen = id; S.custom = false; S.step = freeMode ? 99 : 0;
+      P = JSON.parse(JSON.stringify(PRESETS[id]));
+      if (P.tab === 4) { P.L0 = P.L; P.d0 = P.area === 'd' ? P.d : null; P.A0 = P.A; }
+      if (P.tab === 5) { rig.rl = []; rig.L = 0.6; }
+      $('question').innerHTML = P.q;
+      rebuild();
+    }
+    function rebuild() {
+      sim.t = 0; sim.running = false; sim.last = null; wireGeo = null;
+      if (isSteps()) S.step = Math.min(S.step, nSteps());
+    }
+
+    /* ---------------- drawing helpers ---------------- */
+    // what the canvas drew, for the checks: every label's box, every arrow, the panes and the drag handles
+    window.__pim = { labels: [], arrows: [], panes: [], handles: [] };
+    function setup(cv) {
+      const r = cv.getBoundingClientRect();
+      if (r.width < 20 || r.height < 20) return null; // hidden: never draw at no size
+      const dpr = window.devicePixelRatio || 1, cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
+      if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+      const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, r.width, r.height);
+      return { ctx, W: r.width, H: r.height };
+    }
     // Canvas text with <i>, <sub> and <sup> runs, so symbols of physical quantities are italic, as in the notes.
     // Honours ctx.textAlign; returns the width. measureOnly = true draws nothing.
     function richText(ctx, s, x, y, measureOnly) {
@@ -213,334 +754,1156 @@
       ctx.textAlign = align; ctx.font = base;
       return w;
     }
+    let PANE = 'scene', CW = 1e9, CH = 1e9, CX0 = 0, CY0 = 0; // the pane name for the checks; the area a label must stay inside
+    function arrow(ctx, x1, y1, x2, y2, color, lw = 3.5, head = 11, record = true) {
+      const len = Math.hypot(x2 - x1, y2 - y1); if (len < 1.5) return;
+      if (record) __pim.arrows.push({ pane: PANE, x1, y1, x2, y2 });
+      const a = Math.atan2(y2 - y1, x2 - x1), hd = Math.min(head, len * 0.6);
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - Math.cos(a) * hd * 0.8, y2 - Math.sin(a) * hd * 0.8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - hd * Math.cos(a - 0.45), y2 - hd * Math.sin(a - 0.45)); ctx.lineTo(x2 - hd * Math.cos(a + 0.45), y2 - hd * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill();
+    }
+    // a label's box before it is drawn: x/y is the middle of the card's left, centre or right edge
+    function labelBox(ctx, lines, x, y, align, size) {
+      ctx.font = `bold ${size}px Arial`;
+      const w = Math.max(...lines.map(t => richText(ctx, t, 0, 0, true))), lh = size * 1.6 + 1, h = lines.length * lh - 1;
+      const x0 = Math.max(CX0 + 4, Math.min(CW - w - 4, align === 'center' ? x - w / 2 : align === 'right' ? x - w : x));
+      const y0 = Math.max(CY0 + 2, Math.min(CH - h - 2, y - size * 0.8));
+      return { x: x0 - 3, y: y0, w: w + 6, h, lh, tx: x0, size };
+    }
+    const hitBox = (a, b, pad = 1) => Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) > pad && Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) > pad;
+    function crossesArrow(box) {
+      return __pim.arrows.some(a => { if (a.pane !== PANE) return false; for (let k = 0; k <= 24; k++) { const px = a.x1 + (a.x2 - a.x1) * k / 24, py = a.y1 + (a.y2 - a.y1) * k / 24;
+        if (px > box.x + 0.5 && px < box.x + box.w - 0.5 && py > box.y + 0.5 && py < box.y + box.h - 0.5) return true; } return false; });
+    }
+    // labels on white cards, one card per line
+    function label(ctx, lines, x, y, color, align = 'center', size = 12) {
+      if (!Array.isArray(lines)) lines = [lines];
+      const b = labelBox(ctx, lines, x, y, align, size);
+      lines.forEach((t, i) => {
+        const card = { pane: PANE, text: t.replace(/<[^>]+>/g, ''), x: b.x, y: b.y + i * b.lh, w: b.w, h: size * 1.6 };
+        ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fillRect(card.x, card.y, card.w, card.h);
+        ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.font = `bold ${size}px Arial`; richText(ctx, t, b.tx, card.y + size * 0.8);
+        ctx.textBaseline = 'alphabetic';
+        __pim.labels.push(card);
+      });
+      return b;
+    }
+    // a label at the first of several spots that is clear of every label, object and arrow already drawn
+    // (cands: [x, y, align]; if none is clear the label is left out: its value is always in the readout cards)
+    function labelAt(ctx, text, cands, color, size = 12) {
+      for (const [x, y, al] of cands) {
+        const b = labelBox(ctx, [text], x, y, al, size);
+        if (!__pim.labels.some(l => l.pane === PANE && hitBox(l, b)) && !crossesArrow(b)) return label(ctx, text, x, y, color, al, size);
+      }
+      return null;
+    }
+    function title(ctx, text, x, y) {
+      ctx.fillStyle = '#334155'; ctx.font = '12px Arial'; ctx.textAlign = 'left';
+      richText(ctx, text, x, y);
+      __pim.labels.push({ pane: PANE, text: text.replace(/<[^>]+>/g, ''), x: x - 2, y: y - 10, w: richText(ctx, text, 0, 0, true) + 4, h: 18, title: true });
+    }
+    function dashLine(ctx, x1, y1, x2, y2, color = '#94a3b8') {
+      ctx.strokeStyle = color; ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
+    }
+    // a "nice" gridline step: 1, 2, 2.5 or 5 times a power of ten, giving at most `max` steps
+    function niceStep(range, max) {
+      const raw = range / max, p = Math.pow(10, Math.floor(Math.log10(raw)));
+      for (const k of [1, 2, 2.5, 5, 10]) if (k * p >= raw - 1e-12) return k * p;
+      return 10 * p;
+    }
+    function pane(r, name) { PANE = name; CX0 = r.x; CY0 = r.y; CW = r.x + r.w; CH = r.y + r.h; __pim.panes.push(Object.assign({ name }, r)); return r; }
+    const obstacle = (x, y, w, h) => __pim.labels.push({ pane: PANE, obstacle: true, text: '', x, y, w, h });
 
-    function sup(n) { return String(n).replace(/-/g, '⁻').replace(/\d/g, d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]); }
-    function sci(x, dp = 2) { if (x === 0) return '0'; const e = Math.floor(Math.log10(Math.abs(x))); return `${(x / 10 ** e).toFixed(dp)} × 10${sup(e)}`; }
-    function fmtR(r) { return r >= 100 ? `${r.toFixed(0)} Ω` : r >= 1 ? `${r.toFixed(2)} Ω` : `${r.toFixed(3)} Ω`; }
-    function fmtI(i) { return i >= 10 ? `${i.toFixed(1)} A` : i >= 0.01 ? `${i.toFixed(3)} A` : `${(i * 1000).toFixed(2)} mA`; }
-
-    function setup(c) {
-      const r = c.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
-      const cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
-      if (c.width !== cw || c.height !== ch) { c.width = cw; c.height = ch; }
-      const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      return { ctx, w: r.width, h: r.height };
+    // circuit symbols (notes p. 7-7)
+    function wireLine(ctx, pts, color = COL.wire, lw = 2.5) {
+      ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.stroke();
+    }
+    // a cell on a vertical wire, + plate (long, thin) on top; or on a horizontal wire, + plate on the left
+    function cell(ctx, x, y, vertical, variable = false) {
+      ctx.strokeStyle = '#111827';
+      if (vertical) {
+        ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - 17, y - 6); ctx.lineTo(x + 17, y - 6); ctx.stroke();
+        ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(x - 9, y + 6); ctx.lineTo(x + 9, y + 6); ctx.stroke();
+        ctx.fillStyle = '#111827'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'right'; ctx.fillText('+', x - 20, y - 2); ctx.fillText('−', x - 20, y + 16);
+        obstacle(x - 30, y - 12, 50, 26);
+      } else {
+        ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - 6, y - 17); ctx.lineTo(x - 6, y + 17); ctx.stroke();
+        ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(x + 6, y - 9); ctx.lineTo(x + 6, y + 9); ctx.stroke();
+        ctx.fillStyle = '#111827'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.fillText('+', x - 14, y - 19); ctx.fillText('−', x + 16, y - 13);
+        if (variable) { ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x - 20, y + 18); ctx.lineTo(x + 20, y - 18); ctx.moveTo(x + 20, y - 18); ctx.lineTo(x + 11, y - 16); ctx.moveTo(x + 20, y - 18); ctx.lineTo(x + 18, y - 9); ctx.stroke(); }
+        obstacle(x - 22, y - 30, 44, 50);
+      }
+      ctx.textAlign = 'left';
     }
     function meter(ctx, x, y, letter, color, reading) {
       ctx.fillStyle = 'white'; ctx.strokeStyle = color; ctx.lineWidth = 2.5;
-      ctx.beginPath(); ctx.arc(x, y, 17, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       ctx.fillStyle = color; ctx.font = 'bold 15px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(letter, x, y + 1);
-      ctx.textBaseline = 'alphabetic';
-      if (reading) {
-        ctx.font = 'bold 12px Arial'; const tw = ctx.measureText(reading).width;
-        ctx.fillStyle = '#0f172a'; ctx.fillRect(x - tw / 2 - 5, y - 44, tw + 10, 19);
-        ctx.fillStyle = '#4ade80'; ctx.fillText(reading, x, y - 30);
+      ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+      obstacle(x - 17, y - 17, 34, 34);
+      if (reading !== undefined) {
+        // the display, like a digital meter's: green figures on black
+        ctx.font = 'bold 12px Arial'; const tw = richText(ctx, reading, 0, 0, true);
+        const bx = x - tw / 2 - 5, by = y - 42;
+        ctx.fillStyle = '#0f172a'; ctx.fillRect(bx, by, tw + 10, 19);
+        ctx.fillStyle = '#4ade80'; ctx.textAlign = 'center'; richText(ctx, reading, x, by + 14); ctx.textAlign = 'left';
+        __pim.labels.push({ pane: PANE, text: reading.replace(/<[^>]+>/g, ''), x: bx, y: by, w: tw + 10, h: 19, meter: true });
       }
     }
+    // a resistor (a box) or a filament lamp (a circle with a cross), centred at (x, y), along a horizontal or vertical wire
+    function component(ctx, kind, x, y, vertical, glow = 0) {
+      if (kind === 'lamp') {
+        if (glow > 0.01) {
+          const g = ctx.createRadialGradient(x, y, 6, x, y, 22 + 46 * glow);
+          g.addColorStop(0, `rgba(253,224,71,${0.9 * glow})`); g.addColorStop(1, 'rgba(253,224,71,0)');
+          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 22 + 46 * glow, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.fillStyle = `rgba(254,240,138,${0.25 + 0.75 * glow})`; ctx.strokeStyle = '#111827'; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.arc(x, y, 17, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        const d = 17 * Math.SQRT1_2; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(x - d, y - d); ctx.lineTo(x + d, y + d); ctx.moveTo(x + d, y - d); ctx.lineTo(x - d, y + d); ctx.stroke();
+        obstacle(x - 18, y - 18, 36, 36);
+      } else {
+        if (glow > 0.01) { ctx.fillStyle = `rgba(248,113,113,${0.45 * glow})`; vertical ? ctx.fillRect(x - 15, y - 30, 30, 60) : ctx.fillRect(x - 30, y - 15, 60, 30); }
+        ctx.fillStyle = 'white'; ctx.strokeStyle = '#111827'; ctx.lineWidth = 2.5;
+        if (vertical) { ctx.fillRect(x - 9, y - 24, 18, 48); ctx.strokeRect(x - 9, y - 24, 18, 48); obstacle(x - 10, y - 25, 20, 50); }
+        else { ctx.fillRect(x - 24, y - 9, 48, 18); ctx.strokeRect(x - 24, y - 9, 48, 18); obstacle(x - 25, y - 10, 50, 20); }
+      }
+    }
+    // the rectangular loop of tabs 1 and 2: the cell on the left side, path from its + terminal round to its − terminal
+    function loopGeo(W, H) {
+      const x0 = Math.max(46, W * 0.13), x1 = W - Math.max(46, W * 0.13), y0 = 64, y1 = H - 76, by = (y0 + y1) / 2, bh = 24;
+      const a1 = by - bh / 2 - y0, w = x1 - x0, h = y1 - y0, a2 = y1 - (by + bh / 2);
+      const total = a1 + w + h + w + a2;
+      // a point s along the path (conventional current direction), with the direction it runs
+      const at = s => {
+        s = ((s % total) + total) % total;
+        if (s < a1) return { x: x0, y: by - bh / 2 - s, dx: 0, dy: -1 };
+        s -= a1; if (s < w) return { x: x0 + s, y: y0, dx: 1, dy: 0 };
+        s -= w; if (s < h) return { x: x1, y: y0 + s, dx: 0, dy: 1 };
+        s -= h; if (s < w) return { x: x1 - s, y: y1, dx: -1, dy: 0 };
+        s -= w; return { x: x0, y: y1 - s, dx: 0, dy: -1 };
+      };
+      return { x0, x1, y0, y1, by, bh, total, at, sOf: { top: a1, right: a1 + w, bottom: a1 + w + h, left: a1 + 2 * w + h } };
+    }
 
-    let rig = null;
-    function drawRig() {
-      const { ctx, w, h } = setup(el('rigCanvas'));
-      ctx.clearRect(0, 0, w, h);
-      const x0 = 50, x1 = w - 50, wireY = h * 0.66, ppm = (x1 - x0); // wire is 1.00 m long on a metre rule
-      rig = { x0, x1, wireY, ppm };
-      // metre rule
+    /* ---------------- drawing ---------------- */
+    let wireGeo = null; // tab 4's scale, frozen while a finger drags
+    function draw() {
+      __pim = window.__pim = { labels: [], arrows: [], panes: [], handles: [] };
+      const c = setup(canvas); if (!c) return;
+      const { ctx, W, H } = c;
+      pane({ x: 0, y: 0, w: W, h: H }, 'scene');
+      if (currentTab === 1) drawT1(ctx, W, H);
+      else if (currentTab === 2) drawT2(ctx, W, H);
+      else if (currentTab === 3) drawT3(ctx, W, H);
+      else if (currentTab === 4) drawT4(ctx, W, H);
+      else if (currentTab === 5) drawT5(ctx, W, H);
+    }
+
+    // tab 1: a cell, a switch, an ammeter and a lamp in one loop; electrons drift, a counter at P counts the charge
+    function drawT1(ctx, W, H) {
+      const g = loopGeo(W, H), I = t1I(), moving = I > 0, mid = (g.x0 + g.x1) / 2;
+      const swX = g.x0 + (g.x1 - g.x0) * 0.2, amX = g.x0 + (g.x1 - g.x0) * 0.8, lampY = (g.y0 + g.y1) / 2;
+      // the wires, leaving gaps for the switch, the ammeter and the lamp
+      wireLine(ctx, [[g.x0, g.by - g.bh / 2], [g.x0, g.y0], [swX - 16, g.y0]]);
+      wireLine(ctx, [[swX + 16, g.y0], [amX - 16, g.y0]]);
+      wireLine(ctx, [[amX + 16, g.y0], [g.x1, g.y0], [g.x1, lampY - 17]]);
+      wireLine(ctx, [[g.x1, lampY + 17], [g.x1, g.y1], [g.x0, g.y1], [g.x0, g.by + g.bh / 2]]);
+      cell(ctx, g.x0, g.by, true);
+      label(ctx, 'battery', g.x0 + 24, g.by, '#334155', 'left', 11);
+      // the switch: two contacts and a lever, closed or open
+      ctx.fillStyle = '#111827'; [swX - 16, swX + 16].forEach(x => { ctx.beginPath(); ctx.arc(x, g.y0, 3.5, 0, Math.PI * 2); ctx.fill(); });
+      ctx.strokeStyle = '#111827'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(swX - 16, g.y0);
+      if (P.closed) ctx.lineTo(swX + 16, g.y0); else ctx.lineTo(swX + 12, g.y0 - 20);
+      ctx.stroke(); obstacle(swX - 20, g.y0 - 24, 40, 30);
+      label(ctx, P.closed ? 'switch closed' : 'switch open', swX, g.y0 + 20, P.closed ? '#334155' : '#b91c1c', 'center', 11);
+      const showI = !(P.kind === 'findI' && !ended());
+      meter(ctx, amX, g.y0, 'A', COL.amm, P.closed ? (showI ? mA_(I) : '? A') : '0 A');
+      component(ctx, 'lamp', g.x1, lampY, true, moving ? 0.8 : 0);
+      // the counting point P, with its counter
+      const Qt = I * sim.t;
+      dashLine(ctx, mid, g.y1 - 18, mid, g.y1 + 18, '#0f172a');
+      label(ctx, 'P', mid, g.y1 - 26, '#0f172a', 'center', 13);
+      label(ctx, `Charge passed P: ${num(Qt)} C`, mid, g.y1 + 34, '#0f172a', 'center', 12);
+      // the electrons (each dot stands for a great many), drifting from − round to + while charge flows
+      const v = 46, gap = 34, n = Math.floor(g.total / gap), off = moving ? -v * sim.t : 0;
+      if (P.showE !== false) for (let k = 0; k < n; k++) {
+        const p = g.at(k * gap + off + 7);
+        if (Math.hypot(p.x - amX, p.y - g.y0) < 20 || Math.hypot(p.x - g.x1, p.y - lampY) < 21) continue;
+        ctx.beginPath(); ctx.arc(p.x, p.y, 5.5, 0, Math.PI * 2); ctx.fillStyle = COL.e; ctx.fill(); ctx.strokeStyle = COL.eD; ctx.lineWidth = 1.2; ctx.stroke();
+        ctx.strokeStyle = '#111827'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(p.x - 2.8, p.y); ctx.lineTo(p.x + 2.8, p.y); ctx.stroke();
+      }
+      // which way: electron current (− to +) under the bottom wire; conventional current (+ to −) above the top wire
+      if (P.closed && P.showC !== false) {
+        // between the switch and the ammeter, clear of the ammeter's display; on a narrow screen the label shortens to I
+        const y = g.y0 - 30, xa = g.x0 + (g.x1 - g.x0) * 0.36, xb = g.x0 + (g.x1 - g.x0) * 0.5;
+        arrow(ctx, xa, y, xb, y, COL.conv, 3, 10);
+        arrow(ctx, g.x1 + 24, lampY - 60, g.x1 + 24, lampY - 30, COL.conv, 3, 10);
+        if (!labelAt(ctx, 'conventional current <i>I</i>', [[xb + 8, y, 'left'], [xa - 8, y, 'right']], COL.conv, 12))
+          labelAt(ctx, '<i>I</i>', [[xb + 8, y, 'left'], [xa - 8, y, 'right'], [(xa + xb) / 2, y - 18, 'center']], COL.conv, 12);
+      }
+      if (P.closed && P.showE !== false) {
+        const y = g.y1 + 60, xa = g.x0 + (g.x1 - g.x0) * 0.62, xb = g.x0 + (g.x1 - g.x0) * 0.48;
+        arrow(ctx, xa, y, xb, y, COL.eD, 3, 10);
+        labelAt(ctx, 'electron current', [[xa + 8, y, 'left'], [xb - 8, y, 'right']], COL.eD, 12);
+      }
+      title(ctx, `<i>t</i> = ${(Math.round(sim.t * 100) / 100).toFixed(2)} s`, 10, 18);
+      if (P.showE !== false) label(ctx, 'Each dot stands for many electrons.', W - 10, 14, '#64748b', 'right', 11);
+    }
+
+    // tab 2: one charge packet round the loop; it gains energy in the battery and gives it up in the component
+    function packetAt(g) {
+      // where the packet is at each step: before the battery, out of the battery, before the component, after it
+      const st = S.step, n = nSteps(), pre = g.sOf.left + (g.total - g.sOf.left) * 0.45, outB = g.sOf.top * 0.4;
+      const inC = g.sOf.right + (g.sOf.bottom - g.sOf.right) * 0.18, after = g.sOf.right + (g.sOf.bottom - g.sOf.right) * 0.84;
+      if (P.kind === 'emf') return st >= n ? { s: outB, e: 1 } : st >= 2 ? { s: g.total, e: 0.5, inB: true } : { s: pre, e: 0 };
+      return st >= n ? { s: after, e: 0 } : { s: inC, e: 1 };
+    }
+    function drawT2(ctx, W, H) {
+      const g = loopGeo(W, H), V = t2Values(), st = S.step, n = nSteps(), cy = (g.y0 + g.y1) / 2;
+      wireLine(ctx, [[g.x0, g.by - g.bh / 2], [g.x0, g.y0], [g.x1, g.y0], [g.x1, cy - 26]]);
+      wireLine(ctx, [[g.x1, cy + 26], [g.x1, g.y1], [g.x0, g.y1], [g.x0, g.by + g.bh / 2]]);
+      cell(ctx, g.x0, g.by, true);
+      const done = st >= n, used = P.kind !== 'emf' && done;
+      component(ctx, P.comp, g.x1, cy, true, used ? 0.9 : P.kind === 'emf' ? 0.6 : 0.6);
+      wireLine(ctx, [[g.x1, cy - 26], [g.x1, cy - (P.comp === 'lamp' ? 17 : 24)]]); wireLine(ctx, [[g.x1, cy + (P.comp === 'lamp' ? 17 : 24)], [g.x1, cy + 26]]);
+      const Vval = P.kind === 'V' ? (done ? f3(V.V) : '?') : P.kind === 'W' ? gv('V', f3) : f3(V.V);
+      labelAt(ctx, `p.d. <i>V</i> = ${Vval} V`, [[g.x1 - 26, cy, 'right'], [g.x1, g.y1 + 20, 'center']], '#334155', 12);
+      // the conventional current's direction, + terminal round to − terminal
+      const ia = g.x0 + (g.x1 - g.x0) * 0.4, ib = g.x0 + (g.x1 - g.x0) * 0.56;
+      arrow(ctx, ia, g.y0 - 20, ib, g.y0 - 20, COL.conv, 2.5, 9);
+      labelAt(ctx, '<i>I</i>', [[ib + 6, g.y0 - 20, 'left'], [ia - 6, g.y0 - 20, 'right']], COL.conv, 12);
+      // the packet of charge and the energy it carries
+      const pk = packetAt(g), p = pk.inB ? { x: g.x0, y: g.by } : g.at(pk.s), R = 15;
+      const Wshown = P.kind === 'emf' ? V.W * pk.e : (done ? 0 : V.W);
+      ctx.beginPath(); ctx.arc(p.x, p.y, R, 0, Math.PI * 2); ctx.fillStyle = 'rgba(34,197,94,0.9)'; ctx.fill(); ctx.strokeStyle = '#15803d'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.strokeStyle = '#111827'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(p.x - 6, p.y); ctx.lineTo(p.x + 6, p.y); ctx.moveTo(p.x, p.y - 6); ctx.lineTo(p.x, p.y + 6); ctx.stroke();
+      obstacle(p.x - R, p.y - R, 2 * R, 2 * R);
+      // the energy bar beside the packet
+      const bw = 14, bh = 64, bx = p.x < W / 2 ? p.x + R + 10 : p.x - R - 10 - bw, byy = Math.max(6, Math.min(H - bh - 6, p.y - bh / 2));
+      ctx.strokeStyle = COL.energy; ctx.lineWidth = 1.5; ctx.strokeRect(bx, byy, bw, bh);
+      const full = P.kind === 'emf' ? pk.e : (done ? 0 : 1);
+      ctx.fillStyle = COL.energy; ctx.fillRect(bx, byy + bh * (1 - full), bw, bh * full);
+      obstacle(bx - 1, byy - 1, bw + 2, bh + 2);
+      const known = P.kind === 'V' || done;
+      const eLab = P.kind === 'emf' ? (st >= n ? `carries ${J_(V.W)}` : st >= 2 ? 'gaining energy' : 'no energy yet') : done ? `${J_(V.W)} given up` : `carries ${known ? J_(Wshown) : '? J'}`;
+      const right = p.x < W / 2, lx = right ? bx + bw + 6 : bx - 6;
+      labelAt(ctx, `<i>Q</i> = ${gv('Q', f3)} C`, [[p.x, p.y - R - 14, 'center'], [p.x, p.y + R + 16, 'center']], '#15803d', 12);
+      labelAt(ctx, eLab, [[lx, byy + bh / 2, right ? 'left' : 'right'], [p.x, p.y + R + 36, 'center'], [p.x, p.y - R - 36, 'center']], COL.energy, 12);
+      // the battery's label goes in after the packet, so it moves aside while the packet passes through the battery
+      const Etxt = P.kind === 'emf' ? `emf <i>E</i> = ${gv('E', f3)} V` : `emf = ${f3(V.V)} V`;
+      labelAt(ctx, Etxt, [[g.x0 + 26, g.by, 'left'], [g.x0 + 26, g.by + 46, 'left'], [g.x0 + 26, g.by - 46, 'left']], '#334155', 12);
+      if (used) labelAt(ctx, P.comp === 'lamp' ? 'to heat and light' : 'to heat', [[g.x1 - 26, cy + 30, 'right'], [g.x1 - 26, cy - 30, 'right']], '#b45309', 12);
+      title(ctx, P.kind === 'emf' ? 'Charges gain energy from the battery’s emf.' : 'Charges lose energy due to the resistance in the circuit.', 10, 18);
+    }
+
+    // tab 3: supply, ammeter in series, voltmeter across the component (resistor or lamp)
+    function t3Show() {
+      // what the meters read, and which values are still unknown at this step
+      // a digital meter shows a fixed number of decimal places
+      if (P.kind === 'exp') { const v = vSet, i = expI(P.comp, v); return { v, i, vs: `${v.toFixed(2)} V`, is: `${i.toFixed(3)} A`, rs: v > 0 ? O_(v / i) : '—', comp: P.comp }; }
+      const V = t3Values(), st = S.step, n = nSteps();
+      if (P.find === 'V') return { v: V.V, i: V.I, vs: st >= n ? V_(V.V) : '? V', is: `${gv('I', f3)} A`, rs: `${gv('R', f3)} Ω`, comp: 'resistor' };
+      if (P.find === 'I') return { v: V.V, i: V.I, vs: `${gv('V', f3)} V`, is: st >= n ? A_(V.I) : '? A', rs: `${gv('R', f3)} Ω`, comp: 'resistor' };
+      if (st >= 3) return { v: V.V2, i: V.I2, vs: `${gv('V2', f3)} V`, is: st >= 4 ? A_(V.I2) : '? A', rs: O_(V.R), comp: 'resistor' };
+      return { v: V.V, i: V.I, vs: `${gv('V', f3)} V`, is: `${gv('I', f3)} A`, rs: st >= 2 ? O_(V.R) : '? Ω', comp: 'resistor' };
+    }
+    function drawT3(ctx, W, H) {
+      const sh = t3Show(), xL = Math.max(40, W * 0.12), xR = W - xL, topY = H * 0.22, botY = H * 0.55, cx = W / 2;
+      const supX = xL + (cx - xL) * 0.6, ammX = cx + (xR - cx) * 0.45, half = 30;
+      wireLine(ctx, [[supX - 6, topY], [xL, topY], [xL, botY], [cx - half, botY]]);
+      wireLine(ctx, [[cx + half, botY], [xR, botY], [xR, topY], [ammX + 16, topY]]);
+      wireLine(ctx, [[ammX - 16, topY], [supX + 6, topY]]);
+      cell(ctx, supX, topY, false, true);
+      label(ctx, `${P.kind === 'exp' ? vSet.toFixed(1) + ' V' : 'variable'} supply`, supX, topY + 34, '#334155', 'center', 11);
+      meter(ctx, ammX, topY, 'A', COL.amm, sh.is);
+      const lamp = sh.comp === 'lamp';
+      component(ctx, lamp ? 'lamp' : 'resistor', cx, botY, false, lamp ? Math.min(1, sh.v * sh.i / 0.6) : 0);
+      wireLine(ctx, [[cx - half, botY], [cx - (lamp ? 17 : 24), botY]]); wireLine(ctx, [[cx + (lamp ? 17 : 24), botY], [cx + half, botY]]);
+      const cl = P.kind === 'exp' ? (lamp ? 'filament lamp' : `${RES_R} Ω resistor`) : `<i>R</i> = ${sh.rs}`;
+      label(ctx, cl, cx, botY - 32, '#0f172a', 'center', 12);
+      // voltmeter in parallel across the component
+      const vY = botY + 74, a = cx - half - 12, bx = cx + half + 12;
+      ctx.strokeStyle = COL.volt; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(a, botY); ctx.lineTo(a, vY); ctx.lineTo(cx - 16, vY); ctx.moveTo(cx + 16, vY); ctx.lineTo(bx, vY); ctx.lineTo(bx, botY); ctx.stroke();
+      ctx.fillStyle = COL.volt; [a, bx].forEach(x => { ctx.beginPath(); ctx.arc(x, botY, 3.5, 0, Math.PI * 2); ctx.fill(); });
+      meter(ctx, cx, vY, 'V', COL.volt, sh.vs);
+      labelAt(ctx, 'ammeter (in series)', [[ammX, topY + 30, 'center']], COL.amm, 11);
+      labelAt(ctx, 'voltmeter (in parallel)', [[cx, vY + 30, 'center'], [cx + 30, vY, 'left']], COL.volt, 11);
+    }
+
+    // tab 4: a uniform wire as a cylinder (notes p. 7-19), not to scale
+    function drawT4(ctx, W, H) {
+      const V = t4Values(), st = S.step, n = nSteps(), last = st >= n;
+      const cy = H * 0.5, x0 = Math.max(70, W * 0.12);
+      if (!wireGeo) wireGeo = { base: Math.min(W - x0 - 60, W * 0.5), r0: Math.min(30, H * 0.11) };
+      if (P.find === 'cut') {
+        const len = wireGeo.base * 1.25, r = wireGeo.r0 * 0.8, cutD = st >= 2;
+        const pieces = cutD ? Math.max(1, Math.round(P.n)) : 1, gap = cutD ? 14 : 0, pl = (len - gap * (pieces - 1)) / pieces;
+        for (let k = 0; k < pieces; k++) cylinder(ctx, x0 + k * (pl + gap), cy, pl, r, '#94a3b8');
+        label(ctx, cutD ? `each piece: <i>L</i>/${f3(P.n)}` : '<i>L</i>', x0 + (cutD ? pl / 2 : len / 2), cy - r - 22, '#0f172a', 'center', 12);
+        label(ctx, cutD ? (last ? `each piece: <i>R</i> = ${O_(V.Rn)}` : 'each piece: <i>R</i> = ?') : `<i>R</i> = ${gv('R', f3)} Ω`, x0 + len / 2, cy + r + 30, '#b91c1c', 'center', 13);
+        title(ctx, 'Cut into equal lengths (not to scale)', 10, 18);
+        return;
+      }
+      // length drawn in proportion to L (L0 = the scenario's own L), thickness to d (or √A)
+      const L = P.find === 'L' ? (last ? V.L : P.L0 || V.L) : P.L;
+      const Lref = P.find === 'L' ? (P.L0 || V.L) : P.L0;
+      const len = Math.max(30, Math.min(W - x0 - 50, wireGeo.base * (Lref ? L / Lref : 1)));
+      const dCur = P.find === 'd' ? (last ? V.d : null) : (P.area === 'd' ? P.d : Math.sqrt(4 * V.A / Math.PI));
+      const dRef = P.find === 'd' ? null : (P.area === 'd' ? P.d0 : Math.sqrt(4 * P.A0 / Math.PI));
+      const r = dCur && dRef ? Math.max(4, Math.min(H * 0.2, wireGeo.r0 * dCur / dRef)) : wireGeo.r0;
+      const color = { Nichrome: '#9ca3af', Copper: '#c2703d' }[P.mat] || '#60a5fa';
+      cylinder(ctx, x0, cy, len, r, color);
+      __pim.handles.push({ id: 'end', x: x0 + len, y: cy, r: Math.max(16, r) });
+      wireGeo.x0 = x0; wireGeo.len = len; wireGeo.L = L;
+      // L above, with its arrow
+      const yL = cy - r - 22;
+      ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.moveTo(x0, yL - 5); ctx.lineTo(x0, yL + 5); ctx.moveTo(x0 + len, yL - 5); ctx.lineTo(x0 + len, yL + 5); ctx.stroke();
+      arrow(ctx, x0 + len / 2, yL, x0 + 2, yL, '#0f172a', 1.3, 8, false); arrow(ctx, x0 + len / 2, yL, x0 + len - 2, yL, '#0f172a', 1.3, 8, false);
+      const Lval = P.find === 'L' ? (last ? `${num(V.L)} m` : '?') : P.Lf === 0.01 ? `${gv('L', v => f3(v / 0.01))} cm` : `${gv('L', f3)} m`;
+      label(ctx, `<i>L</i> = ${Lval}`, x0 + len / 2, yL - 14, '#0f172a', 'center', 12);
+      // A (or d) at the end face
+      const aTxt = P.find === 'd' ? (last ? `<i>d</i> = ${f3(V.d / 1e-3)} mm` : st >= 2 ? `<i>A</i> = ${num(V.A)} m<sup>2</sup>` : '<i>d</i> = ?')
+        : P.area === 'd' ? `<i>d</i> = ${dTxt()}` : P.Af === 1e-6 ? `<i>A</i> = ${gv('A', v => f3(v / 1e-6))} mm<sup>2</sup>` : `<i>A</i> = ${gv('A', num)} m<sup>2</sup>`;
+      labelAt(ctx, aTxt, [[x0 - 10, cy + r + 20, 'left'], [x0 - 8, cy, 'right'], [x0, cy - r - 46, 'left']], '#1d4ed8', 12);
+      // canvas text: richText knows only <i>, <sub>, <sup>, so no rhoTxt() here (its no-wrap <span> would be drawn as text)
+      const rhoLab = P.find === 'rho' ? (last ? `<i>ρ</i> = ${num(V.rho)} Ω m` : '<i>ρ</i> = ?') : `<i>ρ</i> = ${gv('rho', num)} Ω m`;
+      labelAt(ctx, (P.mat ? P.mat + ': ' : '') + rhoLab, [[x0 + len / 2, cy + r + 22, 'center'], [x0 + len / 2, cy + r + 46, 'center']], '#334155', 12);
+      const Rlab = P.find === 'R' ? (last ? `<i>R</i> = ${O_(V.R)}` : '<i>R</i> = ?') : `<i>R</i> = ${gv('R', f3)} Ω`;
+      labelAt(ctx, Rlab, [[x0 + len / 2, cy + r + 46, 'center'], [x0 + len / 2, cy + r + 70, 'center'], [W - 10, H - 30, 'right']], '#b91c1c', 13);
+      title(ctx, `${P.find === 'd' && !S.custom && P.turns ? 'The coil’s wire, unwound' : 'A uniform wire'} (not to scale)`, 10, 18);
+      if (P.find !== 'L') label(ctx, 'Drag the right-hand end to change <i>L</i>.', W - 10, H - 12, '#64748b', 'right', 11);
+    }
+    function cylinder(ctx, x, cy, len, r, color) {
+      const ew = Math.max(3, r * 0.45);
+      ctx.fillStyle = color; ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(x, cy - r); ctx.lineTo(x + len, cy - r); ctx.ellipse(x + len, cy, ew, r, 0, -Math.PI / 2, Math.PI / 2); ctx.lineTo(x, cy + r); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(x, cy - r * 0.7, len, r * 0.35);
+      ctx.beginPath(); ctx.ellipse(x, cy, ew, r, 0, 0, Math.PI * 2); ctx.fillStyle = '#e0f2fe'; ctx.fill(); ctx.stroke();
+      obstacle(x - ew, cy - r, len + 2 * ew, 2 * r);
+    }
+
+    // tab 5: a 1.00 m wire on a metre rule; supply and ammeter in series, voltmeter across the length L
+    let rigView = null;
+    function drawT5(ctx, W, H) {
+      const x0 = 46, x1 = W - 46, wireY = H * 0.64, ppm = x1 - x0;
+      rigView = { x0, x1, wireY, ppm };
       ctx.fillStyle = '#fde68a'; ctx.fillRect(x0 - 10, wireY + 12, x1 - x0 + 20, 30);
       ctx.strokeStyle = '#92400e'; ctx.fillStyle = '#78350f'; ctx.font = '10px Arial'; ctx.textAlign = 'center';
+      const every = ppm < 340 ? 20 : 10;
       for (let cm = 0; cm <= 100; cm++) {
         const x = x0 + cm / 100 * ppm, big = cm % 10 === 0;
         ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, wireY + 12); ctx.lineTo(x, wireY + 12 + (big ? 12 : cm % 5 === 0 ? 8 : 4)); ctx.stroke();
-        if (big) ctx.fillText(String(cm), x, wireY + 38);
+        if (cm % every === 0) ctx.fillText(String(cm), x, wireY + 38);
       }
-      ctx.fillText('cm', x1 + 22, wireY + 38);
-      // the resistance wire (whole metre), thicker for bigger diameter
-      const thick = 1.5 + (+el('diam').value) * 4;
-      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = thick; ctx.beginPath(); ctx.moveTo(x0, wireY); ctx.lineTo(x1, wireY); ctx.stroke();
-      const xc = x0 + st.L * ppm;
-      ctx.strokeStyle = '#b45309'; ctx.lineWidth = thick + 1; ctx.beginPath(); ctx.moveTo(x0, wireY); ctx.lineTo(xc, wireY); ctx.stroke(); // part carrying current
-      // terminal at the left end
+      ctx.textAlign = 'left'; obstacle(x0 - 10, wireY + 12, x1 - x0 + 20, 30);
+      const thick = 1.5 + P.d * 4, xc = x0 + rig.L * ppm;
+      wireLine(ctx, [[x0, wireY], [x1, wireY]], '#94a3b8', thick);
+      wireLine(ctx, [[x0, wireY], [xc, wireY]], COL.wireTest, thick + 1);
       ctx.fillStyle = '#1f2937'; ctx.fillRect(x0 - 8, wireY - 8, 10, 16);
-      // circuit: cell and ammeter above, lead from cell to crocodile clip
-      const topY = h * 0.16, cellX = x0 + ppm * 0.28, ammX = x0 + ppm * 0.62;
-      ctx.strokeStyle = '#334155'; ctx.lineWidth = 2.5;
-      ctx.beginPath(); ctx.moveTo(x0 - 3, wireY - 8); ctx.lineTo(x0 - 3, topY); ctx.lineTo(cellX - 8, topY); ctx.moveTo(cellX + 8, topY); ctx.lineTo(ammX - 17, topY); ctx.moveTo(ammX + 17, topY);
-      ctx.lineTo(Math.max(ammX + 30, xc + 40), topY); ctx.lineTo(Math.max(ammX + 30, xc + 40), topY + 30); ctx.stroke();
-      // flexible lead down to the clip
-      ctx.beginPath(); ctx.moveTo(Math.max(ammX + 30, xc + 40), topY + 30); ctx.quadraticCurveTo(xc + 30, wireY - 70, xc, wireY - 22); ctx.stroke();
-      // cell symbol (long line +, short line -)
-      ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cellX - 8, topY - 16); ctx.lineTo(cellX - 8, topY + 16); ctx.stroke();
-      ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(cellX + 8, topY - 8); ctx.lineTo(cellX + 8, topY + 8); ctx.stroke();
-      ctx.fillStyle = '#334155'; ctx.font = 'bold 12px Arial'; ctx.fillText('+', cellX - 16, topY - 18); ctx.fillText('−', cellX + 16, topY - 12);
-      ctx.fillText(`${V().toFixed(1)} V supply`, cellX, topY + 32);
-      meter(ctx, ammX, topY, 'A', '#0891b2', fmtI(I()));
-      // voltmeter in parallel across the tested length
-      // Symmetric: one lead lands on the terminal block where the tested length starts, the other on the clip
-      // where it ends, so the voltmeter spans exactly the length L.
-      const vY = wireY - 70, vL = x0 - 3, vX = (vL + xc) / 2;
-      ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 2; ctx.setLineDash([]);
-      ctx.beginPath(); ctx.moveTo(vL, wireY - 8); ctx.lineTo(vL, vY); ctx.lineTo(vX - 17, vY); ctx.moveTo(vX + 17, vY); ctx.lineTo(xc, vY); ctx.lineTo(xc, wireY - 34); ctx.stroke();
-      ctx.fillStyle = '#7c3aed'; [[vL, wireY - 8], [xc, wireY - 34]].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill(); });
-      meter(ctx, vX, vY, 'V', '#7c3aed', `${V().toFixed(2)} V`);
-      // crocodile clip (the drag handle)
+      const topY = H * 0.15, cellX = x0 + ppm * 0.26, ammX = x0 + ppm * 0.6, leadX = Math.max(ammX + 34, xc + 40);
+      wireLine(ctx, [[x0 - 3, wireY - 8], [x0 - 3, topY], [cellX - 6, topY]]);
+      wireLine(ctx, [[cellX + 6, topY], [ammX - 16, topY]]);
+      wireLine(ctx, [[ammX + 16, topY], [leadX, topY], [leadX, topY + 30]]);
+      ctx.strokeStyle = COL.wire; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(leadX, topY + 30); ctx.quadraticCurveTo(xc + 30, wireY - 70, xc, wireY - 22); ctx.stroke();
+      cell(ctx, cellX, topY, false);
+      label(ctx, `${P.V.toFixed(1)} V supply`, cellX, topY + 34, '#334155', 'center', 11);
+      const I = rigI(), big = I > 10;
+      meter(ctx, ammX, topY, 'A', COL.amm, A_(I));
+      // the voltmeter: one lead on the terminal where the tested length starts, the other on the clip
+      const vY = wireY - 74, vL = x0 - 3, vX = (vL + xc) / 2;
+      ctx.strokeStyle = COL.volt; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(vL, wireY - 8); ctx.lineTo(vL, vY); ctx.lineTo(vX - 16, vY); ctx.moveTo(vX + 16, vY); ctx.lineTo(xc, vY); ctx.lineTo(xc, wireY - 34); ctx.stroke();
+      ctx.fillStyle = COL.volt; [[vL, wireY - 8], [xc, wireY - 34]].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill(); });
+      meter(ctx, vX, vY, 'V', COL.volt, `${P.V.toFixed(2)} V`);
+      // the crocodile clip (drag it)
       ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.moveTo(xc, wireY - 4); ctx.lineTo(xc - 10, wireY - 26); ctx.lineTo(xc + 10, wireY - 26); ctx.closePath(); ctx.fill();
       ctx.fillRect(xc - 5, wireY - 34, 10, 10);
-      rig.clip = { x: xc, y: wireY - 20 };
-      // L dimension
-      ctx.strokeStyle = '#b45309'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x0, wireY + 58); ctx.lineTo(xc, wireY + 58); ctx.moveTo(x0, wireY + 52); ctx.lineTo(x0, wireY + 64); ctx.moveTo(xc, wireY + 52); ctx.lineTo(xc, wireY + 64); ctx.stroke();
-      ctx.fillStyle = '#b45309'; ctx.font = 'bold 12px Arial'; richText(ctx, `<i>L</i> = ${st.L.toFixed(2)} m`, (x0 + xc) / 2, wireY + 75);
-      if (I() > 10) { // wrapped to the canvas width, last line at the bottom (the canvas is taller on a phone for this)
-        ctx.fillStyle = '#b91c1c'; ctx.font = 'bold 13px Arial';
-        const lines = [];
-        for (const word of 'Huge current: a low-resistivity wire like this is almost a short circuit — it would get very hot.'.split(' ')) {
-          const last = lines[lines.length - 1];
-          if (last !== undefined && ctx.measureText(last + ' ' + word).width <= w - 16) lines[lines.length - 1] = last + ' ' + word; else lines.push(word);
-        }
-        lines.forEach((l, i) => ctx.fillText(l, w / 2, h - 8 - (lines.length - 1 - i) * 16));
-      }
+      obstacle(xc - 11, wireY - 35, 22, 32);
+      __pim.handles.push({ id: 'clip', x: xc, y: wireY - 18, r: 18 });
+      // L, under the rule
+      const yL = wireY + 54;
+      ctx.strokeStyle = COL.wireTest; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x0, yL); ctx.lineTo(xc, yL); ctx.moveTo(x0, yL - 6); ctx.lineTo(x0, yL + 6); ctx.moveTo(xc, yL - 6); ctx.lineTo(xc, yL + 6); ctx.stroke();
+      label(ctx, `<i>L</i> = ${rig.L.toFixed(2)} m`, (x0 + xc) / 2, yL + 16, COL.wireTest, 'center', 12);
+      // the warning first: the wire's name then keeps clear of it
+      if (big) label(ctx, ['Huge current: almost a short circuit.', 'The wire would get very hot.'], W / 2, H - 30, '#b91c1c', 'center', 12);
+      labelAt(ctx, P.mystery ? `Example 6’s wire, ${P.d.toFixed(2)} mm` : `${P.mat || 'wire'}, ${P.d.toFixed(2)} mm`, [[x1, wireY - 16, 'right'], [x1, wireY + 64, 'right'], [W - 10, H - 12, 'right']], '#334155', 11);
     }
 
-    function fit(points, xs, ys) {
-      // best straight line through the origin: gradient = sum(xy)/sum(xx)
-      let sxy = 0, sxx = 0; points.forEach(p => { sxy += p[xs] * p[ys]; sxx += p[xs] * p[xs]; });
-      return sxx > 0 ? sxy / sxx : null;
+    /* ---------------- the graphs: tab 3 V–I (or I–V), tab 5 R–L ---------------- */
+    function axes(ctx, W, H, xr, yr, xLab, yLab, xstep, ystep, xfmt, yfmt) {
+      const Lm = 52, Rm = 16, Tm = 14, Bm = 32, pw = W - Lm - Rm, ph = H - Tm - Bm;
+      const X = v => Lm + (v - xr[0]) / (xr[1] - xr[0]) * pw, Y = v => Tm + (yr[1] - v) / (yr[1] - yr[0]) * ph;
+      ctx.font = '11px Arial'; ctx.fillStyle = '#475569'; ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      for (let i = 0, v = 0; v <= yr[1] + 1e-9 * yr[1] && i < 40; i++, v = i * ystep) { ctx.beginPath(); ctx.moveTo(Lm, Y(v)); ctx.lineTo(W - Rm, Y(v)); ctx.stroke(); ctx.fillText(yfmt(v), Lm - 5, Y(v)); }
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      for (let i = 0, v = 0; v <= xr[1] + 1e-9 * xr[1] && i < 40; i++, v = i * xstep) { ctx.beginPath(); ctx.moveTo(X(v), Tm); ctx.lineTo(X(v), H - Bm); ctx.stroke(); ctx.fillText(xfmt(v), X(v), H - Bm + 5); }
+      ctx.textBaseline = 'alphabetic';
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(Lm, Tm); ctx.lineTo(Lm, H - Bm); ctx.lineTo(W - Rm, H - Bm); ctx.stroke();
+      ctx.fillStyle = '#334155'; ctx.font = '12px Arial'; ctx.textAlign = 'right'; richText(ctx, xLab, W - Rm, H - 3);
+      ctx.save(); ctx.translate(13, Tm + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; richText(ctx, yLab, 0, 0); ctx.restore();
+      ctx.textAlign = 'left';
+      obstacle(0, H - Bm, W, Bm); obstacle(0, 0, Lm, H);
+      return { X, Y, Lm, Tm, pw, ph };
     }
-
+    const tick = v => String(+v.toPrecision(6));
+    // an example's graph appears only from the step that finds its answer (it would show the answer otherwise)
+    const graphShown = () => (currentTab === 3 && (P.kind === 'exp' || S.step >= (P.find === 'R' ? 2 : nSteps()))) || currentTab === 5;
+    function dot(ctx, x, y, color, r = 5, hollow = false) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); if (hollow) { ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke(); } else { ctx.fillStyle = color; ctx.fill(); } obstacle(x - r, y - r, 2 * r, 2 * r); }
     function drawGraph() {
-      const { ctx, w, h } = setup(el('graphCanvas'));
-      ctx.clearRect(0, 0, w, h);
-      const isVI = st.tab === 'VI';
-      const pts = isVI ? st.vi : st.rl;
-      const xs = isVI ? 'I' : 'L', ys = isVI ? 'V' : 'R';
-      const L = 58, Rm = 16, T = 16, B = 42, pw = w - L - Rm, ph = h - T - B;
-      // Fixed scales that never jump while readings are taken: V-I runs to the 6 V supply maximum and the current
-      // that gives at this length; R-L runs over the whole 1.00 m wire and its resistance. (Changing the wire
-      // clears the readings, so a new scale always starts on an empty graph.)
-      const nice = v => { const e = Math.pow(10, Math.floor(Math.log10(v))); const m = v / e; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * e; };
-      const Rfull = rho() / area(); // resistance of the whole 1.00 m wire
-      const xMax = isVI ? nice(6 / R()) : 1;
-      const yMax = isVI ? 6 : nice(Rfull);
-      const X = v => L + v / xMax * pw, Y = v => T + ph - v / yMax * ph;
-      ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1; ctx.fillStyle = '#475569'; ctx.font = '11px Arial';
-      const yDiv = isVI ? 6 : 5; // 1 V steps up to 6 V
-      for (let k = 0; k <= 5; k++) {
-        const xv = xMax * k / 5;
-        ctx.beginPath(); ctx.moveTo(X(xv), T); ctx.lineTo(X(xv), T + ph); ctx.stroke();
-        ctx.textAlign = 'center'; ctx.fillText(+xv.toPrecision(3), X(xv), T + ph + 15);
-      }
-      for (let k = 0; k <= yDiv; k++) {
-        const yv = yMax * k / yDiv;
-        ctx.beginPath(); ctx.moveTo(L, Y(yv)); ctx.lineTo(L + pw, Y(yv)); ctx.stroke();
-        ctx.textAlign = 'right'; ctx.fillText(+yv.toPrecision(3), L - 6, Y(yv) + 4);
-      }
-      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(L, T + ph); ctx.lineTo(L + pw, T + ph); ctx.stroke();
-      ctx.fillStyle = '#0f172a'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
-      richText(ctx, isVI ? 'current <i>I</i> (A)' : 'length <i>L</i> (m)', L + pw / 2, h - 6);
-      ctx.save(); ctx.translate(14, T + ph / 2); ctx.rotate(-Math.PI / 2); richText(ctx, isVI ? 'voltage <i>V</i> (V)' : 'resistance <i>R</i> (Ω)', 0, 0); ctx.restore();
-      const g = fit(pts, xs, ys);
-      if (g !== null && pts.length >= 2) {
-        ctx.strokeStyle = 'rgba(37,99,235,0.6)'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
-        const xe = Math.min(xMax, yMax / g);
-        ctx.beginPath(); ctx.moveTo(X(0), Y(0)); ctx.lineTo(X(xe), Y(g * xe)); ctx.stroke(); ctx.setLineDash([]);
-      }
-      ctx.fillStyle = '#dc2626';
-      pts.forEach(p => { ctx.beginPath(); ctx.arc(X(p[xs]), Y(p[ys]), 5, 0, Math.PI * 2); ctx.fill(); });
-      // the present (unrecorded) reading as a hollow circle
-      const cx = isVI ? I() : st.L, cy = isVI ? V() : R();
-      if (cx <= xMax && cy <= yMax) { ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X(cx), Y(cy), 6, 0, Math.PI * 2); ctx.stroke(); }
-      let note;
-      if (isVI) note = pts.length >= 2 ? `Gradient of the <i>V</i>–<i>I</i> line = <i>R</i> = ${fmtR(g)}. A straight line through the origin means the wire is an <b>ohmic conductor</b> (<i>V</i> ∝ <i>I</i>).` : 'Record readings at different voltages (keep the clip still). An ohmic conductor gives a straight line through the origin, and the gradient is its resistance.';
-      else note = pts.length >= 2 ? `Gradient of the <i>R</i>–<i>L</i> line = <i>ρ</i>/<i>A</i> = ${g.toPrecision(3)} Ω/m, so <b><i>ρ</i> = gradient × <i>A</i> = ${sci(g * area())} Ω m</b>. <i>R</i> ∝ <i>L</i>: doubling the length doubles the resistance.` : 'Record readings at different lengths (move the clip). The gradient of <i>R</i> against <i>L</i> is <i>ρ</i>/<i>A</i>, so <i>ρ</i> = gradient × <i>A</i>.';
-      el('graphNote').innerHTML = note;
-    }
-
-    // ---------- Ohm's law experiment: supply, ammeter in series, voltmeter across one component ----------
-    function drawOhmRig() {
-      const { ctx, w, h } = setup(el('rigCanvas'));
-      ctx.clearRect(0, 0, w, h);
-      const xL = Math.max(40, w * 0.12), xR = w - xL, topY = h * 0.2, botY = h * 0.56, cx = w / 2;
-      const v = VO(), i = IO(v), lamp = comp() === 'lamp';
-      const supX = xL + (cx - xL) * 0.6, ammX = cx + (xR - cx) * 0.45, half = 30; // half = room for the component
-      ctx.strokeStyle = '#334155'; ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(supX - 8, topY); ctx.lineTo(xL, topY); ctx.lineTo(xL, botY); ctx.lineTo(cx - half, botY);
-      ctx.moveTo(cx + half, botY); ctx.lineTo(xR, botY); ctx.lineTo(xR, topY); ctx.lineTo(ammX + 17, topY);
-      ctx.moveTo(ammX - 17, topY); ctx.lineTo(supX + 8, topY);
-      ctx.stroke();
-      // variable supply: a cell (long line +, short line -) with an arrow through it
-      ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(supX - 8, topY - 16); ctx.lineTo(supX - 8, topY + 16); ctx.stroke();
-      ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(supX + 8, topY - 8); ctx.lineTo(supX + 8, topY + 8); ctx.stroke();
-      ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(supX - 20, topY + 18); ctx.lineTo(supX + 20, topY - 18);
-      ctx.moveTo(supX + 20, topY - 18); ctx.lineTo(supX + 11, topY - 16); ctx.moveTo(supX + 20, topY - 18); ctx.lineTo(supX + 18, topY - 9); ctx.stroke();
-      ctx.fillStyle = '#334155'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
-      ctx.fillText('+', supX - 16, topY - 18); ctx.fillText('−', supX + 18, topY + 22);
-      ctx.fillText(`${v.toFixed(1)} V supply`, supX, topY + 38);
-      meter(ctx, ammX, topY, 'A', '#0891b2', fmtI(i));
-      // the component on the bottom wire
-      if (lamp) {
-        const b = Math.min(1, v * i / 0.6); // brightness: power over the rated 0.60 W
-        if (b > 0.01) {
-          const g = ctx.createRadialGradient(cx, botY, 6, cx, botY, 22 + 48 * b);
-          g.addColorStop(0, `rgba(253,224,71,${0.9 * b})`); g.addColorStop(1, 'rgba(253,224,71,0)');
-          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, botY, 22 + 48 * b, 0, Math.PI * 2); ctx.fill();
-        }
-        ctx.strokeStyle = '#334155'; ctx.lineWidth = 2.5;
-        ctx.beginPath(); ctx.moveTo(cx - half, botY); ctx.lineTo(cx - 18, botY); ctx.moveTo(cx + 18, botY); ctx.lineTo(cx + half, botY); ctx.stroke();
-        ctx.fillStyle = `rgba(254,240,138,${0.25 + 0.75 * b})`;
-        ctx.beginPath(); ctx.arc(cx, botY, 18, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        const d = 18 * Math.SQRT1_2;
-        ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx - d, botY - d); ctx.lineTo(cx + d, botY + d); ctx.moveTo(cx + d, botY - d); ctx.lineTo(cx - d, botY + d); ctx.stroke();
-      } else {
-        ctx.fillStyle = 'white'; ctx.strokeStyle = '#334155'; ctx.lineWidth = 2.5;
-        ctx.fillRect(cx - 24, botY - 9, 48, 18); ctx.strokeRect(cx - 24, botY - 9, 48, 18);
-        ctx.beginPath(); ctx.moveTo(cx - half, botY); ctx.lineTo(cx - 24, botY); ctx.moveTo(cx + 24, botY); ctx.lineTo(cx + half, botY); ctx.stroke();
-      }
-      ctx.fillStyle = '#0f172a'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
-      ctx.fillText(lamp ? 'filament lamp' : `${RES_R} Ω resistor`, cx, botY - 30);
-      // voltmeter in parallel across the component
-      const vY = botY + 72, a = cx - half - 14, bx = cx + half + 14;
-      ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(a, botY); ctx.lineTo(a, vY); ctx.lineTo(cx - 17, vY); ctx.moveTo(cx + 17, vY); ctx.lineTo(bx, vY); ctx.lineTo(bx, botY); ctx.stroke();
-      ctx.fillStyle = '#7c3aed'; [a, bx].forEach(x => { ctx.beginPath(); ctx.arc(x, botY, 3.5, 0, Math.PI * 2); ctx.fill(); });
-      meter(ctx, cx, vY, 'V', '#7c3aed', `${v.toFixed(2)} V`);
-    }
-
-    function drawOhmGraph() {
-      const { ctx, w, h } = setup(el('graphCanvas'));
-      ctx.clearRect(0, 0, w, h);
-      const L = 58, Rm = 16, T = 16, B = 42, pw = w - L - Rm, ph = h - T - B;
-      const xMax = 0.25, yMax = 3; // fixed: the lamp's 0.20 A at its rated 3.0 V fits, and so does the resistor's
-      const X = v => L + v / xMax * pw, Y = v => T + ph - v / yMax * ph;
-      ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1; ctx.fillStyle = '#475569'; ctx.font = '11px Arial';
-      for (let k = 0; k <= 5; k++) {
-        const xv = xMax * k / 5;
-        ctx.beginPath(); ctx.moveTo(X(xv), T); ctx.lineTo(X(xv), T + ph); ctx.stroke();
-        ctx.textAlign = 'center'; ctx.fillText(+xv.toFixed(2), X(xv), T + ph + 15);
-      }
-      for (let k = 0; k <= 6; k++) {
-        const yv = yMax * k / 6;
-        ctx.beginPath(); ctx.moveTo(L, Y(yv)); ctx.lineTo(L + pw, Y(yv)); ctx.stroke();
-        ctx.textAlign = 'right'; ctx.fillText(+yv.toFixed(1), L - 6, Y(yv) + 4);
-      }
-      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(L, T + ph); ctx.lineTo(L + pw, T + ph); ctx.stroke();
-      ctx.fillStyle = '#0f172a'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
-      richText(ctx, 'current <i>I</i> (A)', L + pw / 2, h - 6);
-      ctx.save(); ctx.translate(14, T + ph / 2); ctx.rotate(-Math.PI / 2); richText(ctx, 'voltage <i>V</i> (V)', 0, 0); ctx.restore();
-      // each component's readings, joined from the origin in order of current, so the shape shows
-      const shown = [];
-      for (const k of ['resistor', 'lamp']) {
-        const pts = st.ohm[k].slice().sort((p, q) => p.I - q.I);
-        if (!pts.length) continue;
-        shown.push(k);
-        ctx.strokeStyle = COMP_COLOR[k]; ctx.globalAlpha = 0.6; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
-        ctx.beginPath(); ctx.moveTo(X(0), Y(0)); pts.forEach(p => ctx.lineTo(X(p.I), Y(p.V))); ctx.stroke();
-        ctx.setLineDash([]); ctx.globalAlpha = 1;
-        ctx.fillStyle = COMP_COLOR[k]; pts.forEach(p => { ctx.beginPath(); ctx.arc(X(p.I), Y(p.V), 5, 0, Math.PI * 2); ctx.fill(); });
-      }
-      // the present (unrecorded) reading as a hollow circle
-      ctx.strokeStyle = COMP_COLOR[comp()]; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X(IO()), Y(VO()), 6, 0, Math.PI * 2); ctx.stroke();
-      // key, top left inside the axes
-      if (!shown.includes(comp())) shown.push(comp());
-      ctx.font = '12px Arial'; ctx.textAlign = 'left';
-      shown.forEach((k, n) => {
-        ctx.fillStyle = COMP_COLOR[k]; ctx.beginPath(); ctx.arc(L + 14, T + 12 + n * 18, 5, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#0f172a'; ctx.fillText(COMP_NAME[k], L + 24, T + 16 + n * 18);
-      });
-      const name = COMP_NAME[comp()], pts = st.ohm[comp()].filter(p => p.V > 0);
-      let note;
-      if (pts.length < 3) note = `Record at least three readings at different voltages for the ${name}. Is <i>V</i>/<i>I</i> the same each time?`;
+      if (!graphShown()) return;
+      const c = setup(graphCv); if (!c) return;
+      const { ctx, W, H } = c;
+      pane({ x: 0, y: 0, w: W, h: H }, 'graph');
+      if (currentTab === 5) return drawRL(ctx, W, H);
+      // V–I graph as the notes draw it (p. 7-17): V up, I along; or the I–V graph, whose gradient is 1/R
+      const iv = ivPlot;
+      let Imax, Vmax, pts = [], lineR = null;
+      if (P.kind === 'exp') { Imax = 0.25; Vmax = 3; }
       else {
-        const rs = pts.map(p => p.V / p.I), lo = Math.min(...rs), hi = Math.max(...rs);
-        note = (hi - lo) / lo < 0.01
-          ? `<i>V</i>/<i>I</i> = ${fmtR(lo)} for every reading, so the ${name}'s <i>V</i>–<i>I</i> graph is a straight line through the origin, and its gradient is the resistance. The ${name} obeys Ohm's law: it is an <b>ohmic conductor</b>.`
-          : `<i>V</i>/<i>I</i> rises from ${fmtR(lo)} to ${fmtR(hi)} as the voltage goes up, so the ${name}'s <i>V</i>–<i>I</i> graph is a curve, not a straight line. It does <b>not</b> obey Ohm's law: it is a <b>non-ohmic conductor</b>. A bigger current makes the filament hotter, and a hotter filament has a bigger resistance; Ohm's law needs the temperature to stay the same.`;
+        const V = t3Values();
+        Vmax = Math.max(V.V, V.V2 || 0) * 1.25; Imax = Math.max(V.I, V.I2 || 0) * 1.25;
+        lineR = V.R;
+        pts.push({ I: V.I, V: V.V });
+        if (P.find === 'R' && S.step >= 4) pts.push({ I: V.I2, V: V.V2 });
       }
-      if (st.ohm.resistor.length && st.ohm.lamp.length) note += ' Both components’ readings stay on the graph, so you can compare them.';
-      el('graphNote').innerHTML = note;
+      const xs0 = niceStep(iv ? Vmax : Imax, W < 500 ? 4 : 5), ys0 = niceStep(iv ? Imax : Vmax, 5);
+      const xr = [0, Math.ceil((iv ? Vmax : Imax) / xs0 - 1e-9) * xs0], yr = [0, Math.ceil((iv ? Imax : Vmax) / ys0 - 1e-9) * ys0];
+      const G = axes(ctx, W, H, xr, yr, iv ? 'voltage <i>V</i> (V)' : 'current <i>I</i> (A)', iv ? 'current <i>I</i> (A)' : 'voltage <i>V</i> (V)', xs0, ys0, tick, tick);
+      const XY = (I, V) => (iv ? [G.X(V), G.Y(I)] : [G.X(I), G.Y(V)]);
+      ctx.save(); ctx.beginPath(); ctx.rect(G.Lm, G.Tm, G.pw, G.ph); ctx.clip();
+      if (P.kind === 'exp') {
+        for (const k of ['resistor', 'lamp']) {
+          const set = ohm[k].slice().sort((p, q) => p.I - q.I); if (!set.length) continue;
+          const col = k === 'lamp' ? COL.lamp : COL.res;
+          if (k === 'resistor' && set.length >= 2) {
+            // the best straight line through the origin; its gradient is the resistance (or 1/R on the I–V graph)
+            const g = fit0(set, 'I', 'V'), e = XY(Imax * 2, g * Imax * 2);
+            ctx.strokeStyle = 'rgba(220,38,38,0.6)'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(...XY(0, 0)); ctx.lineTo(...e); ctx.stroke(); ctx.setLineDash([]);
+            __pim.fitR = g;
+          } else if (k === 'lamp') {
+            ctx.strokeStyle = 'rgba(217,119,6,0.6)'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(...XY(0, 0)); set.forEach(p => ctx.lineTo(...XY(p.I, p.V))); ctx.stroke(); ctx.setLineDash([]);
+          }
+          set.forEach(p => dot(ctx, ...XY(p.I, p.V), col));
+        }
+        dot(ctx, ...XY(expI(P.comp, vSet), vSet), P.comp === 'lamp' ? COL.lamp : COL.res, 6, true);
+      } else {
+        const e = XY(Imax * 2, lineR * Imax * 2);
+        ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(...XY(0, 0)); ctx.lineTo(...e); ctx.stroke();
+        pts.forEach(p => dot(ctx, ...XY(p.I, p.V), COL.res));
+      }
+      ctx.restore();
+      // the key (exp) or the gradient (calc)
+      if (P.kind === 'exp') {
+        const shown = ['resistor', 'lamp'].filter(k => ohm[k].length || k === P.comp);
+        shown.forEach((k, n) => {
+          ctx.fillStyle = k === 'lamp' ? COL.lamp : COL.res; ctx.beginPath(); ctx.arc(G.Lm + 14, G.Tm + 12 + n * 20, 5, 0, Math.PI * 2); ctx.fill();
+          label(ctx, k === 'lamp' ? 'filament lamp' : 'resistor', G.Lm + 22, G.Tm + 12 + n * 20, '#0f172a', 'left', 11);
+        });
+      } else {
+        const p = pts[0], [px, py] = XY(p.I, p.V);
+        const t = iv ? `gradient = 1/<i>R</i> = 1/${f3(lineR)}` : `gradient = <i>R</i> = ${O_(lineR)}`;
+        labelAt(ctx, t, [[px - 10, py - 18, 'right'], [px + 10, py + 18, 'left'], [G.Lm + 10, G.Tm + 12, 'left']], '#1d4ed8', 12);
+      }
+    }
+    function drawRL(ctx, W, H) {
+      const Rfull = P.rho / rigA(), ys0 = niceStep(Rfull, 5), yr = [0, Math.ceil(Rfull / ys0 - 1e-9) * ys0];
+      const yfmt = v => (Rfull < 0.1 ? tick(+v.toPrecision(3)) : tick(v));
+      const G = axes(ctx, W, H, [0, 1], yr, 'length <i>L</i> (m)', 'resistance <i>R</i> (Ω)', W < 500 ? 0.25 : 0.1, ys0, tick, yfmt);
+      ctx.save(); ctx.beginPath(); ctx.rect(G.Lm, G.Tm, G.pw, G.ph); ctx.clip();
+      const g = rig.rl.length >= 2 ? fit0(rig.rl, 'L', 'R') : null;
+      if (g !== null) { ctx.strokeStyle = 'rgba(37,99,235,0.7)'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(G.X(0), G.Y(0)); ctx.lineTo(G.X(1.2), G.Y(g * 1.2)); ctx.stroke(); ctx.setLineDash([]); }
+      rig.rl.forEach(p => dot(ctx, G.X(p.L), G.Y(p.R), COL.wireTest));
+      dot(ctx, G.X(rig.L), G.Y(rigR()), COL.wireTest, 6, true);
+      ctx.restore();
+      __pim.fitRL = g;
     }
 
-    function updateOhmReadout() {
-      el('voltOVal').textContent = `(${VO().toFixed(1)} V)`;
-      el('oV').textContent = `${VO().toFixed(2)} V`;
-      el('oI').textContent = fmtI(IO());
-      el('oR').textContent = VO() > 0 ? fmtR(VO() / IO()) : '—';
+    /* ---------------- the inputs ---------------- */
+    function inputList() {
+      if (currentTab === 1) {
+        const tIn = ['t', 'Time <i>t</i> (s)', 1, 120, 1];
+        const first = P.kind === 'findI' ? ['Q', 'Charge <i>Q</i> (C)', 0, 1000, 0.1] : ['I', `Current <i>I</i> (${P.Iu === 1e-3 ? 'mA' : 'A'})`, 0, 1000, 0.1, 'I'];
+        return [first, tIn, ['tick', 'closed', 'Switch closed'], ['tick', 'showE', 'Show the electrons'], ['tick', 'showC', 'Show the conventional current']];
+      }
+      if (currentTab === 2) {
+        if (P.kind === 'emf') return [['E', 'Emf <i>E</i> (V)', 0, 1000, 0.5], ['Q', 'Charge <i>Q</i> (C)', 0, 1000, 0.5]];
+        if (P.kind === 'W') return [['Q', 'Charge <i>Q</i> (C)', 0, 1000, 0.5], ['V', 'p.d. <i>V</i> (V)', 0, 1000, 0.5]];
+        return [['W', 'Work done <i>W</i> (J)', 0, 1e6, 1], ['Q', 'Charge <i>Q</i> (C)', 0.01, 1000, 0.5]];
+      }
+      if (currentTab === 3) {
+        if (P.kind === 'exp') return [['range', 'vS', `Supply voltage <i>V</i> <span class="step-no">(${vSet.toFixed(1)} V)</span>`, 0, 3, 0.1]];
+        if (P.find === 'V') return [['R', 'Resistance <i>R</i> (Ω)', 0.1, 1000, 0.5], ['I', 'Current <i>I</i> (A)', 0, 100, 0.1]];
+        if (P.find === 'I') return [['R', 'Resistance <i>R</i> (Ω)', 0.1, 1000, 0.5], ['V', 'Voltage <i>V</i> (V)', 0, 1000, 0.5]];
+        return [['V', 'Voltage <i>V</i> (V)', 0, 1000, 0.5], ['I', 'Current <i>I</i> (A)', 0.001, 100, 0.05], ['V2', 'Then <i>V</i> (V)', 0, 1000, 0.5]];
+      }
+      if (currentTab === 4) {
+        const rho = ['rho', 'Resistivity <i>ρ</i> (Ω m)', 1e-12, 1, 1e-8, 's'], R = ['R', 'Resistance <i>R</i> (Ω)', 1e-6, 1e9, 1, 's'];
+        const L = P.Lf === 0.01 ? ['L', 'Length <i>L</i> (cm)', 0.01, 1e8, 1, 's', 0.01] : ['L', 'Length <i>L</i> (m)', 1e-4, 1e6, 1, 's', 1];
+        const d = ['d', 'Diameter <i>d</i> (mm)', 1e-4, 1e4, 0.01, 's', 1e-3];
+        const A = P.Af === 1e-6 ? ['A', 'Area <i>A</i> (mm<sup>2</sup>)', 1e-9, 1e9, 1, 's', 1e-6] : ['A', 'Area <i>A</i> (m<sup>2</sup>)', 1e-15, 10, 1e-7, 's', 1];
+        if (P.find === 'cut') return [['R', 'Whole wire <i>R</i> (Ω)', 0.001, 1e9, 1, 's'], ['n', 'Equal pieces', 2, 6, 1, 'int']];
+        if (P.find === 'R') return [rho, L, P.area === 'd' ? d : A];
+        if (P.find === 'rho') return [d, L, R];
+        if (P.find === 'L') return [rho, d, R];
+        return [R, rho, L];
+      }
+      // tab 5
+      const list = [];
+      if (!P.mystery) list.push(['mat']);
+      list.push(['range', 'd', `Wire diameter <i>d</i> <span class="step-no">(${P.d.toFixed(2)} mm)</span>`, 0.2, 1.2, 0.02]);
+      list.push(['range', 'V', `Supply voltage <i>V</i> <span class="step-no">(${P.V.toFixed(1)} V)</span>`, 0.5, 6, 0.1]);
+      return list;
+    }
+    // the value shown in an input, in the label's own unit
+    function inShown(k, kind, f) {
+      if (kind === 'I') return inTxt(P.I / P.Iu);
+      if (kind === 's' && f) return inTxt(P[k] / f);
+      return inTxt(P[k]);
+    }
+    function buildInputs() {
+      const el = $('inputs');
+      el.innerHTML = inputList().map(item => {
+        const [k] = item;
+        if (k === 'tick') return `<div class="control-group"><label class="tick"><input type="checkbox" id="tk_${item[1]}"${P[item[1]] !== false ? ' checked' : ''} /> ${item[2]}</label></div>`;
+        if (k === 'range') { const [, key, lab, min, max, step] = item; const val = currentTab === 3 ? vSet : P[key];
+          return `<div class="control-group wide label-row"><label for="rg_${key}" id="rl_${key}">${lab}</label><input id="rg_${key}" type="range" data-k="${key}" min="${min}" max="${max}" step="${step}" value="${val}" /></div>`; }
+        if (k === 'mat') return `<div class="control-group label-row"><label for="matSel">Material (<i>ρ</i> from the notes)</label><select id="matSel">${METALS.map(([m, r]) => `<option value="${m}"${m === P.mat ? ' selected' : ''}>${m}: ${r} × 10⁻⁸ Ω m</option>`).join('')}</select></div>`;
+        const [, lab, min, max, step, kind, f] = item;
+        return `<div class="control-group label-row"><label for="in_${k}">${lab}</label>
+          <input id="in_${k}" class="num" type="text" inputmode="decimal" data-k="${k}" data-kind="${kind || ''}" data-f="${f || ''}" data-min="${min}" data-max="${max}" value="${inShown(k, kind, f)}" /></div>`;
+      }).join('');
+      el.querySelectorAll('input.num').forEach(inp => inp.addEventListener('input', () => readInput(inp)));
+      el.querySelectorAll('input[type=checkbox]').forEach(cb => cb.addEventListener('change', () => {
+        const key = cb.id.slice(3); P[key] = cb.checked;
+        if (key === 'closed') { toCustom(); rebuild(); }
+        update();
+      }));
+      el.querySelectorAll('input[type=range]').forEach(rg => rg.addEventListener('input', () => {
+        const key = rg.dataset.k, v = +rg.value;
+        if (currentTab === 3) vSet = v;
+        else { P[key] = v; if (key === 'd') { rig.rl = []; toCustom(); } }
+        relabelRanges(); update();
+      }));
+      if ($('matSel')) $('matSel').addEventListener('change', e => { P.mat = e.target.value; P.rho = METALS.find(m => m[0] === P.mat)[1] * 1e-8; rig.rl = []; toCustom(); update(); });
+    }
+    function relabelRanges() {
+      if ($('rl_vS')) $('rl_vS').innerHTML = `Supply voltage <i>V</i> <span class="step-no">(${vSet.toFixed(1)} V)</span>`;
+      if ($('rl_d')) $('rl_d').innerHTML = `Wire diameter <i>d</i> <span class="step-no">(${P.d.toFixed(2)} mm)</span>`;
+      if ($('rl_V')) $('rl_V').innerHTML = `Supply voltage <i>V</i> <span class="step-no">(${P.V.toFixed(1)} V)</span>`;
+    }
+    function syncInputs() {
+      document.querySelectorAll('#inputs input.num').forEach(inp => {
+        if (document.activeElement === inp) return;
+        const want = inShown(inp.dataset.k, inp.dataset.kind, +inp.dataset.f || 0);
+        if (inp.value !== want) inp.value = want;
+      });
+      document.querySelectorAll('#inputs input[type=range]').forEach(rg => { const want = String(currentTab === 3 ? vSet : P[rg.dataset.k]); if (document.activeElement !== rg && +rg.value !== +want) rg.value = want; });
+      document.querySelectorAll('#inputs input[type=checkbox]').forEach(cb => { cb.checked = P[cb.id.slice(3)] !== false; });
+    }
+    function readInput(inp) {
+      const k = inp.dataset.k, kind = inp.dataset.kind, f = +inp.dataset.f || 0, raw = parseFloat(String(inp.value).replace('−', '-'));
+      if (!isFinite(raw)) return;
+      const v = Math.min(+inp.dataset.max, Math.max(+inp.dataset.min, raw));
+      if (kind === 'I') P.I = v * P.Iu;
+      else if (kind === 'int') P[k] = Math.round(v);
+      else P[k] = f ? v * f : v;
+      toCustom();
+      if (currentTab === 1) rebuild();
+      update();
+    }
+    function toCustom() {
+      if (S.custom) return;
+      S.custom = true; S.scen = 'custom'; presetEl.value = 'custom';
+      // the question box keeps its height: nothing above the canvas may move while a finger drags
+      const q = $('question'); q.style.minHeight = q.offsetHeight + 'px';
+      q.innerHTML = OWN;
+      clearFeat();
     }
 
-    function updateReadout() {
-      el('diamVal').textContent = `(${(+el('diam').value).toFixed(2)} mm)`; el('voltVal').textContent = `(${V().toFixed(1)} V)`;
-      el('lenV').textContent = `${st.L.toFixed(2)} m`;
-      el('areaV').textContent = `${sci(area())} m²`;
-      el('resV').textContent = el('material').value === 'mystery' ? `${fmtR(R())} (measured)` : fmtR(R());
-      el('vV').textContent = `${V().toFixed(2)} V`;
-      el('iV').textContent = fmtI(I());
-      el('iCard').classList.toggle('warn', I() > 10);
+    /* ---------------- dragging: tab 4 the wire's end; tab 5 the crocodile clip ---------------- */
+    function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    const handleAt = p => __pim.handles.slice().reverse().find(h => Math.hypot(p.x - h.x, p.y - h.y) < (h.r || 12) + 8);
+    let drag = null;
+    const dragOK = () => (currentTab === 4 && P.find !== 'L' && P.find !== 'cut') || currentTab === 5;
+    canvas.addEventListener('pointerdown', e => {
+      if (!dragOK()) return;
+      if (document.activeElement && document.activeElement.tagName === 'INPUT') document.activeElement.blur();
+      const p = pos(e), h = handleAt(p); if (!h) return;
+      drag = { id: h.id, dx: h.x - p.x }; clearFeat();
+      canvas.setPointerCapture(e.pointerId); e.preventDefault();
+    });
+    canvas.addEventListener('pointermove', e => {
+      const p = pos(e);
+      if (!drag) { canvas.style.cursor = dragOK() && handleAt(p) ? 'ew-resize' : 'default'; return; }
+      const x = p.x + drag.dx;
+      if (drag.id === 'clip') {
+        rig.L = Math.round(Math.max(0.1, Math.min(1, (x - rigView.x0) / rigView.ppm)) * 100) / 100;
+      } else if (drag.id === 'end') {
+        // L in steps of a twentieth of the scenario's own length, from a quarter to twice it
+        const f = Math.max(0.25, Math.min(2, (x - wireGeo.x0) / wireGeo.base));
+        P.L = Math.round(f * 20) / 20 * P.L0; toCustom();
+      }
+      update();
+    });
+    const endDrag = () => { drag = null; };
+    canvas.addEventListener('pointerup', endDrag);
+    canvas.addEventListener('pointercancel', endDrag);
+
+    /* ---------------- readouts, words and working ---------------- */
+    function cards(list) {
+      const el = $('readout');
+      el.className = 'readout' + (list.length === 6 ? ' n6' : list.length === 4 ? ' n4' : list.length === 3 ? ' n3' : '');
+      el.innerHTML = list.map(([id, t, value, cls]) => `<div class="readout-card${cls ? ' ' + cls : ''}${hl[id] ? ' hl' : ''}" id="${id}"><div class="title">${t}</div><div class="value">${value}</div></div>`).join('');
     }
-
-    // drag the clip
-    let drag = false;
-    const rc = el('rigCanvas');
-    function pos(e) { const r = rc.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
-    const nearClip = q => rig && Math.abs(q.x - rig.clip.x) < 22 && Math.abs(q.y - rig.clip.y) < 30;
-    const nearWire = q => rig && q.x >= rig.x0 && q.x <= rig.x1 && Math.abs(q.y - rig.wireY) < 16;
-    rc.addEventListener('pointerdown', e => { if (st.exp !== 'res') return; const q = pos(e); if (!nearClip(q) && !nearWire(q)) return; drag = true; rc.setPointerCapture(e.pointerId); e.preventDefault(); moveClip(q); });
-    rc.addEventListener('pointermove', e => { if (st.exp !== 'res') { rc.style.cursor = 'default'; return; } const q = pos(e); if (!drag) { rc.style.cursor = nearClip(q) || nearWire(q) ? 'ew-resize' : 'default'; return; } moveClip(q); });
-    function moveClip(q) { st.L = Math.round(Math.max(0.1, Math.min(1, (q.x - rig.x0) / rig.ppm)) * 100) / 100; }
-    const end = () => { drag = false; };
-    rc.addEventListener('pointerup', end); rc.addEventListener('pointercancel', end);
-
-    el('recBtn').addEventListener('click', () => {
-      if (st.exp === 'ohm') {
-        // one reading per voltage per component: recording the same voltage again replaces it
-        const set = st.ohm[comp()], v = VO();
-        const k = set.findIndex(p => Math.abs(p.V - v) < 1e-9);
-        if (k >= 0) set.splice(k, 1);
-        set.push({ V: v, I: IO(v) });
-        el('recNote').innerHTML = `Recorded for the ${COMP_NAME[comp()]}: <i>V</i> = ${v.toFixed(1)} V, <i>I</i> = ${fmtI(IO(v))}.`;
+    function eq(lines) { return '<div class="math">' + lines.map(l => `<span class="eq${l.lit ? ' lit' : ''}">${l.h || l}</span>`).join('') + '</div>'; }
+    const Q_ = '?';
+    function readouts() {
+      const words = $('words'), work = $('work'), st = S.step;
+      if (currentTab === 1) {
+        const I = t1I(), end = ended(), knowI = P.kind !== 'findI' || end;
+        cards([['rT', 'Time <i>t</i>', `${(Math.round(sim.t * 100) / 100).toFixed(2)} s`], ['rQ', 'Charge passed P, <i>Q</i>', C_(I * sim.t)],
+          ['rI', 'Current <i>I</i>', knowI ? mA_(I) : Q_, knowI && end ? 'ok' : ''], ['rN', 'Electrons passing P each second', knowI ? num(I / EC) : Q_],
+          ['rNt', 'Electrons passed P so far', num(I * sim.t / EC)]]);
+        words.innerHTML = wordsT1(I);
+        work.innerHTML = end ? eq(t1Steps()) : '';
         return;
       }
-      // a V-I set must all be at one length: a new length starts a new set, and says so
-      if (st.vi.length && Math.abs(st.vi[0].L - st.L) > 1e-9) { st.vi = []; el('recNote').innerHTML = `New length (${st.L.toFixed(2)} m): the <i>V</i>–<i>I</i> graph started a new set of readings. The <i>R</i>–<i>L</i> graph keeps them all.`; }
-      else el('recNote').innerHTML = `Recorded: <i>L</i> = ${st.L.toFixed(2)} m, <i>V</i> = ${V().toFixed(1)} V, <i>I</i> = ${fmtI(I())}.`;
-      st.vi.push({ I: I(), V: V(), L: st.L });
-      st.rl.push({ L: st.L, R: R() });
-    });
-    el('clearBtn').addEventListener('click', () => {
-      if (st.exp === 'ohm') st.ohm = { resistor: [], lamp: [] }; else { st.vi = []; st.rl = []; }
-    });
-    const REC_NOTE = {
-      ohm: 'Take readings at several voltages, then choose the other component and do the same.',
-      res: 'Take readings at several voltages (for the <i>V</i>&ndash;<i>I</i> graph) or several lengths (for the <i>R</i>&ndash;<i>L</i> graph).',
-    };
-    const RIG_HINT = {
-      ohm: 'Set a voltage and press Record this reading. Repeat at several voltages, then choose the other component.',
-      res: 'Drag the crocodile clip along the wire to change the length <i>L</i> in the circuit.',
-    };
-    function setExp(x) {
-      st.exp = x;
-      const ohm = x === 'ohm';
-      el('expOhm').classList.toggle('on', ohm); el('expRes').classList.toggle('on', !ohm);
-      ['ohmControls', 'ohmReadout', 'ohmNote'].forEach(id => { el(id).hidden = !ohm; });
-      ['resControls', 'resReadout', 'resNote', 'graphTabs'].forEach(id => { el(id).hidden = ohm; });
-      el('rigHint').innerHTML = RIG_HINT[x]; el('recNote').innerHTML = REC_NOTE[x];
+      if (currentTab === 2) {
+        const V = t2Values(), n = nSteps(), done = st >= n;
+        if (P.kind === 'emf') cards([['rE', 'Emf <i>E</i>', `${gv('E', f3)} V`], ['rQ', 'Charge <i>Q</i>', `${gv('Q', f3)} C`], ['rW', 'Energy given', done ? J_(V.W) : Q_, done ? 'ok' : '']]);
+        else if (P.kind === 'W') cards([['rQ', 'Charge <i>Q</i>', `${gv('Q', f3)} C`], ['rV', 'p.d. <i>V</i>', `${gv('V', f3)} V`], ['rW', 'Work done <i>W</i>', done ? J_(V.W) : Q_, done ? 'ok' : '']]);
+        else cards([['rW', 'Work done <i>W</i>', `${gv('W', f3)} J`], ['rQ', 'Charge <i>Q</i>', `${gv('Q', f3)} C`], ['rV', 'p.d. <i>V</i>', done ? V_(V.V) : Q_, done ? 'ok' : '']]);
+        words.innerHTML = st === 0 ? 'Press Next to work through it one step at a time.' : !done ? `Step ${st} of ${n}. Press Next for the next step.`
+          : P.kind === 'emf' ? `The battery gives ${J_(V.W)} to ${gv('Q', f3)} C: ${gv('E', f3)} J to every coulomb.`
+          : P.kind === 'W' ? `${J_(V.W)} of work is done by ${gv('Q', f3)} C: ${f3(V.V)} J for every coulomb. The energy goes to heat${P.comp === 'lamp' ? ' and light' : ''}.`
+          : `${f3(V.V)} J of work is done for every coulomb: the p.d. is ${V_(V.V)}.`;
+        work.innerHTML = st ? eq(t2Steps().slice(0, st)) : '';
+        return;
+      }
+      if (currentTab === 3) {
+        const sh = t3Show();
+        if (P.kind === 'exp') {
+          const pts = ohm[P.comp].filter(p => p.V > 0);
+          cards([['rV', 'Voltmeter reading <i>V</i>', sh.vs], ['rI', 'Ammeter reading <i>I</i>', sh.is], ['rR', 'Resistance <i>R</i> = <i>V</i>/<i>I</i>', sh.rs], ['rN', 'Readings recorded', String(ohm[P.comp].length)]]);
+          let w;
+          if (pts.length < 3) w = `Record at least three readings at different voltages for the ${P.comp === 'lamp' ? 'filament lamp' : 'resistor'}. Is <i>V</i>/<i>I</i> the same each time?`;
+          else {
+            const rs = pts.map(p => p.V / p.I), lo = Math.min(...rs), hi = Math.max(...rs);
+            w = (hi - lo) / lo < 0.01
+              ? `<i>V</i>/<i>I</i> = ${O_(lo)} for every reading: the <i>V</i>–<i>I</i> graph is a straight line through the origin, and its gradient is the resistance. The resistor obeys Ohm’s law: it is an ohmic conductor.`
+              : `<i>V</i>/<i>I</i> rises from ${O_(lo)} to ${O_(hi)} as the voltage goes up: the <i>V</i>–<i>I</i> graph is a curve. The lamp does not obey Ohm’s law (a non-ohmic conductor): a bigger current makes the filament hotter, and Ohm’s law needs the temperature to stay the same.`;
+          }
+          words.innerHTML = w; work.innerHTML = '';
+          return;
+        }
+        const V = t3Values(), n = nSteps();
+        if (P.find === 'R') cards([['rV', 'Voltage <i>V</i>', `${gv('V', f3)} V`], ['rI', 'Current <i>I</i>', `${gv('I', f3)} A`], ['rR', '(a) Resistance <i>R</i>', st >= 2 ? O_(V.R) : Q_, st >= 2 ? 'ok' : ''], ['rI2', `(b) Current at ${gv('V2', f3)} V`, st >= 4 ? A_(V.I2) : Q_, st >= 4 ? 'ok' : '']]);
+        else cards([['rR', 'Resistance <i>R</i>', `${gv('R', f3)} Ω`], ['rI', 'Current <i>I</i>', P.find === 'I' ? (st >= n ? A_(V.I) : Q_) : `${gv('I', f3)} A`, P.find === 'I' && st >= n ? 'ok' : ''],
+          ['rV', 'Voltage <i>V</i>', P.find === 'V' ? (st >= n ? V_(V.V) : Q_) : `${gv('V', f3)} V`, P.find === 'V' && st >= n ? 'ok' : '']]);
+        words.innerHTML = st === 0 ? 'Press Next to work through it one step at a time.' : st < n ? `Step ${st} of ${n}. Press Next for the next step.`
+          : P.find === 'V' ? `<i>V</i> = <i>IR</i> = ${V_(V.V)}.` : P.find === 'I' ? `<i>I</i> = <i>V</i>/<i>R</i> = ${A_(V.I)}.` : `<i>R</i> = ${O_(V.R)}; at ${gv('V2', f3)} V the current is ${A_(V.I2)}: twice the voltage, twice the current.`;
+        work.innerHTML = st ? eq(t3Steps().slice(0, st)) : '';
+        return;
+      }
+      if (currentTab === 4) {
+        const V = t4Values(), n = nSteps(), done = st >= n;
+        if (P.find === 'cut') cards([['rR', 'Whole wire <i>R</i>', `${gv('R', f3)} Ω`], ['rN', 'Equal pieces', gv('n', f3)], ['rRn', 'Each piece <i>R</i>', done ? O_(V.Rn) : Q_, done ? 'ok' : '']]);
+        else {
+          const list = [];
+          list.push(['rRho', 'Resistivity <i>ρ</i>', P.find === 'rho' ? (done ? `${num(V.rho)} Ω m` : Q_) : rhoTxt(), P.find === 'rho' && done ? 'ok' : '']);
+          // given values as the question writes them (25.0 m, 2.5 × 10^-7 m²)
+          list.push(['rL', 'Length <i>L</i>', P.find === 'L' ? (done ? `${num(V.L)} m` : Q_) : `${P.Lf === 1 ? gv('L', f3) : f3(P.L)} m`, P.find === 'L' && done ? 'ok' : '']);
+          list.push(['rA', 'Area <i>A</i>', P.find === 'd' ? (st >= 2 ? `${num(V.A)} m<sup>2</sup>` : Q_) : (P.area === 'd' && st < 2 && P.find !== 'R' ? Q_ : `${P.area === 'A' && P.Af === 1 ? gv('A', num) : num(V.A)} m<sup>2</sup>`)]);
+          if (P.area === 'd') list.push(['rD', 'Diameter <i>d</i>', P.find === 'd' ? (done ? `${f3(V.d / 1e-3)} mm` : Q_) : dTxt(), P.find === 'd' && done ? 'ok' : '']);
+          list.push(['rR', 'Resistance <i>R</i>', P.find === 'R' ? (done ? O_(V.R) : Q_) : `${gv('R', f3)} Ω`, P.find === 'R' && done ? 'ok' : '']);
+          cards(list);
+        }
+        const moved = P.find !== 'cut' && P.L0 && Math.abs(P.L - P.L0) > 1e-9 * P.L0;
+        words.innerHTML = st === 0 ? `Press Next to work through it one step at a time.${dragOK() ? ' Or drag the end of the wire.' : ''}` : st < n ? `Step ${st} of ${n}. Press Next for the next step.`
+          : P.find === 'R' ? `<i>R</i> = ${O_(V.R)}.${moved ? ` That is ${f3(P.L / P.L0)} times the resistance at ${f3(P.L0)} m: <i>R</i> ∝ <i>L</i>.` : ''}`
+          : P.find === 'rho' ? `<i>ρ</i> = ${num(V.rho)} Ω m.` : P.find === 'L' ? `${num(V.L)} m of wire is needed.` : P.find === 'd' ? `A wire about ${f3(V.d / 1e-3)} mm across.` : `Each piece has ${frac('1', gv('n', f3))} of the length, so ${frac('1', gv('n', f3))} of the resistance: ${O_(V.Rn)}.`;
+        work.innerHTML = st ? eq(t4Steps().slice(0, st)) : '';
+        return;
+      }
+      // tab 5
+      const I = rigI(), g = __pim.fitRL;
+      cards([['rL', 'Length in the circuit, <i>L</i>', `${rig.L.toFixed(2)} m`], ['rA', 'Area <i>A</i> = π<i>d</i><sup>2</sup>/4', `${num(rigA())} m<sup>2</sup>`],
+        ['rV', 'Voltmeter <i>V</i>', `${P.V.toFixed(2)} V`], ['rI', 'Ammeter <i>I</i>', A_(I), I > 10 ? 'warn' : ''],
+        ['rR', 'Resistance <i>R</i> = <i>V</i>/<i>I</i>', O_(rigR())], ['rRho', '<i>ρ</i> from the graph', rig.rl.length >= 2 && g !== null ? `${num(g * rigA())} Ω m` : Q_, rig.rl.length >= 2 ? 'ok' : '']]);
+      words.innerHTML = rig.rl.length < 2 ? 'Record the resistance at two or more lengths: the gradient of the <i>R</i>–<i>L</i> graph is <i>ρ</i>/<i>A</i>.'
+        : `Gradient of the <i>R</i>–<i>L</i> line = <i>ρ</i>/<i>A</i> = ${num(g)} Ω/m, so <i>ρ</i> = gradient × <i>A</i> = ${num(g)} × ${num(rigA())} = ${num(g * rigA())} Ω m. <i>R</i> ∝ <i>L</i>: a straight line through the origin.`;
+      work.innerHTML = '';
     }
-    el('expOhm').addEventListener('click', () => setExp('ohm'));
-    el('expRes').addEventListener('click', () => setExp('res'));
-    el('component').addEventListener('change', () => { el('recNote').innerHTML = REC_NOTE.ohm; });
-    ['material', 'diam'].forEach(id => el(id).addEventListener('input', () => { st.vi = []; st.rl = []; }));
-    el('tabVI').addEventListener('click', () => { st.tab = 'VI'; el('tabVI').classList.add('on'); el('tabRL').classList.remove('on'); });
-    el('tabRL').addEventListener('click', () => { st.tab = 'RL'; el('tabRL').classList.add('on'); el('tabVI').classList.remove('on'); });
+    function wordsT1(I) {
+      if (!P.closed) return 'The switch is open: an open circuit. No current flows, so the electrons do not drift and no charge passes P.';
+      if (sim.t === 0) return 'Press Start: the clock runs and the counter at P counts the charge that passes.';
+      const Q = I * sim.t;
+      if (ended()) return P.kind === 'findI' ? `${C_(Q)} passed P in ${f3(sim.t)} s: ${A_(I)}, ${f3(I)} coulomb${I === 1 ? '' : 's'} every second.` : `${C_(Q)} passed P in ${f3(sim.t)} s.`;
+      return `${C_(Q)} has passed P after ${f3(Math.round(sim.t * 100) / 100)} s. The electrons drift from the negative terminal round to the positive terminal.`;
+    }
 
-    function frame() {
-      if (st.exp === 'ohm') { drawOhmRig(); drawOhmGraph(); updateOhmReadout(); }
-      else { drawRig(); drawGraph(); updateReadout(); }
-      requestAnimationFrame(frame);
+    function update() {
+      draw(); readouts(); syncInputs();
+      $('graphWrap').hidden = !graphShown();
+      $('ivWrap').hidden = currentTab !== 3;
+      if (graphShown()) { drawGraph(); if (currentTab === 5) readouts(); $('graphTitle').innerHTML = currentTab === 5 ? 'Resistance against length (<i>R</i>–<i>L</i> graph)' : ivPlot ? 'Current against voltage (<i>I</i>–<i>V</i> graph)' : 'Voltage against current (<i>V</i>–<i>I</i> graph)'; }
+      if (isRun()) {
+        const end = runEnd(), mid = sim.t > 1e-9 && sim.t < end - 1e-9;
+        $('pauseBtn').textContent = !sim.running && mid ? 'Play' : 'Pause';
+        $('pauseBtn').disabled = !sim.running && !mid;
+        $('startBtn').disabled = sim.running || end <= 0;
+        const km = keyMoments();
+        $('prevMoment').disabled = !km.some(m => m < sim.t - 1e-6); $('nextMoment').disabled = !km.some(m => m > sim.t + 1e-6);
+        $('speedNote').textContent = speedUp() > 1 ? `The clock runs ${f3(speedUp())} times faster than real time.` : 'The clock runs in real time.';
+      }
+      if (isSteps()) {
+        const n = nSteps();
+        $('stepNo').textContent = `(${S.step} of ${n})`;
+        $('prevStep').disabled = S.step <= 0; $('nextStep').disabled = S.step >= n; $('stepReset').disabled = S.step === 0;
+      }
+      $('simGroup').hidden = !isRun(); $('moments').hidden = !isRun();
+      $('stepGroup').hidden = !isSteps(); $('readGroup').hidden = mode() !== 'read';
+      if (mode() !== 'read') $('recNote').innerHTML = '';
+      else if (!$('recNote').innerHTML) $('recNote').innerHTML = REC_NOTE[currentTab];
+      $('clearBtn').disabled = currentTab === 3 ? !(ohm.resistor.length || ohm.lamp.length) : !rig.rl.length;
     }
-    requestAnimationFrame(frame);
+    function chooseScenario(id) {
+      if (id === 'custom') { if (!S.custom) { S.custom = true; S.scen = 'custom'; $('question').innerHTML = OWN; } rebuild(); }
+      else loadScenario(id);
+      $('question').style.minHeight = '';
+      if (currentTab === 3 || currentTab === 5) $('recNote').innerHTML = REC_NOTE[currentTab];
+      clearFeat(); buildInputs(); update();
+    }
+    presetEl.addEventListener('change', () => chooseScenario(presetEl.value));
+    $('ivTick').addEventListener('change', e => { ivPlot = e.target.checked; update(); });
+
+    /* ---------------- the tabs ---------------- */
+    const KEYS = { e: [COL.e, 'Electron (−)', 'dot'], conv: [COL.conv, 'Conventional current <i>I</i>'], amm: [COL.amm, 'Ammeter (in series)', 'dot'], volt: [COL.volt, 'Voltmeter (in parallel)', 'dot'],
+      pack: ['#22c55e', 'Charge passing round', 'dot'], energy: [COL.energy, 'Energy it carries'], res: [COL.res, 'Resistor', 'dot'], lamp: [COL.lamp, 'Filament lamp', 'dot'],
+      wire: ['#60a5fa', 'The wire (not to scale)'], test: [COL.wireTest, 'Length in the circuit, <i>L</i>'] };
+    const TABS = {
+      1: { strip: 'Answer Predict first. Then press Start: the clock runs and the counter at P counts the charge that passes. Use the key moments to stop at each second.',
+        presets: ['oneA', 'ex1', 'a1', 'a2', 'open'], hint: 'Press Start. Type your own values below.', key: ['e', 'conv', 'amm'],
+        notes: ['Electric current is the flow of electric charges. In metals, such as copper, these charges are free electrons (notes p. 7-2).',
+          'Connected to a battery, the free electrons drift from the negative (−) terminal to the positive (+) terminal: the electron current (p. 7-2).',
+          'Conventional current assumes “positive” charges flow from the positive terminal to the negative terminal. From now on, “electric current” means conventional current (p. 7-3).',
+          'Electric current is the quantity of charge passing a given point in one second: <i>I</i> = <i>Q</i>/<i>t</i>. 1 A = 1 C s<sup>−1</sup> (p. 7-4).',
+          'An open switch makes an open circuit: no current flows, <i>I</i> = 0 (p. 7-9).'] },
+      2: { strip: 'Answer Predict first. Then press Next to follow the charge round the circuit one step at a time. Type your own values below.',
+        presets: ['emf3', 'pd10', 'ex3', 'a5'], hint: 'Press Next, one step at a time.', key: ['pack', 'energy', 'conv'],
+        notes: ['The electromotive force (emf) is the electrical energy given to each coulomb of charge as it passes through the battery or the generator (notes p. 7-10).',
+          'Potential difference (or voltage) is the work done in moving one coulomb of charge between two points: <i>V</i> = <i>W</i>/<i>Q</i> (p. 7-11).',
+          'Both are measured in volts: 1 V = 1 J C<sup>−1</sup>.',
+          'Charges gain energy as they pass through a battery and lose energy as they flow through the circuit (p. 7-13).',
+          'Emf is found across power sources (batteries, generators); p.d. across circuit components (resistors, bulbs) (p. 7-14).'] },
+      3: { strip: 'Answer Predict first. In the experiments, set a voltage and record a reading, several times. In the examples, press Next to work through them.',
+        presets: ['res15', 'ex4a', 'ex4b', 'a6', 'lamp'], hint: 'Set the supply voltage, then press Record this reading.', key: ['amm', 'volt', 'res', 'lamp'],
+        notes: ['Ohm’s law: current is directly proportional to the potential difference between the ends of a conductor, provided that the physical conditions (e.g. temperature) of the conductor remain unchanged (notes p. 7-15).',
+          'Resistance <i>R</i> = <i>V</i>/<i>I</i>, in ohms (Ω): 1 Ω = 1 V A<sup>−1</sup> (p. 7-16).',
+          'Conductors that obey Ohm’s law are ohmic conductors: constant resistance, and a <i>V</i>–<i>I</i> graph that is a straight line through the origin, whose gradient is the resistance (p. 7-17).',
+          'On an <i>I</i>–<i>V</i> graph the ratio <i>I</i>/<i>V</i> gives the reciprocal of the resistance, 1/<i>R</i> (p. 7-17).',
+          'The ammeter is connected in series with the component; the voltmeter in parallel across it (pp. 7-26, 7-27).'] },
+      4: { strip: 'Answer Predict first. Then press Next to work through each example step by step. Drag the end of the wire to change its length.',
+        presets: ['ex5', 'ex6', 'a3', 'a4', 'b1', 'b2'], hint: 'Press Next, one step at a time.', key: ['wire'],
+        notes: ['The resistance of a conductor depends on its temperature, shape and size and the material it is made of (its resistivity <i>ρ</i>) (notes p. 7-19).',
+          'For a uniform metallic wire, <i>R</i> = <i>ρL</i>/<i>A</i>: <i>ρ</i> in Ω m, <i>L</i> the length in m, <i>A</i> the cross-sectional area in m<sup>2</sup> (p. 7-19).',
+          'A round wire of diameter <i>d</i>: <i>A</i> = π(<i>d</i>/2)<sup>2</sup> (Example 6). Change mm into m first: 1 mm = 10<sup>−3</sup> m, 1 mm<sup>2</sup> = 10<sup>−6</sup> m<sup>2</sup>.',
+          'Materials with low resistivity (silver, copper, gold) are used as conductors or connectors; high resistivity (tungsten, nichrome) as heating elements (p. 7-20).'] },
+      5: { strip: 'Answer Predict first. Drag the crocodile clip to a length and record the resistance. Repeat at several lengths, then read the resistivity from the graph.',
+        presets: ['nich', 'w6', 'cu'], hint: 'Drag the red crocodile clip along the wire.', key: ['test', 'amm', 'volt'],
+        notes: ['<i>R</i> = <i>ρL</i>/<i>A</i>, so for one wire <i>R</i> is directly proportional to <i>L</i>: the <i>R</i>–<i>L</i> graph is a straight line through the origin (notes p. 7-19).',
+          'Its gradient is <i>ρ</i>/<i>A</i>, so <i>ρ</i> = gradient × <i>A</i>.',
+          'The ammeter is in series with the wire; the voltmeter is connected in parallel across the length being tested. <i>R</i> = <i>V</i>/<i>I</i>.',
+          'Resistivity varies with temperature: for most metals it increases with temperature (p. 7-20).'] },
+      6: { strip: 'Answer every question, then read the summary.', key: [] }
+    };
+
+    const PREDICT = {
+      1: { q: 'Example 1: a charge of 3.0 C flows past a point in 4.0 s. The current is …',
+        opts: ['12 A', '0.75 A', '1.33 A', '3.0 A'], ans: 1,
+        why: '<i>I</i> = <i>Q</i>/<i>t</i> = 3.0 ÷ 4.0 = 0.75 A: 0.75 coulomb passes every second. Choose “3.0 C passes in 4.0 s” and press Start: the ammeter shows the current when the 4.0 s are up.' },
+      2: { q: 'Example 3: a charge of 2 C flows through a potential difference of 8 V. The work done by the charge is …',
+        opts: ['4 J', '0.25 J', '16 J', '10 J'], ans: 2,
+        why: 'A p.d. of 8 V means 8 J of work for every coulomb: <i>W</i> = <i>QV</i> = 2 × 8 = 16 J. Choose “2 C through 8 V” and press Next to check.' },
+      3: { q: 'A 15 Ω resistor obeys Ohm’s law. At 1.5 V the current is 0.10 A. At 3.0 V the current is …',
+        opts: ['0.10 A', '0.05 A', '0.40 A', '0.20 A'], ans: 3,
+        why: 'For an ohmic conductor the current is directly proportional to the voltage: twice the voltage, twice the current, 0.20 A (<i>I</i> = 3.0 ÷ 15). Set the supply to 3.0 V to check.' },
+      4: { q: 'A wire’s length is doubled; its material and thickness stay the same. Its resistance …',
+        opts: ['halves', 'stays the same', 'becomes 4 times as large', 'doubles'], ans: 3,
+        why: '<i>R</i> = <i>ρL</i>/<i>A</i>: <i>R</i> is directly proportional to <i>L</i>, so twice the length gives twice the resistance. Drag the end of Example 5’s wire to 28 m to check: 112 Ω.' },
+      5: { q: 'Two equal lengths of nichrome wire, 0.50 mm and 1.00 mm across. The thicker wire’s resistance is …',
+        opts: ['a quarter of the thinner one’s', 'half the thinner one’s', 'the same', 'twice the thinner one’s'], ans: 0,
+        why: 'Twice the diameter gives 4 times the area (<i>A</i> = π<i>d</i><sup>2</sup>/4), and <i>R</i> = <i>ρL</i>/<i>A</i>, so a quarter of the resistance. Record a reading, then move the diameter slider to 1.00 mm and compare.' }
+    };
+
+    const FEATS = {
+      // symbols marked by hand: "1 A" is a unit, not the symbol A
+      1: [['oneA', '1 A = 1 C every second'], ['electrons', 'Electrons drift − to +'], ['conv', 'Conventional current + to −'], ['open', 'Open circuit: <i>I</i> = 0'], ['count', 'Electrons each second']],
+      2: [['emf', 'Emf: energy given per coulomb'], ['pd', 'p.d.: work done per coulomb'], ['gain', 'Gain in the battery, lose in the circuit'], ['dq', 'Twice the charge: twice the work']],
+      3: [['straight', 'Ohmic: a straight line'], ['grad', 'Gradient = <i>R</i>'], ['iv', '<i>I</i>–<i>V</i> graph: gradient 1/<i>R</i>'], ['lamp', 'The lamp: a curve'], ['double', 'Double <i>V</i>: double <i>I</i>']],
+      4: [['L2', 'Double <i>L</i>: double <i>R</i>'], ['d2', 'Double <i>d</i>: a quarter of <i>R</i>'], ['rho', 'Lower <i>ρ</i>: lower <i>R</i>'], ['cut', 'Cut in half: half the resistance'], ['units', 'mm<sup>2</sup> into m<sup>2</sup>']],
+      5: [['RL', '<i>R</i> ∝ <i>L</i>'], ['grad', '<i>ρ</i> = gradient × <i>A</i>'], ['thick', 'A thicker wire: less resistance'], ['copper', 'Copper: almost a short circuit']]
+    };
+    const PROMPTS = {
+      1: ['Why do the electrons and the conventional current go opposite ways?', 'How many electrons pass a point in 1 s when the current is 1 A?', 'What happens to the current when the switch is opened? Why?'],
+      2: ['What is the difference between the emf of a battery and the p.d. across a bulb?', 'Where do the charges gain energy, and where do they lose it?', 'What does “12 V” across a bulb tell you about each coulomb?'],
+      3: ['How can you tell from a graph whether a conductor obeys Ohm’s law?', 'Why does the lamp not obey Ohm’s law?', 'Why must the ammeter be in series and the voltmeter in parallel?'],
+      4: ['Why does a longer wire have more resistance? A thicker one less?', 'Why must mm<sup>2</sup> be changed into m<sup>2</sup> first?', 'Why is nichrome used in heaters and copper in connecting wires?'],
+      5: ['Why should the R–L graph pass through the origin?', 'How would the graph change for a thicker wire of the same metal?', 'Why does the copper wire draw such a huge current?'],
+      6: ['Which question did most of the class get wrong, and why?', 'Pick one wrong option: what mistake would lead a student to choose it?']
+    };
+
+    let predictPick = null;
+    function clearFeat() { feat = {}; hl = {}; syncFeatButtons(); $('featNote').textContent = ''; }
+    function clearFeatNoteOnly() { if (Object.keys(feat).length) clearFeat(); }
+    function syncFeatButtons() { document.querySelectorAll('#feats .feat').forEach(b => b.classList.toggle('on', !!feat[b.dataset.f])); }
+    // readings taken as a student would: one at each voltage (tab 3) or length (tab 5)
+    function takeOhm(comp, vs) { vs.forEach(v => { const set = ohm[comp]; const k = set.findIndex(p => Math.abs(p.V - v) < 1e-9); if (k >= 0) set.splice(k, 1); set.push({ V: v, I: expI(comp, v) }); }); }
+    function takeRig(Ls) { Ls.forEach(L => { rig.L = L; rig.rl.push({ L, R: rigR(L), V: P.V, I: P.V / rigR(L) }); }); }
+    // a key feature shows itself: it always reloads its scenario, then sets the step, the moment or the values that show it
+    function tapFeat(id) {
+      const on = !feat[id];
+      const want = scen => { presetEl.value = scen; chooseScenario(scen); };
+      const custom = text => { S.custom = true; S.scen = 'custom'; presetEl.value = 'custom'; $('question').innerHTML = text; };
+      clearFeat();
+      if (on) {
+        ({
+          oneA: () => { want('oneA'); sim.t = runEnd(); hl = { rQ: true, rI: true }; },
+          electrons: () => { want('ex1'); P.showC = false; sim.t = 2; hl = { rNt: true }; },
+          conv: () => { want('ex1'); P.showE = false; sim.t = runEnd(); hl = { rI: true }; },
+          open: () => { want('open'); sim.t = runEnd(); hl = { rI: true, rQ: true }; },
+          count: () => { want('ex1'); sim.t = runEnd(); hl = { rN: true }; },
+          emf: () => { want('emf3'); S.step = nSteps(); hl = { rW: true }; },
+          pd: () => { want('pd10'); S.step = nSteps(); hl = { rW: true }; },
+          gain: () => { want('ex3'); S.step = nSteps(); hl = { rW: true }; },
+          dq: () => { want('ex3'); P.Q = 4; custom('Example 3 with twice the charge: 4 C through 8 V.'); S.step = nSteps(); hl = { rW: true, rQ: true }; },
+          straight: () => { want('res15'); ohm = { resistor: [], lamp: [] }; takeOhm('resistor', [0.5, 1, 1.5, 2, 2.5, 3]); vSet = 3; hl = { rR: true }; },
+          grad: () => { if (currentTab === 3) { want('res15'); ohm = { resistor: [], lamp: [] }; takeOhm('resistor', [1, 2, 3]); vSet = 3; hl = { rR: true }; }
+            else { want('w6'); takeRig([0.2, 0.4, 0.6, 0.8, 1.0]); hl = { rRho: true }; } },
+          iv: () => { want('res15'); ohm = { resistor: [], lamp: [] }; takeOhm('resistor', [1, 2, 3]); vSet = 3; ivPlot = true; $('ivTick').checked = true; hl = { rR: true }; },
+          lamp: () => { want('lamp'); ohm = { resistor: [], lamp: [] }; takeOhm('resistor', [1, 2, 3]); takeOhm('lamp', [0.5, 1, 1.5, 2, 2.5, 3]); vSet = 3; hl = { rR: true }; },
+          double: () => { want('ex4b'); P.V = 12; custom('Example 4(b)’s 4.0 Ω conductor with twice the voltage: 12 V.'); S.step = nSteps(); hl = { rI: true }; },
+          L2: () => { want('ex5'); P.L = 28; custom('Example 5’s nichrome wire, now 28 m long: twice the length.'); S.step = nSteps(); hl = { rR: true, rL: true }; },
+          d2: () => { want('ex5'); P.A = 1.0e-6; custom('Example 5’s wire with twice the diameter: four times the area, 1.0 × 10<sup>−6</sup> m<sup>2</sup>.'); S.step = nSteps(); hl = { rR: true, rA: true }; },
+          rho: () => { want('ex5'); P.rho = 1.7e-8; P.mat = 'Copper'; custom('Example 5’s wire made of copper instead: <i>ρ</i> = 1.7 × 10<sup>−8</sup> Ω m.'); S.step = nSteps(); hl = { rR: true, rRho: true }; },
+          cut: () => { want('b2'); S.step = nSteps(); hl = { rRn: true }; },
+          units: () => { want('a3'); S.step = 1; hl = { rA: true }; },
+          RL: () => { want('nich'); takeRig([0.2, 0.4, 0.6, 0.8, 1.0]); hl = { rR: true }; },
+          thick: () => { want('nich'); P.d = 1.0; custom('The same nichrome wire, now 1.00 mm across: twice the diameter.'); takeRig([0.6]); hl = { rR: true, rA: true }; },
+          copper: () => { want('cu'); hl = { rI: true }; }
+        })[id]();
+        sim.running = false;
+      }
+      feat = on ? { [id]: true } : {};
+      syncFeatButtons(); if (currentTab <= 5) buildInputs(); update();
+      $('featNote').innerHTML = on ? featNote(id) : '';
+    }
+    function featNote(id) {
+      switch (id) {
+        case 'oneA': return 'One ampere is one coulomb per second: 1 A for 5 s carries 5 C past P (notes p. 7-4).';
+        case 'electrons': return 'The free electrons drift from the negative terminal of the battery, round the circuit, to the positive terminal: the electron current (p. 7-2).';
+        case 'conv': return 'Conventional current is taken to flow from the positive terminal to the negative terminal, the opposite way to the electrons. “Electric current” means conventional current (p. 7-3).';
+        case 'open': return 'With the switch open the path is broken: no current flows (<i>I</i> = 0), so no charge passes P however long you wait (p. 7-9).';
+        case 'count': return `Example 1: 0.75 A is 0.75 C every second. Each electron carries ${ECtxt} C, so 0.75 ÷ (${ECtxt}) = ${num(0.75 / EC)} electrons pass P each second.`;
+        case 'emf': return 'A battery of emf 3 V gives 3 J of electrical energy to every coulomb of charge passing through it (p. 7-10).';
+        case 'pd': return 'A p.d. of 10 V across a resistor means 10 J of work must be done to move each coulomb of charge through it (p. 7-11).';
+        case 'gain': return 'Charges gain energy as they pass through the battery and lose it as they flow through the circuit: in the resistor it becomes heat (p. 7-13). 2 C through 8 V gives up 16 J.';
+        case 'dq': return `Twice the charge through the same p.d. does twice the work: 4 C × 8 V = ${J_(4 * 8)}, where 2 C did 16 J.`;
+        case 'straight': return 'Every reading gives <i>V</i>/<i>I</i> = 15 Ω: the resistor’s points lie on a straight line through the origin. It obeys Ohm’s law: an ohmic conductor (p. 7-17).';
+        case 'grad': return currentTab === 3 ? `The gradient of the <i>V</i>–<i>I</i> line is the resistance: ${O_(__pim.fitR || 15)} (p. 7-17).`
+          : `Example 6’s wire: the gradient of the <i>R</i>–<i>L</i> line is ${num(__pim.fitRL || 0)} Ω/m; × <i>A</i> (${num(rigA())} m<sup>2</sup>) gives <i>ρ</i> = ${num((__pim.fitRL || 0) * rigA())} Ω m, as Example 6 finds.`;
+        case 'iv': return 'Plotted as an <i>I</i>–<i>V</i> graph the line’s gradient is <i>I</i>/<i>V</i> = 1/<i>R</i> = 1/15 = 0.0667 A/V: the reciprocal of the resistance (p. 7-17).';
+        case 'lamp': return `The lamp’s <i>V</i>/<i>I</i> rises from ${O_(lampR(0.5))} at 0.5 V to 15 Ω at 3.0 V: its points curve away from the resistor’s straight line. A hotter filament has more resistance.`;
+        case 'double': return 'Example 4(b) gave 1.5 A at 6.0 V. At 12 V the same 4.0 Ω conductor carries 3 A: twice the voltage, twice the current.';
+        case 'L2': return 'Twice the length, 28 m: <i>R</i> = 1.0 × 10<sup>−6</sup> × 28 ÷ 2.5 × 10<sup>−7</sup> = 112 Ω, twice Example 5’s 56 Ω.';
+        case 'd2': return 'Twice the diameter gives 4 times the area, so a quarter of the resistance: 56 Ω becomes 14 Ω.';
+        case 'rho': return `The same size of wire in copper: <i>R</i> = 1.7 × 10<sup>−8</sup> × 14 ÷ 2.5 × 10<sup>−7</sup> = ${O_(1.7e-8 * 14 / 2.5e-7)}. That is why copper makes connecting wires and nichrome heating elements (p. 7-20).`;
+        case 'cut': return 'Each piece has half the length and the same <i>ρ</i> and <i>A</i>, so half the resistance: 50 Ω (Tutorial B2(a)).';
+        case 'units': return '1 mm = 10<sup>−3</sup> m, so 1 mm<sup>2</sup> = (10<sup>−3</sup>)<sup>2</sup> = 10<sup>−6</sup> m<sup>2</sup>: 6000 mm<sup>2</sup> = 6.00 × 10<sup>−3</sup> m<sup>2</sup>.';
+        case 'RL': return 'Five readings, 0.20 m to 1.00 m: they lie on a straight line through the origin. Twice the length, twice the resistance: <i>R</i> ∝ <i>L</i>.';
+        case 'thick': return `At 0.60 m the 0.50 mm nichrome wire is ${O_(1e-6 * 0.6 / areaOfD(0.5e-3))}; 1.00 mm across it is ${O_(rigR())}: a quarter, since the area is 4 times as large.`;
+        case 'copper': return `Copper 0.50 mm across has only ${O_(1.7e-8 * 0.6 / areaOfD(0.5e-3))} in 0.60 m, so 3.0 V drives ${A_(3 / (1.7e-8 * 0.6 / areaOfD(0.5e-3)))}: almost a short circuit, and the wire would get very hot.`;
+      }
+      return '';
+    }
+
+    function renderPredict(tab) {
+      const Q = PREDICT[tab], box = $('predictBox');
+      predictPick = null;
+      if (!Q) { box.hidden = true; return; }
+      box.hidden = false; box.classList.remove('done');
+      $('predictQ').innerHTML = Q.q;
+      $('predictFb').innerHTML = '';
+      const opts = $('predictOpts');
+      opts.innerHTML = '';
+      Q.opts.forEach((o, i) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.innerHTML = o;
+        b.addEventListener('click', () => {
+          if (opts.dataset.done) return;
+          predictPick = i; opts.querySelectorAll('.opt').forEach((x, j) => x.classList.toggle('picked', j === i));
+        });
+        opts.appendChild(b);
+      });
+      delete opts.dataset.done;
+      $('predictCheck').textContent = 'Check my answer';
+    }
+    $('predictCheck').addEventListener('click', () => {
+      const Q = PREDICT[currentTab], opts = $('predictOpts'), fb = $('predictFb');
+      if (!Q) return;
+      if (opts.dataset.done) { renderPredict(currentTab); return; }
+      if (predictPick === null) { fb.innerHTML = '<span class="verdict no">Pick an answer first.</span>'; return; }
+      opts.dataset.done = '1';
+      const ok = predictPick === Q.ans;
+      opts.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === Q.ans) x.classList.add('right'); else if (j === predictPick) x.classList.add('wrong'); });
+      // the options fold away: the result line names the pick (and the right answer), then the explanation
+      $('predictBox').classList.add('done');
+      fb.innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> Your prediction: ${Q.opts[predictPick]}.`
+        + (ok ? '' : ` The answer: <b>${Q.opts[Q.ans]}</b>.`) + ` <span class="why">${Q.why}</span>`;
+      $('predictCheck').textContent = 'Try again';
+    });
+
+    function renderFeats(tab) {
+      const list = FEATS[tab] || [], el = $('feats');
+      $('featBox').hidden = !list.length;
+      el.innerHTML = '';
+      list.forEach(([id, lab]) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'feat'; b.dataset.f = id;
+        b.innerHTML = lab;
+        b.addEventListener('click', () => tapFeat(id));
+        el.appendChild(b);
+      });
+      $('featNote').textContent = '';
+      syncFeatButtons();
+    }
+    function renderKey(tab) {
+      // the label sits in its own span: as direct children of the inline-flex entry, <i> would become a flex item
+      $('ckey').innerHTML = (TABS[tab].key || []).map(k => `<span><b class="${KEYS[k][2] || ''}" style="background:${KEYS[k][0]}"></b><span>${KEYS[k][1]}</span></span>`).join('');
+    }
+    function fillPresets(list) {
+      presetEl.innerHTML = '';
+      [...list, 'custom'].forEach(id => { const o = document.createElement('option'); o.value = id; o.textContent = id === 'custom' ? 'Your own values' : PRESETS[id].name; presetEl.appendChild(o); });
+      presetEl.value = list[0];
+    }
+
+    function showTab(tab) {
+      currentTab = tab;
+      sim.running = false;
+      document.querySelectorAll('#tabs .tab').forEach(b => { const on = +b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+      $('stepLabel').textContent = `Step ${tab} of 6`;
+      document.querySelectorAll('#stepBar i').forEach((i, n) => i.classList.toggle('on', n < tab));
+      $('strip').innerHTML = TABS[tab].strip;
+      renderKey(tab);
+      $('pageSim').hidden = tab === 6;
+      $('page6').hidden = tab !== 6;
+      if (tab <= 5) {
+        const T = TABS[tab];
+        canvas.className = 't' + tab;
+        $('sceneHint').textContent = T.hint || '';
+        $('notes').innerHTML = '<ul>' + T.notes.map(n => `<li>${n}</li>`).join('') + '</ul>';
+        if (tab === 3) { ohm = { resistor: [], lamp: [] }; vSet = 1.5; ivPlot = false; $('ivTick').checked = false; }
+        fillPresets(T.presets); chooseScenario(T.presets[0]);
+      }
+      if (tab === 6) renderQuiz();
+      renderPredict(tab);
+      renderFeats(tab);
+      $('tPrompts').innerHTML = PROMPTS[tab].map(p => `<li>${p}</li>`).join('');
+    }
+    document.querySelectorAll('#tabs .tab').forEach(b => b.addEventListener('click', () => showTab(+b.dataset.tab)));
+
+    /* ---------------- Tab 6: Challenge ---------------- */
+    // every answer recomputed and matched to the lecturer's copy, Tutorial 7's key or the colleague's solutions
+    // A question whose parts share one situation is one screen: the situation once, then its parts
+    const QUIZ = [
+      { src: 'Example 1, notes p. 7-5', stem: 'A charge of 3.0 C flows past a point in 4.0 s.', parts: [
+        { lab: '(a)', q: 'Calculate the current.', opts: ['0.75 A', '12 A', '1.33 A', '7.0 A'], ans: 0,
+          why: '<i>I</i> = <i>Q</i>/<i>t</i> = 3.0 ÷ 4.0 = 0.75 A. (12 A multiplies; 1.33 A divides the wrong way round.)' },
+        { lab: '(b)', q: 'Calculate the number of electrons passing that point each second.', opts: [`4.69 × ${ex(18)}`, `1.88 × ${ex(19)}`, `1.20 × ${ex(-19)}`, `2.13 × ${ex(-19)}`], ans: 0,
+          why: 'Each second 0.75 C passes: 0.75 ÷ 1.60 × 10<sup>−19</sup> = 4.69 × 10<sup>18</sup> electrons. (1.88 × 10<sup>19</sup> counts all 4.0 s; 1.20 × 10<sup>−19</sup> multiplies.)' }] },
+      { src: 'Tutorial 7, A2', stem: 'The current in a wire is 1.6 mA. For any point along the wire:', parts: [
+        { lab: '(a)', q: 'how much charge passes through in 1 minute?', opts: ['0.096 C', '96 C', `2.67 × ${ex(-5)} C`, '0.0016 C'], ans: 0,
+          why: '<i>Q</i> = <i>It</i> = 1.6 × 10<sup>−3</sup> × 60 = 0.096 C. (96 C leaves the current in mA; 1 minute is 60 s.)' },
+        { lab: '(b)', q: 'how many electrons pass through every 30 s?', opts: [`3.00 × ${ex(17)}`, `6.00 × ${ex(17)}`, `3.00 × ${ex(20)}`, `7.68 × ${ex(-21)}`], ans: 0,
+          why: 'In 30 s, <i>Q</i> = 1.6 × 10<sup>−3</sup> × 30 = 0.048 C; 0.048 ÷ 1.60 × 10<sup>−19</sup> = 3.00 × 10<sup>17</sup> electrons. (6.00 × 10<sup>17</sup> is the number in 1 minute.)' }] },
+      { src: 'Notes pp. 7-2, 7-3', stem: 'A copper wire is connected to the terminals of a battery.', parts: [
+        { lab: '(a)', q: 'The free electrons in the wire drift from …', opts: ['the negative terminal to the positive terminal', 'the positive terminal to the negative terminal', 'both terminals into the middle', 'nowhere: only positive charges move'], ans: 0,
+          why: 'The free electrons drift from the negative (−) terminal to the positive (+) terminal: the electron current.' },
+        { lab: '(b)', q: 'The conventional current flows from …', opts: ['the positive terminal to the negative terminal', 'the negative terminal to the positive terminal', 'the battery into both ends of the wire', 'the wire into the battery’s middle'], ans: 0,
+          why: 'Conventional current assumes “positive” charges flow from the positive terminal to the negative terminal: the opposite way to the electrons.' }] },
+      { src: 'Example 3, notes p. 7-12', stem: '', parts: [
+        { q: 'When a charge of 2 C flows through a potential difference of 8 V, how much work is done by the charge?', opts: ['16 J', '4 J', '0.25 J', '10 J'], ans: 0,
+          why: '<i>W</i> = <i>QV</i> = 2(8) = 16 J. (4 J divides the p.d. by the charge.)' }] },
+      { src: 'Tutorial 7, A5', stem: '', parts: [
+        { q: '120 J of work is done when 10 C of charge passes through an electric bulb. What is the potential difference across the bulb?', opts: ['12 V', '1200 V', '0.0833 V', '130 V'], ans: 0,
+          why: '<i>V</i> = <i>W</i>/<i>Q</i> = 120 ÷ 10 = 12 V. (1200 V multiplies; 0.0833 V divides the wrong way round.)' }] },
+      { src: 'Notes pp. 7-10, 7-14', stem: 'Emf and potential difference are both measured in volts.', parts: [
+        { lab: '(a)', q: 'A battery of emf 3 V gives each coulomb of charge passing through it …', opts: ['3 J of electrical energy', '1/3 J of electrical energy', '3 C of charge', '3 A of current'], ans: 0,
+          why: 'Emf is the electrical energy given to each coulomb of charge: 1 V = 1 J C<sup>−1</sup>, so 3 J to every coulomb.' },
+        { lab: '(b)', q: 'Potential difference is found …', opts: ['across circuit components, such as resistors and bulbs', 'only across batteries and generators', 'only in an open circuit', 'only where no current flows'], ans: 0,
+          why: 'Emf is across power sources (batteries, generators); p.d. is across circuit components (resistors, bulbs), where the charges transfer energy (p. 7-14).' }] },
+      { src: 'Example 4, notes p. 7-18', stem: '', parts: [
+        { lab: '(a)', q: 'Calculate the voltage across a 5.0 Ω ohmic conductor carrying a current of 1.2 A.', opts: ['6.0 V', '4.17 V', '0.24 V', '6.2 V'], ans: 0,
+          why: '<i>V</i> = <i>IR</i> = 1.2(5.0) = 6.0 V. (4.17 V divides <i>R</i> by <i>I</i>.)' },
+        { lab: '(b)', q: 'Calculate the current flowing through a 4.0 Ω ohmic conductor when a voltage of 6.0 V is applied across it.', opts: ['1.5 A', '24 A', '0.667 A', '10 A'], ans: 0,
+          why: '<i>I</i> = <i>V</i>/<i>R</i> = 6.0 ÷ 4.0 = 1.5 A. (24 A multiplies; 0.667 A divides the wrong way round.)' }] },
+      { src: 'Tutorial 7, A6', stem: 'When the potential difference across a conductor is 6.0 V, the current is 0.50 A.', parts: [
+        { lab: '(a)', q: 'Calculate the resistance of the conductor.', opts: ['12 Ω', '3.0 Ω', '0.0833 Ω', '6.5 Ω'], ans: 0,
+          why: '<i>R</i> = <i>V</i>/<i>I</i> = 6.0 ÷ 0.50 = 12 Ω. (3.0 Ω multiplies <i>V</i> by <i>I</i>.)' },
+        { lab: '(b)', q: 'Calculate the current which would flow if the potential difference were 12 V.', opts: ['1.0 A', '0.50 A', '144 A', '0.25 A'], ans: 0,
+          why: 'The resistance stays 12 Ω: <i>I</i> = <i>V</i>/<i>R</i> = 12 ÷ 12 = 1.0 A. Twice the voltage, twice the current.' }] },
+      { src: 'Ohmic conductors, notes p. 7-17', stem: 'A conductor obeys Ohm’s law.', parts: [
+        { lab: '(a)', q: 'Its voltage–current (<i>V</i>–<i>I</i>) graph is …', opts: ['a straight line through the origin; its gradient is the resistance', 'a curve through the origin; its gradient is the resistance', 'a straight line through the origin; its gradient is 1/<i>R</i>', 'a horizontal line'], ans: 0,
+          why: 'Ohmic conductors have constant resistance: the <i>V</i>–<i>I</i> graph is a straight line through the origin, and its gradient gives the resistance.' },
+        { lab: '(b)', q: 'Plotted as an <i>I</i>–<i>V</i> graph instead, the gradient gives …', opts: ['1/<i>R</i>, the reciprocal of the resistance', '<i>R</i>, the resistance', 'the voltage', 'zero'], ans: 0,
+          why: 'On an <i>I</i>–<i>V</i> graph the ratio <i>I</i>/<i>V</i> gives the reciprocal of the resistance (p. 7-17).' }] },
+      { src: 'Example 5, notes p. 7-21', stem: '', parts: [
+        { q: 'A piece of nichrome wire is 14 m long and has a cross-sectional area of 2.5 × 10<sup>−7</sup> m<sup>2</sup>. If the resistivity of nichrome is 1.0 × 10<sup>−6</sup> Ω m, what is the resistance of the wire?', opts: ['56 Ω', '0.0179 Ω', `3.50 × ${ex(-12)} Ω`, '5.6 Ω'], ans: 0,
+          why: '<i>R</i> = <i>ρL</i>/<i>A</i> = 1.0 × 10<sup>−6</sup> × 14 ÷ 2.5 × 10<sup>−7</sup> = 56 Ω. (0.0179 Ω turns the fraction upside down; 3.50 × 10<sup>−12</sup> Ω multiplies by <i>A</i>.)' }] },
+      { src: 'Example 6, notes p. 7-22', stem: '', parts: [
+        { q: 'A metallic wire of diameter 0.64 mm is 98.5 cm long and has a resistance of 3.6 Ω. What is the resistivity of the wire?', opts: [`1.18 × ${ex(-6)} Ω m`, `4.70 × ${ex(-6)} Ω m`, `1.18 × ${ex(-8)} Ω m`, `1.10 × ${ex(7)} Ω m`], ans: 0,
+          why: '<i>A</i> = π(0.32 × 10<sup>−3</sup>)<sup>2</sup> = 3.22 × 10<sup>−7</sup> m<sup>2</sup>; <i>ρ</i> = <i>RA</i>/<i>L</i> = 3.6 × 3.22 × 10<sup>−7</sup> ÷ 0.985 = 1.18 × 10<sup>−6</sup> Ω m. (4.70 × 10<sup>−6</sup> uses the diameter as the radius; 1.18 × 10<sup>−8</sup> leaves <i>L</i> in cm.)' }] },
+      { src: 'Tutorial 7, A4', stem: '', parts: [
+        { q: 'The resistivity of nichrome wire is 110 × 10<sup>−8</sup> Ω m. What length of wire of diameter 0.08 mm is required to provide a resistance of 1000 Ω?', opts: ['4.57 m', '18.3 m', '0.219 m', `4.57 × ${ex(6)} m`], ans: 0,
+          why: '<i>A</i> = π(0.04 × 10<sup>−3</sup>)<sup>2</sup> = 5.03 × 10<sup>−9</sup> m<sup>2</sup>; <i>L</i> = <i>RA</i>/<i>ρ</i> = 1000 × 5.03 × 10<sup>−9</sup> ÷ 110 × 10<sup>−8</sup> = 4.57 m. (18.3 m uses the diameter as the radius; 4.57 × 10<sup>6</sup> m leaves <i>A</i> in mm<sup>2</sup>.)' }] },
+      { src: 'Tutorial 7, B1', stem: '', parts: [
+        { q: 'A coil is to have a resistance of 3.50 Ω. It consists of 500 turns of wire and the mean length of a turn is 50.0 mm. The resistivity of the wire is 1.70 × 10<sup>−8</sup> Ω m. A suitable wire diameter is …', opts: ['0.393 mm', '0.197 mm', '0.348 mm', '0.0176 mm'], ans: 0,
+          why: '<i>L</i> = 500 × 50.0 mm = 25.0 m; <i>A</i> = <i>ρL</i>/<i>R</i> = 1.21 × 10<sup>−7</sup> m<sup>2</sup>; <i>d</i> = √(4<i>A</i>/π) = 3.93 × 10<sup>−4</sup> m = 0.393 mm. (0.197 mm is the radius; 0.0176 mm uses one turn’s length.)' }] },
+      { src: 'Tutorial 7, B2(a); notes p. 7-19', stem: 'A wire of resistance 100 Ω.', parts: [
+        { lab: '(a)', q: 'It is cut into 2 pieces of equal lengths. What is the resistance of each piece?', opts: ['50 Ω', '200 Ω', '25 Ω', '100 Ω'], ans: 0,
+          why: 'Each piece has half the length, and the same <i>ρ</i> and <i>A</i>: <i>R</i> = <i>ρ</i>(<i>L</i>/2)/<i>A</i> = 100 ÷ 2 = 50 Ω.' },
+        { lab: '(b)', q: 'Instead, a wire of the same metal and length but twice the diameter is used. Its resistance is …', opts: ['25 Ω', '50 Ω', '200 Ω', '400 Ω'], ans: 0,
+          why: 'Twice the diameter gives 4 times the area (<i>A</i> = π<i>d</i><sup>2</sup>/4), so a quarter of the resistance: 100 ÷ 4 = 25 Ω.' }] }
+    ];
+    // the options are written with the right one first; turn each part's list round by a fixed amount so the right
+    // answer is not always in the same place
+    { let pc = 0; QUIZ.forEach(Q => Q.parts.forEach(Pt => { const n = Pt.opts.length, r = (pc++ * 3 + 1) % n;
+      Pt.opts = Pt.opts.slice(r).concat(Pt.opts.slice(0, r)); Pt.ans = (Pt.ans - r + n) % n; })); }
+    const QUIZ_MARKS = QUIZ.reduce((n, Q) => n + Q.parts.length, 0);
+    const partLabel = (Q, k) => Q.parts[k].lab ? Q.parts[k].lab + ' ' : Q.parts.length > 1 ? `(${'abcdefgh'[k]}) ` : '';
+    let quiz = { i: 0, score: 0, picks: [], done: false, missed: [] };
+    function resetQuiz() { quiz = { i: 0, score: 0, picks: [], done: false, missed: [] }; renderQuiz(); }
+    function renderQuiz() {
+      const el = $('quiz'), N = QUIZ.length;
+      if (quiz.i >= N) {
+        const list = quiz.missed.length
+          ? `<p>Go back over these:</p><ul>${quiz.missed.map(([n, k]) => { const Q = QUIZ[n];
+              return `<li>Question ${n + 1}${partLabel(Q, k).trim()} (${Q.src}): ${(Q.stem ? Q.stem + ' ' : '') + Q.parts[k].q}</li>`; }).join('')}</ul>`
+          : '<p>Every answer right. Well done.</p>';
+        el.innerHTML = `<div class="quiz-top"><span>Summary</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div><div class="quiz-bar"><i style="width:100%"></i></div>
+          <div class="quiz-sum"><div class="quiz-q">You scored ${quiz.score} out of ${QUIZ_MARKS}.</div>${list}</div>
+          <div class="row-btns"><button type="button" id="qAgain">Try the quiz again</button></div>`;
+        $('qAgain').addEventListener('click', resetQuiz);
+        return;
+      }
+      const Q = QUIZ[quiz.i], many = Q.parts.length > 1;
+      quiz.picks = Q.parts.map(() => null);
+      el.innerHTML = `<div class="quiz-top"><span>Question ${quiz.i + 1} of ${N}</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div>
+        <div class="quiz-bar"><i style="width:${(quiz.i / N) * 100}%"></i></div>
+        ${Q.stem ? `<div class="quiz-q" id="qStem">${Q.stem}</div>` : ''}<div class="quiz-src">${Q.src}${many ? ` · ${Q.parts.length} parts, answer them all` : ''}</div>
+        ${Q.parts.map((Pt, k) => `<div class="qpart" data-k="${k}">
+          <div class="${Q.stem ? 'qpart-q' : 'quiz-q'}">${partLabel(Q, k)}${Pt.q}</div>
+          <div class="opts">${Pt.opts.map((o, j) => `<button type="button" class="opt" data-j="${j}">${o}</button>`).join('')}</div>
+          <div class="feedback"></div></div>`).join('')}
+        <div class="row-btns"><button type="button" id="qSubmit">${many ? 'Submit answers' : 'Submit answer'}</button><button type="button" class="secondary" id="qReset">Reset quiz</button></div>
+        <div class="feedback" id="qFb"></div>`;
+      el.querySelectorAll('.qpart').forEach(part => {
+        const k = +part.dataset.k;
+        part.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+          if (quiz.done) return;
+          quiz.picks[k] = +b.dataset.j; part.querySelectorAll('.opt').forEach(x => x.classList.toggle('picked', x === b));
+        }));
+      });
+      $('qReset').addEventListener('click', resetQuiz);
+      $('qSubmit').addEventListener('click', () => {
+        const fb = $('qFb');
+        if (quiz.done) { quiz.i++; quiz.done = false; renderQuiz(); return; }
+        const left = quiz.picks.map((p, k) => p === null ? partLabel(Q, k).trim() || `part ${k + 1}` : null).filter(x => x !== null);
+        if (left.length) { fb.innerHTML = `<span class="verdict no">${many ? `Pick an answer for every part first (still to do: ${left.join(', ')}).` : 'Pick an answer first.'}</span>`; return; }
+        quiz.done = true; fb.innerHTML = '';
+        el.querySelectorAll('.qpart').forEach(part => {
+          const k = +part.dataset.k, Pt = Q.parts[k], ok = quiz.picks[k] === Pt.ans;
+          if (ok) quiz.score++; else quiz.missed.push([quiz.i, k]);
+          part.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === Pt.ans) x.classList.add('right'); else if (j === quiz.picks[k]) x.classList.add('wrong'); });
+          part.querySelector('.feedback').innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> <span class="why">${Pt.why}</span>`;
+        });
+        el.querySelector('.quiz-top span:last-child').textContent = `Score: ${quiz.score} of ${QUIZ_MARKS}`;
+        $('qSubmit').textContent = quiz.i + 1 < N ? 'Next question' : 'See the summary';
+      });
+    }
+
+    /* ---------------- Teacher mode ---------------- */
+    // Only the teacher link (this page's address + ?teacher) shows the button; students and the
+    // Brightspace embed use the plain address. Not a lock: the panel only changes this screen.
+    const teacher = $('teacher');
+    if (new URLSearchParams(location.search).has('teacher')) $('teacherBtn').hidden = false;
+    $('teacherBtn').addEventListener('click', () => { teacher.hidden = !teacher.hidden; });
+    $('tClose').addEventListener('click', () => { teacher.hidden = true; });
+    $('tExplain').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-explain');
+      e.target.textContent = on ? 'Show explanations' : 'Hide explanations'; e.target.classList.toggle('on', on);
+    });
+    $('tAnswers').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-answers');
+      e.target.textContent = on ? 'Show answer labels' : 'Hide answer labels'; e.target.classList.toggle('on', on);
+    });
+    // free exploration: no Predict first, and every step shown at once
+    $('tFree').addEventListener('click', e => {
+      freeMode = !freeMode; document.body.classList.toggle('free-mode', freeMode);
+      e.target.textContent = freeMode ? 'Back to the guided steps' : 'Switch to free exploration'; e.target.classList.toggle('on', freeMode);
+      showTab(currentTab);
+    });
+    const fullBtn = $('tFull');
+    if (!document.fullscreenEnabled) fullBtn.hidden = true;
+    fullBtn.addEventListener('click', () => {
+      if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {});
+    });
+    document.addEventListener('fullscreenchange', () => { fullBtn.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
+    $('tReset').addEventListener('click', () => { resetQuiz(); showTab(1); });
+
+    // for the checks: the state behind the drawing
+    window.__pimState = () => ({ tab: currentTab, scen: S.scen, custom: S.custom, step: S.step, nSteps: isSteps() ? nSteps() : 0, t: sim.t, end: runEnd(), mode: mode(),
+      P: JSON.parse(JSON.stringify(P)), I1: currentTab === 1 ? t1I() : null, v2: currentTab === 2 ? t2Values() : null, v3: currentTab === 3 && P.kind === 'calc' ? t3Values() : null,
+      v4: currentTab === 4 ? t4Values() : null, ohm: JSON.parse(JSON.stringify(ohm)), vSet, iv: ivPlot, rig: JSON.parse(JSON.stringify(rig)), rigR: currentTab === 5 ? rigR() : null,
+      fitR: __pim.fitR || null, fitRL: __pim.fitRL || null, keyMoments: keyMoments() });
+    window.addEventListener('resize', () => { if (currentTab <= 5) { wireGeo = null; update(); } });
+    showTab(1);
+  </script>
+  <script>
+    // Embedded (Brightspace): tell the page around the frame how tall this page is, so a resize script in the
+    // embed code can fit the frame to it (no blank space, no inner scrollbar). Measured from the content, not
+    // scrollHeight, which never drops below the frame's own height and so could never shrink it.
+    (function () {
+      if (window.parent === window) return;
+      let last = 0;
+      function height() {
+        const c = document.querySelector('.container'), cs = getComputedStyle(document.body);
+        return Math.ceil(c.getBoundingClientRect().bottom + window.scrollY + parseFloat(cs.paddingBottom) + parseFloat(cs.marginBottom) + 4);
+      }
+      function send(force) {
+        const h = height();
+        if (!force && Math.abs(h - last) < 2) return;
+        last = h;
+        window.parent.postMessage({ type: 'pim-height', page: location.pathname.split('/').pop(), height: h }, '*');
+      }
+      new ResizeObserver(() => send(false)).observe(document.querySelector('.container'));
+      window.addEventListener('load', () => send(true));
+      // the embed's script asks once it is listening, in case this page loaded first
+      window.addEventListener('message', e => { if (e.data && e.data.type === 'pim-height?') send(true); });
+      send(true);
+    })();
   </script>
   <script>
     // Phones: a swipe that starts on an empty part of a drawing scrolls the page (touch-action: pan-y),
     // and a touch the page grabbed for a drag (its own setPointerCapture call) keeps the page still.
     // (hasPointerCapture can't tell: a touch is always captured implicitly.)
-    // The kinematics graphs are left out: a sideways drag scrubs them and an up-down one scrolls.
     document.querySelectorAll('canvas:not(.graph-canvas)').forEach(c => {
       let grabbed = false;
       const capture = c.setPointerCapture;
