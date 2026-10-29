@@ -18,62 +18,192 @@
   <!-- pim-meta:end -->
   <style>
     * { box-sizing: border-box; }
+    /* the hidden attribute must win over every display rule below */
+    [hidden] { display: none !important; }
     body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
     .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
-    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
-    .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 8px; }
-    .tab { font-size: 0.92rem; font-weight: 700; padding: 9px 6px; border-radius: 9px; border: 2px solid #cbd5e1; background: white; color: #334155; cursor: pointer; }
-    .tab.active { background: #2563eb; border-color: #2563eb; color: white; }
+    h1 { margin: 0; font-size: 1.1rem; }
     .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
-    .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
-    .control-group { display: flex; flex-direction: column; gap: 4px; flex: 1 1 160px; }
-    .control-group.wide { flex: 2 1 260px; }
-    label { font-size: 0.8rem; font-weight: 600; }
-    select, button { font-size: 0.9rem; padding: 7px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
-    button { cursor: pointer; background: #2563eb; color: white; border: none; }
+
+    /* controls: the scenario menu and the simulation buttons (or the steps); then the variables */
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 110px; }
+    .control-group.scen-group { flex: 2.2 1 260px; }
+    .control-group.button-group { flex: 2 1 280px; }
+    .control-group select { width: 100%; max-width: 100%; }
+    .controls input, .controls select, .controls button { height: 34px; }
+    label { font-size: 0.82rem; font-weight: 600; line-height: 1.2; }
+    label sub, label sup { line-height: 0; }
+    .step-no { font-weight: 400; color: #475569; }
+    input, select, button { font-size: 0.95rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; }
+    .buttons { display: flex; gap: 6px; flex-wrap: nowrap; }
+    button { cursor: pointer; background: #2563eb; color: white; border: none; min-width: 0; flex: 1; }
     button:hover { background: #1d4ed8; }
+    button:disabled { background: #94a3b8; cursor: default; }
     button.secondary { background: #475569; }
+    button.secondary:hover { background: #334155; }
+    button.secondary:disabled { background: #cbd5e1; color: #475569; }
+    button.danger { background: #dc2626; }
+    button.danger:hover { background: #b91c1c; }
     button.earth-on { background: #15803d; }
-    .readout { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 6px; margin-top: 8px; }
+    button.earth-on:hover { background: #166534; }
+    .moments { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
+    .moments button { flex: none; padding: 6px 12px; }
+    .speed { font-size: 0.8rem; color: #475569; }
+    .speed:empty { display: none; }
+    .group-title { font-size: 0.78rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.03em; margin: 10px 0 4px; }
+    .inputs { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: flex-end; }
+    .inputs .control-group { flex: 0 1 auto; }
+    .inputs .tick { display: flex; align-items: center; gap: 6px; min-height: 34px; font-size: 0.85rem; font-weight: 600; }
+    .inputs select { height: 34px; }
+    .inputs button { flex: none; height: 34px; padding: 6px 12px; }
+    .label-row label { white-space: nowrap; }
+    .question { margin-top: 8px; font-size: 0.84rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 6px 10px; color: #7c2d12; }
+    .question:empty { display: none; }
+
+    .readout { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout.n4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .readout.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card.hl { box-shadow: inset 0 0 0 2px #dc2626; }
+    .readout-card.ok { background: #ecfdf5; }
     .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
     .readout-card .value { font-size: 1rem; font-weight: bold; }
-    canvas { display: block; width: 100%; border-radius: 10px; touch-action: pan-y; }
-    #sceneCanvas { height: 400px; border: 1px solid #dbeafe; background: #f8fbff; }
-    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
-    .steps { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
-    .steps li { font-size: 0.82rem; padding: 6px 8px 6px 30px; border-radius: 8px; background: #f1f5f9; color: #334155; position: relative; }
-    .steps li::before { content: ''; position: absolute; left: 9px; top: 50%; width: 12px; height: 12px; margin-top: -7px; border: 2px solid #94a3b8; border-radius: 50%; }
-    .steps li.done { background: #dcfce7; color: #166534; }
-    .steps li.done::before { border-color: #16a34a; background: #16a34a; }
+    .words { margin-top: 8px; font-size: 0.86rem; font-weight: 600; color: #1e3a8a; background: #eef4ff; border-radius: 8px; padding: 6px 10px; }
+    .words:empty { display: none; }
+    .words ol { margin: 4px 0 0; padding-left: 20px; font-weight: 400; color: #334155; }
+    .words li.done { color: #15803d; font-weight: 700; }
+    .words li.done::after { content: ' \2713'; }
+
+    .scene-wrap { margin-top: 8px; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 0 0 4px; }
     .note { margin-top: 6px; font-size: 0.8rem; color: #475569; }
-    .note p { margin: 4px 0; }
-    .hidden { display: none !important; }
-    /* The readings and the steps sit beside the simulation on a wide screen, so everything is seen together. */
-    .sim { display: grid; grid-template-columns: 1fr; gap: 8px; }
-    .side .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 0; }
-    .side .steps { margin-top: 6px; }
-    @media (min-width: 900px) {
-      .sim { grid-template-columns: minmax(0, 1fr) 250px; }
-      .side .readout { grid-template-columns: 1fr; gap: 4px; }
-      .side .readout-card { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; text-align: left; padding: 5px 8px; }
-      .side .readout-card .title { margin: 0; }
-      .side .readout-card .value { font-size: 0.92rem; text-align: right; }
-    }
+    .note ul { margin: 2px 0 0; padding-left: 18px; }
+    .note li { margin: 2px 0; }
+    canvas { display: block; width: 100%; border-radius: 10px; background: white; }
+    #scene { height: 400px; border: 1px solid #dbeafe; touch-action: pan-y; }
+
+    /* the working, set like the notes: italic symbols, stacked fractions */
+    .work { margin-top: 8px; }
+    .work:empty { display: none; }
+    .math { font-family: 'Times New Roman', Times, serif; font-size: 1.06rem; color: #1f2937; }
+    /* a block line, not flex: inside flex every <sub> would become its own item and lose its drop */
+    .math .eq { display: block; margin: 4px 0; line-height: 2.1; }
+    .math .eq.lit { background: #fef9c3; border-radius: 4px; padding: 0 4px; }
+    .math .frac { display: inline-flex; flex-direction: column; text-align: center; vertical-align: middle; line-height: 1.15; }
+    .math .frac > span:first-child { border-bottom: 1px solid currentColor; padding: 0 3px; }
+    .math .frac > span:last-child { padding: 0 3px; }
+    .math b { font-family: Arial, Helvetica, sans-serif; }
+
+    /* ---- the step-by-step frame: header, numbered tabs, colour key, instruction strip ---- */
+    .app-head { background: #1e293b; color: #f8fafc; border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+    .head-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .head-row h1 { flex: 1 1 260px; }
+    .steps { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #cbd5e1; }
+    .step-bar { display: flex; gap: 3px; }
+    .step-bar i { display: block; width: 18px; height: 5px; border-radius: 3px; background: #475569; }
+    .step-bar i.on { background: #fbbf24; }
+    button.teacher-btn { flex: none; background: transparent; border: 1px solid #94a3b8; color: #f8fafc; font-size: 0.82rem; padding: 5px 10px; }
+    button.teacher-btn:hover { background: #334155; }
+    /* every tab always visible: equal columns, and a long name wraps onto a second line (never a sideways scroll) */
+    .tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; margin-top: 8px; }
+    button.tab { min-width: 0; background: #f1f5f9; color: #1e293b; font-size: 0.85rem; font-weight: 600; padding: 7px 8px; border-radius: 8px; line-height: 1.2; white-space: normal; text-align: center; }
+    button.tab:hover { background: #e2e8f0; }
+    button.tab.active, button.tab.active:hover { background: #2563eb; color: white; }
+    .tab .ts { display: none; }
+    .ckey { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 7px; font-size: 0.76rem; color: #e2e8f0; }
+    .ckey > span { display: inline-flex; align-items: center; gap: 5px; }
+    .ckey b { display: inline-block; width: 14px; height: 4px; border-radius: 2px; }
+    .ckey b.dot { width: 10px; height: 10px; border-radius: 50%; }
+    .strip { background: #fef9c3; border-left: 4px solid #eab308; border-radius: 6px; padding: 7px 10px; font-size: 0.86rem; margin-bottom: 8px; }
+
+    /* Predict first (above the controls), key features */
+    .learn { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 8px; }
+    .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; }
+    .box-title { font-weight: 700; font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-q { font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-box { margin-bottom: 8px; }
+    .opts { display: grid; gap: 5px; }
+    #predictOpts { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    .predict-box.done #predictOpts { display: none; }
+    .predict-box.done .predict-q { margin-bottom: 0; }
+    button.opt { flex: none; width: 100%; text-align: left; background: white; color: #1f2937; border: 1px solid #cbd5e1; font-size: 0.86rem; padding: 7px 10px; }
+    button.opt:hover { background: #f1f5f9; }
+    button.opt:disabled { background: white; color: #1f2937; cursor: default; }
+    button.opt.picked, button.opt.picked:hover { border-color: #2563eb; background: #eff6ff; box-shadow: inset 0 0 0 1px #2563eb; }
+    button.opt.right, button.opt.right:hover { border-color: #16a34a; background: #dcfce7; box-shadow: inset 0 0 0 1px #16a34a; }
+    button.opt.wrong, button.opt.wrong:hover { border-color: #dc2626; background: #fee2e2; box-shadow: inset 0 0 0 1px #dc2626; }
+    .row-btns { display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+    .row-btns button { flex: none; padding: 6px 12px; }
+    .feedback { font-size: 0.84rem; margin-top: 7px; }
+    .feedback:empty { display: none; }
+    .feedback .verdict { font-weight: 700; }
+    .feedback .verdict.ok { color: #15803d; }
+    .feedback .verdict.no { color: #b91c1c; }
+    .feats { display: flex; flex-wrap: wrap; gap: 6px; }
+    button.feat { flex: none; background: white; color: #1e293b; border: 1px solid #cbd5e1; font-size: 0.84rem; padding: 6px 11px; border-radius: 999px; }
+    button.feat:hover { background: #f1f5f9; }
+    button.feat.on, button.feat.on:hover { background: #1e293b; color: white; border-color: #1e293b; }
+    .feat-note { font-size: 0.82rem; color: #334155; margin-top: 6px; }
+    .feat-note:empty { display: none; }
+
+    /* Tab 5: which way of charging? (a card game) and the summary table */
+    .game { max-width: 760px; margin: 0 auto; }
+    .game-card { font-size: 1rem; font-weight: 600; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 8px; min-height: 64px; }
+    .game-opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
     .summary table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
     .summary th, .summary td { border: 1px solid #e2e8f0; padding: 7px 8px; text-align: left; vertical-align: top; }
     .summary thead th { background: #2563eb; color: white; }
     .summary tbody th { background: #f1f5f9; width: 18%; }
     .summary ul { margin: 8px 0 0; padding-left: 18px; font-size: 0.86rem; color: #334155; }
     .summary li { margin: 3px 0; }
-    .table-scroll { overflow-x: auto; }
+    .sum-title { font-weight: 700; font-size: 0.95rem; margin: 4px 0 6px; }
+
+    /* Challenge */
+    .quiz { max-width: 760px; margin: 0 auto; }
+    .quiz-top { display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 700; margin-bottom: 4px; }
+    .quiz-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+    .quiz-bar i { display: block; height: 100%; background: #2563eb; width: 0; }
+    .quiz-q { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+    .quiz-src { font-size: 0.76rem; color: #475569; margin-bottom: 8px; }
+    .qpart { margin-top: 12px; }
+    .qpart + .qpart { border-top: 1px solid #e2e8f0; padding-top: 10px; }
+    .qpart-q { font-size: 0.92rem; font-weight: 600; margin-bottom: 6px; }
+    .quiz-sum ul { padding-left: 18px; font-size: 0.86rem; }
+    .quiz-sum li { margin: 4px 0; }
+
+    /* Teacher mode */
+    .teacher { position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 92vw); background: white; box-shadow: -4px 0 18px rgba(0,0,0,0.18); padding: 12px; overflow-y: auto; z-index: 20; }
+    .teacher h2 { font-size: 1rem; margin: 0 0 8px; }
+    .teacher .tbtns { display: grid; gap: 6px; }
+    .teacher .tbtns button { background: white; color: #1e293b; border: 1px solid #cbd5e1; flex: none; }
+    .teacher .tbtns button:hover { background: #f1f5f9; }
+    .teacher .tbtns button.on { background: #1e293b; color: white; }
+    .teacher h3 { font-size: 0.9rem; margin: 14px 0 4px; }
+    .teacher ul { padding-left: 18px; margin: 0; font-size: 0.84rem; }
+    .teacher li { margin: 4px 0; }
+    body.no-explain .strip, body.no-explain .words, body.no-explain .feedback .why, body.no-explain .feat-note { display: none; }
+    body.no-answers .readout-card .value, body.no-answers .work { filter: blur(6px); }
+    body.free-mode .predict-box { display: none; }
+
     @media (max-width: 900px) {
-      .tab { font-size: 0.8rem; }
+      .readout { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .readout.n4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
-    @media (max-width: 600px) {
-      .tabs { grid-template-columns: repeat(2, 1fr); }
+    @media (max-width: 700px) {
+      h1 { font-size: 1rem; }
+      .readout, .readout.n4, .readout.n3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .tab .tl { display: none; }
+      .tab .ts { display: inline; }
+      /* phones: short names in rows that wrap, so all six tabs show without scrolling */
+      .tabs { display: flex; flex-wrap: wrap; }
+      button.tab { flex: 1 1 auto; white-space: nowrap; }
       .summary table { font-size: 0.78rem; }
       .summary th, .summary td { padding: 5px; }
+    }
+    @media (max-width: 420px) {
+      .buttons button { padding: 6px 4px; }
+      .game-opts { grid-template-columns: 1fr; }
     }
     /* Touch screens (phones, tablets; Samsung Internet reports hover: hover on a phone, so only pointer is tested):
        16 px form fields stop an iPhone zooming the page in when one is
@@ -82,6 +212,7 @@
       input:not([type=range]):not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
       button { min-height: 36px; }
       input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
+      .controls input, .controls select, .controls button, .inputs select, .inputs button { height: 36px; }
     }
   </style>
   <!-- pim-nav-style:start (generated by scripts/pim-nav.ts) -->
@@ -110,634 +241,1835 @@
     <a class="pim-nav-btn pim-nav-next" href="ohms-law-resistivity.html" title="Next: Ohm's Law and the Resistivity of a Wire (Chapter 7)" aria-label="Next: Ohm's Law and the Resistivity of a Wire (Chapter 7)"><span class="pim-nav-text"><span class="pim-nav-kicker">Next<span class="pim-nav-ch"> &middot; Chapter 7</span></span><span class="pim-nav-name">Ohm's Law and the Resistivity of a Wire</span></span><span class="pim-nav-arrow" aria-hidden="true">&rsaquo;</span></a>
   </nav>
   <!-- pim-nav:end -->
-    <h1>Charging by Friction, Contact and Induction</h1>
 
-    <div class="tabs" role="tablist">
-      <button class="tab active" data-tab="friction" role="tab">Charging by friction</button>
-      <button class="tab" data-tab="contact" role="tab">Charging by contact</button>
-      <button class="tab" data-tab="induction" role="tab">Charging by induction</button>
-      <button class="tab" data-tab="summary" role="tab">Summary</button>
-    </div>
-
-    <div class="panel" id="controlPanel">
-      <div class="controls">
-        <div class="control-group wide">
-          <label for="material" id="materialLabel">Rod and cloth</label>
-          <select id="material">
-            <option value="amber" selected>Amber rod + fur</option>
-            <option value="glass">Glass rod + silk</option>
-          </select>
-        </div>
-        <div class="control-group" id="earthGroup"><button id="earthBtn" class="secondary">Connect earth wire</button></div>
-        <div class="control-group" id="wipeGroup"><button id="wipeBtn" class="secondary">Discharge the rod</button></div>
-        <div class="control-group" id="rechargeGroup"><button id="rechargeBtn" class="secondary">Charge the rod again</button></div>
-        <div class="control-group"><button id="resetBtn" class="secondary">Start again</button></div>
+    <header class="app-head">
+      <div class="head-row">
+        <h1>Charging by Friction, Contact and Induction</h1>
+        <div class="steps"><span id="stepLabel">Step 1 of 6</span><span class="step-bar" id="stepBar"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+        <button class="teacher-btn" id="teacherBtn" type="button" hidden>Teacher mode</button>
       </div>
+      <div class="tabs" role="tablist" id="tabs">
+        <button class="tab" role="tab" data-tab="1" type="button"><span class="tl">1. Charging by friction</span><span class="ts">1. Friction</span></button>
+        <button class="tab" role="tab" data-tab="2" type="button"><span class="tl">2. Conductors and earthing</span><span class="ts">2. Conductors</span></button>
+        <button class="tab" role="tab" data-tab="3" type="button"><span class="tl">3. Charging by contact</span><span class="ts">3. Contact</span></button>
+        <button class="tab" role="tab" data-tab="4" type="button"><span class="tl">4. Charging by induction</span><span class="ts">4. Induction</span></button>
+        <button class="tab" role="tab" data-tab="5" type="button"><span class="tl">5. Compare the three</span><span class="ts">5. Compare</span></button>
+        <button class="tab" role="tab" data-tab="6" type="button"><span class="tl">6. Challenge</span><span class="ts">6. Challenge</span></button>
+      </div>
+      <div class="ckey" id="ckey"></div>
+    </header>
+
+    <div class="strip" id="strip"></div>
+
+    <!-- tabs 1 to 5: Predict first comes first, above the controls and the picture -->
+    <div class="box predict-box" id="predictBox">
+      <div class="box-title">Predict first</div>
+      <div class="predict-q" id="predictQ"></div>
+      <div class="opts" id="predictOpts"></div>
+      <div class="feedback" id="predictFb"></div>
+      <div class="row-btns" id="predictBtns"><button id="predictCheck" type="button">Check my answer</button></div>
     </div>
 
-    <div class="panel" id="simPanel">
-      <div class="hint" id="hint"></div>
-      <div class="sim">
-        <canvas id="sceneCanvas"></canvas>
-        <div class="side">
-          <div class="readout">
-            <div class="readout-card"><div class="title" id="rodTitle">Rod</div><div class="value" id="rodValue">Neutral</div></div>
-            <div class="readout-card" id="clothCard"><div class="title" id="clothTitle">Cloth</div><div class="value" id="clothValue">Neutral</div></div>
-            <div class="readout-card" id="sphereCard"><div class="title">Metal sphere</div><div class="value" id="sphereValue">Neutral</div></div>
-            <div class="readout-card" id="forceCard"><div class="title">Force of rod on sphere</div><div class="value" id="forceValue">None</div></div>
+    <!-- Tabs 1 to 4 share one drawing -->
+    <section class="tab-page" id="pageSim">
+      <div class="panel">
+        <div id="simBlock">
+          <div class="controls">
+            <div class="control-group scen-group">
+              <label for="preset">Scenarios</label>
+              <select id="preset"></select>
+            </div>
+            <div class="control-group button-group" id="simGroup">
+              <label>Simulation controls</label>
+              <div class="buttons">
+                <button id="startBtn" type="button">Start</button>
+                <button id="pauseBtn" class="secondary" type="button">Pause</button>
+                <button id="resetBtn" class="danger" type="button">Reset</button>
+              </div>
+            </div>
+            <div class="control-group button-group" id="stepGroup">
+              <label>Steps <span class="step-no" id="stepNo"></span></label>
+              <div class="buttons">
+                <button id="prevStep" class="secondary" type="button" aria-label="Previous step">&lsaquo; Previous</button>
+                <button id="nextStep" type="button" aria-label="Next step">Next &rsaquo;</button>
+                <button id="stepReset" class="danger" type="button">Reset</button>
+              </div>
+            </div>
           </div>
-          <ul class="steps" id="steps"></ul>
+          <div class="moments" id="moments">
+            <button id="prevMoment" class="secondary" type="button">&lsaquo; Previous key moment</button>
+            <button id="nextMoment" class="secondary" type="button">Next key moment &rsaquo;</button>
+            <span class="speed" id="speedNote"></span>
+          </div>
+          <div class="question" id="question"></div>
+          <div id="expBlock">
+            <div class="group-title">Experimental controls</div>
+            <div class="inputs" id="inputs"></div>
+          </div>
+        </div>
+
+        <!-- the readouts go under the drawing: nothing above the canvas may change height while a finger drags -->
+        <div class="scene-wrap">
+          <div class="hint" id="sceneHint"></div>
+          <canvas id="scene"></canvas>
+          <div class="readout" id="readout"></div>
+          <div class="words" id="words"></div>
+          <div class="work" id="work"></div>
+          <div class="note" id="notes"></div>
         </div>
       </div>
-      <div class="note" id="note"></div>
-    </div>
 
-    <div class="panel summary hidden" id="summaryPanel">
-      <b>How the three ways of charging compare</b>
-      <div class="table-scroll" style="margin-top:6px">
-        <table>
-          <thead><tr><th></th><th>Friction</th><th>Contact</th><th>Induction</th></tr></thead>
-          <tbody>
-            <tr><th>What gets charged</th><td>Two different insulators, rubbed against each other (amber rod and fur)</td><td>An uncharged conductor (the metal sphere)</td><td>An uncharged conductor (the metal sphere)</td></tr>
-            <tr><th>Do they touch?</th><td>Yes: they are rubbed together</td><td>Yes: the charged object touches the conductor</td><td>No: the charged object is only brought close</td></tr>
-            <tr><th>Which electrons move, and where</th><td>Electrons go from one insulator to the other</td><td>Free electrons go between the charged object and the conductor</td><td>Free electrons flow between the conductor and the Earth, through the earth wire</td></tr>
-            <tr><th>Earth wire needed?</th><td>No</td><td>No</td><td>Yes: connected, then removed while the charged object is still near</td></tr>
-            <tr><th>Charge gained</th><td>The two insulators gain equal and opposite charges</td><td>The <b>same</b> sign as the charged object</td><td>The <b>opposite</b> sign to the charged object</td></tr>
-          </tbody>
-        </table>
+      <div class="learn">
+        <div class="box" id="featBox">
+          <div class="box-title">Key features (tap one)</div>
+          <div class="feats" id="feats"></div>
+          <div class="feat-note" id="featNote"></div>
+        </div>
       </div>
-      <ul>
-        <li>In all three, only electrons move from one object to another.</li>
-        <li>Charge is not created or destroyed: an object becomes negative by gaining electrons, and positive by losing them.</li>
-      </ul>
-    </div>
+    </section>
+
+    <!-- Tab 5: which way of charging? -->
+    <section class="tab-page" id="page5" hidden>
+      <div class="panel">
+        <div class="game" id="game"></div>
+      </div>
+      <div class="panel summary">
+        <div class="sum-title">How the three ways of charging compare</div>
+        <!-- the table answers several of the cards: it opens once the cards are sorted, or on a tap -->
+        <div class="row-btns" style="margin-top:0"><button type="button" id="sumBtn" class="secondary">Show the table</button></div>
+        <div id="sumBody" hidden>
+        <div style="overflow-x:auto;margin-top:8px">
+          <table id="sumTable">
+            <thead><tr><th></th><th>Friction</th><th>Contact</th><th>Induction</th></tr></thead>
+            <tbody>
+              <tr><th>What gets charged</th><td>Two different insulators, rubbed against each other (an amber rod and fur)</td><td>An uncharged conductor (a metal sphere)</td><td>An uncharged conductor (a metal sphere)</td></tr>
+              <tr><th>Do they touch?</th><td>Yes: they are rubbed together</td><td>Yes: the charged conductor touches it</td><td>No: the charged object is only brought close</td></tr>
+              <tr><th>Which electrons move, and where</th><td>Electrons go from one insulator to the other</td><td>Free electrons go between the charged conductor and the uncharged one</td><td>Free electrons flow between the conductor and the Earth, through the earth wire</td></tr>
+              <tr><th>Earth wire needed?</th><td>No</td><td>No</td><td>Yes: connected, then removed while the charged object is still near</td></tr>
+              <tr><th>Charge gained</th><td>The two insulators gain equal and opposite charges</td><td>The <b>same</b> sign as the charged conductor</td><td>The <b>opposite</b> sign to the charged object</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ul>
+          <li>In all three, only electrons move from one object to another. The number of protons does not change.</li>
+          <li>Charge is not created or destroyed: an object becomes negative by gaining electrons, and positive by losing them.</li>
+        </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 6: Challenge -->
+    <section class="tab-page" id="page6" hidden>
+      <div class="panel">
+        <div class="quiz" id="quiz"></div>
+      </div>
+    </section>
   </div>
 
+  <aside class="teacher" id="teacher" hidden aria-label="Teacher mode">
+    <h2>Teacher mode</h2>
+    <div class="tbtns">
+      <button id="tExplain" type="button">Hide explanations</button>
+      <button id="tFree" type="button">Switch to free exploration</button>
+      <button id="tAnswers" type="button">Hide answer labels</button>
+      <button id="tFull" type="button">Full screen</button>
+      <button id="tReset" type="button">Reset whole applet</button>
+      <button id="tClose" type="button">Close</button>
+    </div>
+    <h3>Suggested prompts</h3>
+    <ul id="tPrompts"></ul>
+  </aside>
+
   <script>
-    const el = id => document.getElementById(id);
-    const canvas = el('sceneCanvas');
-    const materialEl = el('material');
+    const $ = id => document.getElementById(id);
+    const canvas = $('scene'), presetEl = $('preset');
+    let currentTab = 1, freeMode = false;
 
-    const MATERIALS = {
-      amber: { rodName: 'Amber rod', clothName: 'Fur', rodSign: -1, rodColor: '#d97706', rodEdge: '#92400e', clothColor: '#a16207', clothPattern: '#854d0e' },
-      glass: { rodName: 'Glass rod', clothName: 'Silk', rodSign: +1, rodColor: '#a5f3fc', rodEdge: '#0e7490', clothColor: '#fbcfe8', clothPattern: '#f9a8d4' }
+    /* ---------------- numbers and words ---------------- */
+    const clone = o => JSON.parse(JSON.stringify(o));
+    const ex = e => `10<sup>${String(e).replace('-', '−')}</sup>`;
+    const frac = (a, b) => `<span class="frac"><span>${a}</span><span>${b}</span></span>`;
+    // 3 significant figures; exact whole numbers stay whole; a 1e-12 nudge so a binary half rounds up; a true minus sign
+    const f3 = v => {
+      const x = Math.abs(v) < 1e-300 ? 0 : v;
+      if (Math.abs(x - Math.round(x)) < 1e-9 * Math.max(1, Math.abs(x))) return String(Math.round(x)).replace('-', '−');
+      const t = (x * (1 + 1e-12)).toPrecision(3);
+      if (Math.abs(+t - x) < 1e-12 * Math.max(1, Math.abs(x)) || Math.abs(x) >= 100) return String(+t).replace('-', '−');
+      return t.replace('-', '−');
     };
-    const MAX_ROD = 10, PRECHARGE = 8;
+    // a charge as it is drawn: every + or − on the picture stands for many charges
+    const desc = q => (q === 0 ? 'Neutral' : q > 0 ? `Positive (+${q})` : `Negative (−${-q})`);
+    const signWord = q => (q > 0 ? 'positive' : q < 0 ? 'negative' : 'neutral');
+    const ECtxt = `1.60 × ${ex(-19)}`;
+    const COL = { pos: '#dc2626', neg: '#2563eb', force: '#db2777', earth: '#15803d', wire: '#475569' };
 
-    // ---------- the three tabs ----------
-    const TABS = {
-      friction: {
-        hint: 'Drag the rod and rub it back and forth on the cloth.',
-        steps: ['Rub the rod on the cloth until both are charged. Watch which way the electrons go.'],
-        note: '<p>Each <b style="color:#2563eb">&minus;</b> is a group of electrons and each <b style="color:#dc2626">+</b> a group of positive charges left behind. Only electrons move.</p>' +
-          '<p>Amber has a much greater attraction for electrons than animal fur, so when an amber rod is rubbed with fur, electrons are pulled from the fur onto the amber. The amber becomes <b>negatively</b> charged and the fur <b>positively</b> charged. (A glass rod rubbed with silk is the other way round: the glass loses electrons and becomes positive.)</p>' +
-          '<p>Rubbing does not create or destroy charge, so the rod and the cloth always end up with <b>equal and opposite</b> charges. The rod is an insulator: its charge stays where it was rubbed on.</p>'
-      },
-      contact: {
-        hint: 'The rod has already been charged by rubbing. Drag it so that its charged end touches the metal sphere, then take it away.',
-        steps: ['Touch the sphere with the charged end of the rod.', 'Take the rod away: the sphere keeps a charge of the same sign as the rod.'],
-        note: '<p>When the charged rod touches the neutral metal sphere, electrons move between them: from a negative rod onto the sphere, or from the sphere onto a positive rod. The sphere ends up with a charge of the <b>same sign</b> as the rod.</p>' +
-          '<p>The sphere is a conductor, so the charge it receives spreads out evenly over its surface. The rod is an insulator, so only the charged part that actually touches the sphere passes charge on. The insulating stand stops the charge leaking away.</p>'
-      },
-      induction: {
-        hint: 'The rod has already been charged by rubbing. Follow the steps below in order, without letting the rod touch the sphere. Tap the switch on the earth wire (or use the button) to connect and disconnect it.',
-        steps: ['Bring the charged rod near the sphere (do not touch it).', 'With the rod still near, connect the earth wire.', 'With the rod still near, disconnect the earth wire.', 'Take the rod away: the sphere keeps a charge of the opposite sign to the rod.'],
-        note: '<p>In the metal sphere the free electrons move easily. A nearby charged rod pushes them away (negative rod) or pulls them closer (positive rod), leaving the other side with an equal and opposite charge. The nearer induced charge is closer to the rod, so the rod attracts even a neutral sphere.</p>' +
-          '<p>The Earth is a large conductor. While the sphere is earthed, electrons flow between the sphere and the Earth: away from the sphere when the rod is negative, onto it when the rod is positive. Disconnecting the earth wire <b>before</b> taking the rod away traps that charge, so the sphere is left with a charge <b>opposite</b> in sign to the rod.</p>'
-      }
+    /* ---------------- the world: positions in world units (11 across, 6.4 down; y points down) ---------------- */
+    const WW = 11, WH = 6.4, FLOOR = 6.0;
+    const VIEW = { fric: [1.4, 0.8, 9.6, 5.6], cond: [1.6, 0.9, 10.6, 6.3], rig: [0.3, 0.8, 10.9, 6.3], hang: [0.6, 0.15, 10.4, 6.2] };
+    let V = { s: 50, ox: 0, oy: 0 };          // world -> canvas: x px = ox + x s
+    const X = x => V.ox + x * V.s, Y = y => V.oy + y * V.s;
+
+    // tab 1: a rod (or balloon) rubbed on a cloth
+    const CLOTH = { x: 2.2, y: 3.75, w: 6.6, h: 1.2 };
+    const MAT = {
+      amber: { shape: 'rod', obj: 'Amber rod', cloth: 'Fur', gain: 'obj', oc: '#f59e0b', oe: '#92400e', cc: '#c9975c', cp: '#8a5a2b' },
+      acetate: { shape: 'rod', obj: 'Acetate rod', cloth: 'Wool', gain: 'cloth', oc: '#fcd34d', oe: '#b45309', cc: '#bbe3b0', cp: '#7cb46e' },
+      balloon: { shape: 'balloon', obj: 'Balloon', cloth: 'Wool', gain: 'obj', oc: '#fca5a5', oe: '#b91c1c', cc: '#bbe3b0', cp: '#7cb46e' }
     };
-    let tab = 'friction';
+    const UPY = { rod: 1.7, balloon: 1.55 }, RUBY = { rod: CLOTH.y - 0.21, balloon: CLOTH.y - 0.85 };
+    const BAL = { rx: 1.15, ry: 0.85 };
+    const ROD1 = { len: 4, handle: 1, th: 0.42 };     // the charged part runs from 1 unit after the left end to the tip
+    // tab 2: one sphere on a stand
+    const SC = { x: 5.0, y: 2.85, R: 1.25, a0: 3.75, wireX: 7.7, swTop: 3.75, swBot: 4.3, earthY: 5.25 };
+    // tabs 3 and 4: a rod brought up to a sphere on an insulating stand (with an earth wire on tab 4)
+    const RG = { x: 6.8, y: 2.8, R: 1.15, far: 2.4, near: 5.2, len: 2.6, handle: 0.8, th: 0.3, wireX: 8.9, swTop: 3.55, swBot: 4.05, earthY: 5.2 };
+    RG.touch = RG.x - RG.R;
+    // tabs 3 and 4: balls hanging from threads
+    const HG = { top: 0.5, L: 2.6, g: 10, m: 1, damp: 1.5, rodHalf: 0.15 };
 
-    let state;
-    function freshState() {
-      return {
-        rod: { x: 0, y: 0, placed: false, charges: [] }, // charges: { s: px from tip, sign }
-        cloth: [],                                       // charges: { fx, fy } as fractions of the cloth box, sign
-        electrons: [],                                   // sphere free electrons: { x, y } relative to sphere centre
-        flights: [],                                     // electrons in transit
-        earthed: false,
-        rubAccum: 0,
-        transferClock: 0,
-        touched: false,
-        steps: [false, false, false, false]
-      };
-    }
+    /* ---------------- scenarios ---------------- */
+    // Every situation is from the notes (pp. 6-20 to 6-32), the lecturer's copy or Tutorial 6. The numbers of + and −
+    // drawn are chosen for this page: each one stands for many charges.
+    const PRESETS = {
+      // ---- tab 1: charging by friction (a step walk; drag the rod to rub it yourself)
+      amber: { tab: 1, rig: 'fric', mat: 'amber', name: 'Amber rod and fur',
+        q: 'Notes p. 6-21: Amber has a much greater attraction for electrons than animal fur. When an amber rod is rubbed with animal fur, some atoms of amber pull electrons from the atoms of fur. Thus the amber gains extra electrons and becomes negatively charged, and the fur loses the same amount of electrons and becomes positively charged.' },
+      acetate: { tab: 1, rig: 'fric', mat: 'acetate', name: 'Acetate rod and wool',
+        q: 'Notes p. 6-22: wool and acetate are rubbed together. Before rubbing, both are neutral; after rubbing, the wool is negatively charged and the acetate positively charged.' },
+      balloon: { tab: 1, rig: 'fric', mat: 'balloon', name: 'Balloon and wool',
+        q: 'Example 8 (notes p. 6-23): A balloon has a negative charge when rubbed with wool. During rubbing, what has been transferred between the wool and the balloon? (A) electrons (B) protons (C) neutrons (D) electrons and protons' },
 
-    const hasCloth = () => tab === 'friction';
-    const hasSphere = () => tab !== 'friction';
-    const hasEarth = () => tab === 'induction';
+      // ---- tab 2: conductors and earthing (one run each)
+      ins: { tab: 2, rig: 'cond', metal: false, sign: -1, conn: 'none', name: 'Charge on an insulator',
+        q: 'Notes p. 6-20: An electrical insulator (such as plastic, glass and wool) has no free electrons and does not allow charges to move through it easily. Thus when a small region of an insulator is given a charge, the charge stays within that region and does not move.' },
+      metal: { tab: 2, rig: 'cond', metal: true, sign: -1, conn: 'none', name: 'Charge on a metal sphere',
+        q: 'Notes p. 6-24: Electrical conductors are materials that have free electrons and allow charges to move through them easily. When a small region of a metal sphere is charged, the charge will quickly redistribute evenly on the surface of the metal sphere.' },
+      earthPos: { tab: 2, rig: 'cond', metal: true, sign: 1, conn: 'wire', name: 'Earthing a positive sphere',
+        q: 'Notes p. 6-25: The Earth is a large good conductor of electricity. When a charged metal part is connected to the Earth, free electrons will flow away or towards the charged metal part and cause it to become electrically neutral.' },
+      earthNeg: { tab: 2, rig: 'cond', metal: true, sign: -1, conn: 'wire', name: 'Earthing a negative sphere',
+        q: 'Notes p. 6-25: free electrons will flow away from or towards the charged metal part and cause it to become electrically neutral. Here the sphere is negatively charged.' },
+      hand: { tab: 2, rig: 'cond', metal: true, sign: 1, conn: 'hand', name: 'Touched by a hand',
+        q: 'Notes p. 6-25: The human body is a relatively good conductor and therefore acts as a conducting path for the electrons. For this reason, a metal held in the hand cannot be charged.' },
+      stand: { tab: 2, rig: 'cond', metal: true, sign: -1, conn: 'stand', name: 'On a metal stand',
+        q: 'Example 9 (notes p. 6-26): What is the purpose of the insulating stand? Here the sphere stands on a metal stand instead, to see what an insulating stand prevents.' },
 
-    // ---------- layout ----------
-    let L = null;
-    function layout(w, h) {
-      const R = Math.max(46, Math.min(72, w * 0.1));
-      const cx = hasEarth() ? Math.min(w * 0.64, w - R - 110) : Math.min(w * 0.68, w - R - 40), cy = h * 0.4;
-      const floorY = h - 18;
-      const rodLen = Math.max(130, Math.min(200, w * 0.3));
-      const clothW = hasCloth() ? Math.max(180, Math.min(360, w * 0.5)) : 0;
-      const contactAng = 0.6;
-      return {
-        w, h, R, cx, cy, floorY, rodLen, rodThick: 14, chargedLen: rodLen * 0.62,
-        cloth: { x: (w - clothW) / 2, y: h * 0.62, w: clothW, h: 64 },
-        contact: { x: cx + R * Math.cos(contactAng), y: cy + R * Math.sin(contactAng) },
-        wireX: cx + R + 46,
-        earthY: floorY - 34
-      };
-    }
+      // ---- tab 3: charging by contact
+      cneg: { tab: 3, rig: 'rig', rodQ: -8, metal: true, induce: false, earth: false, name: 'Negative rod touches a sphere',
+        q: 'Notes p. 6-27: A conductor can be charged with static electricity by direct contact with another charged conductor. If a charged conductor touches an uncharged metal part, free electrons will be transferred between them, charging the metal part with the same sign as the charge on the charged conductor.',
+        steps: [{ t: 'Touch the neutral sphere with the negatively charged metal rod.', d: 'touch' }, { t: 'Take the rod away.', d: 'away' }] },
+      cpos: { tab: 3, rig: 'rig', rodQ: 8, metal: true, induce: false, earth: false, name: 'Positive rod touches a sphere',
+        q: 'Notes p. 6-27, with a positively charged metal rod: the sphere is charged with the same sign as the rod.',
+        steps: [{ t: 'Touch the neutral sphere with the positively charged metal rod.', d: 'touch' }, { t: 'Take the rod away.', d: 'away' }] },
+      c4: { tab: 3, rig: 'rig', rodQ: 0, sphQ: 12, metal: true, induce: false, earth: false, share: 2 / 3, unit: 'µC', name: 'A +12 µC sphere touches a rod',
+        q: 'Tutorial 6, C4: A metal sphere has an initial charge of +12 µC. It touches a metal rod and is then separated from it. The final charge of the sphere is +8.0 µC. (a) What type of charged particles is transferred between the sphere and the rod, and in which direction? (b) How many charged particles are transferred? (Here each + drawn is 1 µC.)',
+        steps: [{ t: 'The metal rod touches the sphere.', d: 'touch' }, { t: 'Separate them.', d: 'away' }, { t: 'Find the change in the sphere’s charge.', d: 'none' }, { t: 'Find the number of electrons.', d: 'none' }] },
+      ex10: { tab: 3, rig: 'hang', name: 'Two balls touched by + metal',
+        q: 'Example 10 (notes p. 6-28): Two lightweight, electrically neutral conducting balls hang from threads. How do the balls hang after both balls are touched by a positively charged metal?' },
+      b4: { tab: 3, rig: 'hang', name: 'One ball −, one ball +',
+        q: 'Tutorial 6, B4: Two lightweight electrically neutral conducting balls A and B hang from threads. How do the balls hang after A is touched by a negatively charged metal and B is touched by a positively charged metal? (Assume the balls will never touch each other.)' },
 
-    // Fixed positive charges inside the sphere (relative to its centre), as fractions of R.
-    const IONS = (() => {
-      const pts = [];
-      for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2 + 0.26; pts.push({ fx: 0.66 * Math.cos(a), fy: 0.66 * Math.sin(a) }); }
-      for (let i = 0; i < 4; i++) { const a = (i / 4) * Math.PI * 2 + 0.78; pts.push({ fx: 0.28 * Math.cos(a), fy: 0.28 * Math.sin(a) }); }
-      return pts;
-    })();
-    const N_IONS = IONS.length;
-    const SURFACE_SLOTS = 26;
+      // ---- tab 4: charging by induction
+      ipos: { tab: 4, rig: 'rig', rodQ: 8, metal: false, induce: true, earth: true, name: 'Positive rod, earthed sphere',
+        q: 'Notes p. 6-29: A charged object is brought close to the uncharged conductor and does not touch it. If the uncharged conductor is earthed, free electrons will flow away from or towards it. With the charged object still around, the earth connection is then removed and the conductor will have a charge opposite in sign to that of the charged object.',
+        steps: [{ t: 'Bring the positively charged rod near the sphere. Do not touch it.', d: 'near' }, { t: 'With the rod still near, connect the earth wire.', d: 'earthOn' }, { t: 'With the rod still near, disconnect the earth wire.', d: 'earthOff' }, { t: 'Take the rod away.', d: 'away' }] },
+      ineg: { tab: 4, rig: 'rig', rodQ: -8, metal: false, induce: true, earth: true, name: 'Negative rod, earthed sphere',
+        q: 'Notes p. 6-29, with a negatively charged rod. Tutorial 6, A5 asks the same about a positively charged rod held near a neutral metal sphere: show the charge distribution on the sphere.',
+        steps: [{ t: 'Bring the negatively charged rod near the sphere. Do not touch it.', d: 'near' }, { t: 'With the rod still near, connect the earth wire.', d: 'earthOn' }, { t: 'With the rod still near, disconnect the earth wire.', d: 'earthOff' }, { t: 'Take the rod away.', d: 'away' }] },
+      iwrong: { tab: 4, rig: 'rig', rodQ: 8, metal: false, induce: true, earth: true, name: 'Rod taken away too early',
+        q: 'What if the rod is taken away while the earth wire is still connected? The notes say the earth connection is removed with the charged object still around (p. 6-29). Here the order is changed.',
+        steps: [{ t: 'Bring the positively charged rod near the sphere. Do not touch it.', d: 'near' }, { t: 'With the rod still near, connect the earth wire.', d: 'earthOn' }, { t: 'Take the rod away first, with the earth wire still connected.', d: 'away' }, { t: 'Now disconnect the earth wire.', d: 'earthOff' }] },
+      attract: { tab: 4, rig: 'hang', name: 'Neutral conductor attracted',
+        q: 'Notes p. 6-30: A charged object can also attract a neutral (uncharged) object. Its free electrons move away from the negatively charged rod as far as they can. A positive charge is induced at the end nearer to the rod and a negative charge at the other end. Since electrostatic force decreases with distance, the attraction is greater than the repulsion: the rod attracts the neutral conductor.' },
+      insul: { tab: 4, rig: 'hang', name: 'Neutral insulator attracted',
+        q: 'Notes p. 6-31: For a neutral insulator, a nearby charged object can induce positive and negative charges within the molecules in the insulator. Once the molecules have realigned with the most attractive side towards the charged object, the force of attraction is greater than the force of repulsion.' },
+      b3: { tab: 4, rig: 'hang', name: 'Two metal-coated balloons',
+        q: 'Tutorial 6, B3: Two identical metal-coated balloons A and B are hung from the ceiling with nylon threads; they are initially electrically neutral. When A is rubbed and given a negative charge, the two balloons attract each other without touching. (a) Explain briefly why. (b) Draw a charge diagram showing the induced charges on each balloon.' },
+      c5: { tab: 4, rig: 'hang', name: 'Ball touches, flies away',
+        q: 'Tutorial 6, C5: A lightweight metal ball hangs by a thread. When a charged rod is held near, the ball moves towards the rod and touches it. After touching it, it then flies away. Explain this observation. (Here the rod is positively charged.)' }
+    };
+    const OWN = { 1: 'Rubbing by hand: drag the object across the cloth. Choose a scenario to start again.',
+      3: 'Do it yourself: drag the rod to the sphere and away again. Choose a scenario to start again.',
+      4: 'Do it yourself: drag the rod and tap the switch on the earth wire. Choose a scenario to start again.',
+      2: 'Your own set-up. Press Start. Choose a scenario to go back to one from the notes.' };
 
-    function sphereCharge() { return N_IONS - state.electrons.length; }
-    const rodCharge = () => state.rod.charges.reduce((s, c) => s + c.sign, 0);
+    /* ---------------- the state ---------------- */
+    let S = { scen: 'amber', custom: false, step: 0, playing: false };
+    let P = {};            // the scenario in use (a copy)
+    let Wd = null;         // the world now
+    let snaps = [];        // the world at the end of each step (snaps[0] = the start)
+    let drivers = [];      // scripted actions still to do, the first one running
+    let hl = {}, feat = {}, showAll = true;
+    let runInfo = null;    // tab 2: the end of the run, worked out when the scenario loads
 
-    function rodWorldCharges() {
-      const r = state.rod;
-      return r.charges.map(c => ({ x: r.x - c.s, y: r.y, q: c.sign }));
-    }
-
-    // ---------- where the sphere's electrons want to be ----------
-    function externalPush() {
-      // Net push on an electron at the sphere centre from the rod's charges, and the grounded image charge.
-      let fx = 0, fy = 0, image = 0;
-      for (const c of rodWorldCharges()) {
-        const dx = L.cx - c.x, dy = L.cy - c.y, d = Math.hypot(dx, dy);
-        if (d < 1) continue;
-        // force on a negative charge: attracted to +, repelled by -
-        fx += -c.q * dx / (d * d * d); fy += -c.q * dy / (d * d * d);
-        image += -c.q * L.R / d;
+    /* ---------------- building a world ---------------- */
+    function ball(px, o) { return Object.assign({ px, L: HG.L, R: 0.42, th: 0, w: 0, a: 0, Q: 0, m: 0, mFull: 3, ins: false, dip: 0, stuck: false, name: '' }, o); }
+    function initWorld() {
+      if (P.rig === 'fric') {
+        const cl = []; for (let r = 0; r < 2; r++) for (let c = 0; c < 5; c++) cl.push({ fx: 0.1 + 0.2 * c, fy: r ? 0.78 : 0.22, lost: false });
+        const op = []; for (let i = 0; i < 6; i++) op.push({ u: (i + 0.5) / 6, lost: false });
+        return { rig: 'fric', mat: P.mat, t: 0, cx: 5.5, cy: UPY[MAT[P.mat].shape], cl, op, gO: [], gC: [], moved: 0, acc: 0, flights: [] };
       }
-      return { fx, fy, image };
+      if (P.rig === 'cond') return { rig: 'cond', t: 0, metal: P.metal, sign: P.sign, Q: P.sign * 6, spread: 0, conn: P.conn, closed: false, handX: WW + 0.6, moved: 0, dir: 0, flights: [], spawnT: 0 };
+      if (P.rig === 'rig') return { rig: 'rig', t: 0, rod: { x: RG.far, Q: P.rodQ, metal: P.metal, given: 0 }, sph: { Q: P.sphQ || 0, m: 0, s: Math.sign(P.rodQ) || 1 },
+        earth: P.earth, closed: false, induce: P.induce, share: P.share || 0.5, unit: P.unit || null, mvC: 0, mvUp: 0, mvDn: 0, dirC: 0, dirE: 0,
+        flights: [], spawnE: 0, spawnI: 0, touched: false, ck: 0 };
+      const W = { rig: 'hang', id: P.id, t: 0, hold: true, kC: 6.5, kI: 0, balls: [], rod: null, probes: [], flights: [], spawnI: 0, touchStop: false, touched: false };
+      const by = HG.top + HG.L;
+      if (P.id === 'ex10') { W.balls = [ball(4, { name: 'A' }), ball(7, { name: 'B' })]; W.probes = [{ x: 1.1, y: by, Q: 6, name: 'Positively charged metal' }]; }
+      else if (P.id === 'b4') { W.balls = [ball(4, { name: 'A' }), ball(7, { name: 'B' })]; W.probes = [{ x: 1.1, y: by, Q: -3, name: 'Negatively charged metal' }, { x: WW - 1.1, y: by, Q: 3, name: 'Positively charged metal' }]; }
+      else if (P.id === 'attract') { W.balls = [ball(6.6, { R: 0.45 })]; W.rod = { x: 1.6, Q: -6 }; W.kI = 0.36; }
+      else if (P.id === 'insul') { W.balls = [ball(6.6, { R: 0.62, ins: true })]; W.rod = { x: 1.6, Q: -6 }; W.kI = 0.45; }
+      else if (P.id === 'b3') { W.balls = [ball(4.6, { R: 0.45, Q: -3, name: 'A' }), ball(9.2, { R: 0.45, name: 'B' })]; W.kI = 1.45; }
+      else if (P.id === 'c5') { W.balls = [ball(6.6, { R: 0.4, mFull: 2 })]; W.rod = { x: 1.6, Q: 6 }; W.kI = 0.36; W.touchStop = true; }
+      return W;
     }
 
-    function computeTargets(visualOffset = true) {
-      const nE = state.electrons.length;
-      const R = L.R;
-      const push = externalPush();
-      const mag = Math.hypot(push.fx, push.fy);
-      const ux = mag > 0 ? push.fx / mag : 0, uy = mag > 0 ? push.fy / mag : 0;
-      // how many electrons the rod can push across the sphere (a conductor lets them move freely)
-      let P = Math.round(1.8 * R * R * mag);
-      const excess = Math.max(0, nE - N_IONS);
-      const paired0 = nE - excess;
-      P = Math.min(P, paired0, Math.floor(N_IONS / 2) + 2);
-      const surfaceCount = excess + P;
-      const pairedCount = nE - surfaceCount;
-
-      // Which ions keep an electron: the ones toward the push direction (front); ties broken evenly.
-      const order = IONS.map((p, i) => ({ i, key: mag > 0 ? (p.fx * ux + p.fy * uy) : 0, inner: Math.hypot(p.fx, p.fy) < 0.4 ? 1 : 0, spread: (i * 5) % 12 }));
-      order.sort((a, b) => (b.key - a.key) || (b.inner - a.inner) || (a.spread - b.spread));
-      const targets = [];
-      for (let k = 0; k < pairedCount; k++) {
-        const p = IONS[order[k].i];
-        targets.push(visualOffset ? { x: p.fx * R + 9, y: p.fy * R + 2 } : { x: p.fx * R, y: p.fy * R });
+    /* ---------------- the steps of each scenario: lists of scripted actions ("drivers") ---------------- */
+    const glide = (who, to, dur) => ({ k: 'glide', who, to, dur });
+    function stepsFor() {
+      const id = P.id;
+      if (P.rig === 'fric') {
+        const sh = MAT[P.mat].shape, o = MAT[P.mat];
+        return [{ t: `Rub the ${o.obj.toLowerCase()} on the ${o.cloth.toLowerCase()}.`, drv: [glide('obj', [5.5, RUBY[sh]], 0.6), { k: 'rub', n: 6, c: 5.5, amp: 1.1, per: 0.36 }, glide('obj', [5.5, UPY[sh]], 0.6), { k: 'settle' }] },
+          { t: 'Count the charges on each.', drv: [{ k: 'wait', dur: 0.01 }] }];
       }
-      // Surface electrons: packed toward the front if there is a push, otherwise spread evenly.
-      const slots = [];
-      for (let j = 0; j < SURFACE_SLOTS; j++) { const a = (j / SURFACE_SLOTS) * Math.PI * 2; slots.push({ x: 0.87 * R * Math.cos(a), y: 0.87 * R * Math.sin(a), a }); }
-      let chosen;
-      if (P > 0 && mag > 0) {
-        chosen = slots.slice().sort((a, b) => (b.x * ux + b.y * uy) - (a.x * ux + a.y * uy)).slice(0, surfaceCount);
-      } else {
-        chosen = [];
-        for (let k = 0; k < surfaceCount; k++) chosen.push(slots[Math.round(k * SURFACE_SLOTS / surfaceCount) % SURFACE_SLOTS]);
+      if (P.rig === 'rig') {
+        const D = { touch: [glide('rod', [RG.touch, RG.y], 1.0), { k: 'settle' }, { k: 'wait', dur: 0.2 }], away: [glide('rod', [RG.far, RG.y], 1.0), { k: 'settle' }],
+          near: [glide('rod', [RG.near, RG.y], 1.2), { k: 'settle' }], earthOn: [{ k: 'set', key: 'closed', v: true }, { k: 'settle' }, { k: 'wait', dur: 0.2 }],
+          earthOff: [{ k: 'set', key: 'closed', v: false }, { k: 'wait', dur: 0.4 }], none: [{ k: 'wait', dur: 0.01 }] };
+        return P.steps.map(s => ({ t: s.t, drv: D[s.d] }));
       }
-      chosen.forEach(s => targets.push({ x: s.x, y: s.y }));
-      return targets;
+      if (P.rig !== 'hang') return [];
+      const by = HG.top + HG.L, A = 4, B = 7, R = 0.42;
+      const rel = { k: 'release' };
+      if (id === 'ex10') return [
+        { t: 'Touch ball A with the positively charged metal.', drv: [glide('probe0', [A - R - 0.27, by], 1.0), { k: 'xfer', a: 'balls.0', b: 'probes.0', n: 2 }, { k: 'wait', dur: 0.2 }] },
+        { t: 'Touch ball B with it too.', drv: [{ k: 'glide', who: 'probe0', path: [[2.6, by], [2.6, by + 1.3], [B + 1.2, by + 1.3], [B + R + 0.27, by]], dur: 2.2 }, { k: 'xfer', a: 'balls.1', b: 'probes.0', n: 2 }, { k: 'wait', dur: 0.2 }] },
+        { t: 'Take the metal away and let the balls go.', drv: [{ k: 'glide', who: 'probe0', path: [[B + 1.2, by], [WW + 0.8, by]], dur: 0.9 }, rel] }];
+      if (id === 'b4') return [
+        { t: 'Touch ball A with the negatively charged metal.', drv: [glide('probe0', [A - R - 0.27, by], 1.0), { k: 'xfer', a: 'probes.0', b: 'balls.0', n: 1 }, { k: 'wait', dur: 0.2 }] },
+        { t: 'Touch ball B with the positively charged metal.', drv: [glide('probe1', [B + R + 0.27, by], 1.0), { k: 'xfer', a: 'balls.1', b: 'probes.1', n: 1 }, { k: 'wait', dur: 0.2 }] },
+        { t: 'Take both metals away and let the balls go.', drv: [glide('probe0', [-0.8, by], 0.8), glide('probe1', [WW + 0.8, by], 0.8), rel] }];
+      if (id === 'attract' || id === 'insul') return [
+        { t: 'Hold the ball still and bring the negatively charged rod near it.', drv: [glide('rodV', [id === 'insul' ? 4.8 : 5.0, by], 1.2), id === 'insul' ? { k: 'align', i: 0, dur: 1.0 } : { k: 'ind', i: 0, to: 3 }] },
+        { t: 'Let the ball go.', drv: [rel] }];
+      if (id === 'b3') return [
+        { t: 'Hold the balloons still and bring B close to A.', drv: [glide('pivot1', [6.8, by], 1.2), { k: 'ind', i: 1, to: 3 }] },
+        { t: 'Let both balloons go.', drv: [rel] }];
+      if (id === 'c5') return [
+        { t: 'Hold the ball still and bring the charged rod near it.', drv: [glide('rodV', [5.55, by], 1.2), { k: 'ind', i: 0, to: 2 }] },
+        { t: 'Let the ball go.', drv: [rel] },
+        { t: 'The ball touches the rod.', drv: [{ k: 'setm', i: 0, v: 0 }, { k: 'xfer', a: 'balls.0', b: 'rod', n: 2 }, { k: 'wait', dur: 0.3 }] },
+        { t: 'Let the ball go again.', drv: [{ k: 'unstick', i: 0 }, rel] }];
+      return [];
+    }
+    // tab 2: one run (Start)
+    function runDrivers() {
+      const W = Wd;
+      if (W.conn === 'wire') return [{ k: 'wait', dur: 1.1 }, { k: 'set', key: 'closed', v: true }, { k: 'settle' }, { k: 'wait', dur: 0.4 }];
+      if (W.conn === 'hand') return [{ k: 'wait', dur: 0.4 }, glide('hand', [SC.x + SC.R + 0.02, SC.y], 0.7), { k: 'set', key: 'closed', v: true }, { k: 'settle' }, { k: 'wait', dur: 0.4 }];
+      if (W.conn === 'stand') return [{ k: 'wait', dur: 0.3 }, { k: 'set', key: 'closed', v: true }, { k: 'settle' }, { k: 'wait', dur: 0.4 }];
+      return [{ k: 'wait', dur: 1.6 }];
     }
 
-    function relaxElectrons(dt) {
-      if (!hasSphere()) return;
-      const targets = computeTargets();
-      const free = state.electrons.slice();
-      const used = new Array(free.length).fill(false);
-      for (const t of targets) {
-        let best = -1, bd = Infinity;
-        for (let i = 0; i < free.length; i++) {
-          if (used[i]) continue;
-          const d = (free[i].x - t.x) ** 2 + (free[i].y - t.y) ** 2;
-          if (d < bd) { bd = d; best = i; }
+    /* ---------------- the engine: a fixed time step, scripted drivers, electrons in flight ---------------- */
+    const DT = 1 / 120;
+    function getObj(path) { return !path ? Wd : path.split('.').reduce((o, k) => o[k], Wd); }
+    function applyOps(ops) { for (const op of ops || []) { const o = getObj(op.o); if (op.push !== undefined) o[op.k].push(op.push); else o[op.k] += op.d; } }
+    // the change still on its way, carried by electrons in flight
+    function pend(o, k) { let s = 0; for (const f of Wd.flights) for (const op of f.arr || []) if (op.o === o && op.k === k && op.d) s += op.d; return s; }
+    function spawn(pts, arr, dur = 0.5, extra = {}) { Wd.flights.push(Object.assign({ pts, arr, dur, t: 0 }, extra)); }
+
+    function posOf(who) {
+      const W = Wd;
+      if (who === 'obj') return [W.cx, W.cy];
+      if (who === 'rod') return [W.rod.x, RG.y];
+      if (who === 'hand') return [W.handX, SC.y];
+      if (who === 'rodV') return [W.rod.x, HG.top + HG.L];
+      if (who === 'pivot1') return [W.balls[1].px, HG.top + HG.L];
+      const p = W.probes[+who.slice(5)]; return [p.x, p.y];
+    }
+    function setPos(who, [x, y]) {
+      const W = Wd;
+      if (who === 'obj') { W.cx = x; W.cy = y; }
+      else if (who === 'rod') W.rod.x = x;
+      else if (who === 'hand') W.handX = x;
+      else if (who === 'rodV') W.rod.x = x;
+      else if (who === 'pivot1') W.balls[1].px = x;
+      else { const p = W.probes[+who.slice(5)]; p.x = x; p.y = y; }
+    }
+    function along(pts, u) {
+      const segs = []; let tot = 0;
+      for (let i = 0; i < pts.length - 1; i++) { const d = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]); segs.push(d); tot += d; }
+      let d = u * tot;
+      for (let i = 0; i < segs.length; i++) {
+        if (d <= segs[i] || i === segs.length - 1) { const k = segs[i] ? Math.min(1, d / segs[i]) : 1; return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * k, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * k]; }
+        d -= segs[i];
+      }
+      return pts[pts.length - 1];
+    }
+    const ease = u => u * u * (3 - 2 * u);
+
+    function startDriver(d) {
+      const W = Wd;
+      d.t = 0;
+      if (d.k === 'glide') d.pts = [posOf(d.who)].concat(d.path || [d.to]);
+      else if (d.k === 'set') W[d.key] = d.v;
+      else if (d.k === 'rub') d.c0 = W.cx, d.done = 0;
+      else if (d.k === 'xfer') { d.sent = 0; d.next = 0; }
+      else if (d.k === 'release') { W.hold = false; W.balls.forEach(b => { b.w = 0; }); }
+      else if (d.k === 'setm') W.balls[d.i].m = d.v;
+      else if (d.k === 'unstick') W.balls[d.i].stuck = false;
+      else if (d.k === 'ind') d.next = 0;
+    }
+    function stepDriver(d, dt) {
+      const W = Wd;
+      d.t += dt;
+      switch (d.k) {
+        case 'glide': { const u = Math.min(1, d.t / d.dur); setPos(d.who, along(d.pts, ease(u))); return u >= 1; }
+        case 'wait': return d.t >= d.dur;
+        case 'set': case 'setm': case 'unstick': return true;
+        case 'settle': return !needsMore() && !W.flights.length;
+        case 'rub': {
+          const T = d.n * d.per;
+          W.cx = d.c0 + d.amp * Math.sin(Math.PI * Math.min(d.t, T) / d.per);
+          while (d.done < d.n && d.t >= d.per * (d.done + 0.5)) { rubTransfer(); d.done++; }
+          if (d.t >= T) { W.cx = d.c0; return true; }
+          return false;
         }
-        if (best < 0) break;
-        used[best] = true;
-        const e = free[best];
-        const k = 1 - Math.exp(-dt * 6);
-        e.x += (t.x - e.x) * k; e.y += (t.y - e.y) * k;
+        case 'xfer': {
+          if (d.sent < d.n && d.t >= d.next) { xferHang(d.a, d.b); d.sent++; d.next = d.t + 0.25; }
+          return d.sent >= d.n && !W.flights.length;
+        }
+        case 'release':
+          if (W.touchStop && W.balls.some(b => b.stuck)) return true;
+          if (d.t > 0.5 && hangRest()) { snapRest(); return true; }
+          return false;
+        case 'ind': {
+          const b = W.balls[d.i];
+          if (b.m === d.to && !W.flights.length) return true;
+          if (!W.flights.length && d.t >= d.next) { indFlight(d.i, d.to > b.m ? 1 : -1); d.next = d.t + 0.15; }
+          return false;
+        }
+        case 'align': { W.balls[d.i].dip = Math.min(1, d.t / d.dur); return d.t >= d.dur; }
+      }
+      return true;
+    }
+    function runDriversTick(dt) {
+      let guard = 0;
+      while (drivers.length && guard++ < 20) {
+        const d = drivers[0];
+        if (!d.started) { d.started = true; startDriver(d); }
+        if (stepDriver(d, dt)) { drivers.shift(); dt = 0; continue; }
+        break;
       }
     }
+    function tick(dt) {
+      Wd.t += dt;
+      runDriversTick(dt);
+      physics(dt);
+      for (const f of Wd.flights) f.t += dt;
+      const done = Wd.flights.filter(f => f.t >= f.dur);
+      if (done.length) { Wd.flights = Wd.flights.filter(f => f.t < f.dur); done.forEach(f => applyOps(f.arr)); }
+      settle(true);
+    }
+    const needsMore = () => settle(false);
+    function isIdle() { return !drivers.length && !Wd.flights.length && !needsMore() && (Wd.rig !== 'hang' || hangRest()); }
+    // run straight to the end of what is playing (for Previous, the key moments and the checks)
+    function fastForward(cap = 60) { let n = 0; while (!isIdle() && n++ < cap / DT) tick(DT); }
 
-    // ---------- transfers ----------
-    function launch(from, to, onArrive, via) { state.flights.push({ from, to, via, t: 0, onArrive }); }
-    function nearestElectron(px, py) {
-      let best = -1, bd = Infinity;
-      state.electrons.forEach((e, i) => {
-        const d = (L.cx + e.x - px) ** 2 + (L.cy + e.y - py) ** 2;
-        if (d < bd) { bd = d; best = i; }
-      });
+    function physics(dt) {
+      const W = Wd;
+      if (W.rig === 'cond' && W.metal && W.spread < 1) W.spread = Math.min(1, W.spread + dt / 0.9);
+      if (W.rig === 'hang' && !W.hold) for (let k = 0; k < 4; k++) hangStep(dt / 4);
+    }
+    // what still has to happen by itself; doSpawn = true starts it
+    function settle(doSpawn) {
+      const W = Wd;
+      if (W.rig === 'cond') {
+        if (!(W.closed && W.metal)) return false;
+        const Qe = W.Q + pend('', 'Q');
+        if (!Qe) return false;
+        if (doSpawn && W.t >= W.spawnT) {
+          const path = condPath();
+          if (Qe > 0) { spawn(path.slice().reverse(), [{ o: '', k: 'Q', d: -1 }, { o: '', k: 'moved', d: 1 }], 0.6); W.dir = 1; }
+          else { W.Q += 1; spawn(path, [{ o: '', k: 'moved', d: 1 }], 0.6); W.dir = -1; }
+          W.spawnT = W.t + 0.24;
+        }
+        return true;
+      }
+      if (W.rig === 'rig') return rigSettle(doSpawn);
+      return false;
+    }
+
+    /* ---- tab 1: rubbing moves electrons from one insulator to the other, where they touch ---- */
+    function contactRange() {
+      const W = Wd, sh = MAT[W.mat].shape;
+      if (Math.abs(W.cy - RUBY[sh]) > 0.08) return null;
+      const a = sh === 'rod' ? W.cx - ROD1.len / 2 + ROD1.handle : W.cx - 0.8, b = sh === 'rod' ? W.cx + ROD1.len / 2 : W.cx + 0.8;
+      const lo = Math.max(a, CLOTH.x), hi = Math.min(b, CLOTH.x + CLOTH.w);
+      return hi - lo > 0.25 ? [lo, hi] : null;
+    }
+    // a point on the rubbed object: u from 0 to 1 along its rubbed part; row -1 (extra charges) or +1 (the pairs)
+    function objPoint(u, row) {
+      const W = Wd;
+      if (MAT[W.mat].shape === 'rod') return [W.cx - ROD1.len / 2 + ROD1.handle + (ROD1.len - ROD1.handle) * u, W.cy + row * 0.095];
+      // the balloon: its 6 pairs in two rows of 3 on the upper half, the extra electrons in two rows of 5 on the lower half
+      if (row > 0) { const i = Math.min(5, Math.floor(u * 6)); return [W.cx + (i % 3 - 1) * 0.55, W.cy + (i < 3 ? -0.1 : -0.45)]; }
+      const k = Math.min(NSLOT - 1, Math.floor(u * NSLOT)); return [W.cx + (k % 5 - 2) * 0.3, W.cy + (k < 5 ? 0.5 : 0.2)];
+    }
+    // the extra electrons sit in 10 fixed slots (the cloth holds 10 pairs), so no two are drawn on top of each other;
+    // each one takes the free slot nearest where it crossed (on the balloon, the row nearest the cloth first)
+    const NSLOT = 10, slotU = k => (k + 0.5) / NSLOT;
+    function freeSlot(x) {
+      const W = Wd, used = new Set(W.gO.concat(W.flights.filter(f => f.toU !== undefined).map(f => f.toU)).map(u => Math.floor(u * NSLOT)));
+      let best = null, bd = 1e9;
+      for (let k = 0; k < NSLOT; k++) {
+        if (used.has(k)) continue;
+        const d = Math.abs(objPoint(slotU(k), -1)[0] - x) + (MAT[W.mat].shape === 'balloon' && k >= 5 ? 0.25 : 0) + 1e-3 * k;
+        if (d < bd) { bd = d; best = slotU(k); }
+      }
       return best;
     }
-
-    function touching() {
-      const r = state.rod;
-      return hasSphere() && Math.hypot(r.x - L.cx, r.y - L.cy) <= L.R + 2.5;
-    }
-    // "near": the charged end within two radii of the sphere's surface
-    const rodNear = () => hasSphere() && rodCharge() !== 0 && Math.hypot(state.rod.x - L.cx, state.rod.y - L.cy) < L.R * 3;
-    const rodAway = () => rodCharge() === 0 || Math.hypot(state.rod.x - L.cx, state.rod.y - L.cy) > L.R * 4;
-
-    function stepTransfers(dt) {
-      for (const f of state.flights) f.t += dt / 0.45;
-      const arrived = state.flights.filter(f => f.t >= 1);
-      state.flights = state.flights.filter(f => f.t < 1);
-      arrived.forEach(f => f.onArrive());
-
-      state.transferClock += dt;
-      if (!hasSphere() || state.transferClock < 0.12 || state.flights.length > 2) return;
-
-      const r = state.rod;
-      // Contact: only charge on the part of the rod that touches can move across.
-      if (touching()) {
-        const tipCharges = r.charges.filter(c => c.s < 34 && !c.pending).sort((a, b) => a.s - b.s);
-        if (tipCharges.length) {
-          const c = tipCharges[0];
-          state.transferClock = 0;
-          state.touched = true;
-          const tip = { x: r.x, y: r.y };
-          if (c.sign < 0) {
-            r.charges.splice(r.charges.indexOf(c), 1);
-            const ang = Math.atan2(tip.y - L.cy, tip.x - L.cx);
-            const inX = Math.cos(ang) * L.R * 0.82, inY = Math.sin(ang) * L.R * 0.82;
-            launch(tip, { x: L.cx + inX, y: L.cy + inY }, () => state.electrons.push({ x: inX, y: inY }));
-          } else if (state.electrons.length) {
-            const i = nearestElectron(tip.x, tip.y);
-            const e = state.electrons.splice(i, 1)[0];
-            c.pending = true;
-            launch({ x: L.cx + e.x, y: L.cy + e.y }, tip, () => {
-              const k = r.charges.indexOf(c);
-              if (k >= 0) r.charges.splice(k, 1);
-            });
-          }
-          return;
-        }
-      }
-      // Earth: electrons flow until the sphere's charge matches what the rod's presence demands.
-      if (hasEarth() && state.earthed) {
-        // A rod beyond 4 radii counts as "taken away" (the same test as step 4). The picture is too small to
-        // take it truly far, and at the canvas edge it would still hold one induced group on an earthed sphere,
-        // so a student who removes the rod before disconnecting the earth would wrongly see a charged sphere.
-        const target = rodAway() ? 0 : Math.round(externalPush().image);
-        const q = sphereCharge() + state.flights.reduce((s, f) => s + (f.earthDelta || 0), 0);
-        if (q < target && state.electrons.length) {
-          const i = nearestElectron(L.contact.x, L.contact.y);
-          const e = state.electrons.splice(i, 1)[0];
-          launch({ x: L.cx + e.x, y: L.cy + e.y }, { x: L.wireX, y: L.earthY }, () => {}, true);
-          state.transferClock = 0;
-        } else if (q > target) {
-          launch({ x: L.wireX, y: L.earthY }, { x: L.contact.x, y: L.contact.y }, () => {
-            state.electrons.push({ x: L.contact.x - L.cx, y: L.contact.y - L.cy });
-          }, true);
-          state.flights[state.flights.length - 1].earthDelta = -1;
-          state.transferClock = 0;
-        }
-      }
-    }
-
-    function flightPos(f) {
-      const t = Math.min(1, f.t);
-      if (f.via) {
-        // along the earth wire: sphere contact -> across -> down (or reverse)
-        const up = f.from.y > f.to.y;
-        const pts = up
-          ? [f.from, { x: L.wireX, y: L.contact.y }, { x: L.contact.x, y: L.contact.y }, f.to]
-          : [f.from, { x: L.contact.x, y: L.contact.y }, { x: L.wireX, y: L.contact.y }, f.to];
-        const segs = [];
-        let total = 0;
-        for (let i = 0; i < pts.length - 1; i++) { const d = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y); segs.push(d); total += d; }
-        let dist = t * total;
-        for (let i = 0; i < segs.length; i++) {
-          if (dist <= segs[i] || i === segs.length - 1) {
-            const k = segs[i] ? Math.min(1, dist / segs[i]) : 1;
-            return { x: pts[i].x + (pts[i + 1].x - pts[i].x) * k, y: pts[i].y + (pts[i + 1].y - pts[i].y) * k };
-          }
-          dist -= segs[i];
-        }
-      }
-      return { x: f.from.x + (f.to.x - f.from.x) * t, y: f.from.y + (f.to.y - f.from.y) * t };
-    }
-
-    // ---------- forces ----------
-    function forceOnSphere() {
-      if (!hasSphere()) return 0;
-      let fx = 0;
-      const rc = rodWorldCharges();
-      if (!rc.length) return 0;
-      const sphereCharges = IONS.map(p => ({ x: L.cx + p.fx * L.R, y: L.cy + p.fy * L.R, q: 1 }))
-        .concat(computeTargets(false).map(e => ({ x: L.cx + e.x, y: L.cy + e.y, q: -1 })));
-      for (const s of sphereCharges) for (const c of rc) {
-        const dx = s.x - c.x, dy = s.y - c.y, d = Math.hypot(dx, dy);
-        fx += s.q * c.q * dx / (d * d * d);
-      }
-      const rodLeft = state.rod.x < L.cx;
-      return rodLeft ? fx : -fx;
-    }
-
-    // ---------- drawing ----------
-    function setupCanvas() {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      const W = Math.round(rect.width * dpr), H = Math.round(rect.height * dpr);
-      if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
-      const ctx = canvas.getContext('2d');
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      return { ctx, w: rect.width, h: rect.height };
-    }
-    function drawSign(ctx, x, y, sign, r = 6.5) {
-      ctx.fillStyle = sign < 0 ? '#2563eb' : '#dc2626';
-      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = 'white'; ctx.lineWidth = 1.8;
-      ctx.beginPath(); ctx.moveTo(x - r * 0.55, y); ctx.lineTo(x + r * 0.55, y);
-      if (sign > 0) { ctx.moveTo(x, y - r * 0.55); ctx.lineTo(x, y + r * 0.55); }
-      ctx.stroke();
-    }
-    function drawPlus(ctx, x, y) {
-      ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2.2;
-      ctx.beginPath(); ctx.moveTo(x - 5, y); ctx.lineTo(x + 5, y); ctx.moveTo(x, y - 5); ctx.lineTo(x, y + 5); ctx.stroke();
-    }
-    function arrow(ctx, x1, y1, x2, y2, color, lw = 3, head = 10) {
-      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
-      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-      const a = Math.atan2(y2 - y1, x2 - x1);
-      ctx.beginPath(); ctx.moveTo(x2, y2);
-      ctx.lineTo(x2 - head * Math.cos(a - 0.45), y2 - head * Math.sin(a - 0.45));
-      ctx.lineTo(x2 - head * Math.cos(a + 0.45), y2 - head * Math.sin(a + 0.45));
-      ctx.closePath(); ctx.fill();
-    }
-
-    function draw() {
-      const { ctx, w, h } = setupCanvas();
-      const m = MATERIALS[materialEl.value];
-      ctx.clearRect(0, 0, w, h);
-      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, L.floorY, w, h - L.floorY);
-
-      if (hasCloth()) {
-        const c = L.cloth;
-        ctx.fillStyle = m.clothColor;
-        ctx.beginPath(); ctx.roundRect ? ctx.roundRect(c.x, c.y, c.w, c.h, 10) : ctx.rect(c.x, c.y, c.w, c.h); ctx.fill();
-        ctx.strokeStyle = m.clothPattern; ctx.lineWidth = 1.5;
-        for (let x = c.x + 8; x < c.x + c.w - 4; x += 9) { ctx.beginPath(); ctx.moveTo(x, c.y + 4); ctx.lineTo(x - 4, c.y + c.h - 4); ctx.stroke(); }
-        state.cloth.forEach(q => drawSign(ctx, c.x + q.fx * c.w, c.y + q.fy * c.h, q.sign, 6));
-        ctx.fillStyle = '#334155'; ctx.font = '13px Arial'; ctx.textAlign = 'left';
-        ctx.fillText(`${m.clothName} (rub the rod here)`, c.x, c.y + c.h + 17);
-      }
-
-      if (hasSphere()) {
-        // insulating stand
-        ctx.fillStyle = '#e7c9a0';
-        ctx.fillRect(L.cx - 6, L.cy + L.R - 4, 12, L.floorY - (L.cy + L.R - 4));
-        ctx.fillStyle = '#b08968'; ctx.fillRect(L.cx - 26, L.floorY - 6, 52, 6);
-        ctx.fillStyle = '#64748b'; ctx.font = '12px Arial'; ctx.textAlign = 'right';
-        ctx.fillText('insulating stand', L.cx - 12, L.floorY - 12);
-      }
-
-      if (hasEarth()) {
-        const wx = L.wireX, swTop = L.contact.y + (L.earthY - L.contact.y) * 0.35, swBot = swTop + 26;
-        ctx.strokeStyle = state.earthed ? '#15803d' : '#94a3b8'; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(L.contact.x, L.contact.y); ctx.lineTo(wx, L.contact.y); ctx.lineTo(wx, swTop); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(wx, swBot); ctx.lineTo(wx, L.earthY); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(wx, swTop);
-        if (state.earthed) ctx.lineTo(wx, swBot); else ctx.lineTo(wx + 20, swBot - 6);
-        ctx.stroke();
-        ctx.fillStyle = '#334155';
-        ctx.beginPath(); ctx.arc(wx, swTop, 3.5, 0, Math.PI * 2); ctx.arc(wx, swBot, 3.5, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = '#334155'; ctx.lineWidth = 3;
-        [[22, 0], [14, 7], [6, 14]].forEach(([hw, dy]) => { ctx.beginPath(); ctx.moveTo(wx - hw, L.earthY + dy); ctx.lineTo(wx + hw, L.earthY + dy); ctx.stroke(); });
-        const labRight = wx + 90 < L.w;
-        ctx.fillStyle = state.earthed ? '#15803d' : '#64748b'; ctx.font = 'bold 12px Arial'; ctx.textAlign = labRight ? 'left' : 'right';
-        ctx.fillText(state.earthed ? 'Earthed' : 'Earth off', wx + (labRight ? 14 : -10), swTop - 4);
-        ctx.font = '11px Arial'; ctx.fillStyle = '#64748b';
-        ctx.fillText('(tap switch)', wx + (labRight ? 14 : -10), swTop + 10);
-        L.switchBox = { x: wx - 16, y: swTop - 14, w: 60, h: swBot - swTop + 28 };
-      } else L.switchBox = null;
-
-      if (hasSphere()) {
-        const grad = ctx.createRadialGradient(L.cx - L.R * 0.35, L.cy - L.R * 0.35, L.R * 0.1, L.cx, L.cy, L.R);
-        grad.addColorStop(0, '#f8fafc'); grad.addColorStop(1, '#94a3b8');
-        ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(L.cx, L.cy, L.R, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.5; ctx.stroke();
-        IONS.forEach(p => drawPlus(ctx, L.cx + p.fx * L.R, L.cy + p.fy * L.R));
-        state.electrons.forEach(e => drawSign(ctx, L.cx + e.x, L.cy + e.y, -1, 5.5));
-        ctx.fillStyle = '#334155'; ctx.font = '13px Arial'; ctx.textAlign = 'center';
-        ctx.fillText('Metal sphere', L.cx, L.cy - L.R - 10);
-
-        const F = forceOnSphere(), fmag = Math.abs(F);
-        if (fmag > 2e-6) {
-          const len = Math.min(70, 14 + Math.sqrt(fmag) * 1500);
-          const dirToRod = state.rod.x < L.cx ? -1 : 1;
-          const d = F < 0 ? dirToRod : -dirToRod;
-          const ay = L.cy - L.R - 34;
-          arrow(ctx, L.cx, ay, L.cx + d * len, ay, F < 0 ? '#16a34a' : '#f59e0b', 3.5, 11);
-          ctx.fillStyle = F < 0 ? '#15803d' : '#b45309'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
-          ctx.fillText(F < 0 ? 'attracted to rod' : 'repelled by rod', L.cx + d * len / 2, ay - 9);
-        }
-      }
-
-      // rod
-      const r = state.rod;
-      const x0 = r.x - L.rodLen, handleEnd = r.x - L.chargedLen;
-      ctx.fillStyle = '#334155';
-      ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x0, r.y - L.rodThick / 2, handleEnd - x0, L.rodThick, 5) : ctx.rect(x0, r.y - L.rodThick / 2, handleEnd - x0, L.rodThick); ctx.fill();
-      ctx.fillStyle = m.rodColor; ctx.strokeStyle = m.rodEdge; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.roundRect ? ctx.roundRect(handleEnd, r.y - L.rodThick / 2, L.chargedLen, L.rodThick, 6) : ctx.rect(handleEnd, r.y - L.rodThick / 2, L.chargedLen, L.rodThick); ctx.fill(); ctx.stroke();
-      r.charges.forEach(q => drawSign(ctx, r.x - q.s, r.y, q.sign, 6));
-      ctx.fillStyle = '#334155'; ctx.font = '12px Arial'; ctx.textAlign = 'left';
-      ctx.fillText(`${m.rodName} (drag me)`, x0, r.y - L.rodThick / 2 - 6);
-
-      state.flights.forEach(f => { const p = flightPos(f); drawSign(ctx, p.x, p.y, -1, 6); });
-    }
-
-    // ---------- readouts and steps ----------
-    function describe(q) {
-      if (q === 0) return 'Neutral';
-      return q > 0 ? `Positive (+${q})` : `Negative (${q})`;
-    }
-    function updateSteps() {
-      const m = MATERIALS[materialEl.value];
-      const s = state.steps, sq = sphereCharge(), rq = rodCharge(), clothQ = state.cloth.reduce((a, c) => a + c.sign, 0);
-      if (tab === 'friction') {
-        if (rq !== 0 && clothQ !== 0) s[0] = true;
-      } else if (tab === 'contact') {
-        if (state.touched && sq !== 0 && Math.sign(sq) === m.rodSign) s[0] = true;
-        if (s[0] && rodAway() && sq !== 0 && Math.sign(sq) === m.rodSign && !state.flights.length) s[1] = true;
+    const clothXY = p => [CLOTH.x + p.fx * CLOTH.w, CLOTH.y + p.fy * CLOTH.h];
+    const SPOTS = [0.5, 0.3, 0.7, 0.1, 0.9, 0.4, 0.6, 0.2, 0.8, 0.5].map((fx, i) => ({ fx: fx + (i === 9 ? 0.05 : 0), fy: 0.5 }));
+    function rubTransfer() {
+      const W = Wd, M = MAT[W.mat], c = contactRange(); if (!c) return false;
+      const mid = (c[0] + c[1]) / 2;
+      if (M.gain === 'obj') {
+        // the cloth's pair nearest the middle of the contact gives up its electron to the object above it
+        let best = -1, bd = 1e9;
+        W.cl.forEach((p, i) => { if (p.lost) return; const x = clothXY(p)[0], d = (x < c[0] || x > c[1] ? 10 : 0) + Math.abs(x - mid) + 1e-3 * i; if (d < bd) { bd = d; best = i; } });
+        if (best < 0) return false;
+        const p = W.cl[best], [px, py] = clothXY(p);
+        const u = freeSlot(Math.max(c[0], Math.min(c[1], px))); if (u === null) return false;
+        p.lost = true;
+        spawn([[px + 0.12, py], [px + 0.12, py]], [{ o: '', k: 'gO', push: u }, { o: '', k: 'moved', d: 1 }], 0.3, { toU: u });
       } else {
-        // the steps only count in order, and touching the sphere spoils the run
-        if (state.touched) return;
-        if (!s[0] && rodNear() && !state.earthed) s[0] = true;
-        if (s[0] && !s[1] && rodNear() && state.earthed) s[1] = true;
-        if (s[1] && !s[2] && rodNear() && !state.earthed && sq !== 0 && Math.sign(sq) === -m.rodSign) s[2] = true;
-        if (s[2] && !s[3] && rodAway() && !state.earthed && sq !== 0 && Math.sign(sq) === -m.rodSign) s[3] = true;
+        // the object's pair nearest the middle of the contact gives up its electron to the cloth below it
+        let best = -1, bd = 1e9;
+        W.op.forEach((p, i) => { if (p.lost) return; const x = objPoint(p.u, 1)[0], d = (x < c[0] || x > c[1] ? 10 : 0) + Math.abs(x - mid) + 1e-3 * i; if (d < bd) { bd = d; best = i; } });
+        if (best < 0) return false;
+        const p = W.op[best]; p.lost = true;
+        const x = objPoint(p.u, 1)[0];
+        let sb = -1; bd = 1e9;
+        SPOTS.forEach((s, i) => { if (W.gC.some(g => g.i === i)) return; const d = Math.abs(clothXY(s)[0] - x) + 1e-3 * i; if (d < bd) { bd = d; sb = i; } });
+        if (sb < 0) return false;
+        const to = clothXY(SPOTS[sb]);
+        spawn([to, to], [{ o: '', k: 'gC', push: { i: sb } }, { o: '', k: 'moved', d: 1 }], 0.3, { fromU: p.u });
       }
+      return true;
     }
-    function updateReadout() {
-      const m = MATERIALS[materialEl.value];
-      const clothQ = state.cloth.reduce((s, c) => s + c.sign, 0);
-      el('rodTitle').textContent = m.rodName;
-      el('clothTitle').textContent = m.clothName;
-      el('rodValue').textContent = describe(rodCharge());
-      el('clothValue').textContent = describe(clothQ);
-      el('sphereValue').textContent = describe(sphereCharge());
-      const F = forceOnSphere();
-      el('forceValue').textContent = Math.abs(F) < 2e-6 ? 'None' : (F < 0 ? 'Attraction' : 'Repulsion');
-      const eb = el('earthBtn');
-      eb.textContent = state.earthed ? 'Disconnect earth wire' : 'Connect earth wire';
-      eb.className = state.earthed ? 'earth-on' : 'secondary';
-      updateSteps();
-      [...el('steps').children].forEach((li, i) => li.classList.toggle('done', state.steps[i]));
-      if (tab === 'induction' && state.touched) el('hint').textContent = 'The rod touched the sphere, so that was charging by contact. Press "Start again" to try induction without touching.';
+    const objQ = () => -Wd.gO.length + Wd.op.filter(p => p.lost).length;
+    const clothQ = () => -Wd.gC.length + Wd.cl.filter(p => p.lost).length;
+
+    /* ---- tab 2: the paths an electron takes to or from the Earth (wire, hand and body, metal stand) ---- */
+    function condPath() {
+      const W = Wd;
+      if (W.conn === 'hand') return [[SC.x + SC.R, SC.y], [WW + 0.6, SC.y]];
+      if (W.conn === 'stand') return [[SC.x, SC.y + SC.R], [SC.x, FLOOR]];
+      return [[SC.x + SC.R, SC.y], [SC.wireX, SC.y], [SC.wireX, SC.earthY]];
     }
 
-    // ---------- interaction ----------
-    let drag = null;
-    function pos(e) { const b = canvas.getBoundingClientRect(); return { x: e.clientX - b.left, y: e.clientY - b.top }; }
-    function onRod(p) {
-      const r = state.rod;
-      return p.x >= r.x - L.rodLen - 6 && p.x <= r.x + 8 && Math.abs(p.y - r.y) <= L.rodThick / 2 + 12;
-    }
-    const inSwitch = p => L.switchBox && p.x >= L.switchBox.x && p.x <= L.switchBox.x + L.switchBox.w && p.y >= L.switchBox.y && p.y <= L.switchBox.y + L.switchBox.h;
-    canvas.addEventListener('pointerdown', e => {
-      const p = pos(e);
-      if (inSwitch(p)) { state.earthed = !state.earthed; return; }
-      if (onRod(p)) {
-        drag = { dx: state.rod.x - p.x, dy: state.rod.y - p.y, lastX: p.x };
-        canvas.setPointerCapture(e.pointerId);
-        e.preventDefault();
+    /* ---- tabs 3 and 4: a rod and a sphere on an insulating stand ---- */
+    const rigGap = () => RG.touch - Wd.rod.x;
+    // how many electrons the rod moves across the sphere: more the nearer it is (never more than the rod's own charge)
+    function mAt(gap, q) { const a = Math.abs(q); if (!a) return 0; const m = gap <= 0.8 ? 4 : gap <= 1.5 ? 3 : gap <= 2.2 ? 2 : gap <= 2.9 ? 1 : 0; return Math.min(a, m); }
+    function rigTarget() { const W = Wd, gap = rigGap(), touching = gap <= 0.02; return { touching, mT: !W.induce || touching ? 0 : mAt(gap, W.rod.Q) }; }
+    const SPH_IN = [RG.touch + 0.3, RG.y], TIP = [RG.touch - 0.02, RG.y];
+    function rigSettle(doSpawn) {
+      const W = Wd, { touching, mT } = rigTarget();
+      if (W.rod.Q) W.sph.s = Math.sign(W.rod.Q);
+      let need = false;
+      // inside the sphere: free electrons drift towards a positive rod, or away from a negative one
+      const inside = W.flights.some(f => f.internal);
+      const mPend = W.sph.m + pend('sph', 'm');
+      if (mPend !== mT) {
+        need = true;
+        if (doSpawn && !inside && W.t >= W.spawnI) {
+          const up = mT > W.sph.m, toNear = (W.sph.s > 0) === up;
+          const L = [RG.x - 0.62 * RG.R, RG.y], R = [RG.x + 0.62 * RG.R, RG.y];
+          spawn(toNear ? [R, L] : [L, R], [{ o: 'sph', k: 'm', d: up ? 1 : -1 }], 0.4, { internal: true });
+          W.spawnI = W.t + 0.12;
+        }
       }
+      const Qs = W.sph.Q + pend('sph', 'Q'), Qr = W.rod.Q + pend('rod', 'Q');
+      // contact: free electrons pass between the rod and the sphere
+      if (touching) {
+        let dir = 0;   // +1: an electron from the rod onto the sphere; -1: from the sphere onto the rod
+        if (W.closed) dir = Qr < 0 ? 1 : Qr > 0 ? -1 : 0;
+        else if (W.rod.metal) { const target = Math.round(W.share * (Qs + Qr)); dir = Qs > target ? 1 : Qs < target ? -1 : 0; }
+        else if (W.rod.given < 2) dir = Qr < 0 ? 1 : Qr > 0 ? -1 : 0;
+        if (dir) {
+          need = true;
+          if (doSpawn && W.t >= W.spawnE) {
+            W.touched = true;
+            if (!W.rod.metal) W.rod.given++;
+            if (dir > 0) { W.rod.Q += 1; spawn([TIP, SPH_IN], [{ o: 'sph', k: 'Q', d: -1 }, { o: '', k: 'mvC', d: 1 }], 0.4); }
+            else { W.sph.Q += 1; spawn([SPH_IN, TIP], [{ o: 'rod', k: 'Q', d: -1 }, { o: '', k: 'mvC', d: 1 }], 0.4); }
+            W.dirC = dir; W.spawnE = W.t + 0.16;
+            return need;
+          }
+        }
+      }
+      // the earth wire: electrons flow until the sphere holds only the charge the rod's pull keeps on it
+      if (W.earth && W.closed) {
+        const target = touching ? 0 : -W.sph.s * W.sph.m;
+        if (Qs !== target && !(touching && Qr !== 0)) {
+          need = true;
+          if (doSpawn && W.t >= W.spawnE && !inside) {
+            const path = [[RG.x + RG.R, RG.y], [RG.wireX, RG.y], [RG.wireX, RG.earthY]];
+            if (Qs > target) { spawn(path.slice().reverse(), [{ o: 'sph', k: 'Q', d: -1 }, { o: '', k: 'mvUp', d: 1 }], 0.6); W.dirE = 1; }
+            else { W.sph.Q += 1; spawn(path, [{ o: '', k: 'mvDn', d: 1 }], 0.6); W.dirE = -1; }
+            W.spawnE = W.t + 0.2;
+          }
+        }
+      }
+      return need;
+    }
+    // where the sphere's charge sits: near the rod, on the far side, or spread evenly
+    function sphRegions() {
+      const W = Wd, s = W.sph.s, m = W.sph.m, Q = W.sph.Q;
+      if (!m) return { near: 0, far: 0, even: Q };
+      return { near: -s * m, far: Q + s * m, even: 0 };
+    }
+
+    /* ---- tabs 3 and 4: balls hanging from threads ---- */
+    const by0 = () => HG.top + HG.L;
+    const hangPos = (b, th) => [b.px + b.L * Math.sin(th), HG.top + b.L * Math.cos(th)];
+    const indF = b => (b.ins ? b.dip : b.m / b.mFull);
+    // the electric force on each ball: Coulomb's law between charges, plus the pull of a charged object on a neutral one
+    // (induced charges, notes pp. 6-30 and 6-31); the rod is long and upright, so it acts at the ball's own height
+    function hangForces(ths) {
+      const W = Wd, pos = W.balls.map((b, i) => hangPos(b, ths[i])), F = W.balls.map(() => [0, 0]);
+      W.balls.forEach((b, i) => {
+        const [x, y] = pos[i];
+        if (W.rod && W.rod.Q) {
+          const dx = x - W.rod.x, d = Math.max(0.05, Math.abs(dx)), u = Math.sign(dx) || 1;
+          let f = W.kC * b.Q * W.rod.Q / (d * d);
+          if (!b.Q) f -= W.kI * Math.abs(W.rod.Q) / (d * d * d) * indF(b);
+          F[i][0] += f * u;
+        }
+        W.balls.forEach((o, j) => {
+          if (j === i) return;
+          const dx = x - pos[j][0], dy = y - pos[j][1], d = Math.max(0.05, Math.hypot(dx, dy));
+          let f = W.kC * b.Q * o.Q / (d * d);
+          if (!b.Q && o.Q) f -= W.kI * Math.abs(o.Q) / d ** 3 * indF(b);
+          if (!o.Q && b.Q) f -= W.kI * Math.abs(b.Q) / d ** 3 * indF(o);
+          F[i][0] += f * dx / d; F[i][1] += f * dy / d;
+        });
+      });
+      return F;
+    }
+    function hangDeriv(st) {
+      const W = Wd, F = hangForces(W.balls.map((b, i) => st[2 * i]));
+      const out = [];
+      W.balls.forEach((b, i) => {
+        if (b.stuck) { out.push(0, 0); return; }
+        const th = st[2 * i], w = st[2 * i + 1];
+        out.push(w, (F[i][0] * Math.cos(th) - F[i][1] * Math.sin(th)) / (HG.m * b.L) - HG.g / b.L * Math.sin(th) - HG.damp * w);
+      });
+      return out;
+    }
+    function hangStep(h) {
+      const W = Wd, s = W.balls.flatMap(b => [b.th, b.w]);
+      const k1 = hangDeriv(s), k2 = hangDeriv(s.map((v, i) => v + h / 2 * k1[i])), k3 = hangDeriv(s.map((v, i) => v + h / 2 * k2[i])), k4 = hangDeriv(s.map((v, i) => v + h * k3[i]));
+      const n = s.map((v, i) => v + h / 6 * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]));
+      W.balls.forEach((b, i) => { if (!b.stuck) { b.th = n[2 * i]; b.w = n[2 * i + 1]; b.a = k4[2 * i + 1]; } });
+      // a ball that reaches the rod stops against it (Tutorial 6, C5)
+      if (W.touchStop && W.rod) W.balls.forEach(b => {
+        if (b.stuck || b.Q * W.rod.Q > 0) return;
+        const x = hangPos(b, b.th)[0], lim = b.R + HG.rodHalf;
+        if (Math.abs(x - W.rod.x) <= lim) { b.th = Math.asin((W.rod.x + lim * Math.sign(x - W.rod.x) - b.px) / b.L); b.w = 0; b.a = 0; b.stuck = true; W.touched = true; }
+      });
+    }
+    const hangRest = () => Wd.hold || Wd.balls.every(b => b.stuck || (Math.abs(b.w) < 2e-3 && Math.abs(b.a) < 5e-3));
+    // the swing has all but stopped: finish it exactly, where the forces along each thread balance (a few Newton steps),
+    // so the angle shown is the true resting angle, not wherever the swing happened to be judged still
+    function hangBalance(ths) {
+      const F = hangForces(ths);
+      return Wd.balls.map((b, i) => (b.stuck ? 0 : F[i][0] * Math.cos(ths[i]) - F[i][1] * Math.sin(ths[i]) - HG.m * HG.g * Math.sin(ths[i])));
+    }
+    function snapRest() {
+      const W = Wd, free = W.balls.map((b, i) => (b.stuck ? -1 : i)).filter(i => i >= 0);
+      let th = W.balls.map(b => b.th);
+      for (let it = 0; it < 30; it++) {
+        const f = hangBalance(th);
+        if (free.every(i => Math.abs(f[i]) < 1e-13)) break;
+        const A = free.map(i => free.map(j => { const t2 = th.slice(); t2[j] += 1e-7; return (hangBalance(t2)[i] - f[i]) / 1e-7; }));
+        let dx;
+        if (free.length === 1) dx = [-f[free[0]] / A[0][0]];
+        else { const det = A[0][0] * A[1][1] - A[0][1] * A[1][0], b0 = -f[free[0]], b1 = -f[free[1]]; dx = [(b0 * A[1][1] - A[0][1] * b1) / det, (A[0][0] * b1 - A[1][0] * b0) / det]; }
+        free.forEach((i, k) => { th[i] += dx[k]; });
+      }
+      // only a small correction is expected; anything else means the swing had not really settled, so keep it as it was
+      if (free.every(i => Math.abs(th[i] - W.balls[i].th) < 0.02)) free.forEach(i => { W.balls[i].th = th[i]; W.balls[i].w = 0; W.balls[i].a = 0; });
+    }
+    // the facing points of two things exchanging electrons
+    function contactPt(path, toward) {
+      const W = Wd, o = getObj(path);
+      if (path.startsWith('balls')) { const [x, y] = hangPos(o, o.th), a = Math.atan2(toward[1] - y, toward[0] - x); return [x + Math.cos(a) * o.R * 0.7, y + Math.sin(a) * o.R * 0.7]; }
+      if (path === 'rod') return [W.rod.x, by0()];
+      return [o.x, o.y];
+    }
+    const centreOf = path => { const o = getObj(path); return path.startsWith('balls') ? hangPos(o, o.th) : path === 'rod' ? [Wd.rod.x, by0()] : [o.x, o.y]; };
+    // one electron from a to b
+    function xferHang(a, b) { getObj(a).Q += 1; spawn([contactPt(a, centreOf(b)), contactPt(b, centreOf(a))], [{ o: b, k: 'Q', d: -1 }], 0.4); }
+    // inside a ball, an electron moves towards or away from the charged object beside it
+    function indFlight(i, dir) {
+      const W = Wd, b = W.balls[i], [x, y] = hangPos(b, b.th);
+      const src = W.rod ? [W.rod.x, y] : centreOf(i ? 'balls.0' : 'balls.1');
+      const srcQ = W.rod ? W.rod.Q : W.balls[1 - i].Q;
+      const a = Math.atan2(src[1] - y, src[0] - x), N = [x + Math.cos(a) * b.R * 0.6, y + Math.sin(a) * b.R * 0.6], F = [x - Math.cos(a) * b.R * 0.6, y - Math.sin(a) * b.R * 0.6];
+      const toNear = (srcQ > 0) === (dir > 0);
+      spawn(toNear ? [F, N] : [N, F], [{ o: 'balls.' + i, k: 'm', d: dir }], 0.35, { internal: true });
+    }
+
+    /* ---------------- drawing helpers ---------------- */
+    // what the canvas drew, for the checks: every label's box, every arrow, every + and −, the drag handles
+    window.__pim = { labels: [], arrows: [], panes: [], handles: [], marks: [] };
+    function setup(cv) {
+      const r = cv.getBoundingClientRect();
+      if (r.width < 20 || r.height < 20) return null; // hidden: never draw at no size
+      const dpr = window.devicePixelRatio || 1, cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
+      if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+      const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, r.width, r.height);
+      return { ctx, W: r.width, H: r.height };
+    }
+    // Canvas text with <i>, <sub> and <sup> runs, so symbols of physical quantities are italic, as in the notes.
+    function richText(ctx, s, x, y, measureOnly) {
+      const base = ctx.font, m = base.match(/([\d.]+)px/), size = m ? +m[1] : 12;
+      const runs = []; let it = false, sub = 0;
+      for (const tok of String(s).split(/(<\/?(?:i|sub|sup)>)/)) {
+        if (tok === '<i>') it = true; else if (tok === '</i>') it = false;
+        else if (tok === '<sub>') sub = 1; else if (tok === '<sup>') sub = -1;
+        else if (tok === '</sub>' || tok === '</sup>') sub = 0;
+        else if (tok) {
+          let f = sub ? base.replace(/[\d.]+px/, (size * 0.75).toFixed(1) + 'px') : base;
+          if (it) f = 'italic ' + f;
+          ctx.font = f; runs.push({ t: tok, f, sub, w: ctx.measureText(tok).width });
+        }
+      }
+      ctx.font = base;
+      const w = runs.reduce((a, r) => a + r.w, 0);
+      if (measureOnly) return w;
+      const align = ctx.textAlign;
+      let cx = align === 'center' ? x - w / 2 : (align === 'right' || align === 'end') ? x - w : x;
+      ctx.textAlign = 'left';
+      for (const r of runs) { ctx.font = r.f; ctx.fillText(r.t, cx, y + (r.sub === 1 ? size * 0.3 : r.sub === -1 ? -size * 0.4 : 0)); cx += r.w; }
+      ctx.textAlign = align; ctx.font = base;
+      return w;
+    }
+    let PANE = 'scene', CW = 1e9, CH = 1e9, CX0 = 0, CY0 = 0;
+    function arrow(ctx, x1, y1, x2, y2, color, lw = 3, head = 10, record = true) {
+      const len = Math.hypot(x2 - x1, y2 - y1); if (len < 1.5) return;
+      if (record) __pim.arrows.push({ pane: PANE, x1, y1, x2, y2 });
+      const a = Math.atan2(y2 - y1, x2 - x1), hd = Math.min(head, len * 0.6);
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - Math.cos(a) * hd * 0.8, y2 - Math.sin(a) * hd * 0.8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - hd * Math.cos(a - 0.45), y2 - hd * Math.sin(a - 0.45)); ctx.lineTo(x2 - hd * Math.cos(a + 0.45), y2 - hd * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill();
+    }
+    function labelBox(ctx, lines, x, y, align, size) {
+      ctx.font = `bold ${size}px Arial`;
+      const w = Math.max(...lines.map(t => richText(ctx, t, 0, 0, true))), lh = size * 1.6 + 1, h = lines.length * lh - 1;
+      const x0 = Math.max(CX0 + 4, Math.min(CW - w - 4, align === 'center' ? x - w / 2 : align === 'right' ? x - w : x));
+      const y0 = Math.max(CY0 + 2, Math.min(CH - h - 2, y - size * 0.8));
+      return { x: x0 - 3, y: y0, w: w + 6, h, lh, tx: x0, size };
+    }
+    const hitBox = (a, b, pad = 1) => Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) > pad && Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) > pad;
+    function crossesArrow(box) {
+      return __pim.arrows.some(a => { if (a.pane !== PANE) return false; for (let k = 0; k <= 24; k++) { const px = a.x1 + (a.x2 - a.x1) * k / 24, py = a.y1 + (a.y2 - a.y1) * k / 24;
+        if (px > box.x + 0.5 && px < box.x + box.w - 0.5 && py > box.y + 0.5 && py < box.y + box.h - 0.5) return true; } return false; });
+    }
+    // labels on white cards, one card per line
+    function label(ctx, lines, x, y, color, align = 'center', size = 12) {
+      if (!Array.isArray(lines)) lines = [lines];
+      const b = labelBox(ctx, lines, x, y, align, size);
+      lines.forEach((t, i) => {
+        const card = { pane: PANE, text: t.replace(/<[^>]+>/g, ''), x: b.x, y: b.y + i * b.lh, w: b.w, h: size * 1.6 };
+        ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fillRect(card.x, card.y, card.w, card.h);
+        ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.font = `bold ${size}px Arial`; richText(ctx, t, b.tx, card.y + size * 0.8);
+        ctx.textBaseline = 'alphabetic';
+        __pim.labels.push(card);
+      });
+      return b;
+    }
+    // a label at the first of several spots clear of every label, object and arrow already drawn (none clear: left out)
+    function labelAt(ctx, text, cands, color, size = 12) {
+      for (const [x, y, al, t = text] of cands) {
+        const b = labelBox(ctx, Array.isArray(t) ? t : [t], x, y, al, size);
+        if (!__pim.labels.some(l => l.pane === PANE && hitBox(l, b)) && !crossesArrow(b)) return label(ctx, t, x, y, color, al, size);
+      }
+      return null;
+    }
+    function dashLine(ctx, x1, y1, x2, y2, color = '#94a3b8') {
+      ctx.strokeStyle = color; ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
+    }
+    function pane(r, name) { PANE = name; CX0 = r.x; CY0 = r.y; CW = r.x + r.w; CH = r.y + r.h; __pim.panes.push(Object.assign({ name }, r)); return r; }
+    const obstacle = (x, y, w, h) => __pim.labels.push({ pane: PANE, obstacle: true, text: '', x, y, w, h });
+    const markR = () => Math.max(4, Math.min(7, 0.1 * V.s));
+    // a + (red) or a − (blue), as the notes draw them; who = the object it belongs to (for the checks)
+    function mark(ctx, x, y, q, who, r = markR()) {
+      ctx.fillStyle = q > 0 ? COL.pos : COL.neg;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'white'; ctx.lineWidth = Math.max(1.4, r * 0.3);
+      ctx.beginPath(); ctx.moveTo(x - r * 0.55, y); ctx.lineTo(x + r * 0.55, y);
+      if (q > 0) { ctx.moveTo(x, y - r * 0.55); ctx.lineTo(x, y + r * 0.55); }
+      ctx.stroke();
+      __pim.marks.push({ who, x, y, q });
+    }
+    function metalBall(ctx, x, y, R, fill) {
+      const g = ctx.createRadialGradient(x - R * 0.35, y - R * 0.35, R * 0.1, x, y, R);
+      if (fill) { g.addColorStop(0, '#fffbeb'); g.addColorStop(1, fill); } else { g.addColorStop(0, '#f8fafc'); g.addColorStop(0.6, '#cbd5e1'); g.addColorStop(1, '#64748b'); }
+      ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill(); ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.5; ctx.stroke();
+      obstacle(x - R, y - R, 2 * R, 2 * R);
+    }
+    // n marks of one sign on an arc of a circle (radius r px), centred on angle c
+    function arcMarks(ctx, x, y, r, n, q, c, who, gap = 0.3) {
+      for (let i = 0; i < n; i++) { const a = c + (i - (n - 1) / 2) * gap; mark(ctx, x + Math.cos(a) * r, y + Math.sin(a) * r, q, who); }
+    }
+    function evenMarks(ctx, x, y, r, n, q, who, a0 = -Math.PI / 2) {
+      for (let i = 0; i < n; i++) { const a = a0 + i * 2 * Math.PI / n; mark(ctx, x + Math.cos(a) * r, y + Math.sin(a) * r, q, who); }
+    }
+    function earthSymbol(ctx, x, y) {
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 3;
+      [[0.36, 0], [0.24, 0.11], [0.12, 0.22]].forEach(([hw, dy]) => { ctx.beginPath(); ctx.moveTo(X(x - hw), Y(y + dy)); ctx.lineTo(X(x + hw), Y(y + dy)); ctx.stroke(); });
+      obstacle(X(x - 0.36), Y(y) - 3, 0.72 * V.s, 0.25 * V.s);
+    }
+    // an earth wire from (x0, y0) along to wireX and down to the Earth, with a switch; returns the switch's tap area
+    function earthWire(ctx, x0, y0, wireX, swTop, swBot, earthY, closed) {
+      ctx.strokeStyle = closed ? COL.earth : '#94a3b8'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(X(x0), Y(y0)); ctx.lineTo(X(wireX), Y(y0)); ctx.lineTo(X(wireX), Y(swTop)); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(X(wireX), Y(swBot)); ctx.lineTo(X(wireX), Y(earthY)); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(X(wireX), Y(swTop));
+      if (closed) ctx.lineTo(X(wireX), Y(swBot)); else ctx.lineTo(X(wireX + 0.32), Y(swBot - 0.1));
+      ctx.stroke();
+      ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.arc(X(wireX), Y(swTop), 3.5, 0, Math.PI * 2); ctx.arc(X(wireX), Y(swBot), 3.5, 0, Math.PI * 2); ctx.fill();
+      earthSymbol(ctx, wireX, earthY);
+      obstacle(X(wireX) - 6, Y(swTop) - 4, X(wireX + 0.4) - X(wireX) + 8, Y(swBot) - Y(swTop) + 8);
+      return { x: X(wireX) - 22, y: Y(swTop) - 14, w: 0.6 * V.s + 30, h: Y(swBot) - Y(swTop) + 28 };
+    }
+    function flightAt(f) {
+      const W = Wd, u = Math.min(1, f.t / f.dur);
+      if (f.toU !== undefined) { const a = f.pts[0], b = objPoint(f.toU, -1); return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u]; }
+      if (f.fromU !== undefined) { const a = objPoint(f.fromU, 1), b = f.pts[1]; return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u]; }
+      return along(f.pts, u);
+    }
+
+    /* ---------------- drawing ---------------- */
+    let switchBox = null;
+    function draw() {
+      __pim = window.__pim = { labels: [], arrows: [], panes: [], handles: [], marks: [] };
+      switchBox = null;
+      if (currentTab > 4 || !Wd) return;
+      const w = canvas.clientWidth; if (w < 20) return;
+      // the part of the world each kind of scene uses; the picture keeps its shape (on a phone the canvas is shorter)
+      const [x0, y0, x1, y1] = VIEW[Wd.rig], vw = x1 - x0, vh = y1 - y0;
+      const want = Math.round(Math.max(250, Math.min(410, w * vh / vw)));
+      if (canvas.style.height !== want + 'px') canvas.style.height = want + 'px';
+      const c = setup(canvas); if (!c) return;
+      const { ctx, W, H } = c;
+      V.s = Math.min(W / vw, H / vh); V.ox = (W - vw * V.s) / 2 - x0 * V.s; V.oy = (H - vh * V.s) / 2 - y0 * V.s;
+      pane({ x: 0, y: 0, w: W, h: H }, 'scene');
+      if (Wd.rig === 'fric') drawFric(ctx, W, H);
+      else if (Wd.rig === 'cond') drawCond(ctx, W, H);
+      else if (Wd.rig === 'rig') drawRig(ctx, W, H);
+      else drawHang(ctx, W, H);
+      // electrons on their way: blue dots with a minus
+      for (const f of Wd.flights) { const [x, y] = flightAt(f); mark(ctx, X(x), Y(y), -1, 'flight', markR() + 0.5); }
+      // bottom right, else bottom left; on one line where it fits, else on two
+      const one = 'Each + or − drawn stands for many charges.', two = ['Each + or − stands', 'for many charges.'];
+      labelAt(ctx, one, (W < 520 ? [] : [[W - 6, H - 12, 'right', one], [6, H - 12, 'left', one]]).concat([[W - 6, H - 30, 'right', two], [6, H - 30, 'left', two]]), '#64748b', 11);
+    }
+    function floor(ctx, W, H) { ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, Y(FLOOR), W, H - Y(FLOOR)); }
+
+    // tab 1: an object rubbed on a cloth
+    function drawFric(ctx, W, H) {
+      const Wl = Wd, M = MAT[Wl.mat], r = markR(), dx = 0.15;
+      // the cloth, lying on the bench
+      const cx0 = X(CLOTH.x), cy0 = Y(CLOTH.y), cw = CLOTH.w * V.s, ch = CLOTH.h * V.s;
+      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, cy0 + ch + 4, W, H - cy0 - ch - 4);
+      ctx.fillStyle = M.cc; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(cx0, cy0, cw, ch, 10); else ctx.rect(cx0, cy0, cw, ch); ctx.fill();
+      ctx.strokeStyle = M.cp; ctx.lineWidth = 1.3;
+      for (let x = cx0 + 9; x < cx0 + cw - 5; x += 10) { ctx.beginPath(); ctx.moveTo(x, cy0 + 4); ctx.lineTo(x - 4, cy0 + ch - 4); ctx.stroke(); }
+      obstacle(cx0, cy0, cw, ch);
+      Wl.cl.forEach(p => {
+        const [x, y] = clothXY(p);
+        if (showAll) { mark(ctx, X(x - dx), Y(y), 1, 'cloth'); if (!p.lost) mark(ctx, X(x + dx), Y(y), -1, 'cloth'); }
+        else if (p.lost) mark(ctx, X(x), Y(y), 1, 'cloth');
+      });
+      Wl.gC.forEach(g => { const [x, y] = clothXY(SPOTS[g.i]); mark(ctx, X(x), Y(y), -1, 'cloth'); });
+      label(ctx, M.cloth, X(CLOTH.x + CLOTH.w / 2), cy0 + ch + 18, '#334155', 'center', 12);
+      // the object
+      if (M.shape === 'rod') {
+        const x0 = Wl.cx - ROD1.len / 2, xh = x0 + ROD1.handle, x1 = Wl.cx + ROD1.len / 2, t = ROD1.th;
+        ctx.fillStyle = '#334155'; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(X(x0), Y(Wl.cy - t / 2), ROD1.handle * V.s, t * V.s, 5); else ctx.rect(X(x0), Y(Wl.cy - t / 2), ROD1.handle * V.s, t * V.s); ctx.fill();
+        ctx.fillStyle = M.oc; ctx.strokeStyle = M.oe; ctx.lineWidth = 1.5;
+        ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(X(xh), Y(Wl.cy - t / 2), (x1 - xh) * V.s, t * V.s, 6); else ctx.rect(X(xh), Y(Wl.cy - t / 2), (x1 - xh) * V.s, t * V.s); ctx.fill(); ctx.stroke();
+        obstacle(X(x0), Y(Wl.cy - t / 2), ROD1.len * V.s, t * V.s);
+        __pim.handles.push({ id: 'obj', x: X(Wl.cx), y: Y(Wl.cy), w: ROD1.len * V.s, h: t * V.s + 16 });
+      } else {
+        const bx = X(Wl.cx), byy = Y(Wl.cy), rx = BAL.rx * V.s, ry = BAL.ry * V.s;
+        ctx.strokeStyle = '#64748b'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(bx - rx - 6, byy); ctx.quadraticCurveTo(bx - rx - 30, byy - 20, bx - rx - 40, byy - 50); ctx.stroke();
+        ctx.fillStyle = M.oe; ctx.beginPath(); ctx.moveTo(bx - rx + 1, byy); ctx.lineTo(bx - rx - 8, byy - 5); ctx.lineTo(bx - rx - 8, byy + 5); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = M.oc; ctx.strokeStyle = M.oe; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(bx, byy, rx, ry, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        obstacle(bx - rx - 10, byy - ry, 2 * rx + 10, 2 * ry);
+        __pim.handles.push({ id: 'obj', x: bx, y: byy, w: 2 * rx, h: 2 * ry });
+      }
+      Wl.op.forEach(p => {
+        const [x, y] = objPoint(p.u, 1);
+        if (showAll) { mark(ctx, X(x - dx * 0.85), Y(y), 1, 'obj', r * 0.9); if (!p.lost) mark(ctx, X(x + dx * 0.85), Y(y), -1, 'obj', r * 0.9); }
+        else if (p.lost) mark(ctx, X(x), Y(y), 1, 'obj', r * 0.9);
+      });
+      Wl.gO.forEach(u => { const [x, y] = objPoint(u, -1); mark(ctx, X(x), Y(y), -1, 'obj', r * 0.9); });
+      const top = M.shape === 'rod' ? Wl.cy - ROD1.th / 2 : Wl.cy - BAL.ry;
+      labelAt(ctx, M.obj, [[X(Wl.cx), Y(top) - 14, 'center'], [X(Wl.cx), Y(top) - 34, 'center']], '#334155', 12);
+    }
+
+    // tab 2: a sphere on a stand, and its connection to the Earth
+    function drawCond(ctx, W, H) {
+      const Wl = Wd, x = X(SC.x), y = Y(SC.y), R = SC.R * V.s;
+      floor(ctx, W, H);
+      const metalStand = Wl.conn === 'stand';
+      ctx.fillStyle = metalStand ? '#94a3b8' : '#e7c9a0';
+      ctx.fillRect(x - 0.11 * V.s, y + R - 2, 0.22 * V.s, Y(FLOOR) - y - R + 2);
+      ctx.fillStyle = metalStand ? '#64748b' : '#b08968'; ctx.fillRect(x - 0.5 * V.s, Y(FLOOR) - 0.12 * V.s, V.s, 0.12 * V.s);
+      obstacle(x - 0.11 * V.s, y + R, 0.22 * V.s, Y(FLOOR) - y - R); obstacle(x - 0.5 * V.s, Y(FLOOR) - 0.12 * V.s, V.s, 0.12 * V.s);
+      if (Wl.conn === 'wire') switchBox = earthWire(ctx, SC.x + SC.R, SC.y, SC.wireX, SC.swTop, SC.swBot, SC.earthY, Wl.closed);
+      if (Wl.conn === 'hand') {
+        const hx = X(Wl.handX), hy = y, hw = 0.32 * V.s;
+        ctx.fillStyle = '#f2c9a8'; ctx.strokeStyle = '#b07a55'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(hx, hy - hw / 2, W - hx + 20, hw, hw / 2); else ctx.rect(hx, hy - hw / 2, W - hx + 20, hw); ctx.fill(); ctx.stroke();
+        obstacle(hx, hy - hw / 2, W - hx, hw);
+      }
+      if (metalStand) earthSymbol(ctx, SC.x, FLOOR + 0.08);
+      if (Wl.metal) metalBall(ctx, x, y, R); else { ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.fillStyle = '#f8fafc'; ctx.fill(); ctx.strokeStyle = '#64748b'; ctx.lineWidth = 1.5; ctx.stroke(); obstacle(x - R, y - R, 2 * R, 2 * R); }
+      // the charge: put on one small region; on a metal it spreads evenly over the surface
+      const n = Math.abs(Wl.Q), q = Math.sign(Wl.Q), sp = Wl.metal ? ease(Wl.spread) : 0;
+      for (let i = 0; i < n; i++) {
+        const aR = SC.a0 + (i - (n - 1) / 2) * 0.2, aE = SC.a0 + i * 2 * Math.PI / n, a = aR + (aE - aR) * sp;
+        mark(ctx, x + Math.cos(a) * R * 0.8, y + Math.sin(a) * R * 0.8, q, 'sph');
+      }
+      label(ctx, Wl.metal ? 'Metal sphere' : 'Plastic sphere (an insulator)', x, y - R - 16, '#334155', 'center', 12);
+      label(ctx, metalStand ? 'metal stand' : 'insulating stand', x - 0.2 * V.s, Y(FLOOR) - 0.45 * V.s, '#64748b', 'right', 11);
+      if (Wl.conn === 'wire') earthWireLabel(ctx, W, SC, Wl.closed);
+      if (Wl.conn === 'wire') labelAt(ctx, 'Earth', [[X(SC.wireX + 0.5), Y(SC.earthY + 0.1), 'left'], [X(SC.wireX - 0.5), Y(SC.earthY + 0.1), 'right']], '#334155', 11);
+      if (Wl.conn === 'hand') labelAt(ctx, 'A hand (the body is joined to the Earth)', [[W - 6, y - 0.55 * V.s, 'right'], [W - 6, y + 0.55 * V.s, 'right']], '#7c4a2d', 11);
+      if (metalStand) labelAt(ctx, 'Earth', [[x + 0.5 * V.s, Y(FLOOR) + 0.25 * V.s, 'left']], '#334155', 11);
+    }
+
+    // beside the switch, clear of it; where the canvas is too narrow, above the wire's run to the right of the sphere
+    function earthWireLabel(ctx, W, G, closed) {
+      const t = ['Earth wire', closed ? 'connected' : 'not connected'], ym = Y((G.swTop + G.swBot) / 2) - 9;
+      labelAt(ctx, t, [[X(G.wireX + 0.6), ym, 'left'], [W - 4, Y(G.y) - 0.3 * V.s - 30, 'right'], [X(G.wireX - 0.3), ym, 'right']], closed ? COL.earth : '#64748b', 11);
+    }
+
+    // tabs 3 and 4: a rod and a sphere on an insulating stand
+    function drawRig(ctx, W, H) {
+      const Wl = Wd, x = X(RG.x), y = Y(RG.y), R = RG.R * V.s;
+      floor(ctx, W, H);
+      ctx.fillStyle = '#e7c9a0'; ctx.fillRect(x - 0.1 * V.s, y + R - 2, 0.2 * V.s, Y(FLOOR) - y - R + 2);
+      ctx.fillStyle = '#b08968'; ctx.fillRect(x - 0.45 * V.s, Y(FLOOR) - 0.12 * V.s, 0.9 * V.s, 0.12 * V.s);
+      obstacle(x - 0.1 * V.s, y + R, 0.2 * V.s, Y(FLOOR) - y - R); obstacle(x - 0.45 * V.s, Y(FLOOR) - 0.12 * V.s, 0.9 * V.s, 0.12 * V.s);
+      if (Wl.earth) switchBox = earthWire(ctx, RG.x + RG.R, RG.y, RG.wireX, RG.swTop, RG.swBot, RG.earthY, Wl.closed);
+      metalBall(ctx, x, y, R);
+      const reg = sphRegions(), rr = R * 0.78;
+      if (reg.even) evenMarks(ctx, x, y, rr, Math.abs(reg.even), Math.sign(reg.even), 'sph');
+      if (reg.near) arcMarks(ctx, x, y, rr, Math.abs(reg.near), Math.sign(reg.near), Math.PI, 'near', Math.abs(reg.near) > 5 ? 0.24 : 0.32);
+      if (reg.far) arcMarks(ctx, x, y, rr, Math.abs(reg.far), Math.sign(reg.far), 0, 'far', Math.abs(reg.far) > 5 ? 0.24 : 0.32);
+      // the rod: a handle, then the part that carries the charge
+      const rx1 = X(Wl.rod.x), rx0 = X(Wl.rod.x - RG.len), rh = X(Wl.rod.x - RG.len + RG.handle), t = RG.th * V.s;
+      ctx.fillStyle = '#334155'; ctx.fillRect(rx0, y - t / 2, rh - rx0, t);
+      ctx.fillStyle = Wl.rod.metal ? '#94a3b8' : '#fbbf24'; ctx.strokeStyle = Wl.rod.metal ? '#475569' : '#b45309'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(rh, y - t / 2, rx1 - rh, t, 5); else ctx.rect(rh, y - t / 2, rx1 - rh, t); ctx.fill(); ctx.stroke();
+      obstacle(rx0, y - t / 2, rx1 - rx0, t);
+      __pim.handles.push({ id: 'rod', x: (rx0 + rx1) / 2, y, w: rx1 - rx0, h: t + 16 });
+      const nq = Math.abs(Wl.rod.Q);
+      for (let i = 0; i < nq; i++) { const u = nq === 1 ? 0.5 : i / (nq - 1); mark(ctx, rx1 - 0.15 * V.s - u * (rx1 - rh - 0.3 * V.s), y, Math.sign(Wl.rod.Q), 'rod', markR() * 0.9); }
+      // the force between them
+      const { touching } = rigTarget(), gap = rigGap();
+      let fk = 0;
+      if (!touching && gap < 2.9 && Wl.rod.Q) {
+        if (Wl.sph.m > 0 || Wl.sph.Q * Wl.rod.Q < 0) fk = -1; else if (Wl.sph.Q * Wl.rod.Q > 0) fk = 1;
+      }
+      const ya = y - R - 0.42 * V.s;
+      if (fk) arrow(ctx, x, ya, x + fk * 0.95 * V.s, ya, COL.force, 3, 10);
+      label(ctx, 'Metal sphere', x, y - R - (fk ? 0.9 * V.s : 16), '#334155', 'center', 12);
+      if (fk) labelAt(ctx, fk < 0 ? 'attracted to the rod' : 'repelled by the rod', [[x + fk * 0.5 * V.s, ya - 14, 'center'], [x + fk * 1.1 * V.s, ya, fk < 0 ? 'right' : 'left']], COL.force, 11);
+      labelAt(ctx, Wl.rod.metal ? 'Metal rod' : 'Charged rod', [[(rh + rx1) / 2, y - t / 2 - 14, 'center'], [(rh + rx1) / 2, y + t / 2 + 16, 'center']], '#334155', 12);
+      label(ctx, 'insulating stand', x - 0.2 * V.s, Y(FLOOR) - 0.45 * V.s, '#64748b', 'right', 11);
+      if (Wl.earth) {
+        earthWireLabel(ctx, W, RG, Wl.closed);
+        labelAt(ctx, 'Earth', [[X(RG.wireX - 0.5), Y(RG.earthY + 0.1), 'right']], '#334155', 11);
+      }
+      if (Wl.unit) labelAt(ctx, 'Each + is 1 µC', [[10, 18, 'left']], '#334155', 11);
+    }
+
+    // tabs 3 and 4: balls hanging from threads
+    function drawHang(ctx, W, H) {
+      const Wl = Wd, top = Y(HG.top);
+      floor(ctx, W, H);
+      ctx.fillStyle = '#94a3b8'; ctx.fillRect(X(1.2), top - 0.12 * V.s, 8.6 * V.s, 0.12 * V.s);
+      const F = !Wl.hold ? hangForces(Wl.balls.map(b => b.th)) : Wl.balls.map(() => [0, 0]);
+      // the rod (upright)
+      if (Wl.rod) {
+        const rx = X(Wl.rod.x), y0 = Y(by0() - 1.3), y1 = Y(by0() + 1.3), hw = HG.rodHalf * V.s;
+        ctx.fillStyle = '#fbbf24'; ctx.strokeStyle = '#b45309'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(rx - hw, y0, 2 * hw, y1 - y0, 4); else ctx.rect(rx - hw, y0, 2 * hw, y1 - y0); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#334155'; ctx.fillRect(rx - hw, y1, 2 * hw, 0.7 * V.s);
+        obstacle(rx - hw, y0, 2 * hw, y1 - y0 + 0.7 * V.s);
+        const n = Math.abs(Wl.rod.Q);
+        for (let i = 0; i < n; i++) mark(ctx, rx, y0 + 0.2 * V.s + (n === 1 ? 0.5 : i / (n - 1)) * (y1 - y0 - 0.4 * V.s), Math.sign(Wl.rod.Q), 'rod', markR() * 0.9);
+        labelAt(ctx, 'Charged rod', [[rx, y0 - 14, 'center'], [rx + hw + 6, y0 + 10, 'left']], '#334155', 12);
+      }
+      Wl.balls.forEach((b, i) => {
+        const px = X(b.px), [bx, byy] = hangPos(b, b.th), x = X(bx), y = Y(byy), R = b.R * V.s;
+        dashLine(ctx, px, top, px, Y(by0()) + R);
+        ctx.strokeStyle = '#111827'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(px, top); ctx.lineTo(x, y); ctx.stroke();
+        if (b.ins) {
+          ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.fillStyle = '#fde68a'; ctx.fill(); ctx.strokeStyle = '#a16207'; ctx.lineWidth = 1.5; ctx.stroke();
+          obstacle(x - R, y - R, 2 * R, 2 * R);
+          // molecules: each a + end and a − end; near the rod they turn their most attractive side towards it
+          const toward = Wl.rod ? Math.atan2(0, Wl.rod.x - bx) : 0, plusAng = Wl.rod && Wl.rod.Q < 0 ? toward : toward + Math.PI;
+          [[-0.38, -0.32, 2.1], [0.36, -0.3, 0.7], [-0.36, 0.34, 4.4], [0.38, 0.32, 5.5]].forEach(([ox, oy, a0]) => {
+            const a = a0 + (plusAng - a0) * b.dip, cx = x + ox * R, cy = y + oy * R, ex = 0.3 * R, ey = 0.15 * R;
+            ctx.save(); ctx.translate(cx, cy); ctx.rotate(a); ctx.strokeStyle = '#475569'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(0, 0, ex, ey, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+            const pr = Math.max(2.5, ey * 0.8);
+            mark(ctx, cx + Math.cos(a) * ex * 0.55, cy + Math.sin(a) * ex * 0.55, 1, 'mol' + i, pr);
+            mark(ctx, cx - Math.cos(a) * ex * 0.55, cy - Math.sin(a) * ex * 0.55, -1, 'mol' + i, pr);
+          });
+        } else {
+          metalBall(ctx, x, y, R);
+          const src = Wl.rod ? [Wl.rod.x, byy] : Wl.balls.length > 1 ? hangPos(Wl.balls[1 - i], Wl.balls[1 - i].th) : null;
+          const srcQ = Wl.rod ? Wl.rod.Q : Wl.balls.length > 1 ? Wl.balls[1 - i].Q : 0;
+          if (b.m && src) {
+            const a = Math.atan2(src[1] - byy, src[0] - bx), s = Math.sign(srcQ) || 1;
+            arcMarks(ctx, x, y, R * 0.64, b.m, -s, a, 'ball' + i, (2 * markR() + 2) / (R * 0.64));
+            arcMarks(ctx, x, y, R * 0.64, b.m, s, a + Math.PI, 'ball' + i, (2 * markR() + 2) / (R * 0.64));
+          } else if (b.Q) evenMarks(ctx, x, y, R * 0.62, Math.abs(b.Q), Math.sign(b.Q), 'ball' + i);
+        }
+        __pim.handles.push({ id: 'ball' + i, x, y, r: R });
+        // the electric force on the ball
+        const fm = Math.hypot(F[i][0], F[i][1]);
+        if (fm > 0.03) {
+          const ux = F[i][0] / fm, uy = F[i][1] / fm;
+          let len = Math.min(1.2, 0.45 + fm * 0.22) * V.s, lift = 0;
+          // two forces that point at each other share the gap between the objects: each takes less than half of it
+          const rodGap = Wl.rod && i === 0 && Math.sign(ux) === Math.sign(X(Wl.rod.x) - x) ? Math.abs(X(Wl.rod.x) - x) - R - HG.rodHalf * V.s : Infinity;
+          if (rodGap / 2 - 9 >= 8) len = Math.min(len, rodGap / 2 - 9);
+          // a gap too narrow for two arrows: the ball's force keeps the gap, the rod's force is drawn lower down the rod
+          else if (rodGap < Infinity) { len = Math.min(len, Math.max(8, rodGap - 6)); lift = 12; }
+          Wl.balls.forEach((o, j) => {
+            if (j === i) return;
+            const [ox, oy] = hangPos(o, o.th), dx = X(ox) - x, dy = Y(oy) - y, d = Math.hypot(dx, dy);
+            if (ux * dx + uy * dy > 0) len = Math.min(len, (d - R - o.R * V.s) / 2 - 9);
+          });
+          len = Math.max(8, len);
+          arrow(ctx, x + ux * (R + 2), y + uy * (R + 2), x + ux * (R + 2 + len), y + uy * (R + 2 + len), COL.force, 3, 10);
+          labelAt(ctx, '<i>F</i>', [[x + ux * (R + len / 2), y - R - 14, 'center'], [x + ux * (R + len + 10), y, ux > 0 ? 'left' : 'right']], COL.force, 13);
+          if (Wl.rod && i === 0) {   // the equal and opposite force on the rod
+            const rx = X(Wl.rod.x) - ux * (HG.rodHalf * V.s + 2), rl = lift ? 8 : len, yr = y + lift;
+            arrow(ctx, rx, yr, rx - ux * rl, yr, COL.force, 3, 10);
+            labelAt(ctx, '<i>F</i>', lift ? [[rx - ux * rl / 2, yr + 16, 'center'], [rx + ux * 10, yr + 16, ux > 0 ? 'right' : 'left']]
+              : [[rx - ux * len / 2, y - 14, 'center'], [rx - ux * (len + 10), y, ux > 0 ? 'right' : 'left']], COL.force, 13);
+          }
+        }
+        if (b.name) labelAt(ctx, (Wl.id === 'b3' ? 'Balloon ' : 'Ball ') + b.name, [[x, y + R + 16, 'center'], [x, y + R + 36, 'center']], '#334155', 12);
+      });
+      if (!Wl.balls.some(b => b.name)) {
+        const b = Wl.balls[0], [bx, byy] = hangPos(b, b.th);
+        labelAt(ctx, b.ins ? 'Neutral insulator' : Wl.id === 'c5' ? 'Metal ball' : 'Neutral conductor', [[X(bx), Y(byy + b.R) + 18, 'center'], [X(bx), Y(byy + b.R) + 40, 'center']], '#334155', 12);
+      }
+      // the charged metals that touch the balls, on insulating handles
+      Wl.probes.forEach((p, k) => {
+        if (p.x < -0.5 || p.x > WW + 0.5) return;
+        const x = X(p.x), y = Y(p.y), R = 0.27 * V.s, side = k === 0 && Wl.probes.length > 1 ? -1 : (p.x < 5.5 ? -1 : 1);
+        ctx.strokeStyle = '#b45309'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x, y + R); ctx.lineTo(x + side * 0.5 * V.s, y + 1.6 * V.s); ctx.stroke();
+        metalBall(ctx, x, y, R);
+        // a small ball: the marks go on a wider ring, drawn a little smaller, so six of them stay apart on a phone
+        const nq = Math.abs(p.Q);
+        for (let i = 0; i < nq; i++) { const a = -Math.PI / 2 + i * 2 * Math.PI / nq; mark(ctx, x + Math.cos(a) * R * 0.7, y + Math.sin(a) * R * 0.7, Math.sign(p.Q), 'probe' + k, markR() * 0.8); }
+        labelAt(ctx, p.name, [[x + side * 0.5 * V.s, y + 1.6 * V.s + 14, 'center'], [x, y - R - 14, 'center']], '#334155', 11);
+      });
+    }
+
+    /* ---------------- playing: steps (tabs 1, 3, 4) and one run (tab 2) ---------------- */
+    let steps = [];
+    const anim = { on: false, last: null, acc: 0 };
+    function loop(ts) {
+      if (!anim.on) return;
+      if (anim.last === null) anim.last = ts;
+      // a first rAF timestamp can be earlier than the one stored: never step backwards
+      const real = Math.max(0, Math.min(0.1, (ts - anim.last) / 1000)); anim.last = ts;
+      anim.acc += real;
+      let n = 0;
+      while (anim.acc >= DT && n++ < 24) { tick(DT); anim.acc -= DT; if (isIdle()) { anim.acc = 0; break; } }
+      if (isIdle()) { anim.on = false; onIdle(); }
+      update();
+      if (anim.on) requestAnimationFrame(loop);
+    }
+    function play() { if (anim.on) return; anim.on = true; anim.last = null; anim.acc = 0; requestAnimationFrame(loop); }
+    function stop() { anim.on = false; anim.last = null; }
+    function onIdle() {
+      if (S.playing) { S.playing = false; snaps[S.step] = clone(Wd); }
+      if (currentTab === 2 && S.run === 'running') S.run = 'done';
+    }
+    const newDrivers = list => clone(list || []);
+    // the state at the end of step n, worked out by running each step through (they never change, so they are kept)
+    function gotoStep(n) {
+      stop(); S.playing = false; drivers = [];
+      n = Math.max(0, Math.min(steps.length, n));
+      for (let k = snaps.length; k <= n; k++) { Wd = clone(snaps[k - 1]); drivers = newDrivers(steps[k - 1].drv); fastForward(); drivers = []; snaps[k] = clone(Wd); }
+      Wd = clone(snaps[n]); S.step = n;
+      update();
+    }
+    function nextStep() {
+      if (S.custom) return;
+      if (S.playing) { fastForward(); drivers = []; S.playing = false; snaps[S.step] = clone(Wd); stop(); }
+      if (S.step >= steps.length) { update(); return; }
+      if (!snaps[S.step]) { gotoStep(S.step); }
+      Wd = clone(snaps[S.step]); S.step++; drivers = newDrivers(steps[S.step - 1].drv); S.playing = true;
+      clearFeatNoteOnly(); update(); play();
+    }
+    $('nextStep').addEventListener('click', nextStep);
+    $('prevStep').addEventListener('click', () => { clearFeatNoteOnly(); gotoStep(S.step - 1); });
+    $('stepReset').addEventListener('click', () => {
+      clearFeatNoteOnly();
+      if (S.custom) { stop(); drivers = []; Wd = initWorld(); Wd.ck = 0; update(); } else gotoStep(0);
+    });
+
+    // tab 2: the run, worked out to its end when the scenario loads (for the key moment and the checks)
+    function computeRun() { const save = Wd; Wd = clone(initWorld()); drivers = runDrivers(); fastForward(); const end = { t: Wd.t, W: clone(Wd) }; Wd = save; drivers = []; return end; }
+    function startRun() {
+      if (anim.on) return;
+      if (S.run === 'done') { Wd = initWorld(); }
+      if (S.run !== 'paused') { drivers = runDrivers(); }
+      S.run = 'running'; clearFeatNoteOnly(); update(); play();
+    }
+    function resetRun() { stop(); drivers = []; Wd = initWorld(); S.run = 'idle'; update(); }
+    function runToEnd() { stop(); drivers = []; Wd = clone(runInfo.W); S.run = 'done'; update(); }
+    $('startBtn').addEventListener('click', startRun);
+    $('pauseBtn').addEventListener('click', () => {
+      if (S.run === 'running') { stop(); S.run = 'paused'; update(); }
+      else if (S.run === 'paused') { S.run = 'running'; update(); play(); }
+    });
+    $('resetBtn').addEventListener('click', resetRun);
+    $('nextMoment').addEventListener('click', () => { if (S.run !== 'done') runToEnd(); });
+    $('prevMoment').addEventListener('click', () => { if (S.run !== 'idle') resetRun(); });
+
+    function loadScenario(id) {
+      S.scen = id; S.custom = false; S.step = 0; S.playing = false; S.run = 'idle';
+      P = clone(PRESETS[id]); P.id = id;
+      $('question').innerHTML = P.q;
+      rebuild();
+    }
+    function rebuild() {
+      stop(); drivers = []; S.playing = false; S.run = 'idle';
+      Wd = initWorld(); steps = S.custom ? [] : stepsFor(); snaps = [clone(Wd)];
+      runInfo = P.rig === 'cond' ? computeRun() : null;
+      if (freeMode && !S.custom) { if (steps.length) gotoStep(steps.length); else if (runInfo) runToEnd(); }
+    }
+    function toCustom(fresh) {
+      if (S.custom) { if (fresh) rebuild(); return; }
+      S.custom = true; S.scen = 'custom'; presetEl.value = 'custom';
+      // the question box keeps its height: nothing above the canvas may move while a finger drags
+      const q = $('question'); q.style.minHeight = q.offsetHeight + 'px';
+      q.innerHTML = OWN[currentTab];
+      stop(); drivers = []; S.playing = false; steps = [];
+      if (Wd) Wd.ck = 0;
+      if (fresh) rebuild();
+      clearFeat();
+    }
+    function chooseScenario(id) {
+      $('question').style.minHeight = '';
+      if (id === 'custom') {
+        // "Do it yourself" from a hanging-balls scenario starts the rod and sphere of this tab
+        if (P.rig === 'hang') { loadScenario(TABS[currentTab].presets.find(k => PRESETS[k].rig === 'rig')); }
+        toCustom(true);
+      } else loadScenario(id);
+      clearFeat(); buildInputs(); update();
+    }
+    presetEl.addEventListener('change', () => chooseScenario(presetEl.value));
+
+    /* ---------------- dragging: tab 1 the rod or balloon (rub it on the cloth); tabs 3 and 4 the rod ---------------- */
+    function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    const toWorld = p => [(p.x - V.ox) / V.s, (p.y - V.oy) / V.s];
+    function handleAt(p) {
+      if (!Wd || (Wd.rig !== 'fric' && Wd.rig !== 'rig')) return null;
+      return __pim.handles.find(h => h.w !== undefined && Math.abs(p.x - h.x) <= h.w / 2 + 6 && Math.abs(p.y - h.y) <= h.h / 2 + 6) || null;
+    }
+    const inSwitch = p => switchBox && Wd && Wd.rig === 'rig' && p.x >= switchBox.x && p.x <= switchBox.x + switchBox.w && p.y >= switchBox.y && p.y <= switchBox.y + switchBox.h;
+    let drag = null;
+    canvas.addEventListener('pointerdown', e => {
+      if (currentTab === 2 || currentTab > 4 || !Wd) return;
+      if (document.activeElement && document.activeElement.tagName === 'SELECT') document.activeElement.blur();
+      const p = pos(e);
+      if (inSwitch(p)) { toCustom(false); Wd.closed = !Wd.closed; buildInputs(); update(); play(); return; }
+      const h = handleAt(p); if (!h) return;
+      const [wx, wy] = toWorld(p);
+      toCustom(false);
+      drag = Wd.rig === 'fric' ? { dx: Wd.cx - wx, dy: Wd.cy - wy } : { dx: Wd.rod.x - wx, dy: 0 };
+      buildInputs();
+      canvas.setPointerCapture(e.pointerId); e.preventDefault();
     });
     canvas.addEventListener('pointermove', e => {
       const p = pos(e);
-      if (!drag) { canvas.style.cursor = onRod(p) ? 'grab' : inSwitch(p) ? 'pointer' : 'default'; return; }
+      if (!drag) { canvas.style.cursor = handleAt(p) ? 'grab' : inSwitch(p) ? 'pointer' : 'default'; return; }
       canvas.style.cursor = 'grabbing';
-      moveRod(p.x + drag.dx, p.y + drag.dy);
-      rub(Math.abs(p.x - drag.lastX));
-      drag.lastX = p.x;
+      const [wx, wy] = toWorld(p);
+      if (Wd.rig === 'fric') {
+        const sh = MAT[Wd.mat].shape, px = Wd.cx;
+        Wd.cx = Math.max(0.6, Math.min(WW - 0.6, wx + drag.dx));
+        let y = Math.max(0.9, Math.min(RUBY[sh], wy + drag.dy)); if (y > RUBY[sh] - 0.15) y = RUBY[sh];
+        Wd.cy = y;
+        // rubbing: every 0.55 of sideways movement while touching the cloth passes one more electron across
+        if (contactRange()) { Wd.acc += Math.abs(Wd.cx - px); while (Wd.acc >= 0.55) { Wd.acc -= 0.55; if (!rubTransfer()) { Wd.acc = 0; break; } } }
+      } else {
+        Wd.rod.x = Math.max(0.6 + RG.len - RG.handle, Math.min(RG.touch, wx + drag.dx));
+      }
+      update(); play();
     });
-    function endDrag() { drag = null; }
+    const endDrag = () => { drag = null; };
     canvas.addEventListener('pointerup', endDrag);
     canvas.addEventListener('pointercancel', endDrag);
 
-    function moveRod(x, y) {
-      const r = state.rod;
-      r.x = Math.max(L.rodLen * 0.4, Math.min(L.w - 6, x));
-      r.y = Math.max(20, Math.min(L.floorY - 12, y));
-      if (!hasSphere()) return;
-      // the rod cannot pass into the sphere: it stops against the surface
-      const dy = r.y - L.cy;
-      if (Math.abs(dy) < L.R && r.x - L.rodLen < L.cx) {
-        const surfX = L.cx - Math.sqrt(L.R * L.R - dy * dy);
-        if (r.x > surfX) r.x = surfX;
+    /* ---------------- readouts, words and working ---------------- */
+    function cards(list) {
+      const el = $('readout');
+      el.className = 'readout' + (list.length === 4 ? ' n4' : list.length === 3 ? ' n3' : '');
+      el.innerHTML = list.map(([id, t, value, cls]) => `<div class="readout-card${cls ? ' ' + cls : ''}${hl[id] ? ' hl' : ''}" id="${id}"><div class="title">${t}</div><div class="value">${value}</div></div>`).join('');
+    }
+    function eq(lines) { return '<div class="math">' + lines.map(l => `<span class="eq${l.lit ? ' lit' : ''}">${l.h || l}</span>`).join('') + '</div>'; }
+    const deg = th => `${f3(Math.abs(th) * 180 / Math.PI)}°`;
+    const uC = q => (q === 0 ? '0 µC' : `${q > 0 ? '+' : '−'}${Math.abs(q) >= 10 ? Math.abs(q) : Math.abs(q).toFixed(1)} µC`);
+    function sci(v, sf) { const a = Math.abs(v), e = Math.floor(Math.log10(a) + 1e-12); let m = (a / 10 ** e * (1 + 1e-12)).toPrecision(sf); return `${v < 0 ? '−' : ''}${m} × ${ex(e)}`; }
+    const stepD = k => (P.steps && P.steps[k - 1] ? P.steps[k - 1].d : '');
+    // electrons through the earth wire, in the order they went (a positive rod pulls them up first; a negative one pushes them down)
+    function earthMoves() {
+      const W = Wd, up = `${W.mvUp} up from the Earth`, dn = `${W.mvDn} down to the Earth`;
+      if (W.mvUp && W.mvDn) return (Math.sign(P.rodQ) || W.sph.s) > 0 ? `${up}, then ${dn}` : `${dn}, then ${up}`;
+      return W.mvUp ? up : W.mvDn ? dn : '0';
+    }
+    function readouts() {
+      const words = $('words'), work = $('work'), W = Wd;
+      work.innerHTML = '';
+      if (W.rig === 'fric') {
+        const M = MAT[W.mat], oq = objQ(), cq = clothQ(), n = W.moved, from = M.gain === 'obj' ? M.cloth : M.obj, to = M.gain === 'obj' ? M.obj : M.cloth;
+        cards([['rO', M.obj, desc(oq)], ['rC', M.cloth, desc(cq)], ['rM', 'Electrons moved', n ? `${n}, ${from.toLowerCase()} → ${to.toLowerCase()}` : '0'],
+          ['rT', 'Total charge of both', oq + cq === 0 ? '0: none created' : desc(oq + cq), oq + cq === 0 && n ? 'ok' : '']]);
+        words.innerHTML = wordsFric(oq, cq, n, from, to);
+        if (!S.custom && S.step >= 2) work.innerHTML = eq([`Electrons moved from the ${from.toLowerCase()} to the ${to.toLowerCase()}: ${n}`,
+          `${to}: ${n} extra electrons, so negatively charged (−${n})`, `${from}: ${n} electrons missing, so positively charged (+${n})`,
+          { h: `Total: (−${n}) + (+${n}) = 0. The rubbing did not create or destroy charge: it only moved electrons.`, lit: true }]);
+        return;
       }
-      // or into the stand
-      if (r.y > L.cy + L.R && r.x > L.cx - 8 && r.x - L.rodLen < L.cx + 8) r.x = L.cx - 8;
-    }
-
-    function rub(dxMoved) {
-      if (!hasCloth()) return;
-      const r = state.rod, c = L.cloth, m = MATERIALS[materialEl.value];
-      if (Math.abs(r.y - (c.y + c.h / 2)) > c.h / 2 + 2) return;
-      const segA = Math.max(r.x - L.chargedLen, c.x), segB = Math.min(r.x, c.x + c.w);
-      if (segB - segA < 8) return;
-      state.rubAccum += dxMoved;
-      while (state.rubAccum > 34) {
-        state.rubAccum -= 34;
-        if (r.charges.length >= MAX_ROD) return;
-        const x = segA + Math.random() * (segB - segA);
-        r.charges.push({ s: r.x - x, sign: m.rodSign });
-        state.cloth.push({ fx: Math.min(0.93, Math.max(0.07, (x - c.x) / c.w)), fy: 0.2 + Math.random() * 0.6, sign: -m.rodSign });
+      if (W.rig === 'cond') {
+        const where = W.Q === 0 ? 'None: neutral' : !W.metal ? 'Stays in one small region' : W.spread < 1 ? 'Spreading out' : 'Spread evenly over the surface';
+        const via = W.conn === 'hand' ? 'the hand' : W.conn === 'stand' ? 'the stand' : 'the wire';
+        cards([['rQ', 'Sphere’s charge', desc(W.Q), W.Q === 0 && W.moved ? 'ok' : ''], ['rWhere', 'Where the charge is', where],
+          ['rMv', 'Electrons moved', W.moved ? `${W.moved}, ${W.dir > 0 ? 'Earth → sphere' : 'sphere → Earth'} (through ${via})` : '0'],
+          ['rMat', 'Conductor or insulator?', W.metal ? 'Conductor (metal)' : 'Insulator (plastic)']]);
+        words.innerHTML = wordsCond();
+        return;
       }
-    }
-
-    // On the contact and induction tabs the rod arrives already charged by rubbing, spread along its charged end.
-    function precharge() {
-      const m = MATERIALS[materialEl.value];
-      state.rod.charges = [];
-      for (let i = 0; i < PRECHARGE; i++) state.rod.charges.push({ s: 10 + (L.chargedLen - 22) * i / (PRECHARGE - 1), sign: m.rodSign });
-    }
-
-    function reset() {
-      state = freshState();
-      L = null;
-      ensureLayout();
-      state.electrons = IONS.map(p => ({ x: p.fx * L.R + 9, y: p.fy * L.R + 2 }));
-      if (hasSphere()) precharge();
-      const t = TABS[tab];
-      el('hint').textContent = t.hint;
-      el('note').innerHTML = t.note;
-      el('steps').innerHTML = t.steps.map((s, i) => `<li>${t.steps.length > 1 ? `<b>${i + 1}.</b> ` : ''}${s}</li>`).join('');
-      el('clothCard').classList.toggle('hidden', !hasCloth());
-      el('sphereCard').classList.toggle('hidden', !hasSphere());
-      el('forceCard').classList.toggle('hidden', !hasSphere());
-      el('earthGroup').classList.toggle('hidden', !hasEarth());
-      el('wipeGroup').classList.toggle('hidden', !hasCloth());
-      el('rechargeGroup').classList.toggle('hidden', hasCloth());
-      el('materialLabel').textContent = hasCloth() ? 'Rod and cloth' : 'Rod (already charged by rubbing)';
-    }
-
-    function ensureLayout() {
-      const rect = canvas.getBoundingClientRect();
-      const nl = layout(rect.width, rect.height);
-      const changed = !L || L.w !== nl.w || L.h !== nl.h;
-      if (changed && L) { state.rod.x *= nl.w / L.w; state.rod.y *= nl.h / L.h; }
-      L = Object.assign(L || {}, nl);
-      if (!state.rod.placed) {
-        if (hasCloth()) { state.rod.x = L.cloth.x + L.rodLen * 0.9; state.rod.y = L.h * 0.25; }
-        else { state.rod.x = Math.max(L.rodLen + 16, L.cx - L.R * 4.6); state.rod.y = L.cy; }
-        state.rod.placed = true;
+      if (W.rig === 'rig') {
+        const { touching } = rigTarget(), reg = sphRegions();
+        if (currentTab === 3) {
+          const u = W.unit ? uC : desc;
+          cards([['rRod', 'Rod’s charge', u(W.rod.Q)], ['rSph', 'Sphere’s charge', u(W.sph.Q), S.step >= 2 && !touching ? 'ok' : ''],
+            ['rMv', 'Electrons moved', W.mvC ? `${W.mvC}, ${W.dirC > 0 ? 'rod → sphere' : 'sphere → rod'}` : '0'], ['rTouch', 'Touching?', touching ? 'Yes' : 'No']]);
+          if (W.unit && !S.custom && S.step >= 3) {
+            const dq = W.sph.Q - 12, n = Math.abs(dq) * 1e-6 / 1.6e-19;
+            const L = [`Change in charge of the sphere = (final charge) − (initial charge) = (+8.0 × ${ex(-6)}) − (+12 × ${ex(-6)}) = ${dq.toFixed(1).replace('-', '−')} × ${ex(-6)} C`,
+              { h: 'The sphere became less positive, so it gained electrons: free electrons moved from the metal rod to the sphere.', lit: S.step === 3 }];
+            if (S.step >= 4) L.push(`<i>n</i> = ${frac('change in charge of the sphere', 'charge of one electron')} = ${frac(`${dq.toFixed(1).replace('-', '−')} × ${ex(-6)}`, `−1.6 × ${ex(-19)}`)}`,
+              { h: `<i>n</i> = ${sci(n, 2)} electrons, added to the sphere and removed from the metal rod`, lit: true });
+            work.innerHTML = eq(L);
+          }
+        } else {
+          const side = W.sph.m ? `${reg.near > 0 ? '+' : reg.near < 0 ? '−' : ''}${Math.abs(reg.near)} near, ${reg.far > 0 ? '+' : reg.far < 0 ? '−' : ''}${Math.abs(reg.far)} far` : W.sph.Q ? 'Spread evenly' : '—';
+          cards([['rRod', 'Rod’s charge', desc(W.rod.Q)], ['rSph', 'Sphere’s charge', desc(W.sph.Q), S.step >= steps.length && W.sph.Q ? 'ok' : ''], ['rSide', 'Near side, far side', side],
+            ['rEarth', 'Earth wire', W.closed ? 'Connected' : 'Not connected'], ['rMv', 'Electrons through the earth wire', earthMoves()]]);
+        }
+        words.innerHTML = wordsRig();
+        return;
       }
-      if (changed) moveRod(state.rod.x, state.rod.y);
+      // hanging balls
+      const F = hangForces(W.balls.map(b => b.th));
+      if (W.balls.length === 2) {
+        const [A, B] = W.balls, rel = A.Q * B.Q > 0 ? 'Repel' : A.Q * B.Q < 0 || (B.m && A.Q) ? 'Attract' : 'No force';
+        const nm = W.id === 'b3' ? 'Balloon' : 'Ball';
+        cards([['rA', `${nm} A`, desc(A.Q)], ['rB', `${nm} B`, B.m ? 'Neutral (charges separated)' : desc(B.Q)],
+          ['rThA', `Thread A from the vertical`, deg(A.th)], ['rThB', 'Thread B from the vertical', deg(B.th)], ['rF', W.id === 'b3' ? 'The balloons' : 'The balls', rel]]);
+      } else {
+        const b = W.balls[0], fx = F[0][0], toward = W.rod && Math.abs(fx) > 0.03 ? (Math.sign(fx) === Math.sign(W.rod.x - hangPos(b, b.th)[0]) ? 'Attraction' : 'Repulsion') : 'None';
+        const ind = b.ins ? (b.dip > 0 ? 'Molecules turned: + towards the rod' : 'Molecules not lined up') : b.m ? (W.rod.Q < 0 ? '+ near the rod, − far side' : '− near the rod, + far side') : 'None';
+        cards([['rBall', 'Ball’s charge', desc(b.Q)], ['rInd', 'Induced charges', ind], ['rTh', 'Thread from the vertical', deg(b.th)], ['rF', 'Force from the rod', toward]]);
+      }
+      words.innerHTML = wordsHang();
+    }
+    function stepWords(result) {
+      const N = steps.length, k = S.step;
+      if (k === 0) return `Press Next to begin. Step 1: ${steps[0].t}`;
+      if (S.playing) return `Step ${k} of ${N}: ${steps[k - 1].t}`;
+      return result + (k < N ? ` <span style="font-weight:400">Next: ${steps[k].t}</span>` : '');
+    }
+    function wordsFric(oq, cq, n, from, to) {
+      if (S.custom) return n ? `${n} electron${n > 1 ? 's have' : ' has'} moved from the ${from.toLowerCase()} to the ${to.toLowerCase()}. ${to}: ${signWord(-n)}; ${from.toLowerCase()}: ${signWord(n)}. The charge on an insulator stays where it was rubbed.`
+        : 'Drag the object down onto the cloth and rub it from side to side.';
+      if (S.step === 1) return stepWords(`${n} electrons moved from the ${from.toLowerCase()} to the ${to.toLowerCase()}: the ${to.toLowerCase()} is now ${signWord(-n)} and the ${from.toLowerCase()} ${signWord(n)}.`);
+      if (S.step === 2) return stepWords('Equal and opposite charges: together they still add up to zero.');
+      return stepWords('Before rubbing, both are neutral: each has equal numbers of + and − charges.');
+    }
+    function wordsCond() {
+      const W = Wd;
+      if (S.run === 'idle') return `A small region of the ${W.metal ? 'metal' : 'plastic'} sphere has been given a ${W.Q > 0 ? 'positive' : 'negative'} charge. Press Start.`;
+      if (S.run !== 'done') return W.closed && W.metal ? `Free electrons flow ${W.Q + pend('', 'Q') > 0 || W.dir > 0 ? 'from the Earth onto the sphere' : 'from the sphere to the Earth'}.` : W.metal ? 'The free electrons move: the charge spreads out.' : 'Nothing in an insulator moves.';
+      if (!W.metal) return W.conn === 'none' ? 'The charge stays in the small region where it was put: an insulator has no free electrons.'
+        : `The charge stays where it was put, even ${W.conn === 'hand' ? 'with a hand touching the sphere' : W.conn === 'stand' ? 'on a metal stand' : 'with the earth wire connected'}: charges cannot move through an insulator to reach the Earth.`;
+      if (W.conn === 'none') return 'The charge has spread out evenly over the whole surface of the metal sphere. The insulating stand stops it leaking away.';
+      const via = W.conn === 'hand' ? 'through the hand and body' : W.conn === 'stand' ? 'through the metal stand' : 'through the earth wire';
+      return `${W.moved} electrons flowed ${W.dir > 0 ? 'from the Earth onto the sphere' : 'from the sphere to the Earth'} ${via}: the sphere is now electrically neutral.`;
+    }
+    function wordsRig() {
+      const W = Wd, s = Math.sign(P.rodQ) || W.sph.s, { touching } = rigTarget();
+      if (S.custom) {
+        if (currentTab === 3) {
+          const ck = [W.touched, W.touched && !touching && rigGap() >= 2.9 && Math.sign(W.sph.Q) === s];
+          return `Do it yourself:<ol><li class="${ck[0] ? 'done' : ''}">Touch the sphere with the rod.</li><li class="${ck[0] && ck[1] ? 'done' : ''}">Take the rod away: the sphere keeps a charge of the same sign as the rod.</li></ol>`;
+        }
+        if (W.touched) return 'The rod touched the sphere, so that was charging by contact, not induction. Press Reset to try induction without touching.';
+        const near = rigGap() <= 1.5, away = rigGap() >= 2.9, opp = Math.sign(W.sph.Q) === -s && W.sph.Q !== 0;
+        if (W.ck === 0 && near && !W.closed && W.sph.m >= 3) W.ck = 1;
+        if (W.ck === 1 && near && W.closed) W.ck = 2;
+        if (W.ck === 2 && near && !W.closed && opp) W.ck = 3;
+        if (W.ck === 3 && away && !W.closed && opp && !W.flights.length) W.ck = 4;
+        const L = ['Bring the rod near the sphere (do not touch it).', 'With the rod near, connect the earth wire (tap the switch).', 'With the rod near, disconnect the earth wire.', 'Take the rod away: the sphere keeps a charge opposite to the rod’s.'];
+        return `Do it yourself, in this order:<ol>${L.map((t, i) => `<li class="${W.ck > i ? 'done' : ''}">${t}</li>`).join('')}</ol>`;
+      }
+      const d = stepD(S.step), Q = W.sph.Q, rodW = s > 0 ? 'positive' : 'negative';
+      let r = '';
+      if (S.step === 0) r = '';
+      else if (d === 'touch') r = `Touching: ${W.mvC} electrons moved from the ${W.dirC > 0 ? 'rod onto the sphere' : 'sphere onto the rod'}. The sphere now has a ${signWord(Q)} charge.`;
+      else if (d === 'away' && currentTab === 3) r = `The sphere keeps its ${signWord(Q)} charge, ${W.unit ? '+8.0 µC' : 'the same sign as the rod'}, spread evenly over its surface.`;
+      else if (d === 'near') r = `The ${rodW} rod ${s > 0 ? 'pulls the free electrons towards the near side' : 'pushes the free electrons to the far side'}: ${s > 0 ? 'negative near the rod, positive on the far side' : 'positive near the rod, negative on the far side'}. The sphere as a whole is still neutral, and the rod attracts it.`;
+      else if (d === 'earthOn') r = `${W.mvUp || W.mvDn} electrons flow ${W.mvUp ? 'up from the Earth onto the sphere' : 'from the sphere down to the Earth'}. The sphere is now ${signWord(Q)}; the charge near the rod stays, held by the rod.`;
+      else if (d === 'earthOff') r = Q ? `The earth wire is disconnected with the rod still near: no electrons can flow back. The sphere keeps its ${signWord(Q)} charge.` : 'Disconnecting the earth wire now changes nothing: the sphere is already neutral. The earth wire must be removed while the rod is still near.';
+      else if (d === 'away') r = Q ? `The rod is taken away: the sphere is left ${signWord(Q)}, opposite in sign to the rod, and its charge spreads evenly over the surface.` : `With the earth wire still connected, the ${s > 0 ? W.mvDn : W.mvUp} electrons went back ${s > 0 ? 'down to the Earth' : 'up from the Earth'} as the rod moved away: the sphere is neutral again.`;
+      else if (d === 'none') r = S.step === 3 ? 'The sphere’s charge went from +12 µC to +8.0 µC: it became less positive, so it gained electrons.' : 'Electrons are always the ones transferred: here free electrons moved from the metal rod to the sphere.';
+      return stepWords(r);
+    }
+    function wordsHang() {
+      const W = Wd, k = S.step, id = W.id;
+      let r = '';
+      const A = W.balls[0], B = W.balls[1];
+      if (k > 0 && !S.playing) {
+        if (id === 'ex10') r = k === 1 ? 'Electrons moved from ball A onto the positive metal: A is now positively charged.' : k === 2 ? 'Ball B is positively charged too.' : `Both balls are positively charged, and like charges repel: they hang apart, each thread at ${deg(A.th)} to the vertical (choice B in the notes).`;
+        else if (id === 'b4') r = k === 1 ? 'Electrons moved from the negative metal onto ball A: A is now negatively charged.' : k === 2 ? 'Electrons moved from ball B onto the positive metal: B is now positively charged.' : `A is negative and B positive. Opposite charges attract: the balls hang closer together, each thread at ${deg(A.th)} to the vertical.`;
+        else if (id === 'attract') r = k === 1 ? 'Free electrons move away from the negative rod as far as they can: positive charge near the rod, negative on the far side. The ball is still neutral.' : `The induced positive charge is nearer the rod, and electrostatic force decreases with distance: the attraction wins, and the ball hangs ${deg(A.th)} towards the rod.`;
+        else if (id === 'insul') r = k === 1 ? 'The molecules of the insulator turn, with their positive sides towards the negative rod. No charge leaves the ball.' : `The attraction to the near sides is greater than the repulsion from the far sides: the neutral insulator hangs ${deg(A.th)} towards the rod.`;
+        else if (id === 'b3') r = k === 1 ? 'Balloon A’s negative charge pushes B’s free electrons to its far side: positive charge on the side of B nearer A.' : `The positive charge on B is nearer A, so the attraction is greater than the repulsion: the balloons lean towards each other (${deg(A.th)} and ${deg(B.th)}) without touching.`;
+        else if (id === 'c5') r = k === 1 ? 'The positive rod pulls the free electrons to the near side of the ball: negative near the rod, positive on the far side.' : k === 2 ? 'The attraction pulls the neutral ball over until it touches the rod.' : k === 3 ? 'Touching: free electrons moved from the ball onto the rod. The ball now has a positive charge, the same as the rod.' : `Like charges repel: the ball flies away from the rod and comes to rest ${deg(A.th)} from the vertical.`;
+      }
+      return stepWords(r);
     }
 
-    document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === b));
-      const summary = b.dataset.tab === 'summary';
-      el('summaryPanel').classList.toggle('hidden', !summary);
-      el('controlPanel').classList.toggle('hidden', summary);
-      el('simPanel').classList.toggle('hidden', summary);
-      if (summary) return; // the experiment underneath keeps its last tab
-      tab = b.dataset.tab;
-      reset();
-    }));
-    el('earthBtn').addEventListener('click', () => { state.earthed = !state.earthed; });
-    el('wipeBtn').addEventListener('click', () => { state.rod.charges = []; });
-    el('rechargeBtn').addEventListener('click', precharge);
-    el('resetBtn').addEventListener('click', reset);
-    materialEl.addEventListener('change', reset);
-
-    reset();
-    let last = null;
-    function frame(ts) {
-      if (last === null) last = ts;
-      const dt = Math.max(0, Math.min(0.05, (ts - last) / 1000));
-      last = ts;
-      ensureLayout();
-      stepTransfers(dt);
-      relaxElectrons(dt);
-      draw();
-      updateReadout();
-      requestAnimationFrame(frame);
+    /* ---------------- the experimental controls ---------------- */
+    function buildInputs() {
+      const el = $('inputs'), W = Wd;
+      let h = '';
+      if (currentTab === 1) h = `<div class="control-group"><label class="tick"><input type="checkbox" id="showAll"${showAll ? ' checked' : ''} /> Show every charge (untick: only the extra ones)</label></div>`;
+      else if (currentTab === 2) h = sel('inMetal', 'Material', [['1', 'Metal'], ['0', 'Plastic (an insulator)']], P.metal ? '1' : '0')
+        + sel('inSign', 'Charge given', [['-1', 'Negative'], ['1', 'Positive']], String(P.sign))
+        + sel('inConn', 'Joined to the Earth by', [['none', 'Nothing: insulating stand'], ['wire', 'An earth wire'], ['hand', 'A hand'], ['stand', 'A metal stand']], P.conn);
+      else if (W && W.rig === 'rig') {
+        if (!W.unit) h += sel('inRod', 'Charge on the rod', [['-1', 'Negative'], ['1', 'Positive']], String(Math.sign(P.rodQ) || -1));
+        if (W.earth) h += `<div class="control-group"><label>Earth wire</label><button type="button" id="earthBtn" class="${W.closed ? 'earth-on' : 'secondary'}">${W.closed ? 'Disconnect the earth wire' : 'Connect the earth wire'}</button></div>`;
+      }
+      el.innerHTML = h;
+      $('expBlock').hidden = !h;
+      if ($('showAll')) $('showAll').addEventListener('change', e => { showAll = e.target.checked; update(); });
+      [['inMetal', v => { P.metal = v === '1'; }], ['inSign', v => { P.sign = +v; }], ['inConn', v => { P.conn = v; }]].forEach(([id, f]) => {
+        if ($(id)) $(id).addEventListener('change', e => { f(e.target.value); toCustom(true); buildInputs(); update(); });
+      });
+      if ($('inRod')) $('inRod').addEventListener('change', e => { P.rodQ = 8 * +e.target.value; toCustom(true); buildInputs(); update(); });
+      if ($('earthBtn')) $('earthBtn').addEventListener('click', () => { toCustom(false); Wd.closed = !Wd.closed; buildInputs(); update(); play(); });
     }
-    requestAnimationFrame(frame);
+    function sel(id, lab, opts, v) {
+      return `<div class="control-group label-row"><label for="${id}">${lab}</label><select id="${id}">${opts.map(([k, t]) => `<option value="${k}"${k === v ? ' selected' : ''}>${t}</option>`).join('')}</select></div>`;
+    }
+
+    function update() {
+      draw(); readouts();
+      if (currentTab > 4) return;
+      const T = TABS[currentTab];
+      if (T.mode === 'run') {
+        const mid = S.run === 'paused';
+        $('pauseBtn').textContent = mid ? 'Play' : 'Pause';
+        $('pauseBtn').disabled = S.run !== 'running' && !mid;
+        $('startBtn').disabled = S.run === 'running' || mid;
+        $('prevMoment').disabled = S.run === 'idle'; $('nextMoment').disabled = S.run === 'done';
+      } else {
+        const N = steps.length;
+        $('stepNo').textContent = S.custom ? '(doing it yourself)' : `(${S.step} of ${N})`;
+        $('prevStep').disabled = S.custom || S.step <= 0;
+        $('nextStep').disabled = S.custom || (S.step >= N && !S.playing);
+        $('stepReset').disabled = !S.custom && S.step === 0 && !S.playing;
+      }
+      if ($('earthBtn') && Wd) { const b = $('earthBtn'); b.textContent = Wd.closed ? 'Disconnect the earth wire' : 'Connect the earth wire'; b.className = Wd.closed ? 'earth-on' : 'secondary'; }
+    }
+
+    /* ---------------- the tabs ---------------- */
+    const KEYS = { pos: [COL.pos, 'Positive charge (+)', 'dot'], neg: [COL.neg, 'Electron / negative charge (−)', 'dot'], force: [COL.force, 'Electric force <i>F</i>'], earth: [COL.earth, 'Earth wire, connected'] };
+    const TABS = {
+      1: { strip: 'Answer Predict first. Then press Next: the rod is rubbed on the cloth and you see which way the electrons go. Or drag the rod (or the balloon) onto the cloth and rub it yourself.',
+        presets: ['amber', 'acetate', 'balloon'], hint: 'Press Next, or drag the object onto the cloth and rub it from side to side. (The electrons are slowed down so you can see them.)', key: ['pos', 'neg'], mode: 'steps',
+        notes: ['Insulators can be charged with static electricity by friction. If two different insulators are rubbed against each other, electrons have a tendency to be transferred from one insulator to the other (notes p. 6-21).',
+          'Amber has a much greater attraction for electrons than animal fur: rubbed with fur, the amber gains extra electrons and becomes negatively charged. The fur loses the same amount of electrons and becomes positively charged.',
+          'The rubbing process does not create or destroy electrons and protons.',
+          'An insulator has no free electrons: when a small region of it is given a charge, the charge stays within that region and does not move (p. 6-20).',
+          'Each object has many + and − charges. Untick “Show every charge” to see only the extra ones, as in the lower picture on p. 6-22.'] },
+      2: { strip: 'Answer Predict first. Then choose a scenario and press Start. Change the material, the charge or the connection to the Earth to compare.',
+        presets: ['ins', 'metal', 'earthPos', 'earthNeg', 'hand', 'stand'], hint: 'Press Start. (The electrons are slowed down so you can see them.)', key: ['pos', 'neg', 'earth'], mode: 'run',
+        notes: ['An electrical insulator (such as plastic, glass and wool) has no free electrons: charge put on a small region stays there (notes p. 6-20).',
+          'Most metals, such as copper, aluminium, iron and silver, are good electrical conductors: they have free electrons. Charge placed on a metal sphere spreads out evenly over the entire surface (p. 6-24).',
+          'The Earth is a large good conductor of electricity. Connected to the Earth, a charged metal part becomes electrically neutral: free electrons flow away from it or towards it (p. 6-25).',
+          'The human body is a relatively good conductor, so a metal held in the hand cannot be charged (p. 6-25).',
+          'The insulating stand prevents any electron flow between the charged conductor and the Earth (Example 9, p. 6-26).'] },
+      3: { strip: 'Answer Predict first. Then press Next to work through each scenario one step at a time, or drag the rod to the sphere yourself.',
+        presets: ['cneg', 'cpos', 'c4', 'ex10', 'b4'], hint: 'Press Next, one step at a time. (The electrons are slowed down so you can see them.)', key: ['pos', 'neg', 'force'], mode: 'steps',
+        notes: ['A conductor can be charged by direct contact with another charged conductor: charging by contact (notes p. 6-27).',
+          'If a charged conductor touches an uncharged metal part, free electrons are transferred between them, charging the metal part with the same sign as the charged conductor.',
+          'A negative conductor gives electrons to the metal part; a positive one takes electrons from it.',
+          'Once the rod is taken away, the charge on the metal sphere spreads out evenly over its surface (p. 6-24).',
+          'Two balls with charges of the same sign repel; with opposite signs they attract (Example 10, Tutorial 6 B4).'] },
+      4: { strip: 'Answer Predict first. Then press Next to work through each scenario one step at a time, or drag the rod and tap the switch on the earth wire yourself.',
+        presets: ['ipos', 'ineg', 'iwrong', 'attract', 'insul', 'b3', 'c5'], hint: 'Press Next, one step at a time. (The electrons are slowed down so you can see them.)', key: ['pos', 'neg', 'force', 'earth'], mode: 'steps',
+        notes: ['A charged object is brought close to the uncharged conductor and does not touch it (notes p. 6-29).',
+          'If the uncharged conductor is earthed, free electrons flow away from it or towards it.',
+          'With the charged object still around, the earth connection is removed: the conductor is left with a charge opposite in sign to that of the charged object.',
+          'A charged object also attracts a neutral object: the induced charge nearer the rod is attracted more strongly than the charge further away is repelled, since the force decreases with distance (pp. 6-30 and 6-31).'] },
+      5: { strip: 'Answer Predict first. Then sort each situation: friction, contact or induction? The table under the cards compares the three.', key: [], mode: 'game' },
+      6: { strip: 'Answer every question, then read the summary.', key: [], mode: 'quiz' }
+    };
+
+    const PREDICT = {
+      1: { q: 'An amber rod is rubbed with fur. Afterwards, the amber rod and the fur are …',
+        opts: ['amber negative, fur positive, equal amounts', 'both negative', 'amber negative, fur still neutral', 'amber positive, fur negative'], ans: 0,
+        why: 'Amber has a much greater attraction for electrons, so it pulls electrons from the fur: the amber gains them (negative) and the fur loses the same amount (positive). Rubbing creates no charge. Press Next to see it.' },
+      2: { q: 'A positively charged metal sphere is connected to the Earth by a wire. What happens?',
+        opts: ['Positive charges flow to the Earth: it becomes neutral', 'Electrons flow from the Earth to it: it becomes neutral', 'Nothing: the Earth is neutral', 'Electrons flow to the Earth: it becomes more positive'], ans: 1,
+        why: 'Only electrons move. Free electrons flow from the Earth onto the sphere until it is electrically neutral (notes p. 6-25). Choose “Earthing a positive sphere” and press Start.' },
+      3: { q: 'A negatively charged metal rod touches a neutral metal sphere, then is taken away. The sphere is left …',
+        opts: ['negative, spread evenly over its surface', 'positive', 'neutral', 'negative only where the rod touched it'], ans: 0,
+        why: 'Free electrons move from the rod onto the sphere, so it gets the same sign as the rod (p. 6-27). The sphere is a conductor, so the charge spreads out evenly over its surface (p. 6-24).' },
+      4: { q: 'A positively charged rod is held near an earthed metal sphere. The earth wire is removed, then the rod. The sphere is left …',
+        opts: ['positive', 'neutral', 'negative', 'positive on one side, negative on the other'], ans: 2,
+        why: 'The positive rod pulls electrons up from the Earth. With the earth removed first, they cannot go back: the sphere is left with the opposite sign to the rod (p. 6-29). Press Next through the four steps to see it.' },
+      5: { q: 'Which way of charging leaves a conductor with a charge opposite in sign to the charged object?',
+        opts: ['Charging by friction', 'Charging by contact', 'Charging by induction', 'None of them'], ans: 2,
+        why: 'Induction: the charged object never touches the conductor, and electrons flow through the earth wire (p. 6-29). Contact gives the same sign (p. 6-27).' }
+    };
+
+    const FEATS = {
+      1: [['equal', 'Equal and opposite charges'], ['electrons', 'Only electrons move'], ['stays', 'Insulator: charge stays where rubbed'], ['extra', 'Only the extra charges'], ['reverse', 'Acetate: the other way round']],
+      2: [['stays', 'Insulator: charge stays put'], ['spreads', 'Conductor: charge spreads evenly'], ['fromEarth', 'Electrons from the Earth'], ['toEarth', 'Electrons to the Earth'], ['body', 'The body conducts'], ['standF', 'Why an insulating stand?']],
+      3: [['same', 'Same sign as the rod'], ['take', 'A positive rod takes electrons'], ['count', 'Counting the electrons'], ['repel', 'Like charges repel'], ['attractB', 'Opposite charges attract']],
+      4: [['opposite', 'Opposite sign to the rod'], ['order', 'Earth off before the rod goes'], ['wrong', 'Wrong order: neutral'], ['neutral', 'A neutral object is attracted'], ['insulator', 'Insulators are attracted too'], ['c5', 'Attract, touch, fly away']]
+    };
+    const PROMPTS = {
+      1: ['Why does the fur end up positive although no positive charge moved?', 'Why does the charge stay at the tip when only the tip is rubbed?', 'Why can a metal rod held in the hand not be charged by rubbing?'],
+      2: ['Why does charge spread over a metal sphere but not over a plastic one?', 'Which particles move when a positive sphere is earthed?', 'Why do people who work on computers wear a grounded wrist strap (p. 6-13)?'],
+      3: ['Why does the sphere end with the same sign as the rod?', 'In Tutorial C4, how do you know electrons moved onto the sphere?', 'Why do the two balls in Example 10 hang apart?'],
+      4: ['Why must the earth wire be removed before the rod?', 'Why is a neutral conductor attracted at all?', 'In Tutorial C5, why does the ball fly away after touching?'],
+      5: ['Which way of charging needs no contact at all?', 'Which way works on insulators, and why not the others?'],
+      6: ['Which question did most of the class get wrong, and why?', 'Pick one wrong option: what mistake would lead a student to choose it?']
+    };
+
+    let predictPick = null;
+    function clearFeat() { feat = {}; hl = {}; syncFeatButtons(); $('featNote').textContent = ''; }
+    function clearFeatNoteOnly() { if (Object.keys(feat).length) clearFeat(); }
+    function syncFeatButtons() { document.querySelectorAll('#feats .feat').forEach(b => b.classList.toggle('on', !!feat[b.dataset.f])); }
+    // a key feature shows itself: it always reloads its scenario, then sets the step or the run that shows it
+    function tapFeat(id) {
+      const on = !feat[id];
+      const want = scen => { presetEl.value = scen; chooseScenario(scen); };
+      clearFeat();
+      if (on) {
+        ({
+          equal: () => { want('amber'); gotoStep(2); hl = { rO: true, rC: true, rT: true }; },
+          electrons: () => { want('balloon'); gotoStep(2); hl = { rM: true }; },
+          stays: () => {
+            want('amber'); toCustom(false);
+            $('question').innerHTML = 'Only the tip of the amber rod was rubbed on the fur. Rub other parts of it yourself.';
+            Wd.cx = 1.2; Wd.cy = RUBY.rod; drivers = [{ k: 'rub', n: 4, c: 1.2, amp: 0.2, per: 0.36 }]; fastForward(); drivers = [];
+            Wd.cx = 3.4; Wd.cy = UPY.rod; hl = { rO: true };
+          },
+          extra: () => { want('acetate'); gotoStep(2); showAll = false; hl = { rO: true, rC: true }; },
+          reverse: () => { want('acetate'); gotoStep(2); hl = { rO: true, rC: true, rM: true }; },
+          stays2: () => {},
+          spreads: () => { want('metal'); runToEnd(); hl = { rWhere: true }; },
+          fromEarth: () => { want('earthPos'); runToEnd(); hl = { rQ: true, rMv: true }; },
+          toEarth: () => { want('earthNeg'); runToEnd(); hl = { rQ: true, rMv: true }; },
+          body: () => { want('hand'); runToEnd(); hl = { rMv: true }; },
+          standF: () => { want('stand'); runToEnd(); hl = { rQ: true, rMv: true }; },
+          same: () => { want('cneg'); gotoStep(2); hl = { rRod: true, rSph: true }; },
+          take: () => { want('cpos'); gotoStep(1); hl = { rMv: true, rSph: true }; },
+          count: () => { want('c4'); gotoStep(4); hl = { rSph: true }; },
+          repel: () => { want('ex10'); gotoStep(3); hl = { rF: true, rThA: true, rThB: true }; },
+          attractB: () => { want('b4'); gotoStep(3); hl = { rF: true, rThA: true, rThB: true }; },
+          opposite: () => { want('ipos'); gotoStep(4); hl = { rSph: true, rRod: true }; },
+          order: () => { want('ipos'); gotoStep(3); hl = { rEarth: true, rSph: true }; },
+          wrong: () => { want('iwrong'); gotoStep(4); hl = { rSph: true }; },
+          neutral: () => { want('attract'); gotoStep(2); hl = { rF: true, rTh: true }; },
+          insulator: () => { want('insul'); gotoStep(2); hl = { rF: true, rInd: true }; },
+          c5: () => { want('c5'); gotoStep(4); hl = { rBall: true, rF: true }; }
+        })[id === 'stays' && currentTab === 2 ? 'stays2' : id]();
+        if (id === 'stays' && currentTab === 2) { want('ins'); runToEnd(); hl = { rWhere: true }; }
+      }
+      feat = on ? { [id]: true } : {};
+      if (id === 'extra' && !on) showAll = true;
+      syncFeatButtons(); buildInputs(); update();
+      $('featNote').innerHTML = on ? featNote(id) : '';
+    }
+    function featNote(id) {
+      const W = Wd;
+      switch (id) {
+        case 'equal': return `The amber gained ${W.moved} electrons (${desc(objQ())}) and the fur lost ${W.moved} (${desc(clothQ())}): equal and opposite charges, adding up to zero.`;
+        case 'electrons': return 'Example 8: the balloon became negative because electrons moved onto it from the wool. Only electrons move; protons and neutrons stay where they are (answer A).';
+        case 'stays': return currentTab === 1 ? 'Only the tip touched the fur, so only the tip is charged. Amber is an insulator: the charge stays where it was rubbed and does not spread along the rod (p. 6-20).'
+          : 'On the plastic sphere the charge stays in the small region where it was put: an insulator has no free electrons (p. 6-20).';
+        case 'extra': return 'With only the extra charges shown, the acetate shows + where electrons are missing and the wool shows − for the extra electrons, as in the lower picture on p. 6-22. Both pictures show the same thing.';
+        case 'reverse': return `Acetate loses electrons to the wool: the acetate is positive (${desc(objQ())}) and the wool negative (${desc(clothQ())}), the other way round from amber and fur (p. 6-22).`;
+        case 'spreads': return 'On the metal sphere the free electrons move until the charge is spread evenly over the whole surface (p. 6-24).';
+        case 'fromEarth': return `The positive sphere is short of electrons: ${W.moved} electrons flow up from the Earth and make it neutral. No positive charge moves (p. 6-25).`;
+        case 'toEarth': return `The negative sphere has extra electrons: ${W.moved} flow down to the Earth and leave it neutral (p. 6-25).`;
+        case 'body': return 'The hand and body are a conducting path to the Earth: the sphere ends up neutral. That is why a metal held in the hand cannot be charged (p. 6-25).';
+        case 'standF': return 'On a metal stand the charge leaks away to the Earth and the sphere ends up neutral. The insulating stand prevents any electron flow between the charged conductor and the Earth (Example 9).';
+        case 'same': return 'The negative rod gave electrons to the sphere: both end up negative. Charging by contact gives the same sign as the charged conductor (p. 6-27).';
+        case 'take': return 'A positive rod is short of electrons, so it takes free electrons from the sphere: the sphere is left positive, the same sign as the rod.';
+        case 'count': return 'Tutorial C4: the sphere went from +12 µC to +8.0 µC, a change of −4.0 µC. It gained 4.0 × 10<sup>−6</sup> ÷ 1.6 × 10<sup>−19</sup> = 2.5 × 10<sup>13</sup> electrons, all from the metal rod.';
+        case 'repel': return `Example 10: both balls end up positive. Like charges repel, so the threads lean apart, each at ${deg(W.balls[0].th)} (choice B).`;
+        case 'attractB': return `Tutorial B4: A negative, B positive. Opposite charges attract, so the balls hang closer together, each thread at ${deg(W.balls[0].th)}.`;
+        case 'opposite': return `A positive rod leaves the sphere ${signWord(W.sph.Q)} (${desc(W.sph.Q)}): charging by induction gives the opposite sign (p. 6-29).`;
+        case 'order': return 'The earth wire is disconnected while the rod is still near. The electrons that came up from the Earth are now trapped on the sphere.';
+        case 'wrong': return 'Taking the rod away first lets the electrons flow back to the Earth, so the sphere ends up neutral. The earth must be removed with the charged object still around.';
+        case 'neutral': return `The neutral conductor swings ${deg(W.balls[0].th)} towards the negative rod: the induced positive charge is nearer the rod than the negative charge (p. 6-30).`;
+        case 'insulator': return `Even an insulator is attracted (${deg(W.balls[0].th)}): its molecules line up with their attractive side towards the rod (p. 6-31).`;
+        case 'c5': return `Tutorial C5: attracted by induction, it touches the rod, gains the same charge (${desc(W.balls[0].Q)}) and flies away, coming to rest ${deg(W.balls[0].th)} from the vertical.`;
+      }
+      return '';
+    }
+
+    function renderPredict(tab) {
+      const Q = PREDICT[tab], box = $('predictBox');
+      predictPick = null;
+      if (!Q) { box.hidden = true; return; }
+      box.hidden = false; box.classList.remove('done');
+      $('predictQ').innerHTML = Q.q;
+      $('predictFb').innerHTML = '';
+      const opts = $('predictOpts');
+      opts.innerHTML = '';
+      Q.opts.forEach((o, i) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.innerHTML = o;
+        b.addEventListener('click', () => {
+          if (opts.dataset.done) return;
+          predictPick = i; opts.querySelectorAll('.opt').forEach((x, j) => x.classList.toggle('picked', j === i));
+        });
+        opts.appendChild(b);
+      });
+      delete opts.dataset.done;
+      $('predictCheck').textContent = 'Check my answer';
+    }
+    $('predictCheck').addEventListener('click', () => {
+      const Q = PREDICT[currentTab], opts = $('predictOpts'), fb = $('predictFb');
+      if (!Q) return;
+      if (opts.dataset.done) { renderPredict(currentTab); return; }
+      if (predictPick === null) { fb.innerHTML = '<span class="verdict no">Pick an answer first.</span>'; return; }
+      opts.dataset.done = '1';
+      const ok = predictPick === Q.ans;
+      opts.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === Q.ans) x.classList.add('right'); else if (j === predictPick) x.classList.add('wrong'); });
+      // the options fold away: the result line names the pick (and the right answer), then the explanation
+      $('predictBox').classList.add('done');
+      fb.innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> Your prediction: ${Q.opts[predictPick]}.`
+        + (ok ? '' : ` The answer: <b>${Q.opts[Q.ans]}</b>.`) + ` <span class="why">${Q.why}</span>`;
+      $('predictCheck').textContent = 'Try again';
+    });
+
+    function renderFeats(tab) {
+      const list = FEATS[tab] || [], el = $('feats');
+      $('featBox').hidden = !list.length;
+      el.innerHTML = '';
+      list.forEach(([id, lab]) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'feat'; b.dataset.f = id; b.textContent = lab;
+        b.addEventListener('click', () => tapFeat(id));
+        el.appendChild(b);
+      });
+      $('featNote').textContent = '';
+      syncFeatButtons();
+    }
+    function renderKey(tab) {
+      // the label sits in its own span: as direct children of the inline-flex entry, <i> would become a flex item
+      $('ckey').innerHTML = (TABS[tab].key || []).map(k => `<span><b class="${KEYS[k][2] || ''}" style="background:${KEYS[k][0]}"></b><span>${KEYS[k][1]}</span></span>`).join('');
+    }
+    function fillPresets(list, tab) {
+      presetEl.innerHTML = '';
+      const custom = tab === 2 ? 'Your own set-up' : 'Do it yourself';
+      [...list, 'custom'].forEach(id => { const o = document.createElement('option'); o.value = id; o.textContent = id === 'custom' ? custom : PRESETS[id].name; presetEl.appendChild(o); });
+      presetEl.value = list[0];
+    }
+
+    function showTab(tab) {
+      currentTab = tab;
+      stop(); drivers = []; S.playing = false;
+      document.querySelectorAll('#tabs .tab').forEach(b => { const on = +b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+      $('stepLabel').textContent = `Step ${tab} of 6`;
+      document.querySelectorAll('#stepBar i').forEach((i, n) => i.classList.toggle('on', n < tab));
+      $('strip').innerHTML = TABS[tab].strip;
+      renderKey(tab);
+      $('pageSim').hidden = tab > 4;
+      $('page5').hidden = tab !== 5;
+      $('page6').hidden = tab !== 6;
+      if (tab <= 4) {
+        const T = TABS[tab];
+        $('simGroup').hidden = T.mode !== 'run';
+        $('moments').hidden = T.mode !== 'run';
+        $('stepGroup').hidden = T.mode !== 'steps';
+        $('speedNote').textContent = T.mode === 'run' ? 'The electrons are slowed down so you can see them.' : '';
+        $('sceneHint').textContent = T.hint || '';
+        $('notes').innerHTML = '<ul>' + T.notes.map(n => `<li>${n}</li>`).join('') + '</ul>';
+        showAll = true;
+        fillPresets(T.presets, tab); chooseScenario(T.presets[0]);
+      }
+      if (tab === 5) renderGame();
+      if (tab === 6) renderQuiz();
+      renderPredict(tab);
+      renderFeats(tab);
+      $('tPrompts').innerHTML = PROMPTS[tab].map(p => `<li>${p}</li>`).join('');
+    }
+    document.querySelectorAll('#tabs .tab').forEach(b => b.addEventListener('click', () => showTab(+b.dataset.tab)));
+
+    /* ---------------- Tab 5: which way of charging? ---------------- */
+    const METHODS = ['Friction', 'Contact', 'Induction'];
+    const CARDS = [
+      ['An amber rod is rubbed with fur.', 0, 'Two different insulators rubbed together: electrons pass from the fur to the amber (p. 6-21).'],
+      ['A negatively charged metal rod touches a neutral metal sphere.', 1, 'A charged conductor touches an uncharged metal part: free electrons pass between them (p. 6-27).'],
+      ['A positively charged rod is held near an earthed sphere. The earth wire is removed, then the rod.', 2, 'The rod never touches the sphere; electrons come up from the Earth and are trapped (p. 6-29).'],
+      ['A balloon becomes negative when it is rubbed with wool.', 0, 'Rubbing two different materials together: charging by friction (Example 8).'],
+      ['Two neutral balls are each touched by a positively charged metal.', 1, 'Touching with a charged conductor: both balls end up positive (Example 10).'],
+      ['The conductor ends up with a charge opposite in sign to the charged object.', 2, 'Only induction gives the opposite sign (p. 6-29).'],
+      ['The conductor ends up with the same sign of charge as the charged object.', 1, 'Contact gives the same sign as the charged conductor (p. 6-27).'],
+      ['The charged object never touches the conductor, and an earth wire is used.', 2, 'That is charging by induction (p. 6-29).'],
+      ['Paint droplets become charged by rubbing against the nozzle of the spray gun.', 0, 'Rubbing against the nozzle is friction (electrostatic painting, p. 6-15).'],
+      ['Two different insulators end up with equal and opposite charges.', 0, 'The insulator that gains electrons is negative; the other loses the same number and is positive (p. 6-21).']
+    ];
+    let game = { i: 0, score: 0, pick: null, done: false };
+    function showSummary(on) { $('sumBody').hidden = !on; $('sumBtn').textContent = on ? 'Hide the table' : 'Show the table'; }
+    $('sumBtn').addEventListener('click', () => showSummary($('sumBody').hidden));
+    function renderGame() {
+      const el = $('game'), N = CARDS.length;
+      showSummary(game.i >= N);
+      if (game.i >= N) {
+        el.innerHTML = `<div class="quiz-top"><span>All ${N} cards sorted</span><span>Score: ${game.score} of ${N}</span></div><div class="quiz-bar"><i style="width:100%"></i></div>
+          <div class="quiz-q">You sorted ${game.score} of ${N} correctly.</div><div class="row-btns"><button type="button" id="gAgain">Sort them again</button></div>`;
+        $('gAgain').addEventListener('click', () => { game = { i: 0, score: 0, pick: null, done: false }; renderGame(); });
+        return;
+      }
+      const [text] = CARDS[game.i];
+      el.innerHTML = `<div class="quiz-top"><span>Card ${game.i + 1} of ${N}: which way of charging?</span><span>Score: ${game.score} of ${N}</span></div>
+        <div class="quiz-bar"><i style="width:${(game.i / N) * 100}%"></i></div>
+        <div class="game-card" id="gCard">${text}</div>
+        <div class="game-opts">${METHODS.map((m, j) => `<button type="button" class="opt" data-j="${j}">${m}</button>`).join('')}</div>
+        <div class="feedback" id="gFb"></div>
+        <div class="row-btns"><button type="button" id="gNext" hidden>Next card</button></div>`;
+      el.querySelectorAll('.game-opts .opt').forEach(b => b.addEventListener('click', () => {
+        if (game.done) return;
+        const j = +b.dataset.j, ans = CARDS[game.i][1], ok = j === ans;
+        game.done = true; if (ok) game.score++;
+        el.querySelectorAll('.game-opts .opt').forEach((x, k) => { if (k === ans) x.classList.add('right'); else if (k === j) x.classList.add('wrong'); });
+        $('gFb').innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : `Not quite: ${METHODS[ans].toLowerCase()}.`}</span> <span class="why">${CARDS[game.i][2]}</span>`;
+        el.querySelector('.quiz-top span:last-child').textContent = `Score: ${game.score} of ${N}`;
+        $('gNext').hidden = false; $('gNext').textContent = game.i + 1 < N ? 'Next card' : 'See the score';
+      }));
+      $('gNext').addEventListener('click', () => { game.i++; game.done = false; renderGame(); });
+    }
+
+    /* ---------------- Tab 6: Challenge ---------------- */
+    // every answer from the notes' examples, Tutorial 6's key and the colleague's worked solutions
+    // A question whose parts share one situation is one screen: the situation once, then its parts
+    const QUIZ = [
+      { src: 'Example 8, notes p. 6-23', stem: 'A balloon has a negative charge when rubbed with wool.', parts: [
+        { q: 'During rubbing, what has been transferred between the wool and the balloon?', opts: ['electrons', 'protons', 'neutrons', 'electrons and protons'], ans: 0,
+          why: 'Only electrons move from one object to another: the balloon gained electrons from the wool. The number of protons does not change (p. 6-5).' }] },
+      { src: 'Example 9, notes p. 6-26', stem: 'A charged metal sphere stands on an insulating stand.', parts: [
+        { q: 'What is the purpose of the insulating stand?', opts: ['To prevent any electron flow between the charged conductor and the Earth', 'To spread the charge evenly over the sphere', 'To let electrons flow from the Earth to the sphere', 'To charge the sphere by friction'], ans: 0,
+          why: 'The insulating stand prevents any electron flow between the charged conductor and the Earth. On a metal stand the charge would leak away and the sphere would become neutral.' }] },
+      { src: 'Example 10, notes p. 6-28', stem: 'Two lightweight, electrically neutral conducting balls hang from threads. Both balls are touched by a positively charged metal.', parts: [
+        { q: 'How do the balls hang afterwards?', opts: ['Pushed apart: both are positively charged, and like charges repel', 'Straight down: they are still neutral', 'Pulled together: they attract each other', 'One hangs straight down, the other is pushed away'], ans: 0,
+          why: 'Both balls become positively charged and like charges repel each other (choice B in the notes).' }] },
+      { src: 'Example 11, notes p. 6-32', stem: 'A balloon has a negative charge when rubbed with silk. It can attract some paper scraps.', parts: [
+        { q: 'Which of the following cannot be the net charge of the paper scraps?', opts: ['Negative', 'Neutral', 'Positive'], ans: 0,
+          why: 'Like charges repel and unlike charges attract: a negative scrap would be repelled. A neutral scrap is attracted by induction, a positive one because unlike charges attract.' }] },
+      { src: 'Tutorial 6, A5', stem: 'A positively charged rod is held near, but not touching, a neutral metal sphere.', parts: [
+        { q: 'How is the charge arranged on the sphere?', opts: ['Negative on the side nearer the rod, positive on the far side', 'Positive on the side nearer the rod, negative on the far side', 'Negative all over the sphere', 'No change: the rod does not touch it'], ans: 0,
+          why: 'Charges in a conductor move freely: the electrons are pulled closer to the positive rod, leaving positive charge on the far side.' }] },
+      { src: 'Tutorial 6, B3', stem: 'Two identical metal-coated balloons A and B hang from nylon threads, both electrically neutral. A is rubbed and given a negative charge; the two balloons then attract each other without touching.', parts: [
+        { lab: '(a)', q: 'Which charge is induced on the side of B nearer to A?', opts: ['Positive: B’s free electrons are pushed to its far side', 'Negative: electrons are pulled towards A', 'None: B is neutral', 'Positive: protons move towards A'], ans: 0,
+          why: 'A’s negative charge repels the free electrons in B, so they move as far from A as possible, leaving positive charge on the near side. Protons do not move.' },
+        { lab: '(b)', q: 'Why is the attraction greater than the repulsion?', opts: ['The positive charge on B is nearer to A, and the force decreases with distance', 'B now has more positive charge than negative charge', 'A’s charge is larger than B’s', 'The nylon threads let charge flow'], ans: 0,
+          why: 'B is still neutral, with equal + and − charges; the + charge is nearer A, so its attraction is stronger than the repulsion on the − charge further away.' }] },
+      { src: 'Tutorial 6, B4', stem: 'Two lightweight neutral conducting balls A and B hang from threads. A is touched by a negatively charged metal and B by a positively charged metal. The balls never touch each other.', parts: [
+        { q: 'How do the balls hang?', opts: ['Closer together: A is negative, B is positive, and opposite charges attract', 'Further apart: like charges repel', 'Straight down: they are still neutral', 'Straight down: their charges cancel'], ans: 0,
+          why: 'Contact gives each ball the sign of the metal that touched it: A negative, B positive. Opposite charges attract, so they hang at an angle closer to each other.' }] },
+      { src: 'Tutorial 6, C3', stem: 'Four lightweight aluminium balls P, Q, R and S hang from threads. P has been touched by a positively charged iron rod. Q, R and S are attracted to P. Q and S have no effect on each other. Q is attracted to R.', parts: [
+        { lab: '(a)', q: 'Q is …', opts: ['electrically neutral', 'negatively charged', 'positively charged', 'either positive or negative'], ans: 0,
+          why: 'Q and S have no effect on each other, so neither is charged: if either were charged there would be a force between them.' },
+        { lab: '(b)', q: 'R is …', opts: ['negatively charged', 'electrically neutral', 'positively charged', 'either positive or neutral'], ans: 0,
+          why: 'Q is neutral but attracted to R, so R must be charged. R is attracted to the positive P, so R is negatively charged.' }] },
+      { src: 'Tutorial 6, C4', stem: 'A metal sphere has an initial charge of +12 µC. It touches a metal rod and is then separated from it. The final charge of the sphere is +8.0 µC.', parts: [
+        { lab: '(a)', q: 'What type of charged particles is transferred, and in which direction?', opts: ['Free electrons, from the metal rod to the sphere', 'Free electrons, from the sphere to the metal rod', 'Protons, from the sphere to the metal rod', 'Protons, from the metal rod to the sphere'], ans: 0,
+          why: 'Electrons are always the ones transferred. The sphere became less positive, so it gained electrons from the rod.' },
+        { lab: '(b)', q: 'How many are transferred?', opts: [`2.5 × ${ex(13)}`, `7.5 × ${ex(13)}`, `5.0 × ${ex(13)}`, `6.4 × ${ex(-25)}`], ans: 0,
+          why: `Change in charge = (+8.0 × 10<sup>−6</sup>) − (+12 × 10<sup>−6</sup>) = −4.0 × 10<sup>−6</sup> C; <i>n</i> = (−4.0 × 10<sup>−6</sup>) ÷ (−1.6 × 10<sup>−19</sup>) = 2.5 × 10<sup>13</sup>. (7.5 × 10<sup>13</sup> uses the initial 12 µC; 6.4 × 10<sup>−25</sup> multiplies.)` }] },
+      { src: 'Tutorial 6, C5', stem: 'A lightweight metal ball hangs by a thread. When a charged rod is held near, the ball moves towards the rod and touches it. After touching it, it then flies away.', parts: [
+        { lab: '(a)', q: 'Why does the neutral ball move towards the rod?', opts: ['The rod induces opposite charge on the nearer side, and the attraction is stronger than the repulsion', 'The ball already had the opposite charge', 'The rod pulls the protons in the ball towards it', 'The ball is pulled by the Earth through the thread'], ans: 0,
+          why: 'Induction: opposite charge on the near side, like charge on the far side. The opposite charge is closer, so the attraction is stronger.' },
+        { lab: '(b)', q: 'Why does it fly away after touching?', opts: ['It now has the same type of charge as the rod, and like charges repel', 'It loses all its charge to the rod', 'It gains the opposite charge to the rod', 'The rod becomes neutral'], ans: 0,
+          why: 'The ball is a conductor: on touching, charge passes between the rod and the ball, so the ball gets the same type of charge as the rod and is repelled.' }] },
+      { src: 'Tutorial 6, C6', stem: 'Two neutral aluminium spheres of equal radii hang from the ceiling on nylon threads. You have a glass rod and a piece of silk.', parts: [
+        { q: 'How can you give the two spheres exactly equal amounts of the same type of charge?', opts: ['Rub the glass rod with the silk, touch it to sphere A, then touch A to B and separate them', 'Rub each sphere with the silk', 'Touch each sphere with your hand', 'Hold the rubbed rod near sphere A without touching, then take it away'], ans: 0,
+          why: 'Charging by contact: the rod charges A, then A shares its charge with B. The spheres have equal radii, so the charge is shared equally.' }] },
+      { src: 'Effects and applications, notes pp. 6-14 and 6-15; Tutorial 6, C7', stem: 'Static electricity in daily life.', parts: [
+        { lab: '(a)', q: 'Trucks that carry petrol have a metal chain or conductive strip to the ground. Why?', opts: ['So the charge that builds up on the metal body is discharged harmlessly', 'To charge the petrol so it stays in the tank', 'To stop the tyres wearing out', 'To attract dust away from the engine'], ans: 0,
+          why: 'Static electricity builds up on a moving truck; the chain lets the charge flow away to the ground before it can cause a spark (p. 6-14).' },
+        { lab: '(b)', q: 'In electrostatic painting, why do the paint droplets spread out evenly over the car body?', opts: ['They all have the same charge, so they repel each other', 'The car body is positively charged', 'They are neutral', 'The spray gun is earthed'], ans: 0,
+          why: 'The droplets all have the same charge, so they repel each other and spread out evenly over the sprayed surface (p. 6-15).' },
+        { lab: '(c)', q: 'A screen wiped with a dry cloth soon gathers dust. Why?', opts: ['Rubbing charges the screen by friction, and the charged screen attracts the dust', 'The cloth leaves dust behind', 'The screen is earthed by the cloth', 'Dust is always positively charged'], ans: 0,
+          why: 'Friction between the cloth and the screen transfers electrons, leaving the screen charged; it then attracts neutral dust by induction (Tutorial 6, C7(a)).' }] }
+    ];
+    // the options are written with the right one first; turn each part's list round so the right answer is not always first
+    { let pc = 0; QUIZ.forEach(Q => Q.parts.forEach(Pt => { const n = Pt.opts.length, r = (pc++ * 3 + 1) % n;
+      Pt.opts = Pt.opts.slice(r).concat(Pt.opts.slice(0, r)); Pt.ans = (Pt.ans - r + n) % n; })); }
+    const QUIZ_MARKS = QUIZ.reduce((n, Q) => n + Q.parts.length, 0);
+    const partLabel = (Q, k) => Q.parts[k].lab ? Q.parts[k].lab + ' ' : Q.parts.length > 1 ? `(${'abcdefgh'[k]}) ` : '';
+    let quiz = { i: 0, score: 0, picks: [], done: false, missed: [] };
+    function resetQuiz() { quiz = { i: 0, score: 0, picks: [], done: false, missed: [] }; renderQuiz(); }
+    function renderQuiz() {
+      const el = $('quiz'), N = QUIZ.length;
+      if (quiz.i >= N) {
+        const list = quiz.missed.length
+          ? `<p>Go back over these:</p><ul>${quiz.missed.map(([n, k]) => { const Q = QUIZ[n];
+              return `<li>Question ${n + 1}${partLabel(Q, k).trim()} (${Q.src}): ${(Q.stem ? Q.stem + ' ' : '') + Q.parts[k].q}</li>`; }).join('')}</ul>`
+          : '<p>Every answer right. Well done.</p>';
+        el.innerHTML = `<div class="quiz-top"><span>Summary</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div><div class="quiz-bar"><i style="width:100%"></i></div>
+          <div class="quiz-sum"><div class="quiz-q">You scored ${quiz.score} out of ${QUIZ_MARKS}.</div>${list}</div>
+          <div class="row-btns"><button type="button" id="qAgain">Try the quiz again</button></div>`;
+        $('qAgain').addEventListener('click', resetQuiz);
+        return;
+      }
+      const Q = QUIZ[quiz.i], many = Q.parts.length > 1;
+      quiz.picks = Q.parts.map(() => null);
+      el.innerHTML = `<div class="quiz-top"><span>Question ${quiz.i + 1} of ${N}</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div>
+        <div class="quiz-bar"><i style="width:${(quiz.i / N) * 100}%"></i></div>
+        ${Q.stem ? `<div class="quiz-q" id="qStem">${Q.stem}</div>` : ''}<div class="quiz-src">${Q.src}${many ? ` · ${Q.parts.length} parts, answer them all` : ''}</div>
+        ${Q.parts.map((Pt, k) => `<div class="qpart" data-k="${k}">
+          <div class="${Q.stem ? 'qpart-q' : 'quiz-q'}">${partLabel(Q, k)}${Pt.q}</div>
+          <div class="opts">${Pt.opts.map((o, j) => `<button type="button" class="opt" data-j="${j}">${o}</button>`).join('')}</div>
+          <div class="feedback"></div></div>`).join('')}
+        <div class="row-btns"><button type="button" id="qSubmit">${many ? 'Submit answers' : 'Submit answer'}</button><button type="button" class="secondary" id="qReset">Reset quiz</button></div>
+        <div class="feedback" id="qFb"></div>`;
+      el.querySelectorAll('.qpart').forEach(part => {
+        const k = +part.dataset.k;
+        part.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+          if (quiz.done) return;
+          quiz.picks[k] = +b.dataset.j; part.querySelectorAll('.opt').forEach(x => x.classList.toggle('picked', x === b));
+        }));
+      });
+      $('qReset').addEventListener('click', resetQuiz);
+      $('qSubmit').addEventListener('click', () => {
+        const fb = $('qFb');
+        if (quiz.done) { quiz.i++; quiz.done = false; renderQuiz(); return; }
+        const left = quiz.picks.map((p, k) => p === null ? partLabel(Q, k).trim() || `part ${k + 1}` : null).filter(x => x !== null);
+        if (left.length) { fb.innerHTML = `<span class="verdict no">${many ? `Pick an answer for every part first (still to do: ${left.join(', ')}).` : 'Pick an answer first.'}</span>`; return; }
+        quiz.done = true; fb.innerHTML = '';
+        el.querySelectorAll('.qpart').forEach(part => {
+          const k = +part.dataset.k, Pt = Q.parts[k], ok = quiz.picks[k] === Pt.ans;
+          if (ok) quiz.score++; else quiz.missed.push([quiz.i, k]);
+          part.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === Pt.ans) x.classList.add('right'); else if (j === quiz.picks[k]) x.classList.add('wrong'); });
+          part.querySelector('.feedback').innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> <span class="why">${Pt.why}</span>`;
+        });
+        el.querySelector('.quiz-top span:last-child').textContent = `Score: ${quiz.score} of ${QUIZ_MARKS}`;
+        $('qSubmit').textContent = quiz.i + 1 < N ? 'Next question' : 'See the summary';
+      });
+    }
+
+    /* ---------------- Teacher mode ---------------- */
+    // Only the teacher link (this page's address + ?teacher) shows the button; students and the
+    // Brightspace embed use the plain address. Not a lock: the panel only changes this screen.
+    const teacher = $('teacher');
+    if (new URLSearchParams(location.search).has('teacher')) $('teacherBtn').hidden = false;
+    $('teacherBtn').addEventListener('click', () => { teacher.hidden = !teacher.hidden; });
+    $('tClose').addEventListener('click', () => { teacher.hidden = true; });
+    $('tExplain').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-explain');
+      e.target.textContent = on ? 'Show explanations' : 'Hide explanations'; e.target.classList.toggle('on', on);
+    });
+    $('tAnswers').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-answers');
+      e.target.textContent = on ? 'Show answer labels' : 'Hide answer labels'; e.target.classList.toggle('on', on);
+    });
+    // free exploration: no Predict first, and every step (or the whole run) shown at once
+    $('tFree').addEventListener('click', e => {
+      freeMode = !freeMode; document.body.classList.toggle('free-mode', freeMode);
+      e.target.textContent = freeMode ? 'Back to the guided steps' : 'Switch to free exploration'; e.target.classList.toggle('on', freeMode);
+      showTab(currentTab);
+    });
+    const fullBtn = $('tFull');
+    if (!document.fullscreenEnabled) fullBtn.hidden = true;
+    fullBtn.addEventListener('click', () => {
+      if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {});
+    });
+    document.addEventListener('fullscreenchange', () => { fullBtn.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
+    $('tReset').addEventListener('click', () => { resetQuiz(); game = { i: 0, score: 0, pick: null, done: false }; showTab(1); });
+
+    // for the checks: the state behind the drawing, and a way to finish what is playing at once
+    window.__pimState = () => ({ tab: currentTab, scen: S.scen, custom: S.custom, step: S.step, nSteps: steps.length, playing: S.playing, run: S.run,
+      W: Wd ? clone(Wd) : null, regions: Wd && Wd.rig === 'rig' ? sphRegions() : null, idle: Wd ? isIdle() : true,
+      F: Wd && Wd.rig === 'hang' ? hangForces(Wd.balls.map(b => b.th)) : null, runEnd: runInfo ? runInfo.t : null });
+    window.__pimFinish = () => { if (!Wd) return; fastForward(); drivers = []; if (isIdle()) { stop(); onIdle(); } update(); };
+    window.addEventListener('resize', () => { if (currentTab <= 4) update(); });
+    showTab(1);
+  </script>
+  <script>
+    // Embedded (Brightspace): tell the page around the frame how tall this page is, so a resize script in the
+    // embed code can fit the frame to it (no blank space, no inner scrollbar). Measured from the content, not
+    // scrollHeight, which never drops below the frame's own height and so could never shrink it.
+    (function () {
+      if (window.parent === window) return;
+      let last = 0;
+      function height() {
+        const c = document.querySelector('.container'), cs = getComputedStyle(document.body);
+        return Math.ceil(c.getBoundingClientRect().bottom + window.scrollY + parseFloat(cs.paddingBottom) + parseFloat(cs.marginBottom) + 4);
+      }
+      function send(force) {
+        const h = height();
+        if (!force && Math.abs(h - last) < 2) return;
+        last = h;
+        window.parent.postMessage({ type: 'pim-height', page: location.pathname.split('/').pop(), height: h }, '*');
+      }
+      new ResizeObserver(() => send(false)).observe(document.querySelector('.container'));
+      window.addEventListener('load', () => send(true));
+      // the embed's script asks once it is listening, in case this page loaded first
+      window.addEventListener('message', e => { if (e.data && e.data.type === 'pim-height?') send(true); });
+      send(true);
+    })();
   </script>
   <script>
     // Phones: a swipe that starts on an empty part of a drawing scrolls the page (touch-action: pan-y),
     // and a touch the page grabbed for a drag (its own setPointerCapture call) keeps the page still.
     // (hasPointerCapture can't tell: a touch is always captured implicitly.)
-    // The kinematics graphs are left out: a sideways drag scrubs them and an up-down one scrolls.
     document.querySelectorAll('canvas:not(.graph-canvas)').forEach(c => {
       let grabbed = false;
       const capture = c.setPointerCapture;
