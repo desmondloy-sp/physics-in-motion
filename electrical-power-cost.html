@@ -18,48 +18,191 @@
   <!-- pim-meta:end -->
   <style>
     * { box-sizing: border-box; }
+    /* the hidden attribute must win over every display rule below */
+    [hidden] { display: none !important; }
     body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
     .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
-    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    h1 { margin: 0; font-size: 1.1rem; }
     .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
-    .controls { display: grid; grid-template-columns: 1.8fr 1fr 1fr 1fr; gap: 10px; align-items: end; }
-    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-    label { font-size: 0.8rem; font-weight: 600; }
-    .val { font-weight: normal; color: #334155; }
-    select, input[type=number] { font-size: 0.9rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
-    input[type=range] { width: 100%; }
-    button { font-size: 0.88rem; padding: 7px 12px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; }
-    button.go { background: #2563eb; }
+
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 110px; }
+    .control-group.scen-group { flex: 2.2 1 260px; }
+    .control-group.button-group { flex: 2 1 280px; }
+    .control-group select { width: 100%; max-width: 100%; }
+    .controls input, .controls select, .controls button { height: 34px; }
+    label { font-size: 0.82rem; font-weight: 600; line-height: 1.2; }
+    label sub, label sup { line-height: 0; }
+    .step-no { font-weight: 400; color: #475569; }
+    input, select, button { font-size: 0.95rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; }
+    input.num { width: 100%; max-width: 120px; }
+    input[type=range] { width: 100%; padding: 0; height: 34px; }
+    .buttons { display: flex; gap: 6px; flex-wrap: nowrap; }
+    button { cursor: pointer; background: #2563eb; color: white; border: none; min-width: 0; flex: 1; }
+    button:hover { background: #1d4ed8; }
+    button:disabled { background: #94a3b8; cursor: default; }
+    button.secondary { background: #475569; }
+    button.secondary:hover { background: #334155; }
+    button.secondary:disabled { background: #cbd5e1; color: #475569; }
+    button.danger { background: #dc2626; }
+    button.danger:hover { background: #b91c1c; }
+    .moments { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+    .moments button { flex: none; padding: 6px 12px; }
+    .speed { font-size: 0.8rem; color: #475569; }
+    .speed:empty { display: none; }
+    .group-title { font-size: 0.78rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.03em; margin: 10px 0 4px; }
+    .inputs { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: flex-end; }
+    .inputs .control-group { flex: 0 1 auto; }
+    .inputs .control-group.wide { flex: 1 1 260px; }
+    .label-row label { white-space: nowrap; }
+    .question { margin-top: 8px; font-size: 0.84rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 6px 10px; color: #7c2d12; }
+    .question:empty { display: none; }
+
     .readout { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout:empty { display: none; }
+    .readout.n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .readout.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .readout.n4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card.hl { box-shadow: inset 0 0 0 2px #dc2626; }
     .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
     .readout-card .value { font-size: 1rem; font-weight: bold; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
-    .app { border: 2px solid #e2e8f0; border-radius: 10px; padding: 8px; cursor: pointer; background: #f8fafc; transition: background 0.2s, border-color 0.2s; }
-    .app.on { border-color: #f59e0b; background: #fffbeb; }
-    .app .top { display: flex; align-items: center; gap: 8px; }
-    .app .icon { width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center; font-size: 20px; background: #e2e8f0; }
-    .app.on .icon { background: #fde68a; }
-    .app .name { font-weight: bold; font-size: 0.9rem; }
-    .app .rating { font-size: 0.75rem; color: #64748b; }
-    .app .now { margin-left: auto; font-weight: bold; font-size: 0.85rem; }
-    .app .hours { margin-top: 6px; font-size: 0.75rem; color: #334155; }
-    .app .hours input { margin-top: 2px; }
-    .app .cost { font-size: 0.78rem; color: #92400e; margin-top: 2px; }
-    canvas { display: block; width: 100%; border-radius: 10px; }
-    #meterCanvas { height: 150px; border: 1px solid #e5e7eb; background: #fbfdff; }
-    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 6px; }
+    .words { margin-top: 8px; font-size: 0.86rem; font-weight: 600; color: #1e3a8a; background: #eef4ff; border-radius: 8px; padding: 6px 10px; }
+    .words:empty { display: none; }
+
+    .scene-wrap { margin-top: 8px; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 0 0 4px; }
+    .hint:empty { display: none; }
     .note { margin-top: 6px; font-size: 0.8rem; color: #475569; }
     .note ul { margin: 2px 0 0; padding-left: 18px; }
     .note li { margin: 2px 0; }
-    .question { margin-top: 8px; font-size: 0.85rem; font-weight: 700; color: #7c2d12; background: #fff7ed; border-radius: 7px; padding: 6px 8px; }
-    .question:empty { display: none; }
-    button.danger { background: #dc2626; }
-    .app.hidden { display: none; }
+    canvas { display: block; width: 100%; border-radius: 10px; background: white; }
+    #scene { height: 300px; border: 1px solid #dbeafe; touch-action: pan-y; }
+    canvas.qfig { height: 230px; border: 1px solid #e5e7eb; margin: 4px 0 8px; touch-action: pan-y; }
+
+    /* tab 4: the appliances in a home (page values) */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; margin-top: 8px; }
+    .app { border: 2px solid #e2e8f0; border-radius: 10px; padding: 8px; cursor: pointer; background: #f8fafc; }
+    .app.on { border-color: #f59e0b; background: #fffbeb; }
+    .app .top { display: flex; align-items: center; gap: 8px; }
+    .app .name { font-weight: bold; font-size: 0.88rem; }
+    .app .rating { font-size: 0.76rem; color: #475569; }
+    .app .state { margin-left: auto; font-weight: bold; font-size: 0.82rem; }
+    .app .hours { margin-top: 6px; font-size: 0.76rem; color: #334155; }
+
+    /* the working, set like the notes: italic symbols, stacked fractions */
+    .work { margin-top: 8px; }
+    .work:empty { display: none; }
+    .math { font-family: 'Times New Roman', Times, serif; font-size: 1.06rem; color: #1f2937; }
+    /* a block line, not flex: inside flex every <sub> would become its own item and lose its drop */
+    .math .eq { display: block; margin: 4px 0; line-height: 2.1; }
+    .math .eq.lit { background: #fef9c3; border-radius: 4px; padding: 0 4px; }
+    .math .frac { display: inline-flex; flex-direction: column; text-align: center; vertical-align: middle; line-height: 1.15; }
+    .math .frac > span:first-child { border-bottom: 1px solid currentColor; padding: 0 3px; }
+    .math .frac > span:last-child { padding: 0 3px; }
+    .math b { font-family: Arial, Helvetica, sans-serif; }
+
+    /* the game (tab 5) */
+    .game { margin-top: 8px; }
+    .game .opts { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+    .game-top { display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 700; margin-bottom: 6px; }
+
+    /* ---- the step-by-step frame: header, numbered tabs, colour key, instruction strip ---- */
+    .app-head { background: #1e293b; color: #f8fafc; border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+    .head-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .head-row h1 { flex: 1 1 260px; }
+    .steps { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #cbd5e1; }
+    .step-bar { display: flex; gap: 3px; }
+    .step-bar i { display: block; width: 18px; height: 5px; border-radius: 3px; background: #475569; }
+    .step-bar i.on { background: #fbbf24; }
+    button.teacher-btn { flex: none; background: transparent; border: 1px solid #94a3b8; color: #f8fafc; font-size: 0.82rem; padding: 5px 10px; }
+    button.teacher-btn:hover { background: #334155; }
+    /* every tab always visible: equal columns, and a long name wraps onto a second line (never a sideways scroll) */
+    .tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; margin-top: 8px; }
+    button.tab { min-width: 0; background: #f1f5f9; color: #1e293b; font-size: 0.85rem; font-weight: 600; padding: 7px 8px; border-radius: 8px; line-height: 1.2; white-space: normal; text-align: center; }
+    button.tab:hover { background: #e2e8f0; }
+    button.tab.active, button.tab.active:hover { background: #2563eb; color: white; }
+    .tab .ts { display: none; }
+    .nw { white-space: nowrap; }
+    .ckey { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 7px; font-size: 0.76rem; color: #e2e8f0; }
+    .ckey > span { display: inline-flex; align-items: center; gap: 5px; }
+    .ckey b { display: inline-block; width: 14px; height: 4px; border-radius: 2px; }
+    .ckey b.dot { width: 10px; height: 10px; border-radius: 50%; }
+    .strip { background: #fef9c3; border-left: 4px solid #eab308; border-radius: 6px; padding: 7px 10px; font-size: 0.86rem; margin-bottom: 8px; }
+
+    /* Predict first (above the controls), key features */
+    .learn { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 8px; }
+    .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; }
+    .box-title { font-weight: 700; font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-q { font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-box { margin-bottom: 8px; }
+    .opts { display: grid; gap: 5px; }
+    #predictOpts { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    .predict-box.done #predictOpts { display: none; }
+    .predict-box.done .predict-q { margin-bottom: 0; }
+    button.opt { flex: none; width: 100%; text-align: left; background: white; color: #1f2937; border: 1px solid #cbd5e1; font-size: 0.86rem; padding: 7px 10px; }
+    button.opt:hover { background: #f1f5f9; }
+    button.opt:disabled { background: white; color: #1f2937; cursor: default; }
+    button.opt.picked, button.opt.picked:hover { border-color: #2563eb; background: #eff6ff; box-shadow: inset 0 0 0 1px #2563eb; }
+    button.opt.right, button.opt.right:hover { border-color: #16a34a; background: #dcfce7; box-shadow: inset 0 0 0 1px #16a34a; }
+    button.opt.wrong, button.opt.wrong:hover { border-color: #dc2626; background: #fee2e2; box-shadow: inset 0 0 0 1px #dc2626; }
+    .row-btns { display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+    .row-btns button { flex: none; padding: 6px 12px; }
+    .feedback { font-size: 0.84rem; margin-top: 7px; }
+    .feedback:empty { display: none; }
+    .feedback .verdict { font-weight: 700; }
+    .feedback .verdict.ok { color: #15803d; }
+    .feedback .verdict.no { color: #b91c1c; }
+    .feats { display: flex; flex-wrap: wrap; gap: 6px; }
+    button.feat { flex: none; background: white; color: #1e293b; border: 1px solid #cbd5e1; font-size: 0.84rem; padding: 6px 11px; border-radius: 999px; }
+    button.feat:hover { background: #f1f5f9; }
+    button.feat.on, button.feat.on:hover { background: #1e293b; color: white; border-color: #1e293b; }
+    .feat-note { font-size: 0.82rem; color: #334155; margin-top: 6px; }
+    .feat-note:empty { display: none; }
+
+    /* Challenge */
+    .quiz { max-width: 760px; margin: 0 auto; }
+    .quiz-top { display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 700; margin-bottom: 4px; }
+    .quiz-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+    .quiz-bar i { display: block; height: 100%; background: #2563eb; width: 0; }
+    .quiz-q { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+    .quiz-src { font-size: 0.76rem; color: #475569; margin-bottom: 8px; }
+    .qpart { margin-top: 12px; }
+    .qpart + .qpart { border-top: 1px solid #e2e8f0; padding-top: 10px; }
+    .qpart-q { font-size: 0.92rem; font-weight: 600; margin-bottom: 6px; }
+    .quiz-sum ul { padding-left: 18px; font-size: 0.86rem; }
+    .quiz-sum li { margin: 4px 0; }
+
+    /* Teacher mode */
+    .teacher { position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 92vw); background: white; box-shadow: -4px 0 18px rgba(0,0,0,0.18); padding: 12px; overflow-y: auto; z-index: 20; }
+    .teacher h2 { font-size: 1rem; margin: 0 0 8px; }
+    .teacher .tbtns { display: grid; gap: 6px; }
+    .teacher .tbtns button { background: white; color: #1e293b; border: 1px solid #cbd5e1; flex: none; }
+    .teacher .tbtns button:hover { background: #f1f5f9; }
+    .teacher .tbtns button.on { background: #1e293b; color: white; }
+    .teacher h3 { font-size: 0.9rem; margin: 14px 0 4px; }
+    .teacher ul { padding-left: 18px; margin: 0; font-size: 0.84rem; }
+    .teacher li { margin: 4px 0; }
+    body.no-explain .strip, body.no-explain .words, body.no-explain .feedback .why, body.no-explain .feat-note { display: none; }
+    body.no-answers .readout-card .value, body.no-answers .work { filter: blur(6px); }
+    body.free-mode .predict-box { display: none; }
+
     @media (max-width: 900px) {
-      .controls { grid-template-columns: 1fr 1fr; }
-      .controls .control-group:first-child { grid-column: 1 / -1; }
-      .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .readout { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .readout.n4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 700px) {
+      h1 { font-size: 1rem; }
+      .readout, .readout.n3, .readout.n4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .tab .tl { display: none; }
+      .tab .ts { display: inline; }
+      /* phones: short names in rows that wrap, so all six tabs show without scrolling */
+      .tabs { display: flex; flex-wrap: wrap; }
+      button.tab { flex: 1 1 auto; white-space: nowrap; }
+    }
+    @media (max-width: 420px) {
+      .buttons button { padding: 6px 4px; }
+      .inputs .control-group { flex: 1 1 40%; }
     }
     /* Touch screens (phones, tablets; Samsung Internet reports hover: hover on a phone, so only pointer is tested):
        16 px form fields stop an iPhone zooming the page in when one is
@@ -68,6 +211,7 @@
       input:not([type=range]):not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
       button { min-height: 36px; }
       input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
+      .controls input, .controls select, .controls button { height: 36px; }
     }
   </style>
   <!-- pim-nav-style:start (generated by scripts/pim-nav.ts) -->
@@ -96,209 +240,1399 @@
     <a class="pim-nav-btn pim-nav-next" href="magnetic-field-poles.html" title="Next: Magnetic Poles, Field Lines and Induced Magnetism (Chapter 8)" aria-label="Next: Magnetic Poles, Field Lines and Induced Magnetism (Chapter 8)"><span class="pim-nav-text"><span class="pim-nav-kicker">Next<span class="pim-nav-ch"> &middot; Chapter 8</span></span><span class="pim-nav-name">Magnetic Poles, Field Lines and Induced Magnetism</span></span><span class="pim-nav-arrow" aria-hidden="true">&rsaquo;</span></a>
   </nav>
   <!-- pim-nav:end -->
-    <h1>Electrical Power, Energy and the Cost of Electricity</h1>
 
-    <div class="panel">
-      <div class="controls">
-        <div class="control-group">
-          <label for="preset">Scenarios</label>
-          <select id="preset">
-            <option value="ex13" selected>Example 13: a 2.0 kW kettle for a month</option>
-            <option value="ex12">Example 12: kettle at a lower voltage</option>
-            <option value="home">A typical flat</option>
-            <option value="custom">Custom</option>
-          </select>
+    <header class="app-head">
+      <div class="head-row">
+        <h1>Electrical Power, Energy and the Cost of Electricity</h1>
+        <div class="steps"><span id="stepLabel">Step 1 of 6</span><span class="step-bar" id="stepBar"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+        <button class="teacher-btn" id="teacherBtn" type="button" hidden>Teacher mode</button>
+      </div>
+      <div class="tabs" role="tablist" id="tabs">
+        <button class="tab" role="tab" data-tab="1" type="button"><span class="tl">1. Electrical energy</span><span class="ts">1. Energy</span></button>
+        <button class="tab" role="tab" data-tab="2" type="button"><span class="tl">2. Electric power</span><span class="ts">2. Power</span></button>
+        <button class="tab" role="tab" data-tab="3" type="button"><span class="tl">3. Rated values</span><span class="ts">3. Ratings</span></button>
+        <button class="tab" role="tab" data-tab="4" type="button"><span class="tl">4. Paying for electricity</span><span class="ts">4. Cost</span></button>
+        <button class="tab" role="tab" data-tab="5" type="button"><span class="tl">5. Which uses more energy?</span><span class="ts">5. Compare</span></button>
+        <button class="tab" role="tab" data-tab="6" type="button"><span class="tl">6. Challenge</span><span class="ts">6. Challenge</span></button>
+      </div>
+      <div class="ckey" id="ckey"></div>
+    </header>
+
+    <div class="strip" id="strip"></div>
+
+    <!-- tabs 1 to 5: Predict first comes first, above the controls and the picture -->
+    <div class="box predict-box" id="predictBox">
+      <div class="box-title">Predict first</div>
+      <div class="predict-q" id="predictQ"></div>
+      <div class="opts" id="predictOpts"></div>
+      <div class="feedback" id="predictFb"></div>
+      <div class="row-btns" id="predictBtns"><button id="predictCheck" type="button">Check my answer</button></div>
+    </div>
+
+    <!-- Tabs 1 to 5 share one drawing -->
+    <section class="tab-page" id="pageSim">
+      <div class="panel">
+        <div id="simBlock">
+          <div class="controls">
+            <div class="control-group scen-group">
+              <label for="preset">Scenarios</label>
+              <select id="preset"></select>
+            </div>
+            <div class="control-group button-group" id="simGroup">
+              <label>Simulation controls</label>
+              <div class="buttons">
+                <button id="startBtn" type="button">Start</button>
+                <button id="pauseBtn" class="secondary" type="button">Pause</button>
+                <button id="resetBtn" class="danger" type="button">Reset</button>
+              </div>
+            </div>
+            <div class="control-group button-group" id="stepGroup">
+              <label>Steps <span class="step-no" id="stepNo"></span></label>
+              <div class="buttons">
+                <button id="prevStep" class="secondary" type="button" aria-label="Previous step">&lsaquo; Previous</button>
+                <button id="nextStep" type="button" aria-label="Next step">Next &rsaquo;</button>
+                <button id="stepReset" class="danger" type="button">Reset</button>
+              </div>
+            </div>
+          </div>
+          <div class="moments" id="moments">
+            <button id="prevMoment" class="secondary" type="button">&lsaquo; Previous key moment</button>
+            <button id="nextMoment" class="secondary" type="button">Next key moment &rsaquo;</button>
+            <span class="speed" id="speedNote"></span>
+          </div>
+          <div class="question" id="question"></div>
+          <div id="expBlock">
+            <div class="group-title">Experimental controls</div>
+            <div class="inputs" id="inputs"></div>
+          </div>
+          <div class="grid" id="homeGrid" hidden></div>
         </div>
-        <div class="control-group"><label for="volt">Supply voltage <span class="val" id="voltVal"></span></label><input id="volt" type="range" min="100" max="260" step="10" value="240" /></div>
-        <div class="control-group"><label for="days">Number of days <span class="val" id="daysVal"></span></label><input id="days" type="range" min="1" max="31" step="1" value="30" /></div>
-        <div class="control-group"><label for="tariff">Price per kWh ($)</label><input id="tariff" type="number" min="0" step="0.01" value="0.27" /></div>
-      </div>
-      <div class="readout">
-        <div class="readout-card"><div class="title">Power being used now</div><div class="value" id="pNow">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Current from the mains, <i>I</i> = <i>P</i>/<i>V</i></div><div class="value" id="iNow">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Energy per day</div><div class="value" id="eDay">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Energy for the period, <i>E</i> = <i>Pt</i></div><div class="value" id="eAll">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Cost for the period</div><div class="value" id="cost">&mdash;</div></div>
-      </div>
-      <div class="question" id="question"></div>
-    </div>
 
-    <div class="panel">
-      <div class="hint">Tap an appliance to switch it on or off, and set how long it is used each day.</div>
-      <div class="grid" id="grid"></div>
-    </div>
-
-    <div class="panel">
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
-        <button id="runBtn" class="go">Run the period on the meter</button>
-        <button id="resetRunBtn" class="danger">Reset the meter</button>
-        <span style="font-size:0.8rem;color:#475569" id="runNote"></span>
+        <!-- the readouts go under the drawing: nothing above the canvas may change height while it runs -->
+        <div class="scene-wrap">
+          <div class="hint" id="sceneHint"></div>
+          <canvas id="scene"></canvas>
+          <div class="readout" id="readout"></div>
+          <div class="words" id="words"></div>
+          <div class="box game" id="gameBox" hidden>
+            <div class="game-top"><span id="gameNo"></span><span id="gameScore"></span></div>
+            <div class="predict-q" id="gameQ">Which uses more electrical energy, so costs more to run?</div>
+            <div class="opts" id="gameOpts"></div>
+            <div class="feedback" id="gameFb"></div>
+            <div class="row-btns"><button id="gameCheck" type="button">Check my answer</button><button id="gameNext" class="secondary" type="button">Next pair &rsaquo;</button></div>
+          </div>
+          <div class="work" id="work"></div>
+          <div class="note" id="notes"></div>
+        </div>
       </div>
-      <canvas id="meterCanvas"></canvas>
-      <div class="note"><ul>
-        <li>Power is the rate of using energy: <i>P</i> = <i>E</i>/<i>t</i> = <i>VI</i> = <i>I</i><sup>2</sup><i>R</i> = <i>V</i><sup>2</sup>/<i>R</i>.</li>
-        <li>An appliance's <b>rating</b> (e.g. 2000 W 240 V) is the power it uses when it is connected to its rated voltage.</li>
-        <li id="ex12Note">The heating element keeps the same resistance, <i>R</i> = <i>V</i><sup>2</sup>/<i>P</i> = 38.4 &Omega; for the 1500 W 240 V kettle. So on a lower supply voltage it uses less power: at 120 V only a quarter, 375 W.</li>
-        <li>Electricity in Singapore is paid for by the kilowatt-hour. 1 kWh is the energy a 1 kW appliance uses in 1 hour, = 3.6 &times; 10<sup>6</sup> J.</li>
-        <li>Energy in kWh = power in kW &times; time in hours.</li>
-      </ul></div>
-    </div>
+
+      <div class="learn">
+        <div class="box" id="featBox">
+          <div class="box-title">Key features (tap one)</div>
+          <div class="feats" id="feats"></div>
+          <div class="feat-note" id="featNote"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 6: Challenge -->
+    <section class="tab-page" id="page6" hidden>
+      <div class="panel">
+        <div class="quiz" id="quiz"></div>
+      </div>
+    </section>
   </div>
 
+  <aside class="teacher" id="teacher" hidden aria-label="Teacher mode">
+    <h2>Teacher mode</h2>
+    <div class="tbtns">
+      <button id="tExplain" type="button">Hide explanations</button>
+      <button id="tFree" type="button">Switch to free exploration</button>
+      <button id="tAnswers" type="button">Hide answer labels</button>
+      <button id="tFull" type="button">Full screen</button>
+      <button id="tReset" type="button">Reset whole applet</button>
+      <button id="tClose" type="button">Close</button>
+    </div>
+    <h3>Suggested prompts</h3>
+    <ul id="tPrompts"></ul>
+  </aside>
+
   <script>
-    const el = id => document.getElementById(id);
-    // Each appliance is treated as a fixed resistance set by its rating: R = Vr^2 / Pr
-    const APPS = [
-      { id: 'kettle2', name: 'Kettle', icon: '☕', P: 2000, V: 240, hours: 0.25 },
-      { id: 'kettle15', name: 'Kettle (Ex 12)', icon: '🫖', P: 1500, V: 240, hours: 0.25 },
-      { id: 'aircon', name: 'Air-conditioner', icon: '❄️', P: 1200, V: 240, hours: 8 },
-      { id: 'fridge', name: 'Refrigerator', icon: '🧊', P: 150, V: 240, hours: 24 },
-      { id: 'tv', name: 'Television', icon: '📺', P: 100, V: 240, hours: 4 },
-      { id: 'lamp', name: 'Fluorescent lamp', icon: '💡', P: 40, V: 240, hours: 6 },
-      { id: 'iron', name: 'Clothes iron', icon: '👕', P: 1000, V: 240, hours: 0.5 },
-      { id: 'fan', name: 'Table fan', icon: '🌀', P: 60, V: 240, hours: 8 }
+    const $ = id => document.getElementById(id);
+    const canvas = $('scene'), presetEl = $('preset');
+    let currentTab = 1, freeMode = false;
+
+    /* ---------------- numbers ---------------- */
+    const clean = v => (Math.abs(v) < 1e-12 ? 0 : v);
+    const minus = s => String(s).replace('-', '−');
+    // 3 significant figures; exact whole numbers stay whole; an exact value keeps its own figures; a 1e-12 nudge so a
+    // binary half rounds up; a true minus sign
+    const f3 = v => {
+      const x = clean(v);
+      if (Math.abs(x - Math.round(x)) < 1e-9 * Math.max(1, Math.abs(x))) return minus(Math.round(x));
+      const t = (x * (1 + 1e-12)).toPrecision(3);
+      if (Math.abs(+t - x) < 1e-12 * Math.max(1, Math.abs(x)) || Math.abs(x) >= 100) return minus(+t);
+      return minus(t);
+    };
+    // an answer to the figures the lecturer's copy and the keys give (sf per value: 0.30 A, 0.90 W, 7.20 kWh)
+    function fs(v, sf) {
+      const x = clean(v); if (x === 0) return '0';
+      if (Math.abs(x - Math.round(x)) < 1e-9 * Math.max(1, Math.abs(x)) && Math.abs(x) >= Math.pow(10, sf - 1)) return group(Math.round(x));
+      return minus((x * (1 + 1e-12)).toPrecision(sf));
+    }
+    // 16 200 and 86 400 as the notes write them (a space between groups of three from five digits; 1500 stays 1500)
+    const group = n => (Math.abs(n) < 10000 ? minus(String(n)) : minus(String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')));
+    const plain = v => minus(+(+v).toFixed(4));
+    // a given value as the question writes it (3.0 V, 0.60 W): the scenario's dp holds the decimals; your own values plain
+    const gk = (Q, k, v = Q[k]) => (Q.dp && Q.dp[k] != null ? minus((+v).toFixed(Q.dp[k])) : plain(v));
+    // an answer to the figures the key gives for this scenario (sf), else 3 significant figures
+    const ans = v => (!S.custom && P.sf ? fs(v, P.sf) : f3(v));
+    // an energy in kWh: the key's figures, else to the 0.01 kWh the meter shows
+    const kw = v => (!S.custom && P.sf ? fs(v, P.sf) : minus(+(+v).toFixed(2)));
+    // a power of ten as the notes write it: 3.6 × 10<sup>6</sup>
+    function sci(v, sf) {
+      const x = clean(v); if (x === 0) return '0';
+      const e = Math.floor(Math.log10(Math.abs(x) * (1 + 1e-12))), m = x / Math.pow(10, e);
+      return `${sf ? fs(m, sf) : f3(m)} × 10<sup>${minus(e)}</sup>`;
+    }
+    // a value that can grow large (an energy in joules while a run counts up)
+    const big = v => (Math.abs(v) >= 1e5 ? sci(v) : Math.abs(v - Math.round(v)) < 1e-9 && Math.abs(v) >= 1e4 ? group(Math.round(v)) : f3(v));
+    const money = v => '$' + (Math.round(v * 100 * (1 + 1e-12)) / 100).toFixed(2);
+    const frac = (a, b) => `<span class="frac"><span>${a}</span><span>${b}</span></span>`;
+    const nm = (s, n) => `<i>${s}</i><sub>${n}</sub>`;
+    const COL = { wire: '#334155', res: '#dc2626', lamp: '#d97706', heat: '#f97316', charge: '#2563eb', energy: '#16a34a', rated: '#64748b', pt: '#0f172a' };
+
+    /* ---------------- the physics: one function per formula ---------------- */
+    const energyVIt = (V, I, t) => V * I * t;            // E = VIt (notes p. 7-54)
+    const ratedR = (Pr, Vr) => (Vr * Vr) / Pr;            // from the rating: R = V²/P (Example 12(a))
+    const ratedI = (Pr, Vr) => Pr / Vr;                   // from the rating: I = P/V (Example 12(b))
+    const kWh = (Pw, hours) => (Pw / 1000) * hours;       // energy in kWh = power in kW × time in h (p. 7-59)
+    const J_PER_KWH = 1000 * 60 * 60;                     // 1 kWh = (1000 W)(60 minutes × 60 seconds) = 3.6 × 10⁶ J (p. 7-59)
+    // a circuit: series elements, then parallel branches of elements in series; every element's current, voltage and
+    // power (P = I²R), the one place a power in a circuit is computed
+    function solveLay(L, V) {
+      const ser = L.series || [], sumS = ser.reduce((a, e) => a + e.R, 0);
+      const br = L.branches.map(b => b.reduce((a, e) => a + e.R, 0));
+      const Rp = 1 / br.reduce((a, r) => a + 1 / r, 0), RT = sumS + Rp, IT = V / RT, Vp = IT * Rp, el = {};
+      const put = (e, I) => { el[e.id] = { I, V: I * e.R, P: I * I * e.R }; };
+      ser.forEach(e => put(e, IT));
+      L.branches.forEach((b, k) => b.forEach(e => put(e, Vp / br[k])));
+      return { RT, IT, Vp, el, br };
+    }
+
+    /* ---------------- scenarios (every number from the lecturer's copy or Tutorial 7) ---------------- */
+    const HOME = [ // tab 4's home: values chosen for this page
+      { id: 'kettle', name: 'Kettle', P: 2000, h: 0.25, on: true },
+      { id: 'aircon', name: 'Air-conditioner', P: 1200, h: 8, on: true },
+      { id: 'fridge', name: 'Refrigerator', P: 150, h: 24, on: true },
+      { id: 'tv', name: 'Television', P: 100, h: 4, on: true },
+      { id: 'lamp', name: 'Fluorescent lamp', P: 40, h: 6, on: true },
+      { id: 'iron', name: 'Clothes iron', P: 1000, h: 0.5, on: false },
+      { id: 'fan', name: 'Table fan', P: 60, h: 8, on: true }
     ];
-    const state = {}; APPS.forEach(a => state[a.id] = { on: false, hours: a.hours });
     const PRESETS = {
-      ex13: { on: { kettle2: 0.25 }, V: 240, days: 30 },
-      ex12: { on: { kettle15: 1 }, V: 240, days: 1 },
-      home: { on: { kettle2: 0.25, aircon: 8, fridge: 24, tv: 4, lamp: 6, fan: 8 }, V: 240, days: 30 }
+      // tab 1: electrical energy, E = VIt
+      ex11: { tab: 1, mode: 'run', name: 'A bulb on 3.0 V taking 0.2 A, for one minute', dev: 'Bulb', V: 3.0, I: 0.2, T: 60, km: 10, unit: 's', dp: { V: 1 },
+        q: 'Example 11: A bulb used a 3.0 V supply and takes a current of 0.2 A. It is switched on for one minute. How much electrical energy is used?' },
+      b7: { tab: 1, mode: 'run', name: 'A 0.60 W, 3.0 V lamp for 10 minutes', dev: 'Lamp', V: 3.0, Pr: 0.60, T: 600, km: 60, unit: 'min', dp: { V: 1, Pr: 2 },
+        q: 'Tutorial 7, B7: A filament lamp has a rating of 0.60 W, 3.0 V. Assuming the lamp operates normally at its rated potential difference, (b) find the charge passing through it in 10 minutes, and (c) find the energy it transfers in 10 minutes.' },
+      b6: { tab: 1, mode: 'run', name: 'A 500 W, 100 V projector lamp for 2 hours', dev: 'Lamp', V: 100, Pr: 500, Vs: 240, withR: true, T: 7200, km: 1800, unit: 'h',
+        q: 'Tutorial 7, B6: A ‘500 W 100 V’ projector lamp, a resistor <i>R</i> and a 240 V supply are connected in series. If the lamp operates at its rated voltage, find (b) the total electrical energy the lamp transfers in 2 hours.' },
+      // tab 2: electric power, P = VI = I²R = V²/R
+      pow: { tab: 2, mode: 'live', name: 'One resistor: three formulas for power', V: 6.0, R: 12, dp: { V: 1 }, sf: 2,
+        q: 'A 12 Ω resistor on a 6.0 V supply (values chosen for this page). Read its power worked out three ways, then change <i>V</i> or <i>R</i>.' },
+      ex12: { tab: 2, mode: 'steps', name: 'A kettle rated 1500 W 240 V', Pr: 1500, Vr: 240,
+        q: 'Example 12: A kettle is rated at 1500 W 240 V. (a) What is the resistance of the heating element of the kettle? (b) What is the current through the kettle if the supply voltage is 240 V?' },
+      c3: { tab: 2, mode: 'steps', name: 'Three resistors on a 9.0 V battery', V: 9.0, Ra: 10, Rb: 30, Rc: 60, dp: { V: 1 },
+        q: 'Tutorial 7, C3: Three resistors are connected to a 9.0 V battery as shown. Find (b) the current delivered by the battery, (c) the power dissipated in the 10 Ω resistor, (d) the power dissipated in the 30 Ω resistor, (e) the power dissipated in the 60 Ω resistor.' },
+      c4: { tab: 2, mode: 'steps', name: 'Four resistors on a 6 V battery', V: 6, Ra: 2, Rb: 4, Rc: 7, Rd: 5, th: 30,
+        q: 'Tutorial 7, C4: For the circuit shown, find (a) the current <i>I</i>, (b) the power dissipated in the 2 Ω resistor, (c) the power dissipated in the 4 Ω resistor, (d) the heat dissipated in the 7 Ω resistor in 30 s, (e) the heat dissipated in the 5 Ω resistor in 30 s.' },
+      // tab 3: rated values
+      ex12c: { tab: 3, mode: 'live', name: 'The 1500 W 240 V kettle on a lower voltage', dev: 'Kettle', Pr: 1500, Vr: 240, V: 240, vmax: 240, vstep: 10, sf: 3,
+        q: 'Example 12: A kettle is rated at 1500 W 240 V. (c) If the supply voltage drops to 120 V, calculate the electric power consumed. Work it out, then slide the supply voltage to check.' },
+      b7d: { tab: 3, mode: 'live', name: 'The 0.60 W, 3.0 V lamp on other voltages', dev: 'Lamp', Pr: 0.60, Vr: 3.0, V: 3.0, vmax: 12, vstep: 0.5, blowAt: 12, dp: { Pr: 2, Vr: 1, V: 1 }, sf: 2,
+        q: 'Tutorial 7, B7: A filament lamp has a rating of 0.60 W, 3.0 V. (a) Find its resistance. (d) Describe and explain what would happen if a 12 V battery were connected directly to the lamp.' },
+      b6r: { tab: 3, mode: 'steps', name: 'The 500 W 100 V lamp in series with a resistor', dev: 'Lamp', Pr: 500, Vr: 100, Vs: 240,
+        q: 'Tutorial 7, B6: A ‘500 W 100 V’ projector lamp, a resistor <i>R</i> and a 240 V supply are connected in series. If the lamp operates at its rated voltage, find (a) the resistance of resistor <i>R</i>.' },
+      // tab 4: paying for electricity (h: hours a day, from 00:00)
+      ex13: { tab: 4, mode: 'run', name: 'A 2.0 kW kettle for a month', apps: [{ id: 'k', name: '2.0 kW kettle', P: 2000 }], uses: 3, mins: 5.0, days: 30, price: 0.27, sf: 2,
+        q: 'Example 13: The water in a 2.0 kW kettle boils in 5.0 minutes. If the kettle is used 3 times a day, find the cost to operate the kettle for a month of 30 days. Take the electricity cost as $0.27 per kWh.' },
+      a7: { tab: 4, mode: 'run', name: 'A 300 W refrigerator for one day', apps: [{ id: 'f', name: '300 W refrigerator', P: 300, h: 24 }], days: 1, price: null, V: 240, sf: 3,
+        q: 'Tutorial 7, A7: Electricity in Singapore is supplied at 240 V. A refrigerator is rated 300 W. (a) How much current does it draw? (b) What is the total amount of energy it consumes in one day? Express the answer in joules and in kilowatt-hours.' },
+      a8: { tab: 4, mode: 'run', name: 'A 2000 W air-conditioner for a month', apps: [{ id: 'a', name: '2000 W air-conditioner', P: 2000, h: 10 }], days: 30, price: 0.27, sf: 3,
+        q: 'Tutorial 7, A8: A 2000 W air conditioner is used for 10 hours per day. Find the cost to operate the air conditioner for a month of 30 days. Take the electricity cost as 27 cents per kWh.' },
+      home: { tab: 4, mode: 'run', name: 'A home: choose the appliances', home: true, days: 30, price: 0.27,
+        q: 'A home (powers and hours chosen for this page). Tap an appliance to switch it on or off, set how long it is used each day, then run the month on the meter.' }
     };
-    const QUESTIONS = {
-      ex12: 'Example 12: a kettle is rated 1500 W 240 V. (a) What is the resistance of its heating element? (b) What is the current at 240 V? (c) If the supply voltage drops to 120 V, what power does it use? Work it out, then slide the supply voltage to 120 V to check.',
-      ex13: 'Example 13: the water in a 2.0 kW kettle boils in 5.0 minutes. The kettle is used 3 times a day. Find the cost of running it for a month of 30 days at $0.27 per kWh.',
-    };
-    const run = { t: 0, running: false, energy: 0 };
+    // tab 5: which uses more energy? (P in W, t in hours; the kettle on 120 V, the TV, fan, iron and the hours are values chosen for this page)
+    const GAME = [
+      { id: 'g1', A: ['A 2000 W kettle', '15 minutes a day'], B: ['A 40 W fluorescent lamp', '8 hours a day'], PA: 2000, tA: 0.25, PB: 40, tB: 8,
+        why: 'Kettle: 2.0 kW × 0.25 h = 0.50 kWh. Lamp: 0.040 kW × 8 h = 0.32 kWh. The kettle’s much bigger power wins, even for a short time.' },
+      { id: 'g2', A: ['A 300 W refrigerator', '24 hours a day'], B: ['A 2000 W air-conditioner', '4 hours a day'], PA: 300, tA: 24, PB: 2000, tB: 4,
+        why: 'Refrigerator: 0.3 kW × 24 h = 7.2 kWh. Air-conditioner: 2 kW × 4 h = 8 kWh. Close, but the air-conditioner uses more.' },
+      { id: 'g3', A: ['The 1500 W 240 V kettle on 240 V', '10 minutes'], B: ['The same kettle on a 120 V supply', '40 minutes'], PA: 1500, tA: 10 / 60, PB: 375, tB: 40 / 60,
+        why: 'On 120 V the kettle uses only 375 W (a quarter, Example 12(c)). 1.5 kW × 1/6 h = 0.25 kWh and 0.375 kW × 2/3 h = 0.25 kWh: the same.' },
+      { id: 'g4', A: ['A 500 W projector lamp', '2 hours'], B: ['A 2000 W air-conditioner', '30 minutes'], PA: 500, tA: 2, PB: 2000, tB: 0.5,
+        why: '0.5 kW × 2 h = 1 kWh and 2 kW × 0.5 h = 1 kWh: four times the power for a quarter of the time is the same energy.' },
+      { id: 'g5', A: ['The 0.60 W, 3.0 V lamp (Tutorial B7)', '10 minutes'], B: ['A bulb on 3.0 V taking 0.2 A (Example 11)', '1 minute'], PA: 0.60, tA: 10 / 60, PB: 0.6, tB: 1 / 60,
+        why: 'Both have the same power: <i>P</i> = <i>VI</i> = 3.0 × 0.2 = 0.6 W. So the one on for longer uses more: 360 J against 36 J.' },
+      { id: 'g6', A: ['A 40 W fluorescent lamp', '5 hours'], B: ['A 1000 W clothes iron', '15 minutes'], PA: 40, tA: 5, PB: 1000, tB: 0.25,
+        why: 'Lamp: 0.040 kW × 5 h = 0.20 kWh. Iron: 1 kW × 0.25 h = 0.25 kWh.' },
+      { id: 'g7', A: ['A 100 W television', '6 hours'], B: ['A 2000 W kettle', '20 minutes'], PA: 100, tA: 6, PB: 2000, tB: 20 / 60,
+        why: 'Television: 0.1 kW × 6 h = 0.60 kWh. Kettle: 2 kW × 1/3 h = 0.667 kWh.' },
+      { id: 'g8', A: ['A 60 W table fan', '10 hours'], B: ['A 100 W television', '6 hours'], PA: 60, tA: 10, PB: 100, tB: 6,
+        why: '0.06 kW × 10 h = 0.6 kWh and 0.1 kW × 6 h = 0.6 kWh: the same.' }
+    ];
+    GAME.forEach(G => {
+      G.EA = kWh(G.PA, G.tA); G.EB = kWh(G.PB, G.tB);
+      G.ans = Math.abs(G.EA - G.EB) < 1e-9 * Math.max(G.EA, G.EB) ? 2 : G.EA > G.EB ? 0 : 1;
+      G.name = `${G.A[0]} or ${G.B[0]}`.slice(0, 60);
+    });
+    GAME.forEach(G => { PRESETS[G.id] = { tab: 5, mode: 'game', name: `Pair ${GAME.indexOf(G) + 1}`, q: '' }; });
+    const OWN = 'Your own values. Choose a scenario from the menu to go back to an example from the notes.';
 
-    const Vs = () => +el('volt').value;
-    const power = a => { const R = a.V * a.V / a.P; return Vs() * Vs() / R; }; // actual power at this supply voltage
-    const money = x => `$${x.toFixed(2)}`;
-    const kwh = x => `${x < 10 ? x.toFixed(3) : x.toFixed(2)} kWh`;
+    /* ---------------- the state ---------------- */
+    let P = {}, S = { scen: 'ex11', custom: false, step: 0 };
+    let feat = {}, hl = {};
+    let game = { picks: {}, done: {}, score: 0, pick: null };
+    const sim = { t: 0, running: false, last: null };
 
-    function build() {
-      el('grid').innerHTML = APPS.map(a => `
-        <div class="app" id="card-${a.id}" role="button" tabindex="0">
-          <div class="top"><div class="icon">${a.icon}</div><div><div class="name">${a.name}</div><div class="rating">rated ${a.P} W ${a.V} V</div></div><div class="now" id="now-${a.id}"></div></div>
-          <div class="hours"><span id="hl-${a.id}"></span><input type="range" min="0" max="24" step="0.25" id="h-${a.id}" /></div>
-          <div class="cost" id="c-${a.id}"></div>
-        </div>`).join('');
-      APPS.forEach(a => {
-        const card = el('card-' + a.id), h = el('h-' + a.id);
-        card.addEventListener('click', e => { if (e.target === h) return; state[a.id].on = !state[a.id].on; toCustom(); resetRun(); });
-        h.addEventListener('input', () => { state[a.id].hours = +h.value; toCustom(); resetRun(); });
+    function mode() {
+      if (S.custom) return currentTab === 2 || currentTab === 3 ? 'live' : currentTab === 5 ? 'game' : 'run';
+      return (PRESETS[S.scen] || {}).mode || 'live';
+    }
+    const isRun = () => mode() === 'run', isSteps = () => mode() === 'steps';
+
+    /* ---------------- each tab's numbers, from the scenario's data ---------------- */
+    // tab 1
+    const t1I = () => (P.I != null ? P.I : ratedI(P.Pr, P.V));
+    // tab 2 and 3 circuits
+    function layout(Pq = P, fig) {
+      const sc = S.custom ? currentTab : S.scen;
+      const id = fig || (currentTab === 2 ? (S.custom ? 'pow' : S.scen) : currentTab === 3 ? (S.custom ? 'own3' : S.scen) : currentTab === 1 ? 't1' : '');
+      void sc;
+      switch (id) {
+        case 't1': return Pq.withR
+          ? { src: `${plain(Pq.Vs)} V supply`, series: [{ id: 'dev', kind: 'lamp', R: ratedR(Pq.Pr, Pq.V), name: 'Lamp' }], branches: [[{ id: 'R', kind: 'res', R: ratedR(Pq.Pr, Pq.V) * (Pq.Vs - Pq.V) / Pq.V, name: '<i>R</i>' }]] }
+          : { src: `${gk(Pq, 'V')} V`, branches: [[{ id: 'dev', kind: 'lamp', R: Pq.V / t1I(), name: Pq.dev || 'Bulb' }]] };
+        case 'pow': return { src: `${gk(Pq, 'V')} V`, branches: [[{ id: 'r', kind: 'res', R: Pq.R, name: `${plain(Pq.R)} Ω` }]] };
+        case 'ex12': return { src: `${plain(Pq.Vr)} V supply`, branches: [[{ id: 'k', kind: 'res', R: ratedR(Pq.Pr, Pq.Vr), name: 'Kettle (heating element)' }]] };
+        case 'c3': return { src: `${gk(Pq, 'V')} V`, series: [{ id: 'a', kind: 'res', R: Pq.Ra, name: `${Pq.Ra} Ω` }], branches: [[{ id: 'b', kind: 'res', R: Pq.Rb, name: `${Pq.Rb} Ω` }], [{ id: 'c', kind: 'res', R: Pq.Rc, name: `${Pq.Rc} Ω` }]] };
+        case 'c4': return { src: `${gk(Pq, 'V')} V`, branches: [[{ id: 'a', kind: 'res', R: Pq.Ra, name: `${Pq.Ra} Ω` }, { id: 'b', kind: 'res', R: Pq.Rb, name: `${Pq.Rb} Ω` }], [{ id: 'c', kind: 'res', R: Pq.Rc, name: `${Pq.Rc} Ω` }, { id: 'd', kind: 'res', R: Pq.Rd, name: `${Pq.Rd} Ω` }]] };
+        case 'ex12c': case 'b7d': case 'own3': return { src: `${gk(Pq, 'V')} V`, branches: [[{ id: 'dev', kind: Pq.dev === 'Lamp' ? 'lamp' : 'res', R: ratedR(Pq.Pr, Pq.Vr), name: `${Pq.dev || 'Appliance'} (${gk(Pq, 'Pr')} W ${gk(Pq, 'Vr')} V)` }]] };
+        case 'b6r': return { src: `${plain(Pq.Vs)} V supply`, series: [{ id: 'dev', kind: 'lamp', R: ratedR(Pq.Pr, Pq.Vr), name: `Lamp (${Pq.Pr} W ${Pq.Vr} V)` }], branches: [[{ id: 'R', kind: 'res', R: (Pq.Vs - Pq.Vr) / ratedI(Pq.Pr, Pq.Vr), name: '<i>R</i>' }]] };
+      }
+      return null;
+    }
+    // the worked values of a step-by-step example, computed from its data
+    function calc() {
+      const id = S.scen;
+      if (id === 'ex12') return { R: ratedR(P.Pr, P.Vr), I: ratedI(P.Pr, P.Vr) };
+      if (id === 'c3' || id === 'c4') return solveLay(layout(), P.V);
+      if (id === 'b6r') { const I = ratedI(P.Pr, P.Vr), VR = P.Vs - P.Vr; return { VR, I, R: VR / I }; }
+      return {};
+    }
+    const gv = v => plain(v);
+
+    /* ---------------- tab 4: energy on the meter ---------------- */
+    const t4Apps = () => (P.home ? P.homeApps.filter(a => a.on) : P.apps);
+    const runEnd = () => (currentTab === 1 ? P.T : currentTab === 4 ? P.days : 0);   // seconds on tab 1, days on tab 4
+    // energy so far (kWh) after td days: each appliance is on from 00:00 for its hours every day
+    function eAt(td) {
+      const d = Math.floor(td + 1e-9), fr = Math.max(0, td - d);
+      return t4Apps().reduce((a, x) => a + kWh(x.P, d * x.h + Math.min(fr * 24, x.h)), 0);
+    }
+    function powerNow(td) {
+      if (td >= P.days - 1e-9) return 0;
+      const fr = td - Math.floor(td + 1e-9);
+      return t4Apps().reduce((a, x) => a + (fr * 24 < x.h - 1e-9 ? x.P : 0), 0);
+    }
+    const eDay = () => t4Apps().reduce((a, x) => a + kWh(x.P, x.h), 0);
+
+    /* ---------------- the clock ---------------- */
+    // a long run is shown in about 6 s, and the page says so
+    const speedUp = () => (currentTab === 1 ? (P.T > 10 ? P.T / 6 : 1) : P.days / 6);
+    function keyMoments() {
+      if (!isRun()) return [];
+      const T = runEnd(), m = [0];
+      if (currentTab === 1) { const st = P.km || T / 6; for (let k = 1; k * st < T - 1e-9; k++) m.push(k * st); }
+      else {
+        const st = T <= 1 ? 4 / 24 : T <= 7 ? 1 : 5;
+        for (let k = 1; k * st < T - 1e-9; k++) m.push(k * st);
+        // the moment the first day's use ends (the disc stops)
+        t4Apps().forEach(a => { const off = a.h / 24; if (a.h < 24 && off < T - 1e-9 && !m.some(x => Math.abs(x - off) < 1e-9)) m.push(off); });
+      }
+      m.push(T);
+      return m.sort((a, b) => a - b);
+    }
+    function frame(ts) {
+      if (!sim.running) return;
+      if (sim.last === null) sim.last = ts;
+      // a first rAF timestamp can be earlier than the one stored: never step backwards
+      const dt = Math.max(0, Math.min(0.05, (ts - sim.last) / 1000)) * speedUp(); sim.last = ts;
+      const end = runEnd();
+      sim.t = Math.min(end, sim.t + (currentTab === 4 ? dt : dt));
+      if (sim.t >= end - 1e-9) { sim.t = end; sim.running = false; }
+      update();
+      if (sim.running) requestAnimationFrame(frame);
+    }
+    function start() {
+      const end = runEnd();
+      if (!(end > 0)) { update(); return; }
+      if (sim.t >= end - 1e-9) sim.t = 0;
+      sim.running = true; sim.last = null; clearFeatNoteOnly(); update(); requestAnimationFrame(frame);
+    }
+    function setTime(t) { sim.running = false; sim.last = null; sim.t = Math.max(0, Math.min(runEnd(), t)); update(); }
+    function resetRun() { sim.running = false; sim.last = null; sim.t = 0; }
+    const ended = () => isRun() && sim.t >= runEnd() - 1e-9 && runEnd() > 0;
+    $('startBtn').addEventListener('click', start);
+    $('pauseBtn').addEventListener('click', () => {
+      if (sim.running) { sim.running = false; sim.last = null; update(); }
+      else if (sim.t > 0 && sim.t < runEnd()) start();
+    });
+    $('resetBtn').addEventListener('click', () => { resetRun(); update(); });
+    $('nextMoment').addEventListener('click', () => { const n = keyMoments().find(m => m > sim.t + 1e-9); if (n !== undefined) setTime(n); });
+    $('prevMoment').addEventListener('click', () => { const p = keyMoments().filter(m => m < sim.t - 1e-9).pop(); if (p !== undefined) setTime(p); });
+
+    /* ---------------- steps ---------------- */
+    function steps() {
+      const V = calc(), id = S.scen;
+      if (id === 'ex12') return [
+        { h: `(a) Since <i>P</i> = ${frac('<i>V</i><sup>2</sup>', '<i>R</i>')}, <i>R</i> = ${frac('<i>V</i><sup>2</sup>', '<i>P</i>')} = ${frac(gv(P.Vr) + '<sup>2</sup>', gv(P.Pr))} = <b>${f3(V.R)} Ω</b>`, rev: ['R'] },
+        { h: `(b) Since <i>P</i> = <i>VI</i>, <i>I</i> = ${frac('<i>P</i>', '<i>V</i>')} = ${frac(gv(P.Pr), gv(P.Vr))} = <b>${f3(V.I)} A</b>`, rev: ['I'] }];
+      if (id === 'c3') { const e = V.el;
+        return [
+          { h: `(b) <i>R</i><sub>T</sub> = ${P.Ra} + (${frac(1, P.Rb)} + ${frac(1, P.Rc)})<sup>−1</sup> = <b>${f3(V.RT)} Ω</b>`, rev: ['RT'] },
+          { h: `<i>I</i><sub>T</sub> = ${frac('<i>V</i>', '<i>R</i><sub>T</sub>')} = ${frac(fs(P.V, 2), f3(V.RT))} = <b>${fs(V.IT, 2)} A</b>`, rev: ['IT'] },
+          { h: `(c) Use <i>P</i> = <i>I</i><sup>2</sup><i>R</i>: <i>P</i><sub>${P.Ra}</sub> = ${fs(V.IT, 2)}<sup>2</sup> × ${P.Ra} = <b>${fs(e.a.P, 2)} W</b>`, rev: ['Pa'] },
+          { h: `<i>V</i><sub>${P.Ra}</sub> = ${fs(V.IT, 2)} × ${P.Ra} = ${fs(e.a.V, 2)} V, so <i>V</i><sub>${P.Rb}</sub> = <i>V</i><sub>${P.Rc}</sub> = ${fs(P.V, 2)} − ${fs(e.a.V, 2)} = <b>${fs(V.Vp, 2)} V</b>`, rev: ['Vp'] },
+          { h: `(d) Use <i>P</i> = ${frac('<i>V</i><sup>2</sup>', '<i>R</i>')}: <i>P</i><sub>${P.Rb}</sub> = ${frac(fs(V.Vp, 2) + '<sup>2</sup>', P.Rb)} = <b>${fs(e.b.P, 2)} W</b>`, rev: ['Pb'] },
+          { h: `(e) <i>P</i><sub>${P.Rc}</sub> = ${frac(fs(V.Vp, 2) + '<sup>2</sup>', P.Rc)} = <b>${fs(e.c.P, 2)} W</b>`, rev: ['Pc'] }]; }
+      if (id === 'c4') { const e = V.el;
+        return [
+          { h: `<i>R</i><sub>T</sub> = (${frac(1, `${P.Ra} + ${P.Rb}`)} + ${frac(1, `${P.Rc} + ${P.Rd}`)})<sup>−1</sup> = <b>${f3(V.RT)} Ω</b>`, rev: ['RT'] },
+          { h: `(a) <i>I</i> = ${frac('<i>V</i>', '<i>R</i><sub>T</sub>')} = ${frac(gv(P.V), f3(V.RT))} = <b>${fs(V.IT, 2)} A</b>`, rev: ['IT'] },
+          { h: `(${P.Ra} + ${P.Rb})<i>I</i><sub>1</sub> = (${P.Rc} + ${P.Rd})<i>I</i><sub>2</sub> = ${gv(P.V)} V, so <i>I</i><sub>1</sub> = <b>${fs(e.a.I, 2)} A</b> and <i>I</i><sub>2</sub> = <b>${fs(e.c.I, 2)} A</b>`, rev: ['I1', 'I2'] },
+          { h: `(b) Use <i>P</i> = <i>I</i><sup>2</sup><i>R</i>: <i>P</i><sub>${P.Ra}</sub> = ${fs(e.a.I, 2)}<sup>2</sup> × ${P.Ra} = <b>${fs(e.a.P, 2)} W</b>`, rev: ['Pa'] },
+          { h: `(c) <i>P</i><sub>${P.Rb}</sub> = ${fs(e.b.I, 2)}<sup>2</sup> × ${P.Rb} = <b>${fs(e.b.P, 2)} W</b>`, rev: ['Pb'] },
+          { h: `(d) <i>P</i><sub>${P.Rc}</sub> = ${fs(e.c.I, 2)}<sup>2</sup> × ${P.Rc} = ${f3(e.c.P)} W; heat dissipated = power × duration = ${f3(e.c.P)} × ${P.th} = <b>${f3(e.c.P * P.th)} J</b>`, rev: ['Pc', 'Hc'] },
+          { h: `(e) <i>P</i><sub>${P.Rd}</sub> = ${fs(e.d.I, 2)}<sup>2</sup> × ${P.Rd} = ${f3(e.d.P)} W; heat dissipated = ${f3(e.d.P)} × ${P.th} = <b>${f3(e.d.P * P.th)} J</b>`, rev: ['Pd', 'Hd'] }]; }
+      if (id === 'b6r') return [
+        { h: `Potential difference across resistor <i>R</i> = ${gv(P.Vs)} − ${gv(P.Vr)} = <b>${f3(V.VR)} V</b>`, rev: ['VR'] },
+        { h: `Current through the lamp and through <i>R</i>, <i>I</i> = ${frac('<i>P</i>', '<i>V</i>')} = ${frac(gv(P.Pr), gv(P.Vr))} = <b>${f3(V.I)} A</b>`, rev: ['I'] },
+        { h: `(a) Resistance <i>R</i> = ${frac('p.d. across <i>R</i>', 'current through <i>R</i>')} = ${frac(f3(V.VR), f3(V.I))} = <b>${f3(V.R)} Ω</b>`, rev: ['R'] }];
+      return [];
+    }
+    const nSteps = () => (isSteps() ? steps().length : 0);
+    function revealed() {
+      const r = {}; if (!isSteps()) return r;
+      steps().slice(0, S.step).forEach(l => (l.rev || []).forEach(k => { r[k] = true; }));
+      return r;
+    }
+    function setStep(n) { S.step = Math.max(0, Math.min(nSteps(), n)); update(); }
+    $('prevStep').addEventListener('click', () => setStep(S.step - 1));
+    $('nextStep').addEventListener('click', () => { clearFeatNoteOnly(); setStep(S.step + 1); });
+    $('stepReset').addEventListener('click', () => { clearFeatNoteOnly(); setStep(0); });
+
+    function loadScenario(id) {
+      const sc = PRESETS[id];
+      S.scen = id; S.custom = false; S.step = freeMode ? 99 : 0;
+      P = JSON.parse(JSON.stringify(sc));
+      if (sc.home) P.homeApps = JSON.parse(JSON.stringify(HOME));
+      // Example 13: the time a day comes from the question's data, 3 uses of 5.0 minutes
+      if (P.uses) { const a = P.apps[0]; a.h = P.mins * P.uses / 60; a.txt = `${P.uses} × ${fs(P.mins, 2)} min = ${plain(a.h * 60)} min a day`; }
+      $('question').innerHTML = sc.q || '';
+      resetRun();
+      if (freeMode) S.step = nSteps();
+    }
+
+    /* ---------------- drawing helpers ---------------- */
+    // what the canvas drew, for the checks: every label's box, every arrow, the panes, the wires
+    window.__pim = { labels: [], arrows: [], panes: [], segs: [] };
+    function setup(cv, wantH) {
+      if (wantH && Math.abs(cv.getBoundingClientRect().height - wantH) > 1) cv.style.height = wantH + 'px';
+      const r = cv.getBoundingClientRect();
+      if (r.width < 20 || r.height < 20) return null; // hidden: never draw at no size
+      const dpr = window.devicePixelRatio || 1, cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
+      if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+      const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, r.width, r.height);
+      return { ctx, W: r.width, H: r.height };
+    }
+    // Canvas text with <i>, <sub> and <sup> runs, so symbols of physical quantities are italic, as in the notes.
+    function richText(ctx, s, x, y, measureOnly) {
+      const base = ctx.font, m = base.match(/([\d.]+)px/), size = m ? +m[1] : 12;
+      const runs = []; let it = false, sub = 0;
+      for (const tok of String(s).split(/(<\/?(?:i|sub|sup)>)/)) {
+        if (tok === '<i>') it = true; else if (tok === '</i>') it = false;
+        else if (tok === '<sub>') sub = 1; else if (tok === '<sup>') sub = -1;
+        else if (tok === '</sub>' || tok === '</sup>') sub = 0;
+        else if (tok) {
+          let f = sub ? base.replace(/[\d.]+px/, (size * 0.75).toFixed(1) + 'px') : base;
+          if (it) f = 'italic ' + f;
+          ctx.font = f; runs.push({ t: tok, f, sub, w: ctx.measureText(tok).width });
+        }
+      }
+      ctx.font = base;
+      const wd = runs.reduce((a, r) => a + r.w, 0);
+      if (measureOnly) return wd;
+      const align = ctx.textAlign;
+      let cx = align === 'center' ? x - wd / 2 : (align === 'right' || align === 'end') ? x - wd : x;
+      ctx.textAlign = 'left';
+      for (const r of runs) { ctx.font = r.f; ctx.fillText(r.t, cx, y + (r.sub === 1 ? size * 0.3 : r.sub === -1 ? -size * 0.4 : 0)); cx += r.w; }
+      ctx.textAlign = align; ctx.font = base;
+      return wd;
+    }
+    let PANE = 'scene', CW = 1e9, CH = 1e9, CX0 = 0, CY0 = 0;
+    function pane(name, x, y, w, h) { PANE = name; CX0 = x; CY0 = y; CW = x + w; CH = y + h; __pim.panes.push({ name, x, y, w, h }); }
+    function seg(ctx, x1, y1, x2, y2, color = COL.wire, lw = 2.5) {
+      ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      __pim.segs.push([x1, y1, x2, y2, PANE]);
+    }
+    function arrow(ctx, x1, y1, x2, y2, color, lw = 3, head = 10, record = true) {
+      const len = Math.hypot(x2 - x1, y2 - y1); if (len < 1.5) return;
+      if (record) __pim.arrows.push({ pane: PANE, x1, y1, x2, y2 });
+      const a = Math.atan2(y2 - y1, x2 - x1), hd = Math.min(head, len * 0.6);
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - Math.cos(a) * hd * 0.8, y2 - Math.sin(a) * hd * 0.8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - hd * Math.cos(a - 0.45), y2 - hd * Math.sin(a - 0.45)); ctx.lineTo(x2 - hd * Math.cos(a + 0.45), y2 - hd * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill();
+    }
+    function labelBox(ctx, lines, x, y, align, size) {
+      ctx.font = `bold ${size}px Arial`;
+      const wd = Math.max(...lines.map(t => richText(ctx, t, 0, 0, true))), lh = size * 1.6 + 1, h = lines.length * lh - 1;
+      const x0 = Math.max(CX0 + 4, Math.min(CW - wd - 4, align === 'center' ? x - wd / 2 : align === 'right' ? x - wd : x));
+      const y0 = Math.max(CY0 + 2, Math.min(CH - h - 2, y - size * 0.8));
+      return { x: x0 - 3, y: y0, w: wd + 6, h, lh, tx: x0, size };
+    }
+    const hitBox = (a, b, pad = 1) => Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) > pad && Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) > pad;
+    function crossesArrow(box) {
+      return __pim.arrows.some(a => { if (a.pane !== PANE) return false; for (let k = 0; k <= 24; k++) { const px = a.x1 + (a.x2 - a.x1) * k / 24, py = a.y1 + (a.y2 - a.y1) * k / 24;
+        if (px > box.x + 0.5 && px < box.x + box.w - 0.5 && py > box.y + 0.5 && py < box.y + box.h - 0.5) return true; } return false; });
+    }
+    // a wire passing through a label's box: the label sits on a line of the drawing
+    function crossesWire(box) {
+      return __pim.segs.some(([x1, y1, x2, y2, pn]) => {
+        if (pn !== PANE) return false;
+        if (Math.abs(y1 - y2) < 0.5) return y1 > box.y + 0.5 && y1 < box.y + box.h - 0.5 && Math.max(x1, x2) > box.x + 0.5 && Math.min(x1, x2) < box.x + box.w - 0.5;
+        return x1 > box.x + 0.5 && x1 < box.x + box.w - 0.5 && Math.max(y1, y2) > box.y + 0.5 && Math.min(y1, y2) < box.y + box.h - 0.5;
+      });
+    }
+    function label(ctx, lines, x, y, color, align = 'center', size = 12) {
+      if (!Array.isArray(lines)) lines = [lines];
+      const b = labelBox(ctx, lines, x, y, align, size);
+      lines.forEach((t, i) => {
+        const card = { pane: PANE, text: t.replace(/<[^>]+>/g, ''), x: b.x, y: b.y + i * b.lh, w: b.w, h: size * 1.6 };
+        ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fillRect(card.x, card.y, card.w, card.h);
+        ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.font = `bold ${size}px Arial`; richText(ctx, t, b.tx, card.y + size * 0.8);
+        ctx.textBaseline = 'alphabetic';
+        __pim.labels.push(card);
+      });
+      return b;
+    }
+    const clear = b => !__pim.labels.some(l => l.pane === PANE && hitBox(l, b)) && !crossesArrow(b) && !crossesWire(b);
+    // a label at the first clear spot; if none is clear, at the first spot
+    function labelAt(ctx, text, cands, color, size = 12) {
+      for (const [x, y, al] of cands) { const b = labelBox(ctx, Array.isArray(text) ? text : [text], x, y, al, size); if (clear(b)) return label(ctx, text, x, y, color, al, size); }
+      const [x, y, al] = cands[0]; return label(ctx, text, x, y, color, al, size);
+    }
+    const obstacle = (x, y, wd, h) => __pim.labels.push({ pane: PANE, obstacle: true, text: '', x, y, w: wd, h });
+    function niceStep(range, nmax) {
+      const raw = range / Math.max(1, nmax), p = Math.pow(10, Math.floor(Math.log10(raw)));
+      for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= raw - 1e-12) return m * p;
+      return 10 * p;
+    }
+
+    /* ---------------- drawing a circuit: the supply on the top wire, the elements below ---------------- */
+    // o: { vals: { id: text under the element }, glow: { id: 0..1 }, blown: id, fig: no values }
+    function drawCircuit(ctx, B, L, o = {}) {
+      const xl = B.x + 30, xr = B.x + B.w - 30, yt = B.y + 44;
+      const n = L.branches.length, ser = (L.series || []).length > 0;
+      const yb0 = B.y + B.h * (n > 1 ? 0.48 : 0.7), yb1 = B.y + B.h - 46;
+      const rows = L.branches.map((b, k) => (n === 1 ? yb0 : yb0 + (yb1 - yb0) * k / (n - 1)));
+      const xa = ser ? xl + (xr - xl) * 0.45 : xl, cx = (xl + xr) / 2;
+      // wires
+      seg(ctx, xl, yt, cx - 9, yt); seg(ctx, cx + 9, yt, xr, yt);
+      seg(ctx, xl, yt, xl, ser ? rows[0] : rows[n - 1]);
+      seg(ctx, xr, yt, xr, rows[n - 1]);
+      if (ser) seg(ctx, xl, rows[0], xa, rows[0]);
+      if (ser && n > 1) seg(ctx, xa, rows[0], xa, rows[n - 1]);
+      rows.forEach(y => seg(ctx, xa, y, xr, y));
+      // the cell: the long thin plate is the + terminal
+      ctx.strokeStyle = COL.wire; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(cx - 6, yt - 15); ctx.lineTo(cx - 6, yt + 15); ctx.stroke();
+      ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(cx + 6, yt - 8); ctx.lineTo(cx + 6, yt + 8); ctx.stroke();
+      obstacle(cx - 10, yt - 16, 20, 32);
+      labelAt(ctx, L.src, [[cx, yt - 28, 'center'], [cx + 14, yt - 26, 'left']], COL.pt, 12);
+      const placed = [];
+      const put = (list, x0, x1, y) => list.forEach((e, j) => { const c = x0 + (x1 - x0) * (j + 0.5) / list.length; placed.push({ e, x: c, y, span: (x1 - x0) / list.length }); });
+      if (ser) put(L.series, xl, xa, rows[0]);
+      L.branches.forEach((b, k) => put(b, xa, xr, rows[k]));
+      placed.forEach(({ e, x, y, span }) => {
+        const g = Math.max(0, Math.min(1, (o.glow || {})[e.id] || 0)), blown = o.blown === e.id;
+        if (e.kind === 'lamp') {
+          const r = 13;
+          if (g > 0.02 && !blown) { // light: rays grow with the power
+            ctx.strokeStyle = `rgba(250,204,21,${0.35 + 0.6 * g})`; ctx.lineWidth = 2;
+            for (let k = 0; k < 10; k++) { const a = k * Math.PI / 5; ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * (r + 3), y + Math.sin(a) * (r + 3)); ctx.lineTo(x + Math.cos(a) * (r + 4 + 12 * g), y + Math.sin(a) * (r + 4 + 12 * g)); ctx.stroke(); }
+          }
+          ctx.fillStyle = blown ? '#475569' : `rgba(253,224,71,${0.15 + 0.85 * g})`; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = COL.wire; ctx.lineWidth = 2; ctx.stroke();
+          const q = r * 0.7;
+          ctx.beginPath();
+          if (blown) { ctx.moveTo(x - q, y - q); ctx.lineTo(x - 2, y - 2); ctx.moveTo(x + 2, y + 2); ctx.lineTo(x + q, y + q); ctx.moveTo(x + q, y - q); ctx.lineTo(x + 2, y - 2); ctx.moveTo(x - 2, y + 2); ctx.lineTo(x - q, y + q); }
+          else { ctx.moveTo(x - q, y - q); ctx.lineTo(x + q, y + q); ctx.moveTo(x + q, y - q); ctx.lineTo(x - q, y + q); }
+          ctx.stroke();
+          obstacle(x - r - 3, y - r - 3, 2 * r + 6, 2 * r + 6);
+        } else {
+          const ew = Math.min(60, span * 0.62), eh = 18;
+          ctx.fillStyle = 'white'; ctx.fillRect(x - ew / 2, y - eh / 2, ew, eh);
+          ctx.fillStyle = `rgba(249,115,22,${0.08 + 0.8 * g})`; ctx.fillRect(x - ew / 2, y - eh / 2, ew, eh);
+          ctx.strokeStyle = (o.hl || {})[e.id] ? '#7c3aed' : COL.res; ctx.lineWidth = (o.hl || {})[e.id] ? 3.5 : 2.2; ctx.strokeRect(x - ew / 2, y - eh / 2, ew, eh);
+          obstacle(x - ew / 2 - 1, y - eh / 2 - 1, ew + 2, eh + 2);
+        }
+      });
+      placed.forEach(({ e, x, y }) => {
+        const up = e.kind === 'lamp' ? 26 : 22, dn = e.kind === 'lamp' ? 28 : 24;
+        labelAt(ctx, e.name, [[x, y - up, 'center'], [x, y - up - 8, 'center'], [x, y + dn, 'center']], e.kind === 'lamp' ? COL.lamp : COL.res, 12);
+        const v = (o.vals || {})[e.id];
+        if (v) labelAt(ctx, v, [[x, y + dn, 'center'], [x, y + dn + 8, 'center'], [x, y - up - 16, 'center']], COL.heat, 12);
+      });
+      return { xl, xr, yt, yrow: rows[n - 1], cx, placed };
+    }
+
+    /* ---------------- the scene ---------------- */
+    function draw() {
+      __pim.labels = []; __pim.arrows = []; __pim.panes = []; __pim.segs = [];
+      const w = canvas.getBoundingClientRect().width, narrow = w < 560;
+      const want = { 1: narrow ? 480 : 300, 2: 300, 3: narrow ? 470 : 300, 4: narrow ? 340 : 250, 5: narrow ? 300 : 200 }[currentTab];
+      const g = setup(canvas, want); if (!g) return;
+      const { ctx, W, H } = g;
+      if (currentTab === 1) drawT1(ctx, W, H, narrow);
+      else if (currentTab === 2) drawT2(ctx, W, H);
+      else if (currentTab === 3) drawT3(ctx, W, H, narrow);
+      else if (currentTab === 4) drawT4(ctx, W, H, narrow);
+      else if (currentTab === 5) drawT5(ctx, W, H, narrow);
+    }
+    // tab 1: the circuit with its charges moving, and the energy–time graph growing
+    function drawT1(ctx, W, H, narrow) {
+      const A = narrow ? { x: 0, y: 0, w: W, h: H * 0.48 } : { x: 0, y: 0, w: W * 0.46, h: H };
+      const G = narrow ? { x: 0, y: H * 0.48, w: W, h: H * 0.52 } : { x: W * 0.46, y: 0, w: W * 0.54, h: H };
+      pane('circuit', A.x, A.y, A.w, A.h);
+      const T = P.T, t = sim.t, I = t1I(), E = energyVIt(P.V, I, t), on = t > 0 || sim.running;
+      const L = layout();
+      const vals = { dev: on ? `${P.withR ? gk(P, 'V') + ' V, ' : ''}${f3(I)} A` : '' };
+      const c = drawCircuit(ctx, A, L, { glow: { dev: on && !ended() || sim.running ? 0.8 : ended() ? 0.8 : 0 }, vals });
+      // the charges drift round the circuit while it is switched on (drawn for show; three laps a run)
+      if (on) {
+        const Lp = 2 * (c.xr - c.xl) + 2 * (c.yrow - c.yt), k = 18, off = (t / T) * Lp * 3;
+        ctx.fillStyle = COL.charge;
+        for (let j = 0; j < k; j++) {
+          let s = (j * Lp / k + off) % Lp, x, y;
+          if (s < c.xr - c.xl) { x = c.xr - s; y = c.yt; }                   // right to left along the top
+          else if ((s -= c.xr - c.xl) < c.yrow - c.yt) { x = c.xl; y = c.yt + s; }
+          else if ((s -= c.yrow - c.yt) < c.xr - c.xl) { x = c.xl + s; y = c.yrow; }
+          else { s -= c.xr - c.xl; x = c.xr; y = c.yrow - s; }
+          // not inside the cell, a lamp or a resistor (their outlines are recorded as obstacles)
+          if (__pim.labels.some(o => o.obstacle && o.pane === 'circuit' && x > o.x - 3 && x < o.x + o.w + 3 && y > o.y - 3 && y < o.y + o.h + 3)) continue;
+          ctx.beginPath(); ctx.arc(x, y, 2.6, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+      // the graph of energy against time
+      pane('graph', G.x, G.y, G.w, G.h);
+      const u = P.unit === 'h' ? 3600 : P.unit === 'min' ? 60 : 1, Tu = T / u;
+      const Eend = energyVIt(P.V, I, T), mj = Eend >= 1e5, eu = mj ? 1e6 : 1, Eu = Eend / eu;
+      const gx = G.x + 58, gy = G.y + 22, gw = G.w - 58 - 18, gh = G.h - 22 - 46;
+      const sx = niceStep(Tu, Math.max(2, Math.floor(gw / 60))), sy = niceStep(Eu, Math.max(2, Math.floor(gh / 34)));
+      const xMax = Math.ceil(Tu / sx - 1e-9) * sx, yMax = Math.ceil(Eu / sy - 1e-9) * sy;
+      const X = v => gx + (v / xMax) * gw, Y = v => gy + gh - (v / yMax) * gh;
+      ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+      for (let v = 0; v <= yMax + 1e-9; v += sy) { ctx.beginPath(); ctx.moveTo(gx, Y(v)); ctx.lineTo(gx + gw, Y(v)); ctx.stroke(); }
+      for (let v = 0; v <= xMax + 1e-9; v += sx) { ctx.beginPath(); ctx.moveTo(X(v), gy); ctx.lineTo(X(v), gy + gh); ctx.stroke(); }
+      ctx.strokeStyle = COL.wire; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(gx, gy + gh); ctx.lineTo(gx + gw, gy + gh); ctx.stroke();
+      ctx.fillStyle = '#475569'; ctx.font = '11px Arial';
+      for (let v = 0; v <= yMax + 1e-9; v += sy) { ctx.textAlign = 'right'; ctx.fillText(plain(v), gx - 5, Y(v) + 4); }
+      for (let v = 0; v <= xMax + 1e-9; v += sx) { ctx.textAlign = 'center'; ctx.fillText(plain(v), X(v), gy + gh + 14); }
+      obstacle(G.x, gy - 4, 56, gh + 10); obstacle(gx - 10, gy + gh + 2, gw + 20, 16);
+      ctx.textAlign = 'left';
+      const tl = { s: 's', min: 'min', h: 'h' }[P.unit];
+      label(ctx, `Time <i>t</i> (${tl})`, gx + gw / 2, gy + gh + 32, '#334155', 'center', 11);
+      label(ctx, `Energy <i>E</i> (${mj ? 'MJ' : 'J'})`, gx + 4, gy - 10, COL.energy, 'left', 11);
+      if (on) {
+        ctx.strokeStyle = COL.energy; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(X(0), Y(0)); ctx.lineTo(X(t / u), Y(E / eu)); ctx.stroke();
+        ctx.fillStyle = COL.energy; ctx.beginPath(); ctx.arc(X(t / u), Y(E / eu), 4.5, 0, Math.PI * 2); ctx.fill();
+        __pim.arrows.push({ pane: 'graph', x1: X(0), y1: Y(0), x2: X(t / u), y2: Y(E / eu) });
+        if (ended()) labelAt(ctx, `<i>E</i> = ${big(E)} J`, [[X(t / u) - 8, Y(E / eu) + 4, 'right'], [X(t / u) - 8, Y(E / eu) + 22, 'right'], [gx + 10, gy + 10, 'left']], COL.energy, 12);
+        if (feat.grad && ended()) labelAt(ctx, `gradient = <i>VI</i> = ${f3(P.V * I)} J each second`, [[gx + gw - 8, gy + gh - 16, 'right'], [gx + gw - 8, gy + gh - 38, 'right'], [gx + 10, gy + 34, 'left'], [gx + 10, gy + 10, 'left']], '#7c3aed', 12);   // under the line first: that corner is always empty
+      }
+    }
+    // tab 2: a circuit whose elements glow with their power
+    function drawT2(ctx, W, H) {
+      pane('circuit', 0, 0, W, H);
+      const L = layout(), s = solveLay(L, L === null ? 0 : (S.scen === 'ex12' ? P.Vr : P.V)), r = revealed(), vals = {}, glow = {};
+      const maxP = Math.max(...Object.values(s.el).map(e => e.P));
+      if (mode() === 'live') { vals.r = `<i>P</i> = ${ans(s.el.r.P)} W`; glow.r = Math.min(1, s.el.r.P / 12); }
+      else if (S.scen === 'ex12') { if (r.R) vals.k = `<i>R</i> = ${f3(s.el.k.V / s.el.k.I)} Ω`; if (r.I) vals.k = (vals.k ? vals.k + ', ' : '') + `<i>I</i> = ${f3(s.el.k.I)} A`; glow.k = r.I ? 0.7 : 0; }
+      else {
+        const pk = { a: 'Pa', b: 'Pb', c: 'Pc', d: 'Pd' };
+        Object.keys(s.el).forEach(id => { const shown = r[pk[id]]; vals[id] = shown ? `${fs(s.el[id].P, S.scen === 'c4' && (id === 'c' || id === 'd') ? 3 : 2)} W` : '? W'; glow[id] = shown ? s.el[id].P / maxP : 0; });
+      }
+      drawCircuit(ctx, { x: 0, y: 0, w: W, h: H }, L, { vals, glow, hl });
+      if (mode() === 'steps' && (S.scen === 'c3' || S.scen === 'c4')) {
+        const shownI = r.IT ? `<i>I</i> = ${fs(s.IT, 2)} A` : '<i>I</i> = ?';
+        labelAt(ctx, shownI, [[W - 34, 70, 'right'], [W - 34, 90, 'right']], COL.charge, 12);
+      }
+    }
+    // tab 3: the appliance on the supply, and its power beside its rating
+    function drawT3(ctx, W, H, narrow) {
+      const A = narrow ? { x: 0, y: 0, w: W, h: H * 0.56 } : { x: 0, y: 0, w: W * 0.55, h: H };
+      const G = narrow ? { x: 0, y: H * 0.56, w: W, h: H * 0.44 } : { x: W * 0.55, y: 0, w: W * 0.45, h: H };
+      pane('circuit', A.x, A.y, A.w, A.h);
+      const L = layout();
+      if (isSteps()) { // B6: the lamp at its rated voltage, R takes the rest
+        const r = revealed(), V = calc(), s = solveLay(L, P.Vs);
+        const vals = { dev: `${gk(P, 'Vr')} V`, R: r.R ? `<i>R</i> = ${f3(V.R)} Ω` : r.VR ? `${f3(V.VR)} V` : '?' };
+        drawCircuit(ctx, A, L, { vals, glow: { dev: 0.9, R: 0.4 } });
+        pane('gauge', G.x, G.y, G.w, G.h);
+        const bx = G.x + 20, bw = G.w - 40, by = G.y + 60;
+        label(ctx, `The ${plain(P.Vs)} V is shared:`, bx, by - 30, '#334155', 'left', 12);
+        const fl = s.el.dev.V / P.Vs;
+        ctx.fillStyle = 'rgba(253,224,71,0.85)'; ctx.fillRect(bx, by, bw * fl, 26);
+        ctx.fillStyle = r.VR ? 'rgba(249,115,22,0.5)' : '#e2e8f0'; ctx.fillRect(bx + bw * fl, by, bw * (1 - fl), 26);
+        ctx.strokeStyle = COL.wire; ctx.lineWidth = 1.5; ctx.strokeRect(bx, by, bw, 26);
+        label(ctx, `lamp ${gk(P, 'Vr')} V`, bx + bw * fl / 2, by + 46, COL.lamp, 'center', 11);
+        label(ctx, r.VR ? `<i>R</i>: ${f3(V.VR)} V` : '<i>R</i>: ? V', bx + bw * (1 + fl) / 2, by + 46, COL.heat, 'center', 11);
+        return;
+      }
+      const s = solveLay(L, P.V), Pn = s.el.dev.P, ratio = Pn / P.Pr;
+      const blown = P.blowAt && P.V >= P.blowAt - 1e-9;
+      drawCircuit(ctx, A, L, { vals: { dev: `<i>P</i> = ${ans(Pn)} W` }, glow: { dev: Math.min(1, ratio) }, blown: blown ? 'dev' : null });
+      if (blown) labelAt(ctx, 'Blown!', [[A.x + A.w / 2, A.y + A.h - 14, 'center']], '#b91c1c', 13);
+      // the gauge: the power now and the rated power on one scale
+      pane('gauge', G.x, G.y, G.w, G.h);
+      const vmaxP = solveLay(layout({ ...P, V: P.vmax || P.V }), P.vmax || P.V).el.dev.P;
+      const top = Math.max(P.Pr, vmaxP, Pn) * 1.05;
+      const bx = G.x + 20, bw = G.w - 44, by1 = G.y + 52, by2 = G.y + 120;
+      label(ctx, `Rated power ${gk(P, 'Pr')} W`, bx, by1 - 16, COL.rated, 'left', 12);
+      ctx.fillStyle = '#cbd5e1'; ctx.fillRect(bx, by1, bw * P.Pr / top, 22);
+      label(ctx, `Power now ${ans(Pn)} W`, bx, by2 - 16, COL.heat, 'left', 12);
+      ctx.fillStyle = blown ? '#475569' : 'rgba(249,115,22,0.85)'; ctx.fillRect(bx, by2, bw * Pn / top, 22);
+      ctx.strokeStyle = COL.rated; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(bx + bw * P.Pr / top, by1 - 4); ctx.lineTo(bx + bw * P.Pr / top, by2 + 28); ctx.stroke(); ctx.setLineDash([]);
+      obstacle(bx, by1, bw, 22); obstacle(bx, by2, bw, 22);
+      const words = Math.abs(ratio - 1) < 1e-9 ? 'Power now = its rated power' : `Power now = ${f3(ratio)} × its rated power`;
+      labelAt(ctx, words, [[bx, by2 + 46, 'left'], [bx, by2 + 62, 'left']], '#334155', 12);
+    }
+    // tab 4: the meter, the clock and the day
+    function drawT4(ctx, W, H, narrow) {
+      pane('meter', 0, 0, W, H);
+      const td = sim.t, E = eAt(td), Pn = powerNow(td), N = P.days;
+      const mx = 16, my = 16, mw = narrow ? W - 32 : Math.min(320, W * 0.42), mh = 78;
+      ctx.fillStyle = '#1f2937'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(mx, my, mw, mh, 10) : ctx.rect(mx, my, mw, mh); ctx.fill();
+      ctx.fillStyle = '#94a3b8'; ctx.font = '11px Arial'; ctx.textAlign = 'left'; ctx.fillText('ELECTRICITY METER (kWh)', mx + 12, my + 17);
+      const digits = E.toFixed(2).padStart(8, '0');
+      ctx.font = 'bold 26px monospace'; ctx.fillStyle = '#4ade80'; ctx.fillText(digits, mx + 12, my + 54);
+      // the disc turns only while power is being used, faster for more power
+      const cx = mx + mw - 32, cy = my + mh / 2, ang = E * 6;
+      ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, 18, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(ang) * 16, cy + Math.sin(ang) * 16); ctx.stroke();
+      obstacle(mx, my, mw, mh);
+      // the clock and the day
+      const tx = narrow ? mx : mx + mw + 24, ty = narrow ? my + mh + 34 : my + 12, tw = narrow ? W - 32 : W - tx - 16;
+      const d = Math.min(N, Math.floor(td + 1e-9)), fr = td - Math.floor(td + 1e-9), hh = td >= N - 1e-9 ? 24 : fr * 24;
+      const clock = `${String(Math.floor(hh + 1e-9) % 25).padStart(2, '0')}:${String(Math.floor((hh * 60 + 1e-6) % 60)).padStart(2, '0')}`;
+      const dayTxt = td >= N - 1e-9 ? `End of day ${N} of ${N}` : `Day ${d + 1} of ${N}, ${clock}`;
+      label(ctx, dayTxt, tx, ty, COL.pt, 'left', 13);
+      ctx.fillStyle = '#e5e7eb'; ctx.fillRect(tx, ty + 14, tw, 16);
+      ctx.fillStyle = '#f59e0b'; ctx.fillRect(tx, ty + 14, tw * Math.min(1, td / N), 16);
+      obstacle(tx, ty + 14, tw, 16);
+      // one day: when each appliance is on (from 00:00)
+      const apps = t4Apps(), dy = ty + 54;
+      if (apps.length <= 3) {
+        label(ctx, 'Each day:', tx, dy, '#334155', 'left', 11);
+        apps.forEach((a, k) => {
+          const y = dy + 16 + k * 16;
+          ctx.fillStyle = '#f1f5f9'; ctx.fillRect(tx, y, tw, 10);
+          ctx.fillStyle = 'rgba(249,115,22,0.8)'; ctx.fillRect(tx, y, Math.max(2, tw * a.h / 24), 10);
+          if (td < N - 1e-9) { ctx.fillStyle = '#0f172a'; ctx.fillRect(tx + tw * fr - 1, y - 2, 2, 14); }
+          obstacle(tx, y - 2, tw, 14);
+        });
+        const yl = dy + 16 + apps.length * 16 + 14;
+        label(ctx, apps.map(a => `${a.name}: on for ${a.txt || hoursTxt(a.h)}`).join('; '), tx, yl, '#334155', 'left', 11);
+      } else label(ctx, `${apps.filter(a => fr * 24 < a.h - 1e-9 && td < N - 1e-9).length} of ${apps.length} appliances on now`, tx, dy, '#334155', 'left', 12);
+      const by = H - 22;
+      label(ctx, `Power now: ${group(Math.round(Pn))} W`, 16, by - 22, COL.heat, 'left', 12);
+      label(ctx, `Energy so far: ${kw(E)} kWh${P.price != null ? `   Cost so far: ${money(E * P.price)}` : ''}`, 16, by, COL.energy, 'left', 12);
+    }
+    const hoursTxt = h => (h >= 1 ? `${plain(h)} h a day` : `${plain(h * 60)} min a day`);
+    // tab 5: the two appliances, and their energy once checked
+    function drawT5(ctx, W, H, narrow) {
+      pane('game', 0, 0, W, H);
+      const G = GAME.find(g => g.id === S.scen); if (!G) return;
+      const done = !!game.done[G.id], cards = [['A', G.A, G.EA], ['B', G.B, G.EB]];
+      const top = Math.max(G.EA, G.EB) * 1.1;
+      cards.forEach(([k, [what, when], E], j) => {
+        const bx = narrow ? 12 : 12 + j * (W - 24) / 2 + (j ? 6 : 0), bw = narrow ? W - 24 : (W - 24) / 2 - 6;
+        const by = narrow ? 10 + j * (H - 20) / 2 : 10, bh = narrow ? (H - 20) / 2 - 8 : H - 20;
+        ctx.fillStyle = '#f8fafc'; ctx.fillRect(bx, by, bw, bh); ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1.5; ctx.strokeRect(bx, by, bw, bh);
+        label(ctx, k, bx + 10, by + 18, '#1e293b', 'left', 16);
+        label(ctx, what, bx + 34, by + 18, COL.pt, 'left', 12);
+        label(ctx, when, bx + 34, by + 40, '#334155', 'left', 12);
+        const barY = by + bh - 34, barW = bw - 24;
+        ctx.fillStyle = '#e2e8f0'; ctx.fillRect(bx + 12, barY, barW, 14);
+        if (done) { ctx.fillStyle = COL.energy; ctx.fillRect(bx + 12, barY, barW * E / top, 14); }
+        obstacle(bx + 12, barY, barW, 14);
+        const et = E < 0.01 ? `${big(E * J_PER_KWH)} J` : `${f3(E)} kWh`;
+        label(ctx, done ? `Energy: ${et}` : 'Energy: ?', bx + 12, barY - 12, COL.energy, 'left', 12);
+      });
+    }
+
+    /* ---------------- the inputs ---------------- */
+    function inputList() {
+      if (currentTab === 1) return P.Pr != null && !S.custom ? [] : [['V', 'Voltage <i>V</i> (V)', 0.1, 1000], ['I', 'Current <i>I</i> (A)', 0.001, 100], ['T', 'Time <i>t</i> (s)', 1, 100000]];
+      if (currentTab === 2) return mode() === 'live' ? [['V', 'Supply voltage <i>V</i> (V)', 0.1, 1000], ['R', 'Resistance <i>R</i> (Ω)', 0.1, 100000]] : [];
+      if (currentTab === 3) {
+        if (mode() !== 'live') return [];
+        if (S.custom) return [['Pr', 'Rated power (W)', 0.01, 100000], ['Vr', 'Rated voltage (V)', 0.1, 1000], ['V', 'Supply voltage <i>V</i> (V)', 0, 1000]];
+        return [['V', `Supply voltage <i>V</i> (<span id="vVal">${gk(P, 'V')}</span> V)`, 0, P.vmax, 'range', P.vstep]];
+      }
+      if (currentTab === 4) {
+        if (P.home) return [['days', 'Number of days', 1, 366], ['price', 'Price per kWh ($)', 0, 10]];
+        const L = [['Pw', 'Power (W)', 1, 100000], ['mins', 'Used each day (min)', 0, 1440], ['days', 'Number of days', 1, 366]];
+        if (P.price != null) L.push(['price', 'Price per kWh ($)', 0, 10]);
+        return L;
+      }
+      return [];
+    }
+    // the value an input shows, read from the scenario
+    function inputVal(k) {
+      if (currentTab === 4 && !P.home) { const a = P.apps[0]; if (k === 'Pw') return a.P; if (k === 'mins') return +(a.h * 60).toFixed(4); }
+      if (currentTab === 1 && k === 'I') return +t1I().toFixed(6);
+      return P.dp && P.dp[k] != null ? gk(P, k) : P[k];
+    }
+    function buildInputs() {
+      const list = inputList(), el = $('inputs');
+      $('expBlock').hidden = !list.length;
+      el.innerHTML = list.map(([k, lab, mn, mx, type, st]) => type === 'range'
+        ? `<div class="control-group wide"><label for="in-${k}">${lab}</label><input type="range" id="in-${k}" data-k="${k}" min="${mn}" max="${mx}" step="${st}" value="${inputVal(k)}" /></div>`
+        : `<div class="control-group label-row"><label for="in-${k}">${lab}</label><input class="num" type="number" id="in-${k}" data-k="${k}" min="${mn}" max="${mx}" step="any" value="${inputVal(k)}" /></div>`).join('');
+      el.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => readInput(inp)));
+      $('homeGrid').hidden = !(currentTab === 4 && P.home);
+      if (currentTab === 4 && P.home) buildHome();
+    }
+    function syncInputs() {
+      document.querySelectorAll('#inputs input').forEach(inp => {
+        if (document.activeElement === inp) return;
+        const v = inputVal(inp.dataset.k); if (v != null && +inp.value !== +v) inp.value = v;
+      });
+      if ($('vVal')) $('vVal').textContent = gk(P, 'V');
+    }
+    function readInput(inp) {
+      const k = inp.dataset.k, v = parseFloat(inp.value);
+      const [, , mn, mx] = inputList().find(x => x[0] === k) || [];
+      if (!isFinite(v) || v < mn || v > mx) return;
+      clearFeat();
+      if (currentTab === 3 && !S.custom && k === 'V') { P.V = v; update(); return; }   // the slider explores the same scenario
+      if (currentTab === 4 && P.home) { P[k] = v; resetRun(); update(); return; }     // the home is already your own
+      toCustom();
+      if (currentTab === 4) { const a = P.apps[0]; if (k === 'Pw') a.P = v; else if (k === 'mins') a.h = v / 60; else P[k] = v; a.name = `${group(Math.round(a.P))} W appliance`; }
+      else if (currentTab === 1) { if (k === 'I') P.I = v; else P[k] = v; }
+      else P[k] = v;
+      resetRun(); update();
+    }
+    function toCustom() {
+      if (S.custom) return;
+      if (currentTab === 1) { P = { V: P.V, I: t1I(), T: P.T, unit: P.T >= 7200 ? 'h' : P.T >= 120 ? 'min' : 's', dev: P.dev || 'Bulb' }; }
+      if (currentTab === 3) { P = { Pr: P.Pr, Vr: P.Vr, V: P.V, dev: P.dev }; }
+      if (currentTab === 4) { const a = P.apps[0]; P = { apps: [{ id: 'own', name: a.name, P: a.P, h: a.h }], days: P.days, price: P.price != null ? P.price : 0.27 }; }
+      delete P.dp; delete P.sf;   // your own values: shown as typed, answers to 3 significant figures
+      S.custom = true; S.scen = 'custom'; presetEl.value = 'custom'; $('question').innerHTML = OWN;
+      buildInputs();
+    }
+    function buildHome() {
+      const el = $('homeGrid');
+      el.innerHTML = P.homeApps.map(a => `<div class="app${a.on ? ' on' : ''}" id="card-${a.id}" role="button" tabindex="0" aria-pressed="${a.on}">
+        <div class="top"><div><div class="name">${a.name}</div><div class="rating">${group(a.P)} W</div></div><div class="state" id="st-${a.id}">${a.on ? 'on' : 'off'}</div></div>
+        <div class="hours"><span id="hl-${a.id}">Used ${hoursTxt(a.h)}</span><input type="range" min="0" max="24" step="0.25" value="${a.h}" id="h-${a.id}" aria-label="Hours a day: ${a.name}" /></div></div>`).join('');
+      P.homeApps.forEach(a => {
+        const card = $('card-' + a.id), h = $('h-' + a.id);
+        card.addEventListener('click', e => { if (e.target === h) return; a.on = !a.on; card.classList.toggle('on', a.on); card.setAttribute('aria-pressed', a.on); $('st-' + a.id).textContent = a.on ? 'on' : 'off'; clearFeat(); resetRun(); update(); });
+        h.addEventListener('input', () => { a.h = +h.value; $('hl-' + a.id).textContent = `Used ${hoursTxt(a.h)}`; clearFeat(); resetRun(); update(); });
         h.addEventListener('click', e => e.stopPropagation());
       });
     }
-    function toCustom() { el('preset').value = 'custom'; el('question').textContent = ''; }
-    function applyPreset() {
-      el('question').textContent = QUESTIONS[el('preset').value] || '';
-      const p = PRESETS[el('preset').value]; if (!p) return;
-      APPS.forEach(a => { state[a.id].on = a.id in p.on; state[a.id].hours = a.id in p.on ? p.on[a.id] : a.hours; });
-      el('volt').value = p.V; el('days').value = p.days; resetRun();
-    }
-    function totals() {
-      let P = 0, Eday = 0;
-      APPS.forEach(a => { if (!state[a.id].on) return; const p = power(a); P += p; Eday += p / 1000 * state[a.id].hours; });
-      const days = +el('days').value, tariff = +el('tariff').value || 0;
-      return { P, Eday, Eall: Eday * days, cost: Eday * days * tariff, days, tariff };
-    }
-    function resetRun() { run.t = 0; run.running = false; run.energy = 0; }
 
-    function updateUI() {
-      const t = totals();
-      el('voltVal').textContent = `(${Vs()} V)`; el('daysVal').textContent = `(${t.days} ${t.days === 1 ? "day" : "days"})`;
-      el('pNow').textContent = t.P >= 1000 ? `${(t.P / 1000).toFixed(3)} kW` : `${t.P.toFixed(0)} W`;
-      el('iNow').textContent = `${(t.P / Vs()).toFixed(2)} A`;
-      el('eDay').textContent = kwh(t.Eday); el('eAll').textContent = kwh(t.Eall); el('cost').textContent = money(t.cost);
-      // only show what the scenario needs: Example 12 is about its one kettle, and that kettle only appears there
-      const ex12 = el('preset').value === 'ex12';
-      APPS.forEach(a => {
-        const s = state[a.id], p = power(a);
-        const visible = ex12 ? s.on : (a.id !== 'kettle15' || s.on);
-        el('card-' + a.id).classList.toggle('hidden', !visible);
-        el('card-' + a.id).classList.toggle('on', s.on);
-        el('now-' + a.id).textContent = s.on ? `${p.toFixed(0)} W` : 'off';
-        const h = el('h-' + a.id); if (+h.value !== s.hours) h.value = s.hours;
-        const mins = s.hours * 60;
-        el('hl-' + a.id).textContent = `Used ${s.hours >= 1 ? s.hours + ' h' : mins.toFixed(0) + ' min'} per day`;
-        const e = p / 1000 * s.hours * t.days;
-        // the whole working, one step per line: energy for the period, then its cost (no arrow jumping to a price)
-        const dayWord = t.days === 1 ? 'day' : 'days';
-        let work = `Energy = ${(p / 1000).toFixed(3)} kW × ${s.hours} h × ${t.days} ${dayWord} = ${e.toFixed(3)} kWh<br>Cost for ${t.days} ${dayWord} = ${e.toFixed(3)} kWh × ${money(t.tariff)} = ${money(e * t.tariff)}`;
-        if (a.id === 'kettle15') { // Example 12 is about the element's resistance and the power at a lower voltage
-          const R = a.V * a.V / a.P;
-          work = `<i>R</i> = <i>V</i><sup>2</sup>/<i>P</i> = ${a.V}<sup>2</sup>/${a.P} = ${R.toFixed(1)} Ω<br>At ${Vs()} V: <i>P</i> = <i>V</i><sup>2</sup>/<i>R</i> = ${Vs()}<sup>2</sup>/${R.toFixed(1)} = ${p.toFixed(0)} W<br>` + work;
+    /* ---------------- readouts, words and working ---------------- */
+    function cards(list) {
+      const el = $('readout');
+      el.className = 'readout' + (list.length === 2 ? ' n2' : list.length === 3 ? ' n3' : list.length === 4 ? ' n4' : '');
+      el.innerHTML = list.map(([t, v, k]) => `<div class="readout-card${hl[k] ? ' hl' : ''}"${k ? ` data-k="${k}"` : ''}><div class="title">${t}</div><div class="value">${v}</div></div>`).join('');
+    }
+    function eq(lines) { return '<div class="math">' + lines.map(l => `<span class="eq${l.lit ? ' lit' : ''}">${l.h || l}</span>`).join('') + '</div>'; }
+    function tShow(t) { return P.unit === 'h' ? `${(t / 3600).toFixed(2)} h` : P.unit === 'min' ? `${(t / 60).toFixed(2)} min` : `${t.toFixed(1)} s`; }
+    function readouts() {
+      const m = mode(); let words = '', work = '';
+      if (currentTab === 1) {
+        const I = t1I(), t = sim.t, Q = I * t, E = energyVIt(P.V, I, t);
+        cards([['Time <i>t</i>', tShow(t), 't'], ['Charge passed, <i>Q</i> = <i>It</i>', `${big(Q)} C`, 'Q'], ['Energy used, <i>E</i> = <i>VIt</i>', `${big(E)} J`, 'E']]);
+        if (ended()) {
+          const ts = P.T >= 3600 ? `(${plain(P.T / 3600)} × 3600)` : P.T >= 60 ? `(${plain(P.T / 60)} × 60)` : plain(P.T);
+          const L = [];
+          if (P.Pr != null && !S.custom) L.push(`From the rating, <i>I</i> = ${frac('<i>P</i>', '<i>V</i>')} = ${frac(gk(P, 'Pr'), gk(P, 'V'))} = ${f3(I)} A`);
+          if (S.scen === 'b7') L.push(`<i>Q</i> = <i>It</i> = ${f3(I)} × ${ts} = <b>${big(Q)} C</b>`);
+          L.push({ h: `<i>E</i> = <i>VIt</i> = ${gk(P, 'V')} × ${f3(I)} × ${ts} = <b>${big(E)} J</b>${E >= 1e6 ? ` (${f3(E / 1e6)} MJ)` : ''}`, lit: true });
+          work = eq(L);
+          words = `${big(E)} J of electrical energy used in ${tShow(P.T).replace('.00 ', ' ').replace(/\.0 s$/, ' s')}: the energy grows steadily, ${f3(P.V * I)} J every second.`;
+        } else words = t > 0 ? `Switched on for ${tShow(t)}: ${big(E)} J of electrical energy so far, converted into heat and light in the ${(P.dev || 'bulb').toLowerCase()}.` : 'Press Start to switch it on. The counters run up from 0.';
+      } else if (currentTab === 2) {
+        if (m === 'live') {
+          const I = P.V / P.R;
+          cards([['Current, <i>I</i> = <i>V</i>/<i>R</i>', `${ans(I)} A`, 'I'], ['<i>P</i> = <i>VI</i>', `${ans(P.V * I)} W`, 'VI'], ['<i>P</i> = <i>I</i><sup>2</sup><i>R</i>', `${ans(I * I * P.R)} W`, 'I2R'], ['<i>P</i> = <i>V</i><sup>2</sup>/<i>R</i>', `${ans(P.V * P.V / P.R)} W`, 'V2R']]);
+          work = eq([`<i>I</i> = ${frac('<i>V</i>', '<i>R</i>')} = ${frac(gk(P, 'V'), gk(P, 'R'))} = ${ans(I)} A`,
+            `<i>P</i> = <i>VI</i> = ${gk(P, 'V')} × ${ans(I)} = ${ans(P.V * I)} W`,
+            `<i>P</i> = <i>I</i><sup>2</sup><i>R</i> = ${ans(I)}<sup>2</sup> × ${gk(P, 'R')} = ${ans(I * I * P.R)} W`,
+            `<i>P</i> = ${frac('<i>V</i><sup>2</sup>', '<i>R</i>')} = ${frac(gk(P, 'V') + '<sup>2</sup>', gk(P, 'R'))} = ${ans(P.V * P.V / P.R)} W`]);
+          words = `All three formulas give ${ans(P.V * I)} W: ${ans(P.V * I)} J of electrical energy converted into heat every second.`;
+        } else stepReadouts();
+      } else if (currentTab === 3) {
+        if (m === 'live') {
+          const L = layout(), s = solveLay(L, P.V), R = ratedR(P.Pr, P.Vr), Pn = s.el.dev.P;
+          cards([['Supply voltage <i>V</i>', `${gk(P, 'V')} V`, 'V'], ['Resistance <i>R</i> (unchanged)', `${f3(R)} Ω`, 'R'], ['Power, <i>P</i> = <i>V</i><sup>2</sup>/<i>R</i>', `${ans(Pn)} W`, 'P'], ['Compared with the rating', `${f3(Pn / P.Pr)} ×`, 'ratio']]);
+          work = eq([`From the rating, <i>R</i> = ${frac('<i>V</i><sup>2</sup>', '<i>P</i>')} = ${frac(gk(P, 'Vr') + '<sup>2</sup>', gk(P, 'Pr'))} = ${f3(R)} Ω`,
+            { h: `On ${gk(P, 'V')} V: since the resistance <i>R</i> remains unchanged, <i>P</i> = ${frac('<i>V</i><sup>2</sup>', '<i>R</i>')} = ${frac(gk(P, 'V') + '<sup>2</sup>', f3(R))} = <b>${ans(Pn)} W</b>`, lit: true }]);
+          const blown = P.blowAt && P.V >= P.blowAt - 1e-9;
+          words = blown ? `${ans(Pn)} W, significantly higher than ${gk(P, 'Pr')} W. Too much power is dissipated in the lamp: it shines very brightly for an instant, then the large amount of thermal energy melts and blows out the lamp (Tutorial 7, B7(d)).`
+            : Math.abs(P.V - P.Vr) < 1e-9 ? `At its rated voltage, ${gk(P, 'Vr')} V, it uses its rated power: ${gk(P, 'Pr')} W, ${gk(P, 'Pr')} J of energy every second.`
+            : P.V < P.Vr ? `Below its rated voltage it uses less than its rated power: ${ans(Pn)} W instead of ${gk(P, 'Pr')} W.`
+            : `Above its rated voltage it uses more than its rated power: ${ans(Pn)} W instead of ${gk(P, 'Pr')} W.`;
+        } else stepReadouts();
+      } else if (currentTab === 4) {
+        const td = sim.t, E = eAt(td), Pn = powerNow(td), N = P.days;
+        const L = [['Time', td >= N - 1e-9 ? `${N} day${N === 1 ? '' : 's'}` : `Day ${Math.floor(td + 1e-9) + 1}`, 't'], ['Power now', `${group(Math.round(Pn))} W`, 'P'], ['Energy so far', `${kw(E)} kWh`, 'E']];
+        if (P.price != null) L.push(['Cost so far', money(E * P.price), 'cost']); else L.push(['Energy so far (J)', `${big(E * J_PER_KWH)} J`, 'EJ']);
+        cards(L);
+        if (ended()) { work = eq(t4Work()); words = t4Words(); }
+        else words = td > 0 ? (Pn > 0 ? `Switched on: the disc turns and the meter counts up, ${f3(Pn / 1000)} kWh every hour.` : 'Switched off: the disc stops and the meter stays where it is.') : 'Press Start to run the period on the meter. One day passes in a moment.';
+      } else if (currentTab === 5) { cards([]); }
+      if (m !== 'steps') { $('work').innerHTML = work; $('words').innerHTML = words; }
+    }
+    function stepReadouts() {
+      const V = calc(), r = revealed(), id = S.scen, q = (k, txt) => (r[k] ? txt : '?');
+      if (id === 'ex12') cards([['Resistance <i>R</i>', q('R', `${f3(V.R)} Ω`), 'R'], ['Current <i>I</i> at 240 V', q('I', `${f3(V.I)} A`), 'I']]);
+      if (id === 'c3') cards([['<i>R</i><sub>T</sub>', q('RT', `${f3(V.RT)} Ω`), 'RT'], ['<i>I</i><sub>T</sub>', q('IT', `${fs(V.IT, 2)} A`), 'IT'], [`<i>P</i> in ${P.Ra} Ω`, q('Pa', `${fs(V.el.a.P, 2)} W`), 'Pa'], [`<i>P</i> in ${P.Rb} Ω`, q('Pb', `${fs(V.el.b.P, 2)} W`), 'Pb'], [`<i>P</i> in ${P.Rc} Ω`, q('Pc', `${fs(V.el.c.P, 2)} W`), 'Pc']]);
+      if (id === 'c4') cards([['<i>I</i>', q('IT', `${fs(V.IT, 2)} A`), 'IT'], [`<i>P</i> in ${P.Ra} Ω`, q('Pa', `${fs(V.el.a.P, 2)} W`), 'Pa'], [`<i>P</i> in ${P.Rb} Ω`, q('Pb', `${fs(V.el.b.P, 2)} W`), 'Pb'], [`Heat in ${P.Rc} Ω, ${P.th} s`, q('Hc', `${f3(V.el.c.P * P.th)} J`), 'Hc'], [`Heat in ${P.Rd} Ω, ${P.th} s`, q('Hd', `${f3(V.el.d.P * P.th)} J`), 'Hd']]);
+      if (id === 'b6r') cards([['p.d. across <i>R</i>', q('VR', `${f3(V.VR)} V`), 'VR'], ['Current <i>I</i>', q('I', `${f3(V.I)} A`), 'I'], ['Resistance <i>R</i>', q('R', `${f3(V.R)} Ω`), 'R']]);
+      const L = steps(), n = S.step;
+      $('work').innerHTML = n ? eq(L.slice(0, n).map((l, i) => ({ h: l.h, lit: i === n - 1 }))) : '';
+      $('words').innerHTML = n === 0 ? 'Press Next to work through it one step at a time.' : n >= L.length ? 'Done: every part worked out. Press Reset to start again.' : `Step ${n} of ${L.length}.`;
+    }
+    function t4Work() {
+      const id = S.scen, E = eAt(P.days);
+      if (id === 'ex13') { const tot = P.mins * P.uses * P.days;
+        return [`Total time = ${fs(P.mins, 2)} min × ${P.uses} × ${P.days} = ${tot} min = ${plain(tot / 60)} h`,
+          `Total energy used = <i>Pt</i> = ${fs(P.apps[0].P / 1000, 2)} kW × ${plain(tot / 60)} h = ${kw(E)} kWh`,
+          { h: `Total cost = ${money(P.price)} × total energy used = ${money(P.price)} × ${kw(E)} = <b>${money(E * P.price)}</b>`, lit: true }]; }
+      if (id === 'a7') { const a = P.apps[0], s = a.h * 3600 * P.days;
+        return [`(a) <i>I</i> = ${frac('<i>P</i>', '<i>V</i>')} = ${frac(a.P, P.V)} = <b>${f3(ratedI(a.P, P.V))} A</b>`,
+          `(b) 1 day = 24 hours = 24 × 3600 = ${group(s)} seconds; <i>E</i> = ${a.P} × ${group(s)} = ${group(a.P * s)} J ≈ <b>${sci(a.P * s)} J</b>`,
+          { h: `In kilowatt-hours: <i>E</i> = (${plain(a.P / 1000)} kW)(${plain(a.h * P.days)} h) = <b>${fs(E, 3)} kWh</b>`, lit: true }]; }
+      if (id === 'a8') { const a = P.apps[0];
+        return [`<i>E</i> = ${plain(a.P / 1000)} kW × ${plain(a.h)} h × ${P.days} = ${kw(E)} kWh`,
+          { h: `Cost = ${kw(E)} × ${plain(P.price * 100)} = ${group(Math.round(E * P.price * 100))} cents or <b>${money(E * P.price)}</b>`, lit: true }]; }
+      // a home, or your own appliance: one line each, then the total
+      const L = t4Apps().map(a => `${a.name}: ${plain(a.P / 1000)} kW × ${plain(a.h)} h × ${P.days} = ${f3(kWh(a.P, a.h) * P.days)} kWh`);
+      L.push(`Total energy used = ${kw(E)} kWh`);
+      if (P.price != null) L.push({ h: `Total cost = ${money(P.price)} × ${kw(E)} = <b>${money(E * P.price)}</b>`, lit: true });
+      return L;
+    }
+    function t4Words() {
+      const E = eAt(P.days);
+      if (S.scen === 'a7') return `${fs(E, 3)} kWh = ${sci(E * J_PER_KWH)} J: the refrigerator’s small power, used all day, adds up.`;
+      return `${kw(E)} kWh in ${P.days} day${P.days === 1 ? '' : 's'}${P.price != null ? `, costing ${money(E * P.price)} at ${money(P.price)} per kWh` : ''}.`;
+    }
+
+    function update() {
+      draw(); readouts(); syncInputs();
+      const run = isRun(), st = isSteps();
+      $('simGroup').hidden = !run; $('moments').hidden = !run;
+      $('stepGroup').hidden = !st;
+      if (run) {
+        const end = runEnd(), mid = sim.t > 1e-9 && sim.t < end - 1e-9;
+        $('pauseBtn').textContent = !sim.running && mid ? 'Play' : 'Pause';
+        $('pauseBtn').disabled = !sim.running && !mid;
+        $('startBtn').disabled = sim.running || !(end > 0);
+        const km = keyMoments();
+        $('prevMoment').disabled = !km.some(m => m < sim.t - 1e-9); $('nextMoment').disabled = !km.some(m => m > sim.t + 1e-9);
+        const su = speedUp();
+        $('speedNote').textContent = currentTab === 4 ? `The clock runs ${group(Math.round(su * 86400))} times faster than real time: ${plain(su)} day${su === 1 ? '' : 's'} every second.`
+          : su > 1 ? `The clock runs ${f3(su)} times faster than real time.` : 'The clock runs in real time.';
+      }
+      if (st) { const n = nSteps(); $('stepNo').textContent = `(${S.step} of ${n})`; $('prevStep').disabled = S.step <= 0; $('nextStep').disabled = S.step >= n; $('stepReset').disabled = S.step === 0; }
+      $('gameBox').hidden = mode() !== 'game';
+      if (mode() === 'game') renderGame();
+    }
+    function chooseScenario(id) {
+      if (id === 'custom') {
+        if (!S.custom) {
+          if (currentTab === 2) { P = { V: 6.0, R: 12 }; }
+          else if (currentTab === 3) { P = { Pr: 60, Vr: 240, V: 240, dev: 'Appliance' }; }
+          toCustom();
         }
-        el('c-' + a.id).innerHTML = s.on ? work : '';
-      });
-      el('ex12Note').style.display = ex12 || state.kettle15.on ? '' : 'none';
-      el('runBtn').textContent = run.running ? 'Pause' : run.t > 0 && run.t < t.days ? 'Play' : 'Run the period on the meter';
-      el('runNote').textContent = `One day passes every second. At $${t.tariff.toFixed(2)} per kWh.`;
+      } else loadScenario(id);
+      resetRun(); clearFeat(); buildInputs(); update();
     }
+    presetEl.addEventListener('change', () => chooseScenario(presetEl.value));
 
-    function setup(c) {
-      const r = c.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
-      const cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
-      if (c.width !== cw || c.height !== ch) { c.width = cw; c.height = ch; }
-      const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      return { ctx, w: r.width, h: r.height };
-    }
-    function drawMeter() {
-      const { ctx, w, h } = setup(el('meterCanvas'));
-      ctx.clearRect(0, 0, w, h);
-      const t = totals();
-      // electricity meter display
-      const mx = 16, my = 16, mw = Math.min(300, w * 0.42), mh = 70;
-      ctx.fillStyle = '#1f2937'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(mx, my, mw, mh, 10) : ctx.rect(mx, my, mw, mh); ctx.fill();
-      const narrow = mw < 220; // phone: shorter heading and smaller digits so they stop short of the spinning disc
-      ctx.fillStyle = '#94a3b8'; ctx.font = '11px Arial'; ctx.textAlign = 'left'; ctx.fillText(narrow ? 'METER (kWh)' : 'ELECTRICITY METER (kWh)', mx + 12, my + 16);
-      const digits = run.energy.toFixed(2).padStart(8, '0');
-      ctx.font = `bold ${narrow ? 17 : 26}px monospace`; ctx.fillStyle = '#4ade80'; ctx.fillText(digits, mx + 10, my + 50);
-      // spinning disc speed tracks the power being used
-      const cx = mx + mw - 30, cy = my + mh / 2, ang = (run.energy * 40) % (Math.PI * 2);
-      ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, 16, 0, Math.PI * 2); ctx.stroke();
-      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(ang) * 14, cy + Math.sin(ang) * 14); ctx.stroke();
-      // day timeline and cost so far
-      const tx = mx + mw + 24, tw = w - tx - 16;
-      if (tw > 120) {
-        ctx.fillStyle = '#334155'; ctx.font = 'bold 13px Arial'; ctx.fillText(`Day ${Math.min(t.days, run.t).toFixed(1)} of ${t.days}`, tx, my + 14);
-        ctx.fillStyle = '#e5e7eb'; ctx.fillRect(tx, my + 24, tw, 20);
-        ctx.fillStyle = '#f59e0b'; ctx.fillRect(tx, my + 24, tw * Math.min(1, run.t / t.days), 20);
-        ctx.fillStyle = '#0f172a'; ctx.font = 'bold 16px Arial'; ctx.fillText(`${money(run.energy * t.tariff)} so far`, tx, my + 70);
-        ctx.font = '12px Arial'; ctx.fillStyle = '#475569'; ctx.fillText(`of ${money(t.cost)} for the whole period`, tx, my + 88);
-      } else {
-        ctx.fillStyle = '#0f172a'; ctx.font = 'bold 14px Arial'; ctx.fillText(`Day ${Math.min(t.days, run.t).toFixed(1)} — ${money(run.energy * t.tariff)}`, mx, my + mh + 26);
+    /* ---------------- tab 5: the game ---------------- */
+    const GAME_OPTS = ['A uses more', 'B uses more', 'Both use the same'];
+    function renderGame() {
+      const i = GAME.findIndex(g => g.id === S.scen), G = GAME[i], done = !!game.done[G.id];
+      $('gameNo').textContent = `Pair ${i + 1} of ${GAME.length}`;
+      $('gameScore').textContent = `Score: ${game.score} of ${GAME.length}`;
+      const opts = $('gameOpts');
+      if (opts.dataset.id !== G.id || opts.dataset.done !== String(done)) {
+        opts.dataset.id = G.id; opts.dataset.done = String(done);
+        opts.innerHTML = GAME_OPTS.map((o, j) => `<button type="button" class="opt${done ? (j === G.ans ? ' right' : j === game.picks[G.id] ? ' wrong' : '') : ''}" data-j="${j}">${o}</button>`).join('');
+        opts.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+          if (game.done[G.id]) return;
+          game.pick = +b.dataset.j; opts.querySelectorAll('.opt').forEach(x => x.classList.toggle('picked', x === b));
+        }));
+        game.pick = null;
+        $('gameFb').innerHTML = done ? gameFb(G) : '';
       }
-      ctx.fillStyle = '#64748b'; ctx.font = '12px Arial';
-      const line1 = `${kwh(t.Eday)} per day × ${t.days} ${t.days === 1 ? "day" : "days"} = ${kwh(t.Eall)}`, line2 = `${kwh(t.Eall)} × $${t.tariff.toFixed(2)} = ${money(t.cost)}`;
-      if (ctx.measureText(`${line1};  ${line2}`).width < w - 2 * mx) ctx.fillText(`${line1};  ${line2}`, mx, h - 12);
-      else { ctx.fillText(line1, mx, h - 26); ctx.fillText(line2, mx, h - 10); } // too wide for a phone: two lines
+      $('gameCheck').disabled = done;
+      $('gameNext').disabled = i >= GAME.length - 1;
+      $('words').innerHTML = ''; $('work').innerHTML = '';
     }
-
-    el('runBtn').addEventListener('click', () => {
-      const t = totals();
-      if (run.t >= t.days) resetRun();
-      run.running = !run.running;
+    function gameFb(G) {
+      const ok = game.picks[G.id] === G.ans;
+      return `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span>${ok ? '' : ` The answer: <b>${GAME_OPTS[G.ans]}</b>.`} <span class="why">${G.why}</span>`;
+    }
+    $('gameCheck').addEventListener('click', () => {
+      const G = GAME.find(g => g.id === S.scen);
+      if (game.done[G.id]) return;
+      if (game.pick === null) { $('gameFb').innerHTML = '<span class="verdict no">Pick an answer first.</span>'; return; }
+      game.picks[G.id] = game.pick; game.done[G.id] = true; if (game.pick === G.ans) game.score++;
+      update();
     });
-    el('resetRunBtn').addEventListener('click', resetRun);
-    el('preset').addEventListener('change', applyPreset);
-    ['volt', 'days', 'tariff'].forEach(id => el(id).addEventListener('input', resetRun));
+    $('gameNext').addEventListener('click', () => { const i = GAME.findIndex(g => g.id === S.scen); if (i < GAME.length - 1) { presetEl.value = GAME[i + 1].id; chooseScenario(GAME[i + 1].id); } });
 
-    build(); applyPreset();
-    let last = null;
-    function frame(ts) {
-      if (last === null) last = ts;
-      const dt = Math.max(0, Math.min(0.05, (ts - last) / 1000)); last = ts;
-      const t = totals();
-      if (run.running) {
-        const dd = Math.min(dt, t.days - run.t); // one day per second
-        run.t += dd; run.energy += t.Eday * dd;
-        if (run.t >= t.days - 1e-9) { run.t = t.days; run.energy = t.Eall; run.running = false; }
+    /* ---------------- the tabs ---------------- */
+    const KEYS = { res: [COL.res, 'Resistor or heating element', 'dot'], lamp: [COL.lamp, 'Lamp', 'dot'], charge: [COL.charge, 'Moving charges (electrons)', 'dot'],
+      energy: [COL.energy, 'Energy'], heat: [COL.heat, 'Power (energy each second)'], rated: [COL.rated, 'Rated value'] };
+    const TABS = {
+      1: { strip: 'Answer Predict first. Then press Start: the bulb is switched on, and the charge and the energy count up from 0. Use the key moments to stop at exact times.',
+        presets: ['ex11', 'b7', 'b6'], hint: 'Switched on, the energy used grows steadily with time.', key: ['lamp', 'charge', 'energy'],
+        notes: ['In an electric circuit, electric charges gain energy as they pass through a battery (notes p. 7-53).',
+          'When the charges flow through the circuit, they lose their energy as they do work, for example by heating a toaster, lighting a lamp, driving a motor or ringing an electric bell (p. 7-53).',
+          'The electrical energy is converted into other forms of energy such as heat, light, and sound (p. 7-53).',
+          'From <i>V</i> = <i>W</i>/<i>Q</i>, <i>W</i> = <i>QV</i>. The electric energy delivered or dissipated is <i>E</i> = <i>VQ</i>, or, since <i>Q</i> = <i>It</i>, <i>E</i> = <i>VIt</i> (p. 7-54).'] },
+      2: { strip: 'Answer Predict first. In the first scenario, change <i>V</i> or <i>R</i> and compare the three formulas. In the examples, press Next to work through them.',
+        presets: ['pow', 'ex12', 'c3', 'c4'], hint: 'The more power a resistor dissipates, the brighter it glows.', key: ['res', 'heat'],
+        notes: ['Electrical power (<i>P</i>) is the rate at which electrical energy is delivered or used in a circuit: <i>P</i> = <i>E</i>/<i>t</i> (notes p. 7-56).',
+          'Since <i>E</i> = <i>VIt</i>, <i>P</i> = <i>VIt</i>/<i>t</i> = <i>VI</i> (p. 7-56).',
+          'Using <i>V</i> = <i>IR</i> (Ohm’s law), the formula for power can also be written as <i>P</i> = <i>I</i><sup>2</sup><i>R</i> or <i>P</i> = <i>V</i><sup>2</sup>/<i>R</i> (p. 7-56).',
+          'You may use any of the three, as long as you show your working (Tutorial 7, C3 worked solution).'] },
+      3: { strip: 'Answer Predict first. Then slide the supply voltage and watch the power and the rating. In B6, press Next to work through it.',
+        presets: ['ex12c', 'b7d', 'b6r'], hint: 'Slide the supply voltage. The dashed line marks the rated power.', key: ['lamp', 'res', 'heat', 'rated'],
+        notes: ['Electrical appliances usually have their power rating and voltage rating marked on it. They are called the rated value (notes p. 7-57).',
+          'For example, a fluorescent lamp marked 40 W 240 V: when operated at a voltage of 240 V, its power consumption is 40 W, i.e. 40 J of energy every second (p. 7-57).',
+          'The resistance <i>R</i> remains unchanged, so on another supply voltage <i>P</i> = <i>V</i><sup>2</sup>/<i>R</i> (Example 12(c)).',
+          'A rating of 0.60 W, 3.0 V does not mean the lamp always has 3.0 V across it. It must have 3.0 V to operate normally (Tutorial 7, B7 worked solution).'] },
+      4: { strip: 'Answer Predict first. Then press Start to run the period on the meter: the disc turns while power is being used, and the meter counts the kilowatt-hours.',
+        presets: ['ex13', 'a7', 'a8', 'home'], hint: 'The meter counts kWh. The orange bars show when each appliance is on in a day.', key: ['heat', 'energy'],
+        notes: ['Electricity in Singapore is charged in units of kilowatt-hour (kWh). The kilowatt-hour (kWh) is a unit of energy (notes p. 7-59).',
+          'One kilowatt-hour (1 kWh) is the energy used by a 1 kW electrical appliance in one hour (p. 7-59).',
+          'Energy (in kWh) = power (in kW) × time (in h). 1 kWh = (1 kW)(1 hour) = (1000 W)(60 minutes × 60 seconds) = 3.6 × 10<sup>6</sup> J (p. 7-59).',
+          'Total cost = cost per kWh × total energy used (Example 13).'] },
+      5: { strip: 'For each pair, decide which uses more electrical energy (and so costs more at the same price per kWh), then check.',
+        presets: GAME.map(g => g.id), hint: '', key: ['energy'],
+        notes: ['Energy = power × time: compare kW × h, not the power alone (notes p. 7-59).',
+          'A small power used for a long time can use more energy than a big power used for a short time.',
+          'The television, table fan, clothes iron and the hours of use are values chosen for this page.'] },
+      6: { strip: 'Answer every question, then read the summary.', key: [] }
+    };
+    const PREDICT = {
+      1: { q: 'Example 11: a bulb on a 3.0 V supply takes a current of 0.2 A. It is switched on for 2 minutes instead of one. The electrical energy used is …',
+        opts: ['36 J', '72 J', '18 J', '144 J'], ans: 1,
+        why: '<i>E</i> = <i>VIt</i>: the voltage and the current are the same, and the time doubles, so the energy doubles: 3.0 × 0.2 × 120 = 72 J. Choose Your own values and set <i>t</i> to 120 s to check.' },
+      2: { q: 'The voltage across a resistor is doubled (its resistance stays the same). The power dissipated in it …',
+        opts: ['doubles', 'becomes four times as big', 'stays the same', 'halves'], ans: 1,
+        why: '<i>P</i> = <i>V</i><sup>2</sup>/<i>R</i>: twice the voltage gives 2<sup>2</sup> = 4 times the power. (Or: twice the voltage gives twice the current, and <i>P</i> = <i>VI</i> = 2 × 2 = 4 times.) Change <i>V</i> from 6.0 to 12 V to check.' },
+      3: { q: 'Example 12: the kettle rated 1500 W 240 V is used on a 120 V supply. The power it uses is …',
+        opts: ['1500 W', '750 W', '375 W', '3000 W'], ans: 2,
+        why: 'Its resistance stays 38.4 Ω, so <i>P</i> = <i>V</i><sup>2</sup>/<i>R</i> = 120<sup>2</sup>/38.4 = 375 W: half the voltage gives a quarter of the power, not half. Slide the voltage to 120 V to check.' },
+      4: { q: 'In one day, which uses more electrical energy: a 2.0 kW kettle used for 15 minutes, or a 300 W refrigerator running all 24 hours?',
+        opts: ['The kettle', 'The refrigerator', 'They use the same'], ans: 1,
+        why: 'Kettle: 2.0 kW × 0.25 h = 0.5 kWh. Refrigerator: 0.3 kW × 24 h = 7.2 kWh, more than 14 times as much. Run Example 13 (one day of it is 0.5 kWh) and Tutorial A7 to see.' },
+      5: { q: 'To compare the electrical energy two appliances use, you need to know …',
+        opts: ['only their power', 'only how long they are on', 'their power and how long they are on', 'only their voltage'], ans: 2,
+        why: 'Energy = power × time (in kWh: kW × h). A bigger power for a shorter time can use less energy, the same, or more.' }
+    };
+    const FEATS = {
+      1: [['double', 'Twice as long: twice the energy'], ['grad', 'The gradient of the graph = <i>VI</i>'], ['charge', '<i>Q</i> = <i>It</i>: the charge that passed'], ['mj', 'Big numbers: megajoules']],
+      2: [['three', 'Three formulas, one answer'], ['dv', 'Double <i>V</i>: four times the power'], ['bigR', 'Same <i>V</i>, bigger <i>R</i>: less power'], ['most', 'C3: which resistor dissipates most?']],
+      3: [['rated', 'At its rated voltage: its rated power'], ['quarter', 'Half the voltage: a quarter of the power'], ['blow', 'B7: 12 V blows the lamp'], ['share', 'B6: <i>R</i> takes the rest of the voltage']],
+      4: [['disc', 'The disc turns only while it is on'], ['kwh', '1 kWh = 3.6 × 10<sup>6</sup> J'], ['cost', 'Cost = energy × price'], ['fridge', 'A small power all day adds up']],
+      5: []
+    };
+    const PROMPTS = {
+      1: ['Where does the electrical energy go in a bulb?', 'Why does the energy–time graph go up in a straight line?', 'What would change if the current doubled?'],
+      2: ['Why do the three formulas give the same power?', 'When is <i>P</i> = <i>I</i><sup>2</sup><i>R</i> the easiest to use? When is <i>V</i><sup>2</sup>/<i>R</i>?', 'In C3, why does the 30 Ω dissipate more power than the 10 Ω?'],
+      3: ['What does “40 W 240 V” on a lamp mean?', 'Why is the kettle’s power a quarter, not a half, at 120 V?', 'Why does the 0.60 W lamp blow on 12 V?'],
+      4: ['What does the electricity meter count?', 'Why does the refrigerator use so much energy with so little power?', 'How could a home cut its bill?'],
+      5: ['Which pair surprised you most, and why?', 'How do you compare energies quickly in your head?', 'Can a bigger power ever use less energy? When?'],
+      6: ['Which question did most of the class get wrong, and why?', 'Pick one wrong option: what mistake would lead a student to choose it?']
+    };
+
+    let predictPick = null;
+    function clearFeat() { feat = {}; hl = {}; syncFeatButtons(); $('featNote').textContent = ''; }
+    function clearFeatNoteOnly() { if (Object.keys(feat).length) clearFeat(); }
+    function syncFeatButtons() { document.querySelectorAll('#feats .feat').forEach(b => b.classList.toggle('on', !!feat[b.dataset.f])); }
+    // a key feature shows itself: it always reloads its scenario, then sets the values that show it
+    function tapFeat(id) {
+      const on = !feat[id];
+      const want = scen => { presetEl.value = scen; chooseScenario(scen); };
+      clearFeat();
+      if (on) {
+        ({
+          double: () => { want('ex11'); P = { V: 3.0, I: 0.2, T: 120, unit: 's', dev: 'Bulb', km: 20 }; S.custom = true; S.scen = 'custom'; presetEl.value = 'custom'; $('question').innerHTML = 'Example 11’s bulb, switched on for 2 minutes instead of one.'; buildInputs(); sim.t = P.T; hl = { E: true }; },
+          grad: () => { want('ex11'); sim.t = P.T; hl = { E: true }; },
+          charge: () => { want('b7'); sim.t = P.T; hl = { Q: true }; },
+          mj: () => { want('b6'); sim.t = P.T; hl = { E: true }; },
+          three: () => { want('pow'); hl = { VI: true, I2R: true, V2R: true }; },
+          dv: () => { want('pow'); P.V = 12; delete P.dp; delete P.sf; S.custom = true; S.scen = 'custom'; presetEl.value = 'custom'; $('question').innerHTML = 'The 12 Ω resistor, now on 12 V (twice 6.0 V).'; hl = { VI: true }; },
+          bigR: () => { want('pow'); P.R = 24; delete P.dp; delete P.sf; S.custom = true; S.scen = 'custom'; presetEl.value = 'custom'; $('question').innerHTML = 'Still 6.0 V, now across 24 Ω (twice 12 Ω).'; hl = { VI: true }; },
+          most: () => { want('c3'); S.step = nSteps(); hl = { Pb: true, b: true }; },
+          rated: () => { want('ex12c'); P.V = P.Vr; hl = { P: true }; },
+          quarter: () => { want('ex12c'); P.V = 120; hl = { P: true, ratio: true }; },
+          blow: () => { want('b7d'); P.V = 12; hl = { P: true, ratio: true }; },
+          share: () => { want('b6r'); S.step = nSteps(); hl = { VR: true }; },
+          disc: () => { want('a8'); sim.t = 12 / 24; hl = { P: true }; },   // 12:00 on day 1
+          kwh: () => { want('a7'); sim.t = P.days; hl = { E: true, EJ: true }; },
+          cost: () => { want('ex13'); sim.t = P.days; hl = { E: true, cost: true }; },
+          fridge: () => { want('a7'); sim.t = P.days; hl = { E: true }; }
+        })[id]();
       }
-      updateUI(); drawMeter();
-      requestAnimationFrame(frame);
+      feat = on ? { [id]: true } : {};
+      syncFeatButtons(); syncInputs(); update();
+      $('featNote').innerHTML = on ? featNote(id) : '';
     }
-    requestAnimationFrame(frame);
+    function featNote(id) {
+      switch (id) {
+        case 'double': return `<i>E</i> = <i>VIt</i> = 3.0 × 0.2 × 120 = ${f3(energyVIt(3.0, 0.2, 120))} J: twice the 36 J of Example 11, because the time is twice as long.`;
+        case 'grad': return `The graph of <i>E</i> against <i>t</i> is a straight line through the origin: its gradient is <i>VI</i> = 3.0 × 0.2 = ${f3(3.0 * 0.2)} J every second.`;
+        case 'charge': return `The lamp takes <i>I</i> = 0.60 ÷ 3.0 = ${f3(ratedI(0.6, 3.0))} A, so in 10 minutes <i>Q</i> = <i>It</i> = ${f3(ratedI(0.6, 3.0))} × 600 = ${f3(ratedI(0.6, 3.0) * 600)} C pass through it (Tutorial 7, B7(b)).`;
+        case 'mj': return `2 hours is 7200 s: <i>E</i> = 100 × 5 × 7200 = ${sci(energyVIt(100, 5, 7200))} J = 3.6 MJ (Tutorial 7, B6(b)). 1 MJ = 10<sup>6</sup> J.`;
+        case 'three': return `<i>VI</i>, <i>I</i><sup>2</sup><i>R</i> and <i>V</i><sup>2</sup>/<i>R</i> all give ${fs(6 * 0.5, 2)} W: they are the same formula, rewritten with <i>V</i> = <i>IR</i> (p. 7-56).`;
+        case 'dv': return `On 12 V the current doubles to 1.0 A, and <i>P</i> = <i>VI</i> = 12 × 1.0 = ${f3(12 * 12 / 12)} W: four times the 3.0 W on 6.0 V.`;
+        case 'bigR': return `On the same 6.0 V, twice the resistance halves the current, and <i>P</i> = <i>V</i><sup>2</sup>/<i>R</i> = 36 ÷ 24 = ${f3(36 / 24)} W: half the power.`;
+        case 'most': { const s = solveLay(layout(PRESETS.c3, 'c3'), 9); return `The 30 Ω dissipates the most, ${fs(s.el.b.P, 2)} W, not the 60 Ω (${fs(s.el.c.P, 2)} W) or the 10 Ω (${fs(s.el.a.P, 2)} W): power depends on the current or the voltage too, not on the resistance alone.`; }
+        case 'rated': return 'On 240 V the kettle uses exactly its rated 1500 W: that is what the rating means.';
+        case 'quarter': return `On 120 V: <i>P</i> = 120<sup>2</sup>/38.4 = ${f3(120 * 120 / ratedR(1500, 240))} W, a quarter of 1500 W (Example 12(c)). Half the voltage also halves the current, so the power is a quarter.`;
+        case 'blow': return `On 12 V: <i>P</i> = 12<sup>2</sup>/15 = ${f3(144 / ratedR(0.6, 3.0))} W, sixteen times its 0.60 W rating. It shines very brightly, then blows (Tutorial 7, B7(d)).`;
+        case 'share': return 'The lamp must have its rated 100 V to operate at its rated power, so the resistor takes the other 140 V of the 240 V supply, with the same 5 A flowing through both.';
+        case 'disc': return 'At 12:00 on day 1 the air-conditioner has been switched off since 10:00: the power is 0 W, the disc has stopped, and the meter stays at 20 kWh.';
+        case 'kwh': return `The refrigerator’s ${fs(kWh(300, 24), 3)} kWh in one day is ${sci(kWh(300, 24) * J_PER_KWH)} J: each kWh is (1000 W)(3600 s) = 3.6 × 10<sup>6</sup> J (p. 7-59).`;
+        case 'cost': return `15 kWh at $0.27 per kWh: total cost = $0.27 × 15 = ${money(0.27 * 15)} (Example 13).`;
+        case 'fridge': return `The 300 W refrigerator uses ${fs(kWh(300, 24), 3)} kWh in one day; the 2.0 kW kettle in Example 13 uses only ${fs(kWh(2000, 15 / 60), 2)} kWh a day. Power alone does not decide the energy: time matters too.`;
+      }
+      return '';
+    }
+
+    function renderPredict(tab) {
+      const Q = PREDICT[tab], box = $('predictBox');
+      predictPick = null;
+      if (!Q) { box.hidden = true; return; }
+      box.hidden = false; box.classList.remove('done');
+      $('predictQ').innerHTML = Q.q;
+      $('predictFb').innerHTML = '';
+      const opts = $('predictOpts');
+      opts.innerHTML = '';
+      Q.opts.forEach((o, i) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.innerHTML = o;
+        b.addEventListener('click', () => {
+          if (opts.dataset.done) return;
+          predictPick = i; opts.querySelectorAll('.opt').forEach((x, j) => x.classList.toggle('picked', j === i));
+        });
+        opts.appendChild(b);
+      });
+      delete opts.dataset.done;
+      $('predictCheck').textContent = 'Check my answer';
+    }
+    $('predictCheck').addEventListener('click', () => {
+      const Q = PREDICT[currentTab], opts = $('predictOpts'), fb = $('predictFb');
+      if (!Q) return;
+      if (opts.dataset.done) { renderPredict(currentTab); return; }
+      if (predictPick === null) { fb.innerHTML = '<span class="verdict no">Pick an answer first.</span>'; return; }
+      opts.dataset.done = '1';
+      const ok = predictPick === Q.ans;
+      opts.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === Q.ans) x.classList.add('right'); else if (j === predictPick) x.classList.add('wrong'); });
+      $('predictBox').classList.add('done');
+      fb.innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> Your prediction: ${Q.opts[predictPick]}.`
+        + (ok ? '' : ` The answer: <b>${Q.opts[Q.ans]}</b>.`) + ` <span class="why">${Q.why}</span>`;
+      $('predictCheck').textContent = 'Try again';
+    });
+
+    function renderFeats(tab) {
+      const list = FEATS[tab] || [], el = $('feats');
+      $('featBox').hidden = !list.length;
+      el.innerHTML = '';
+      list.forEach(([id, lab]) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'feat'; b.dataset.f = id;
+        b.innerHTML = lab;
+        b.addEventListener('click', () => tapFeat(id));
+        el.appendChild(b);
+      });
+      $('featNote').textContent = '';
+      syncFeatButtons();
+    }
+    function renderKey(tab) {
+      $('ckey').innerHTML = (TABS[tab].key || []).map(k => `<span><b class="${KEYS[k][2] || ''}" style="background:${KEYS[k][0]}"></b><span>${KEYS[k][1]}</span></span>`).join('');
+    }
+    function fillPresets(list) {
+      presetEl.innerHTML = '';
+      const withOwn = currentTab !== 5;
+      [...list, ...(withOwn ? ['custom'] : [])].forEach(id => { const o = document.createElement('option'); o.value = id; o.textContent = id === 'custom' ? 'Your own values' : PRESETS[id].name; presetEl.appendChild(o); });
+      presetEl.value = list[0];
+    }
+
+    function showTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('#tabs .tab').forEach(b => { const on = +b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+      $('stepLabel').textContent = `Step ${tab} of 6`;
+      document.querySelectorAll('#stepBar i').forEach((i, n) => i.classList.toggle('on', n < tab));
+      $('strip').innerHTML = TABS[tab].strip;
+      renderKey(tab);
+      $('pageSim').hidden = tab === 6;
+      $('page6').hidden = tab !== 6;
+      if (tab <= 5) {
+        const T = TABS[tab];
+        $('sceneHint').textContent = T.hint || '';
+        $('notes').innerHTML = '<ul>' + T.notes.map(n => `<li>${n}</li>`).join('') + '</ul>';
+        if (tab === 5) game = { picks: {}, done: {}, score: 0, pick: null };
+        fillPresets(T.presets); chooseScenario(T.presets[0]);
+      }
+      if (tab === 6) renderQuiz();
+      renderPredict(tab);
+      renderFeats(tab);
+      $('tPrompts').innerHTML = PROMPTS[tab].map(p => `<li>${p}</li>`).join('');
+    }
+    document.querySelectorAll('#tabs .tab').forEach(b => b.addEventListener('click', () => showTab(+b.dataset.tab)));
+
+    /* ---------------- Tab 6: Challenge ---------------- */
+    // every answer recomputed and matched to the lecturer's copy, Tutorial 7's key or the colleague's solutions;
+    // a question whose parts share one situation is one screen: the situation (and its circuit) once, then its parts
+    const QUIZ = [
+      { src: 'Example 11, notes p. 7-55', stem: 'A bulb used a 3.0 V supply and takes a current of 0.2 A. It is switched on for one minute.', parts: [
+        { q: 'How much electrical energy is used?', opts: ['36 J', '0.6 J', '900 J', '12 J'], ans: 0,
+          why: '<i>E</i> = <i>VIt</i> = 3.0 × 0.2 × (1 × 60) = 36 J. (0.6 J leaves out the time or keeps it in minutes; 12 J is the charge <i>It</i> in coulombs, not an energy.)' }] },
+      { src: 'Example 12, notes p. 7-58', stem: 'A kettle is rated at 1500 W 240 V.', parts: [
+        { lab: '(a)', q: 'What is the resistance of the heating element of the kettle?', opts: ['38.4 Ω', '6.25 Ω', '0.16 Ω', '360 000 Ω'], ans: 0,
+          why: 'Since <i>P</i> = <i>V</i><sup>2</sup>/<i>R</i>, <i>R</i> = <i>V</i><sup>2</sup>/<i>P</i> = 240<sup>2</sup>/1500 = 38.4 Ω. (0.16 = 240 ÷ 1500 leaves out the square.)' },
+        { lab: '(b)', q: 'What is the current through the kettle if the supply voltage is 240 V?', opts: ['6.25 A', '0.16 A', '38.4 A', '1500 A'], ans: 0,
+          why: 'Since <i>P</i> = <i>VI</i>, <i>I</i> = <i>P</i>/<i>V</i> = 1500/240 = 6.25 A. (0.16 A divides the wrong way round.)' },
+        { lab: '(c)', q: 'If the supply voltage drops to 120 V, calculate the electric power consumed.', opts: ['375 W', '750 W', '1500 W', '3000 W'], ans: 0,
+          why: 'Since the resistance <i>R</i> remains unchanged, <i>P</i> = <i>V</i><sup>2</sup>/<i>R</i> = 120<sup>2</sup>/38.4 = 375 W: a quarter, not half (750 W).' }] },
+      { src: 'Example 13, notes p. 7-60', stem: 'The water in a 2.0 kW kettle boils in 5.0 minutes. The kettle is used 3 times a day for a month of 30 days. The electricity cost is $0.27 per kWh.', parts: [
+        { lab: '(a)', q: 'The total energy used in the month is …', opts: ['15 kWh', '0.5 kWh', '15 000 kWh', '900 kWh'], ans: 0,
+          why: 'Total time = 5.0 min × 3 × 30 = 450 min = 7.5 h; <i>E</i> = <i>Pt</i> = 2.0 kW × 7.5 h = 15 kWh. (0.5 kWh is one day; 15 000 uses watts; 900 = 2.0 × 450 keeps the time in minutes.)' },
+        { lab: '(b)', q: 'The cost to operate the kettle for the month is …', opts: ['$4.05', '$0.14', '$4050.00', '$243.00'], ans: 0,
+          why: 'Total cost = $0.27 × 15 = $4.05. ($0.14 is one day; $4050.00 uses watts; $243.00 = $0.27 × 900 uses minutes.)' }] },
+      { src: 'Tutorial 7, A7', stem: 'Electricity in Singapore is supplied at 240 V. A refrigerator is rated 300 W.', parts: [
+        { lab: '(a)', q: 'How much current does it draw?', opts: ['1.25 A', '0.8 A', '72 000 A', '0.00521 A'], ans: 0,
+          why: '<i>I</i> = <i>P</i>/<i>V</i> = 300/240 = 1.25 A. (0.8 A divides the wrong way round; 72 000 multiplies.)' },
+        { lab: '(b)', q: 'The energy it consumes in one day, in joules, is …', opts: ['2.59 × 10<sup>7</sup> J', '7200 J', '4.32 × 10<sup>5</sup> J', '2.59 × 10<sup>4</sup> J'], ans: 0,
+          why: '1 day = 24 × 3600 = 86 400 s; <i>E</i> = 300 × 86 400 = 25 920 000 J ≈ 2.59 × 10<sup>7</sup> J (25.9 MJ). (7200 J keeps the time in hours; 4.32 × 10<sup>5</sup> J in minutes.)' },
+        { lab: '(c)', q: 'The same energy in kilowatt-hours is …', opts: ['7.20 kWh', '7200 kWh', '0.30 kWh', '25.9 kWh'], ans: 0,
+          why: '<i>E</i> = (0.3 kW)(24 h) = 7.20 kWh. (7200 kWh uses watts; 0.30 kWh leaves out the time.)' }] },
+      { src: 'Tutorial 7, A8', stem: 'A 2000 W air conditioner is used for 10 hours per day.', parts: [
+        { q: 'Find the cost to operate the air conditioner for a month of 30 days, at 27 cents per kWh.', opts: ['$162.00', '$5.40', '$16 200.00', '$1.62'], ans: 0,
+          why: '<i>E</i> = 2 × 10 × 30 = 600 kWh; cost = 600 × 27 = 16 200 cents or $162.00. ($5.40 is one day; $16 200.00 reads cents as dollars.)' }] },
+      { src: 'Tutorial 7, B6', stem: 'A ‘500 W 100 V’ projector lamp, a resistor <i>R</i> and a 240 V supply are connected in series. The lamp operates at its rated voltage.', parts: [
+        { lab: '(a)', q: 'Find the resistance of resistor <i>R</i>.', opts: ['28 Ω', '20 Ω', '48 Ω', '2.4 Ω'], ans: 0,
+          why: 'p.d. across <i>R</i> = 240 − 100 = 140 V; <i>I</i> = <i>P</i>/<i>V</i> = 500/100 = 5 A; <i>R</i> = 140/5 = 28 Ω. (20 Ω is the lamp’s own resistance; 48 Ω is the whole circuit.)' },
+        { lab: '(b)', q: 'Find the total electrical energy the lamp transfers in 2 hours.', opts: ['3.6 × 10<sup>6</sup> J', '1000 J', '6.0 × 10<sup>4</sup> J', '8.64 × 10<sup>6</sup> J'], ans: 0,
+          why: 'Energy = power × time = 500 × (2 × 3600) = 3 600 000 J or 3.6 MJ. (1000 J keeps hours; 8.64 × 10<sup>6</sup> J counts the resistor’s energy too.)' }] },
+      { src: 'Tutorial 7, B7', stem: 'A filament lamp has a rating of 0.60 W, 3.0 V. Assume the lamp operates normally at its rated potential difference.', parts: [
+        { lab: '(a)', q: 'Find its resistance.', opts: ['15 Ω', '5.0 Ω', '0.2 Ω', '1.8 Ω'], ans: 0,
+          why: '<i>P</i> = <i>V</i><sup>2</sup>/<i>R</i>, so <i>R</i> = 3.0<sup>2</sup>/0.60 = 15 Ω. (5.0 Ω = 3.0 ÷ 0.60 leaves out the square.)' },
+        { lab: '(b)', q: 'Find the charge passing through it in 10 minutes.', opts: ['120 C', '2.0 C', '360 C', '1800 C'], ans: 0,
+          why: '<i>I</i> = <i>P</i>/<i>V</i> = 0.60/3.0 = 0.2 A; <i>Q</i> = <i>It</i> = 0.2 × (10 × 60) = 120 C. (2.0 C keeps minutes; 360 C uses the power for the current.)' },
+        { lab: '(c)', q: 'Find the energy it transfers in 10 minutes.', opts: ['360 J', '6.0 J', '36 J', '1080 J'], ans: 0,
+          why: 'Energy = power × time = 0.60 × (10 × 60) = 360 J. (6.0 J keeps minutes.)' },
+        { lab: '(d)', q: 'What would happen if a 12 V battery were connected directly to the lamp?', opts: ['It would take 9.6 W, far more than its 0.60 W rating: it shines very brightly, then blows', 'It would take 2.4 W and glow a little brighter', 'It would still take 0.60 W: the rating fixes its power', 'It would take 0.15 W and glow dimly'], ans: 0,
+          why: 'The same lamp keeps its 15 Ω: <i>P</i> = <i>V</i><sup>2</sup>/<i>R</i> = 12<sup>2</sup>/15 = 9.6 W. The excess power is converted to thermal energy, which melts and blows out the lamp.' }] },
+      { src: 'Tutorial 7, C3', fig: 'c3', stem: 'Three resistors are connected to a 9.0 V battery as shown.', parts: [
+        { lab: '(b)', q: 'The current delivered by the battery is …', opts: ['0.30 A', '0.90 A', '0.090 A', '0.45 A'], ans: 0,
+          why: '<i>R</i><sub>T</sub> = 10 + (1/30 + 1/60)<sup>−1</sup> = 30 Ω; <i>I</i><sub>T</sub> = 9.0/30 = 0.30 A. (0.090 A adds all three in series; 0.90 A uses the 10 Ω alone.)' },
+        { lab: '(c)', q: 'The power dissipated in the 10 Ω resistor is …', opts: ['0.90 W', '3.0 W', '8.1 W', '0.090 W'], ans: 0,
+          why: '<i>P</i> = <i>I</i><sup>2</sup><i>R</i> = 0.30<sup>2</sup> × 10 = 0.90 W. (3.0 W = <i>IR</i> leaves out a factor of <i>I</i>; 8.1 W puts the whole 9.0 V across it.)' },
+        { lab: '(d)', q: 'The power dissipated in the 30 Ω resistor is …', opts: ['1.2 W', '2.7 W', '0.20 W', '0.60 W'], ans: 0,
+          why: '<i>V</i><sub>10</sub> = 0.30 × 10 = 3.0 V, so <i>V</i><sub>30</sub> = 9.0 − 3.0 = 6.0 V; <i>P</i> = 6.0<sup>2</sup>/30 = 1.2 W. (2.7 W uses the full 9.0 V.)' },
+        { lab: '(e)', q: 'The power dissipated in the 60 Ω resistor is …', opts: ['0.60 W', '1.35 W', '1.2 W', '0.10 W'], ans: 0,
+          why: '<i>V</i><sub>60</sub> = 6.0 V too (in parallel with the 30 Ω): <i>P</i> = 6.0<sup>2</sup>/60 = 0.60 W.' }] },
+      { src: 'Tutorial 7, C4', fig: 'c4', stem: 'For the circuit shown (a 6 V battery; 2 Ω and 4 Ω in series in one branch, 7 Ω and 5 Ω in the other):', parts: [
+        { lab: '(a)', q: 'The current <i>I</i> from the battery is …', opts: ['1.5 A', '0.33 A', '0.75 A', '3.0 A'], ans: 0,
+          why: '<i>R</i><sub>T</sub> = (1/(2 + 4) + 1/(7 + 5))<sup>−1</sup> = 4 Ω; <i>I</i> = 6/4 = 1.5 A. (0.33 A adds all four in series.)' },
+        { lab: '(b)', q: 'The power dissipated in the 2 Ω resistor is …', opts: ['2.0 W', '0.50 W', '18 W', '4.5 W'], ans: 0,
+          why: '(2 + 4)<i>I</i><sub>1</sub> = 6 V, so <i>I</i><sub>1</sub> = 1 A; <i>P</i> = 1<sup>2</sup> × 2 = 2.0 W. (4.5 W uses the whole 1.5 A.)' },
+        { lab: '(c)', q: 'The power dissipated in the 4 Ω resistor is …', opts: ['4.0 W', '9.0 W', '1.0 W', '2.0 W'], ans: 0,
+          why: 'The same 1 A flows through the 4 Ω: <i>P</i> = 1<sup>2</sup> × 4 = 4.0 W.' },
+        { lab: '(d)', q: 'The heat dissipated in the 7 Ω resistor in 30 s is …', opts: ['52.5 J', '1.75 J', '472.5 J', '105 J'], ans: 0,
+          why: '(7 + 5)<i>I</i><sub>2</sub> = 6 V, so <i>I</i><sub>2</sub> = 0.5 A; <i>P</i> = 0.5<sup>2</sup> × 7 = 1.75 W; heat = 1.75 × 30 = 52.5 J. (1.75 is the power, not the heat.)' },
+        { lab: '(e)', q: 'The heat dissipated in the 5 Ω resistor in 30 s is …', opts: ['37.5 J', '1.25 J', '337.5 J', '75 J'], ans: 0,
+          why: '<i>P</i> = 0.5<sup>2</sup> × 5 = 1.25 W; heat = 1.25 × 30 = 37.5 J.' }] },
+      { src: 'Notes p. 7-57', stem: 'A fluorescent lamp is marked 40 W 240 V.', parts: [
+        { q: 'This means …', opts: ['when operated at a voltage of 240 V, its power consumption is 40 W: 40 J of energy every second', 'it always uses 40 W, whatever the supply voltage', 'it uses 40 J of energy every hour', 'it takes a current of 40 A at 240 V'], ans: 0,
+          why: 'The rated value: when operated at a voltage of 240 V, its power consumption is 40 W, i.e. 40 J of energy every second.' }] },
+      { src: 'Notes p. 7-59', stem: '', parts: [
+        { q: 'One kilowatt-hour (1 kWh) is equal to …', opts: ['3.6 × 10<sup>6</sup> J', '1000 J', '3600 J', '6.0 × 10<sup>4</sup> J'], ans: 0,
+          why: '1 kWh = (1 kW)(1 hour) = (1000 W)(60 minutes × 60 seconds) = 3.6 × 10<sup>6</sup> J. (6.0 × 10<sup>4</sup> J stops at minutes.)' }] },
+      { src: 'Notes p. 7-56', stem: '', parts: [
+        { q: 'The current through a resistor is doubled (its resistance stays the same). The power dissipated in it …', opts: ['becomes four times as big, since <i>P</i> = <i>I</i><sup>2</sup><i>R</i>', 'doubles, since <i>P</i> = <i>VI</i> and only <i>I</i> changes', 'stays the same', 'halves'], ans: 0,
+          why: '<i>P</i> = <i>I</i><sup>2</sup><i>R</i>: twice the current gives 2<sup>2</sup> = 4 times the power. With <i>P</i> = <i>VI</i>, the voltage doubles too (<i>V</i> = <i>IR</i>), so again 4 times.' }] },
+      { src: 'Notes p. 7-53', stem: '', parts: [
+        { q: 'When the charges flow through a toaster …', opts: ['they lose their energy as they do work: the electrical energy is converted into heat', 'they are used up, so less current flows out of the toaster than into it', 'they gain energy from the toaster', 'they stop flowing once the toaster is hot'], ans: 0,
+          why: 'When the charges flow through the circuit, they lose their energy as they do work, for example by heating a toaster. The charges are not used up: the current is the same in and out.' }] }
+    ];
+    // the options are written with the right one first; turn each part's list round by a fixed amount
+    { let pc = 0; QUIZ.forEach(Q => Q.parts.forEach(Pt => { const n = Pt.opts.length, r = (pc++ * 3 + 1) % n;
+      Pt.opts = Pt.opts.slice(r).concat(Pt.opts.slice(0, r)); Pt.ans = (Pt.ans - r + n) % n; })); }
+    const QUIZ_MARKS = QUIZ.reduce((n, Q) => n + Q.parts.length, 0);
+    const partLabel = (Q, k) => Q.parts[k].lab ? Q.parts[k].lab + ' ' : Q.parts.length > 1 ? `(${'abcdefgh'[k]}) ` : '';
+    function drawFig(cv, id) {
+      __pim.labels = []; __pim.arrows = []; __pim.panes = []; __pim.segs = [];
+      const g = setup(cv); if (!g) return;
+      pane('fig', 0, 0, g.W, g.H);
+      drawCircuit(g.ctx, { x: 0, y: 0, w: g.W, h: g.H }, layout(PRESETS[id], id), { fig: true });
+    }
+    let quiz = { i: 0, score: 0, picks: [], done: false, missed: [] };
+    function resetQuiz() { quiz = { i: 0, score: 0, picks: [], done: false, missed: [] }; renderQuiz(); }
+    function renderQuiz() {
+      const el = $('quiz'), N = QUIZ.length;
+      if (quiz.i >= N) {
+        const list = quiz.missed.length
+          ? `<p>Go back over these:</p><ul>${quiz.missed.map(([n, k]) => { const Q = QUIZ[n];
+              return `<li>Question ${n + 1}${partLabel(Q, k).trim()} (${Q.src}): ${(Q.stem ? Q.stem + ' ' : '') + Q.parts[k].q}</li>`; }).join('')}</ul>`
+          : '<p>Every answer right. Well done.</p>';
+        el.innerHTML = `<div class="quiz-top"><span>Summary</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div><div class="quiz-bar"><i style="width:100%"></i></div>
+          <div class="quiz-sum"><div class="quiz-q">You scored ${quiz.score} out of ${QUIZ_MARKS}.</div>${list}</div>
+          <div class="row-btns"><button type="button" id="qAgain">Try the quiz again</button></div>`;
+        $('qAgain').addEventListener('click', resetQuiz);
+        return;
+      }
+      const Q = QUIZ[quiz.i], many = Q.parts.length > 1;
+      quiz.picks = Q.parts.map(() => null);
+      el.innerHTML = `<div class="quiz-top"><span>Question ${quiz.i + 1} of ${N}</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div>
+        <div class="quiz-bar"><i style="width:${(quiz.i / N) * 100}%"></i></div>
+        ${Q.stem ? `<div class="quiz-q" id="qStem">${Q.stem}</div>` : ''}${Q.fig ? '<canvas class="qfig" id="qFig"></canvas>' : ''}<div class="quiz-src">${Q.src}${many ? ` · ${Q.parts.length} parts, answer them all` : ''}</div>
+        ${Q.parts.map((Pt, k) => `<div class="qpart" data-k="${k}">
+          <div class="${Q.stem ? 'qpart-q' : 'quiz-q'}">${partLabel(Q, k)}${Pt.q}</div>
+          <div class="opts">${Pt.opts.map((o, j) => `<button type="button" class="opt" data-j="${j}">${o}</button>`).join('')}</div>
+          <div class="feedback"></div></div>`).join('')}
+        <div class="row-btns"><button type="button" id="qSubmit">${many ? 'Submit answers' : 'Submit answer'}</button><button type="button" class="secondary" id="qReset">Reset quiz</button></div>
+        <div class="feedback" id="qFb"></div>`;
+      if (Q.fig) drawFig($('qFig'), Q.fig);
+      el.querySelectorAll('.qpart').forEach(part => {
+        const k = +part.dataset.k;
+        part.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+          if (quiz.done) return;
+          quiz.picks[k] = +b.dataset.j; part.querySelectorAll('.opt').forEach(x => x.classList.toggle('picked', x === b));
+        }));
+      });
+      $('qReset').addEventListener('click', resetQuiz);
+      $('qSubmit').addEventListener('click', () => {
+        const fb = $('qFb');
+        if (quiz.done) { quiz.i++; quiz.done = false; renderQuiz(); return; }
+        const left = quiz.picks.map((p, k) => p === null ? partLabel(Q, k).trim() || `part ${k + 1}` : null).filter(x => x !== null);
+        if (left.length) { fb.innerHTML = `<span class="verdict no">${many ? `Pick an answer for every part first (still to do: ${left.join(', ')}).` : 'Pick an answer first.'}</span>`; return; }
+        quiz.done = true; fb.innerHTML = '';
+        el.querySelectorAll('.qpart').forEach(part => {
+          const k = +part.dataset.k, Pt = Q.parts[k], ok = quiz.picks[k] === Pt.ans;
+          if (ok) quiz.score++; else quiz.missed.push([quiz.i, k]);
+          part.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === Pt.ans) x.classList.add('right'); else if (j === quiz.picks[k]) x.classList.add('wrong'); });
+          part.querySelector('.feedback').innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> <span class="why">${Pt.why}</span>`;
+        });
+        el.querySelector('.quiz-top span:last-child').textContent = `Score: ${quiz.score} of ${QUIZ_MARKS}`;
+        $('qSubmit').textContent = quiz.i + 1 < N ? 'Next question' : 'See the summary';
+      });
+    }
+
+    /* ---------------- Teacher mode ---------------- */
+    // Only the teacher link (this page's address + ?teacher) shows the button; students and the
+    // Brightspace embed use the plain address. Not a lock: the panel only changes this screen.
+    const teacher = $('teacher');
+    if (new URLSearchParams(location.search).has('teacher')) $('teacherBtn').hidden = false;
+    $('teacherBtn').addEventListener('click', () => { teacher.hidden = !teacher.hidden; });
+    $('tClose').addEventListener('click', () => { teacher.hidden = true; });
+    $('tExplain').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-explain');
+      e.target.textContent = on ? 'Show explanations' : 'Hide explanations'; e.target.classList.toggle('on', on);
+    });
+    $('tAnswers').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-answers');
+      e.target.textContent = on ? 'Show answer labels' : 'Hide answer labels'; e.target.classList.toggle('on', on);
+    });
+    // free exploration: no Predict first, and every step shown at once
+    $('tFree').addEventListener('click', e => {
+      freeMode = !freeMode; document.body.classList.toggle('free-mode', freeMode);
+      e.target.textContent = freeMode ? 'Back to the guided steps' : 'Switch to free exploration'; e.target.classList.toggle('on', freeMode);
+      showTab(currentTab);
+    });
+    const fullBtn = $('tFull');
+    if (!document.fullscreenEnabled) fullBtn.hidden = true;
+    fullBtn.addEventListener('click', () => {
+      if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {});
+    });
+    document.addEventListener('fullscreenchange', () => { fullBtn.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
+    $('tReset').addEventListener('click', () => { resetQuiz(); showTab(1); });
+
+    // for the checks: the state behind the drawing
+    window.__pimState = () => {
+      const st = { tab: currentTab, scen: S.scen, custom: S.custom, step: S.step, nSteps: nSteps(), mode: mode(), t: sim.t, end: isRun() ? runEnd() : null,
+        running: sim.running, keyMoments: keyMoments(), P: JSON.parse(JSON.stringify(P)), rev: revealed(), game: JSON.parse(JSON.stringify(game)) };
+      if (isSteps()) st.calc = JSON.parse(JSON.stringify(calc()));
+      if (currentTab === 1) { const I = t1I(); st.t1 = { I, Q: I * sim.t, E: energyVIt(P.V, I, sim.t) }; }
+      if ((currentTab === 2 || currentTab === 3) && layout()) st.sol = JSON.parse(JSON.stringify(solveLay(layout(), currentTab === 3 && isSteps() ? P.Vs : S.scen === 'ex12' ? P.Vr : P.V)));
+      if (currentTab === 4) st.t4 = { E: eAt(sim.t), P: powerNow(sim.t), Eday: eDay() };
+      return st;
+    };
+    window.__pimSetTime = setTime;
+    window.addEventListener('resize', () => { if (currentTab <= 5) update(); else if (QUIZ[quiz.i] && QUIZ[quiz.i].fig && $('qFig')) drawFig($('qFig'), QUIZ[quiz.i].fig); });
+    showTab(1);
+  </script>
+  <script>
+    // Embedded (Brightspace): tell the page around the frame how tall this page is, so a resize script in the
+    // embed code can fit the frame to it (no blank space, no inner scrollbar). Measured from the content, not
+    // scrollHeight, which never drops below the frame's own height and so could never shrink it.
+    (function () {
+      if (window.parent === window) return;
+      let last = 0;
+      function height() {
+        const c = document.querySelector('.container'), cs = getComputedStyle(document.body);
+        return Math.ceil(c.getBoundingClientRect().bottom + window.scrollY + parseFloat(cs.paddingBottom) + parseFloat(cs.marginBottom) + 4);
+      }
+      function send(force) {
+        const h = height();
+        if (!force && Math.abs(h - last) < 2) return;
+        last = h;
+        window.parent.postMessage({ type: 'pim-height', page: location.pathname.split('/').pop(), height: h }, '*');
+      }
+      new ResizeObserver(() => send(false)).observe(document.querySelector('.container'));
+      window.addEventListener('load', () => send(true));
+      // the embed's script asks once it is listening, in case this page loaded first
+      window.addEventListener('message', e => { if (e.data && e.data.type === 'pim-height?') send(true); });
+      send(true);
+    })();
+  </script>
+  <script>
+    // Phones: a swipe that starts on an empty part of a drawing scrolls the page (touch-action: pan-y),
+    // and a touch the page grabbed for a drag (its own setPointerCapture call) keeps the page still.
+    document.querySelectorAll('canvas:not(.graph-canvas)').forEach(c => {
+      let grabbed = false;
+      const capture = c.setPointerCapture;
+      c.setPointerCapture = function (id) { grabbed = true; return capture.call(this, id); };
+      for (const t of ['pointerup', 'pointercancel', 'touchend', 'touchcancel']) c.addEventListener(t, () => { grabbed = false; });
+      c.addEventListener('touchmove', e => { if (grabbed && e.cancelable) e.preventDefault(); }, { passive: false });
+    });
   </script>
   <!-- pim-visited:start (generated by scripts/pim-nav.ts) -->
   <script>try{localStorage.setItem('pim-visited:electrical-power-cost.html','1');}catch(e){}</script>
