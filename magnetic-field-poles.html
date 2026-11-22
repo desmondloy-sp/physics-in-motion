@@ -18,30 +18,175 @@
   <!-- pim-meta:end -->
   <style>
     * { box-sizing: border-box; }
+    /* the hidden attribute must win over every display rule below */
+    [hidden] { display: none !important; }
     body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
     .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
-    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    h1 { margin: 0; font-size: 1.1rem; }
     .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
-    .controls { display: grid; grid-template-columns: 1.6fr auto auto auto auto auto; gap: 8px; align-items: end; }
-    .control-group { display: flex; flex-direction: column; gap: 4px; }
-    label { font-size: 0.8rem; font-weight: 600; }
-    select, button { font-size: 0.88rem; padding: 7px 8px; border-radius: 7px; border: 1px solid #cbd5e1; width: 100%; }
-    button { cursor: pointer; background: #475569; color: white; border: none; white-space: nowrap; }
-    button:hover { background: #334155; }
-    .toggle { display: flex; align-items: center; gap: 5px; font-size: 0.82rem; font-weight: 600; white-space: nowrap; padding-bottom: 6px; }
-    .readout { display: grid; grid-template-columns: repeat(3, minmax(140px, 1fr)); gap: 6px; margin-top: 8px; }
+
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 110px; }
+    .control-group.scen-group { flex: 2.2 1 260px; }
+    .control-group.button-group { flex: 2 1 280px; }
+    .control-group select { width: 100%; max-width: 100%; }
+    .controls input, .controls select, .controls button { height: 34px; }
+    label { font-size: 0.82rem; font-weight: 600; line-height: 1.2; }
+    label sub, label sup { line-height: 0; }
+    .step-no { font-weight: 400; color: #475569; }
+    input, select, button { font-size: 0.95rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; }
+    input[type=range] { width: 100%; padding: 0; height: 34px; }
+    .buttons { display: flex; gap: 6px; flex-wrap: nowrap; }
+    button { cursor: pointer; background: #2563eb; color: white; border: none; min-width: 0; flex: 1; }
+    button:hover { background: #1d4ed8; }
+    button:disabled { background: #94a3b8; cursor: default; }
+    button.secondary { background: #475569; }
+    button.secondary:hover { background: #334155; }
+    button.secondary:disabled { background: #cbd5e1; color: #475569; }
+    button.danger { background: #dc2626; }
+    button.danger:hover { background: #b91c1c; }
+    .moments { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+    .moments button { flex: none; padding: 6px 12px; }
+    .speed { font-size: 0.8rem; color: #475569; }
+    .speed:empty { display: none; }
+    .group-title { font-size: 0.78rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.03em; margin: 10px 0 4px; }
+    .inputs { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+    .inputs .control-group { flex: 0 1 auto; }
+    .inputs .control-group.wide { flex: 1 1 260px; }
+    .inputs button { flex: none; padding: 6px 12px; height: 34px; }
+    .inputs button.mat { background: white; color: #1e293b; border: 1px solid #cbd5e1; }
+    .inputs button.mat:hover { background: #f1f5f9; }
+    .inputs button.mat:disabled { background: #f1f5f9; color: #64748b; }
+    .toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 0.84rem; font-weight: 600; white-space: nowrap; }
+    .label-row label { white-space: nowrap; }
+    .question { margin-top: 8px; font-size: 0.84rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 6px 10px; color: #7c2d12; }
+    .question:empty { display: none; }
+
+    .readout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout:empty { display: none; }
+    .readout.n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .readout.n4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card.hl { box-shadow: inset 0 0 0 2px #dc2626; }
     .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
-    .readout-card .value { font-size: 0.98rem; font-weight: bold; }
-    canvas { display: block; width: 100%; border-radius: 10px; touch-action: pan-y; }
-    #sceneCanvas { height: 460px; border: 1px solid #dbeafe; background: #fbfcfe; }
-    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
-    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
-    @media (max-width: 900px) {
-      .controls { grid-template-columns: 1fr 1fr 1fr; }
-      .controls .control-group:first-child { grid-column: 1 / -1; }
-      .readout { grid-template-columns: 1fr; }
-      #sceneCanvas { height: 420px; }
+    .readout-card .value { font-size: 1rem; font-weight: bold; }
+    .words { margin-top: 8px; font-size: 0.86rem; font-weight: 600; color: #1e3a8a; background: #eef4ff; border-radius: 8px; padding: 6px 10px; }
+    .words:empty { display: none; }
+
+    .scene-wrap { margin-top: 8px; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 0 0 4px; }
+    .hint:empty { display: none; }
+    .note { margin-top: 6px; font-size: 0.8rem; color: #475569; }
+    .note ul { margin: 2px 0 0; padding-left: 18px; }
+    .note li { margin: 2px 0; }
+    canvas { display: block; width: 100%; border-radius: 10px; background: white; }
+    #scene { height: 420px; border: 1px solid #dbeafe; touch-action: pan-y; }
+    canvas.qfig { height: 230px; border: 1px solid #e5e7eb; margin: 4px 0 8px; touch-action: pan-y; }
+
+    .work { margin-top: 8px; }
+    .work:empty { display: none; }
+    .steps-list { margin: 0; padding-left: 20px; font-size: 0.88rem; }
+    .steps-list li { margin: 3px 0; }
+    .steps-list li.lit { background: #fef9c3; border-radius: 4px; }
+
+    /* Tutorial A1: three steel bars */
+    .puzzle { margin-top: 8px; }
+    .puzzle .opts { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+    .log { font-size: 0.84rem; margin: 4px 0 6px; padding-left: 18px; }
+    .log:empty { display: none; }
+
+    /* ---- the step-by-step frame: header, numbered tabs, colour key, instruction strip ---- */
+    .app-head { background: #1e293b; color: #f8fafc; border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+    .head-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .head-row h1 { flex: 1 1 260px; }
+    .steps { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #cbd5e1; }
+    .step-bar { display: flex; gap: 3px; }
+    .step-bar i { display: block; width: 18px; height: 5px; border-radius: 3px; background: #475569; }
+    .step-bar i.on { background: #fbbf24; }
+    button.teacher-btn { flex: none; background: transparent; border: 1px solid #94a3b8; color: #f8fafc; font-size: 0.82rem; padding: 5px 10px; }
+    button.teacher-btn:hover { background: #334155; }
+    /* every tab always visible: equal columns, and a long name wraps onto a second line (never a sideways scroll) */
+    .tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; margin-top: 8px; }
+    button.tab { min-width: 0; background: #f1f5f9; color: #1e293b; font-size: 0.85rem; font-weight: 600; padding: 7px 8px; border-radius: 8px; line-height: 1.2; white-space: normal; text-align: center; }
+    button.tab:hover { background: #e2e8f0; }
+    button.tab.active, button.tab.active:hover { background: #2563eb; color: white; }
+    .tab .ts { display: none; }
+    .nw { white-space: nowrap; }
+    .ckey { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 7px; font-size: 0.76rem; color: #e2e8f0; }
+    .ckey > span { display: inline-flex; align-items: center; gap: 5px; }
+    .ckey b { display: inline-block; width: 14px; height: 4px; border-radius: 2px; }
+    .ckey b.dot { width: 10px; height: 10px; border-radius: 50%; }
+    .ckey b.blk { width: 14px; height: 10px; border-radius: 2px; }
+    .strip { background: #fef9c3; border-left: 4px solid #eab308; border-radius: 6px; padding: 7px 10px; font-size: 0.86rem; margin-bottom: 8px; }
+
+    /* Predict first (above the controls), key features */
+    .learn { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 8px; }
+    .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; }
+    .box-title { font-weight: 700; font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-q { font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-box { margin-bottom: 8px; }
+    .opts { display: grid; gap: 5px; }
+    #predictOpts { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    .predict-box.done #predictOpts { display: none; }
+    .predict-box.done .predict-q { margin-bottom: 0; }
+    button.opt { flex: none; width: 100%; text-align: left; background: white; color: #1f2937; border: 1px solid #cbd5e1; font-size: 0.86rem; padding: 7px 10px; }
+    button.opt:hover { background: #f1f5f9; }
+    button.opt:disabled { background: white; color: #1f2937; cursor: default; }
+    button.opt.picked, button.opt.picked:hover { border-color: #2563eb; background: #eff6ff; box-shadow: inset 0 0 0 1px #2563eb; }
+    button.opt.right, button.opt.right:hover { border-color: #16a34a; background: #dcfce7; box-shadow: inset 0 0 0 1px #16a34a; }
+    button.opt.wrong, button.opt.wrong:hover { border-color: #dc2626; background: #fee2e2; box-shadow: inset 0 0 0 1px #dc2626; }
+    .row-btns { display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+    .row-btns button { flex: none; padding: 6px 12px; }
+    .feedback { font-size: 0.84rem; margin-top: 7px; }
+    .feedback:empty { display: none; }
+    .feedback .verdict { font-weight: 700; }
+    .feedback .verdict.ok { color: #15803d; }
+    .feedback .verdict.no { color: #b91c1c; }
+    .feats { display: flex; flex-wrap: wrap; gap: 6px; }
+    button.feat { flex: none; background: white; color: #1e293b; border: 1px solid #cbd5e1; font-size: 0.84rem; padding: 6px 11px; border-radius: 999px; }
+    button.feat:hover { background: #f1f5f9; }
+    button.feat.on, button.feat.on:hover { background: #1e293b; color: white; border-color: #1e293b; }
+    .feat-note { font-size: 0.82rem; color: #334155; margin-top: 6px; }
+    .feat-note:empty { display: none; }
+
+    /* Challenge */
+    .quiz { max-width: 760px; margin: 0 auto; }
+    .quiz-top { display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 700; margin-bottom: 4px; }
+    .quiz-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+    .quiz-bar i { display: block; height: 100%; background: #2563eb; width: 0; }
+    .quiz-q { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+    .quiz-src { font-size: 0.76rem; color: #475569; margin-bottom: 8px; }
+    .qpart { margin-top: 12px; }
+    .qpart + .qpart { border-top: 1px solid #e2e8f0; padding-top: 10px; }
+    .qpart-q { font-size: 0.92rem; font-weight: 600; margin-bottom: 6px; }
+    .quiz-sum ul { padding-left: 18px; font-size: 0.86rem; }
+    .quiz-sum li { margin: 4px 0; }
+
+    /* Teacher mode */
+    .teacher { position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 92vw); background: white; box-shadow: -4px 0 18px rgba(0,0,0,0.18); padding: 12px; overflow-y: auto; z-index: 20; }
+    .teacher h2 { font-size: 1rem; margin: 0 0 8px; }
+    .teacher .tbtns { display: grid; gap: 6px; }
+    .teacher .tbtns button { background: white; color: #1e293b; border: 1px solid #cbd5e1; flex: none; }
+    .teacher .tbtns button:hover { background: #f1f5f9; }
+    .teacher .tbtns button.on { background: #1e293b; color: white; }
+    .teacher h3 { font-size: 0.9rem; margin: 14px 0 4px; }
+    .teacher ul { padding-left: 18px; margin: 0; font-size: 0.84rem; }
+    .teacher li { margin: 4px 0; }
+    body.no-explain .strip, body.no-explain .words, body.no-explain .feedback .why, body.no-explain .feat-note { display: none; }
+    body.no-answers .readout-card .value, body.no-answers .work { filter: blur(6px); }
+    body.free-mode .predict-box { display: none; }
+
+    @media (max-width: 700px) {
+      h1 { font-size: 1rem; }
+      .readout, .readout.n4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .tab .tl { display: none; }
+      .tab .ts { display: inline; }
+      /* phones: short names in rows that wrap, so all five tabs show without scrolling */
+      .tabs { display: flex; flex-wrap: wrap; }
+      button.tab { flex: 1 1 auto; white-space: nowrap; }
+    }
+    @media (max-width: 420px) {
+      .buttons button { padding: 6px 4px; }
     }
     /* Touch screens (phones, tablets; Samsung Internet reports hover: hover on a phone, so only pointer is tested):
        16 px form fields stop an iPhone zooming the page in when one is
@@ -50,6 +195,7 @@
       input:not([type=range]):not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
       button { min-height: 36px; }
       input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
+      .controls input, .controls select, .controls button, .inputs button { height: 36px; }
     }
   </style>
   <!-- pim-nav-style:start (generated by scripts/pim-nav.ts) -->
@@ -78,266 +224,634 @@
     <a class="pim-nav-btn pim-nav-next" href="magnetic-force-motor-effect.html" title="Next: Magnetic Force on a Current-Carrying Wire (Chapter 8)" aria-label="Next: Magnetic Force on a Current-Carrying Wire (Chapter 8)"><span class="pim-nav-text"><span class="pim-nav-kicker">Next<span class="pim-nav-ch"> &middot; Chapter 8</span></span><span class="pim-nav-name">Magnetic Force on a Current-Carrying Wire</span></span><span class="pim-nav-arrow" aria-hidden="true">&rsaquo;</span></a>
   </nav>
   <!-- pim-nav:end -->
-    <h1>Magnetic Poles, Field Lines and Induced Magnetism</h1>
 
-    <div class="panel">
-      <div class="controls">
-        <div class="control-group">
-          <label for="mode">Scenarios</label>
-          <select id="mode">
-            <option value="single" selected>One bar magnet</option>
-            <option value="repel">Two magnets: like poles facing</option>
-            <option value="attract">Two magnets: unlike poles facing</option>
-            <option value="iron">Magnet and a soft-iron bar</option>
-            <option value="steel">Magnet and a steel bar</option>
-          </select>
+    <header class="app-head">
+      <div class="head-row">
+        <h1>Magnetic Poles, Field Lines and Induced Magnetism</h1>
+        <div class="steps"><span id="stepLabel">Step 1 of 5</span><span class="step-bar" id="stepBar"><i></i><i></i><i></i><i></i><i></i></span></div>
+        <button class="teacher-btn" id="teacherBtn" type="button" hidden>Teacher mode</button>
+      </div>
+      <div class="tabs" role="tablist" id="tabs">
+        <button class="tab" role="tab" data-tab="1" type="button"><span class="tl">1. Magnets and their poles</span><span class="ts">1. Poles</span></button>
+        <button class="tab" role="tab" data-tab="2" type="button"><span class="tl">2. Magnetic field lines</span><span class="ts">2. Field lines</span></button>
+        <button class="tab" role="tab" data-tab="3" type="button"><span class="tl">3. Two magnets</span><span class="ts">3. Two magnets</span></button>
+        <button class="tab" role="tab" data-tab="4" type="button"><span class="tl">4. Soft iron and steel</span><span class="ts">4. Iron and steel</span></button>
+        <button class="tab" role="tab" data-tab="5" type="button"><span class="tl">5. Challenge</span><span class="ts">5. Challenge</span></button>
+      </div>
+      <div class="ckey" id="ckey"></div>
+    </header>
+
+    <div class="strip" id="strip"></div>
+
+    <!-- tabs 1 to 4: Predict first comes first, above the controls and the picture -->
+    <div class="box predict-box" id="predictBox">
+      <div class="box-title">Predict first</div>
+      <div class="predict-q" id="predictQ"></div>
+      <div class="opts" id="predictOpts"></div>
+      <div class="feedback" id="predictFb"></div>
+      <div class="row-btns" id="predictBtns"><button id="predictCheck" type="button">Check my answer</button></div>
+    </div>
+
+    <!-- Tabs 1 to 4 share one drawing -->
+    <section class="tab-page" id="pageSim">
+      <div class="panel">
+        <div id="simBlock">
+          <div class="controls">
+            <div class="control-group scen-group">
+              <label for="preset">Scenarios</label>
+              <select id="preset"></select>
+            </div>
+            <div class="control-group button-group" id="simGroup">
+              <label>Simulation controls</label>
+              <div class="buttons">
+                <button id="startBtn" type="button">Start</button>
+                <button id="pauseBtn" class="secondary" type="button">Pause</button>
+                <button id="resetBtn" class="danger" type="button">Reset</button>
+              </div>
+            </div>
+            <div class="control-group button-group" id="stepGroup">
+              <label>Steps <span class="step-no" id="stepNo"></span></label>
+              <div class="buttons">
+                <button id="prevStep" class="secondary" type="button" aria-label="Previous step">&lsaquo; Previous</button>
+                <button id="nextStep" type="button" aria-label="Next step">Next &rsaquo;</button>
+                <button id="stepReset" class="danger" type="button">Reset</button>
+              </div>
+            </div>
+          </div>
+          <div class="moments" id="moments">
+            <button id="prevMoment" class="secondary" type="button">&lsaquo; Previous key moment</button>
+            <button id="nextMoment" class="secondary" type="button">Next key moment &rsaquo;</button>
+            <span class="speed" id="speedNote"></span>
+          </div>
+          <div class="question" id="question"></div>
+          <div id="expBlock">
+            <div class="group-title">Experimental controls</div>
+            <div class="inputs" id="inputs"></div>
+          </div>
         </div>
-        <button id="rotateBtn">Rotate 45&deg;</button>
-        <button id="flipBtn">Flip N/S</button>
-        <label class="toggle"><input type="checkbox" id="showLines" checked /> Field lines</label>
-        <label class="toggle"><input type="checkbox" id="showCompass" /> Compasses</label>
-        <label class="toggle"><input type="checkbox" id="showFilings" /> Iron filings</label>
-      </div>
-      <div class="readout">
-        <div class="readout-card"><div class="title">Force between the objects</div><div class="value" id="forceValue">&mdash;</div></div>
-        <div class="readout-card"><div class="title" id="ironTitle">Induced magnetism</div><div class="value" id="ironValue">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Plotting compass</div><div class="value" id="compassValue">Drag it around</div></div>
-      </div>
-    </div>
 
-    <div class="panel">
-      <div class="hint">Drag the middle of a magnet to move it; drag near either end to turn it. Tap a magnet to select it for the Rotate and Flip buttons. Drag the plotting compass anywhere.</div>
-      <canvas id="sceneCanvas"></canvas>
-      <div class="note" id="sceneNote"></div>
-    </div>
+        <!-- the readouts go under the drawing: nothing above the canvas may change height while a finger drags -->
+        <div class="scene-wrap">
+          <div class="hint" id="sceneHint"></div>
+          <canvas id="scene"></canvas>
+          <div class="readout" id="readout"></div>
+          <div class="words" id="words"></div>
+          <div class="box puzzle" id="puzzleBox" hidden>
+            <div class="box-title">Which two bars are magnets?</div>
+            <div class="predict-q">Bring the bars together, end to end. Turn a bar round and try again. Then decide.</div>
+            <ul class="log" id="puzzleLog"></ul>
+            <div class="opts" id="puzzleOpts"></div>
+            <div class="feedback" id="puzzleFb"></div>
+            <div class="row-btns"><button id="puzzleCheck" type="button">Check my answer</button><button id="puzzleNew" class="secondary" type="button">New set of bars</button></div>
+          </div>
+          <div class="work" id="work"></div>
+          <div class="note" id="notes"></div>
+        </div>
+      </div>
+
+      <div class="learn">
+        <div class="box" id="featBox">
+          <div class="box-title">Key features (tap one)</div>
+          <div class="feats" id="feats"></div>
+          <div class="feat-note" id="featNote"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 5: Challenge -->
+    <section class="tab-page" id="page5" hidden>
+      <div class="panel">
+        <div class="quiz" id="quiz"></div>
+      </div>
+    </section>
   </div>
 
+  <aside class="teacher" id="teacher" hidden aria-label="Teacher mode">
+    <h2>Teacher mode</h2>
+    <div class="tbtns">
+      <button id="tExplain" type="button">Hide explanations</button>
+      <button id="tFree" type="button">Switch to free exploration</button>
+      <button id="tAnswers" type="button">Hide answer labels</button>
+      <button id="tFull" type="button">Full screen</button>
+      <button id="tReset" type="button">Reset whole applet</button>
+      <button id="tClose" type="button">Close</button>
+    </div>
+    <h3>Suggested prompts</h3>
+    <ul id="tPrompts"></ul>
+  </aside>
+
   <script>
-    const el = id => document.getElementById(id);
-    const canvas = el('sceneCanvas');
-    const modeEl = el('mode');
+    const $ = id => document.getElementById(id);
+    const canvas = $('scene'), presetEl = $('preset');
+    let currentTab = 1, freeMode = false;
+    const COL = { N: '#dc2626', S: '#2563eb', line: 'rgba(71,85,105,0.85)', attract: '#16a34a', repel: '#d97706', earth: '#0d9488', iron: '#9ca3af', steel: '#6b7280', plot: '#7c3aed' };
+    const DEG = Math.PI / 180;
+    const minus = s => String(s).replace('-', '−');
 
-    const BAR_L = 140, BAR_W = 34;
-    const K_SUB = 5, FACE_IN = 3;   // each pole: 5 small poles across the end face, 3 px inside it
-    const LINES_PER_POLE = 16;      // field lines per pole of strength 1, spaced by equal flux
-    const CHI = { iron: 1.1e4, steel: 0.55e4 };  // how easily each material is magnetised (model units)
-    const M_MAX = { iron: 0.85, steel: 0.8 };
+    /* ---------------- the model (one function per idea) ----------------
+       Page units: 1 unit = 0.5 cm (values chosen for this page: a bar magnet 7.0 cm long, 1.7 cm wide).
+       A pole is spread across its END FACE as K_SUB small poles; the field of each is the 3D law (strength ÷ distance²),
+       so the field is strongest near the ends (notes p. 8-4) and the lines crowd at the poles (p. 8-12). */
+    const BAR_L = 14, BAR_W = 3.4, K_SUB = 5, FACE_IN = 0.3, EPS = 0.04, CM = 0.5;
+    const LINES_PER_POLE = 16;
+    // induced magnetism (page's own model): soft iron is easy to magnetise and keeps nothing; steel needs a stronger field
+    // (the magnet must come closer) and keeps what it gets (notes p. 8-10)
+    const CHI = { iron: 64, steel: 32, plain: 32 }, M_MAX = { iron: 0.85, steel: 0.8, plain: 0.8 };
+    // below SHOW_M a bar counts as not magnetised everywhere: no poles drawn, no lines, no force (one threshold, so the
+    // cards, the drawing and the force can never disagree)
+    const SHOW_M = 0.12, IRON_MIN = SHOW_M, STEEL_START = 0.15, STEEL_FLIP = 0.5;
+    const EARTH = 4e-3;     // a weak uniform field from the Earth, pointing north (up the screen), only where a scenario says so
 
-    // Each object: { kind: 'magnet'|'iron'|'steel', x, y (px), ang (rad, direction from S to N), m (pole strength) }
-    let objects = [];
-    let selected = 0;
-    const compass = { x: 0, y: 0 };
-    let W = 0, H = 0;
-    let filings = [];
-
-    function setMode(mode) {
-      const cx = W / 2, cy = H * 0.5;
-      const gap = Math.min(150, W * 0.18);
-      if (mode === 'single') objects = [{ kind: 'magnet', x: cx, y: cy, ang: 0, m: 1 }];
-      else if (mode === 'repel') objects = [
-        { kind: 'magnet', x: cx - BAR_L / 2 - gap / 2, y: cy, ang: 0, m: 1 },       // S | N  -> N faces right
-        { kind: 'magnet', x: cx + BAR_L / 2 + gap / 2, y: cy, ang: Math.PI, m: 1 }  // N | S  -> N faces left
-      ];
-      else if (mode === 'attract') objects = [
-        { kind: 'magnet', x: cx - BAR_L / 2 - gap / 2, y: cy, ang: 0, m: 1 },
-        { kind: 'magnet', x: cx + BAR_L / 2 + gap / 2, y: cy, ang: 0, m: 1 }
-      ];
-      else objects = [
-        // as in the notes: the magnet's S-pole is brought near the bar. It starts up to 60 px further out,
-        // but never past 14 px from the left edge (a phone-width canvas has no room for the extra 60).
-        { kind: 'magnet', x: cx - BAR_L / 2 - gap / 2 - Math.max(0, Math.min(60, cx - BAR_L - gap / 2 - 14)), y: cy, ang: Math.PI, m: 1 },
-        { kind: mode === 'iron' ? 'iron' : 'steel', x: cx + BAR_L / 2 + gap / 2, y: cy, ang: 0, m: 0 }
-      ];
-      selected = 0;
-      compass.x = Math.min(W - 40, cx + (mode === 'single' ? 0 : 0)); compass.y = H * 0.18;
-      if (mode === 'single') { compass.x = cx + BAR_L * 0.9; compass.y = cy - 70; }
-      el('sceneNote').innerHTML = NOTES[mode];
+    const frameOf = o => { const u = { x: Math.cos(o.ang), y: Math.sin(o.ang) }; return { u, v: { x: -u.y, y: u.x } }; };
+    const toWorld = (o, a, b) => { const { u, v } = frameOf(o); return { x: o.x + u.x * a + v.x * b, y: o.y + u.y * a + v.y * b }; };
+    const toLocal = (o, x, y) => { const { u } = frameOf(o); const dx = x - o.x, dy = y - o.y; return { a: dx * u.x + dy * u.y, b: -dx * u.y + dy * u.x }; };
+    function rects(o) {
+      if (o.shape === 'u') { const L = o.L, H = o.H, t = o.Wd;
+        return [{ a0: -L / 2, a1: L / 2, b0: -H / 2, b1: -H / 2 + t }, { a0: -L / 2, a1: L / 2, b0: H / 2 - t, b1: H / 2 }, { a0: -L / 2, a1: -L / 2 + t, b0: -H / 2, b1: H / 2 }]; }
+      return [{ a0: -o.L / 2, a1: o.L / 2, b0: -o.Wd / 2, b1: o.Wd / 2 }];
     }
-
-    const NOTES = {
-      single: 'Field lines leave the <b>N-pole</b>, curve round through the space outside, and enter the <b>S-pole</b>; inside the magnet they carry on from S back to N, so every line is a closed loop. Lines never cross, and they are crowded together near the poles, where the field is strongest. Switch on <b>Compasses</b> or <b>Iron filings</b> to see the same pattern the way you would in the lab.',
-      repel: 'Like poles facing. The lines from the two N-poles do not join up: they are squeezed and bent away from each other, leaving a <b>neutral point</b> in the middle where the fields cancel (a compass there does not point anywhere in particular). Like poles repel. Drag one magnet round to face the other way and watch the lines join up.',
-      attract: 'Unlike poles facing. Lines leave the N-pole and run straight across the gap into the facing S-pole &mdash; unlike poles attract. Pull the magnets apart and see how the lines across the gap thin out as the attraction weakens.',
-      iron: 'Bring the magnet near the soft-iron bar without touching it. The iron becomes an <b>induced magnet</b>: the end nearer the magnet gets the <i>opposite</i> pole, so the bar is attracted. Soft iron is easy to magnetise but loses its magnetism easily &mdash; drag the magnet away and the induced poles disappear.',
-      steel: 'Steel is a <b>hard</b> magnetic material: it is harder to magnetise than iron (the magnet has to come closer), but it does not lose its magnetism easily. Bring the magnet close, then drag it away &mdash; the steel stays magnetised. Use <b>Flip N/S</b> on the magnet and bring it close again to re-magnetise the steel the other way.'
-    };
-
-    // ---------- geometry ----------
-    const axis = o => ({ x: Math.cos(o.ang), y: Math.sin(o.ang) });
-    // A bar magnet's poles are its END FACES, so each pole is spread across the end face as K_SUB small poles.
-    // (A single point pole set back inside the bar makes the field beside the middle of the bar almost as strong
-    // as at the ends, and the drawing then crowds lines over the magnet's sides.)
+    function inside(o, x, y, pad = 0) {
+      const l = toLocal(o, x, y);
+      if (o.shape === 'u') {
+        // two straight arms, joined by a half-ring at the back (as drawn)
+        const cx = -o.L / 2 + o.H / 2, R = o.H / 2, t = o.Wd;
+        if (l.a >= cx) return l.a <= o.L / 2 + pad && ((l.b >= -R - pad && l.b <= -R + t + pad) || (l.b >= R - t - pad && l.b <= R + pad));
+        const d = Math.hypot(l.a - cx, l.b); return d <= R + pad && d >= R - t - pad;
+      }
+      return rects(o).some(r => l.a >= r.a0 - pad && l.a <= r.a1 + pad && l.b >= r.b0 - pad && l.b <= r.b1 + pad);
+    }
+    // the end faces; s > 0 is an N-pole. A curved magnet's two tips both face +a: the top tip S, the bottom tip N when m > 0.
+    function faces(o) {
+      if (o.shape === 'u') { const t = o.Wd; return [{ a: o.L / 2, b: -o.H / 2 + t / 2, na: 1, w: t, s: -o.m }, { a: o.L / 2, b: o.H / 2 - t / 2, na: 1, w: t, s: o.m }]; }
+      return [{ a: o.L / 2, b: 0, na: 1, w: o.Wd, s: o.m }, { a: -o.L / 2, b: 0, na: -1, w: o.Wd, s: -o.m }];
+    }
     function poles(o) {
-      if (o.m === 0) return [];
-      const u = axis(o), v = { x: -u.y, y: u.x }, a = BAR_L / 2 - FACE_IN, out = [];
-      for (let i = 0; i < K_SUB; i++) {
-        const b = (i / (K_SUB - 1) - 0.5) * BAR_W * 0.76;
-        out.push({ x: o.x + u.x * a + v.x * b, y: o.y + u.y * a + v.y * b, s: o.m / K_SUB, obj: o });
-        out.push({ x: o.x - u.x * a + v.x * b, y: o.y - u.y * a + v.y * b, s: -o.m / K_SUB, obj: o });
+      if (Math.abs(o.m) < 1e-9) return [];
+      const out = [];
+      for (const f of faces(o)) for (let i = 0; i < K_SUB; i++) {
+        const t = (i / (K_SUB - 1) - 0.5) * f.w * 0.76, p = toWorld(o, f.a - f.na * FACE_IN, f.b + t);
+        out.push({ x: p.x, y: p.y, s: f.s / K_SUB });
       }
       return out;
     }
-    // One entry per magnetised end face (for seeding the field lines)
-    function poleEnds() {
-      return objects.filter(o => Math.abs(o.m) >= 0.12).flatMap(o => {
-        const u = axis(o), a = BAR_L / 2 - FACE_IN;
-        return [{ x: o.x + u.x * a, y: o.y + u.y * a, s: o.m, obj: o }, { x: o.x - u.x * a, y: o.y - u.y * a, s: -o.m, obj: o }];
-      });
+    const faceCentres = o => faces(o).map(f => ({ ...toWorld(o, f.a, f.b), s: f.s, w: f.w, obj: o, n: toWorld(o, f.a + f.na, f.b) }));
+    function fieldFrom(x, y, ps) {
+      let bx = 0, by = 0;
+      for (const p of ps) { const dx = x - p.x, dy = y - p.y, d2 = dx * dx + dy * dy + EPS, d = Math.sqrt(d2); bx += p.s * dx / (d2 * d); by += p.s * dy / (d2 * d); }
+      return { bx, by };
     }
-    function corners(o, pad = 0) {
-      const u = axis(o), v = { x: -u.y, y: u.x };
-      const a = BAR_L / 2 + pad, b = BAR_W / 2 + pad;
-      return [[a, b], [-a, b], [-a, -b], [a, -b]].map(([p, q]) => ({ x: o.x + u.x * p + v.x * q, y: o.y + u.y * p + v.y * q }));
+    const allPoles = objs => objs.flatMap(poles);
+    // the field a compass feels: the magnets, plus the Earth's where the scenario has it
+    function compassField(x, y, objs, earth) { const b = fieldFrom(x, y, allPoles(objs)); if (earth) b.by -= EARTH; return b; }
+    // the magnetism a bar takes on in the field of the magnets near it (along its own axis)
+    function inducedTarget(o, objs) {
+      const src = objs.filter(q => q !== o && q.kind === 'magnet').flatMap(poles), f = fieldFrom(o.x, o.y, src), { u } = frameOf(o);
+      return Math.max(-M_MAX[o.kind], Math.min(M_MAX[o.kind], CHI[o.kind] * (f.bx * u.x + f.by * u.y)));
     }
-    function toLocal(o, x, y) { const u = axis(o); const dx = x - o.x, dy = y - o.y; return { a: dx * u.x + dy * u.y, b: -dx * u.y + dy * u.x }; }
-    function insideBar(o, x, y, pad = 0) { const l = toLocal(o, x, y); return Math.abs(l.a) <= BAR_L / 2 + pad && Math.abs(l.b) <= BAR_W / 2 + pad; }
+    function induce(o, objs) {
+      const t = inducedTarget(o, objs);
+      if (o.kind === 'iron' || o.kind === 'plain') { o.m = Math.abs(t) < IRON_MIN ? 0 : t; return; }  // keeps nothing
+      if (o.kind === 'steel' && Math.abs(t) > STEEL_START) {
+        if (o.m === 0 || (Math.sign(t) === Math.sign(o.m) && Math.abs(t) > Math.abs(o.m)) || (Math.sign(t) !== Math.sign(o.m) && Math.abs(t) > STEEL_FLIP)) o.m = t;
+      }
+    }
+    function updateInduced(objs) { objs.forEach(o => { if (o.kind !== 'magnet') induce(o, objs); }); }
+    // force on one object from another (like poles repel, unlike poles attract: notes p. 8-6)
+    function pairForce(o, q) {
+      let fx = 0, fy = 0;
+      for (const p of poles(o)) for (const r of poles(q)) { const dx = p.x - r.x, dy = p.y - r.y, d2 = dx * dx + dy * dy + EPS, d = Math.sqrt(d2); fx += p.s * r.s * dx / (d2 * d); fy += p.s * r.s * dy / (d2 * d); }
+      return { fx, fy };
+    }
+    const forceOn = (o, objs) => objs.filter(q => q !== o).reduce((a, q) => { const f = pairForce(o, q); return { fx: a.fx + f.fx, fy: a.fy + f.fy }; }, { fx: 0, fy: 0 });
+    // + attraction, − repulsion, 0 nothing to notice
+    function pairKind(o, q) { const f = pairForce(o, q), m = Math.hypot(f.fx, f.fy); if (m < 2e-4) return 0; return f.fx * (q.x - o.x) + f.fy * (q.y - o.y) > 0 ? 1 : -1; }
+    function gapBetween(o, q) {
+      // smallest distance between two straight bars along the line joining them (end to end on one line, as in every scenario that reads it)
+      return Math.max(0, Math.abs(q.x - o.x) - (o.L + q.L) / 2);
+    }
     function overlap(o1, o2) {
-      const c1 = corners(o1, 2), c2 = corners(o2, 2);
-      const axes = [axis(o1), { x: -axis(o1).y, y: axis(o1).x }, axis(o2), { x: -axis(o2).y, y: axis(o2).x }];
-      for (const ax of axes) {
+      const c1 = corners(o1, 0.2), c2 = corners(o2, 0.2), A = o => { const { u, v } = frameOf(o); return [u, v]; };
+      for (const ax of [...A(o1), ...A(o2)]) {
         const p1 = c1.map(p => p.x * ax.x + p.y * ax.y), p2 = c2.map(p => p.x * ax.x + p.y * ax.y);
         if (Math.max(...p1) < Math.min(...p2) || Math.max(...p2) < Math.min(...p1)) return false;
       }
       return true;
     }
-
-    // ---------- physics (pole model) ----------
-    function allPoles() { return objects.flatMap(poles); }
-    // Strength of the field, used for how strongly a bar is magnetised (poles fall off as 1/r^2).
-    function field3(x, y, polesList) {
-      let bx = 0, by = 0;
-      for (const p of polesList) {
-        const dx = x - p.x, dy = y - p.y, d2 = dx * dx + dy * dy + 4; const d = Math.sqrt(d2);
-        bx += p.s * dx / (d2 * d); by += p.s * dy / (d2 * d);
-      }
-      return { bx, by };
+    function corners(o, pad = 0) {
+      const a = (o.shape === 'u' ? o.L : o.L) / 2 + pad, b = (o.shape === 'u' ? o.H : o.Wd) / 2 + pad;
+      return [[a, b], [-a, b], [-a, -b], [a, -b]].map(([p, q]) => toWorld(o, p, q));
     }
-    // The field PATTERN drawn on the page: the real (3D) field of the magnets, in the plane of the page.
-    // An earlier version used a flat-picture (1/r) field; with that law the field beside the middle of a bar is
-    // nearly as strong as at its ends, so the drawing crowded loops over the magnet's sides and looked as if
-    // the field were strongest there. With the 3D law and poles on the end faces, the lines crowd at the poles.
-    // Few lines per pole (LINES_PER_POLE) keeps like poles from bunching along the neutral line.
-    function fieldAt(x, y, polesList) { return field3(x, y, polesList); }
+    const bar = (kind, x, y, ang, m, extra = {}) => ({ kind, x, y, ang, m, L: BAR_L, Wd: BAR_W, shape: 'bar', ...extra });
 
-    function updateInduced() {
-      for (const o of objects) {
-        if (o.kind === 'magnet') continue;
-        const src = objects.filter(q => q !== o && q.kind === 'magnet').flatMap(poles);
-        const f = field3(o.x, o.y, src);
-        const u = axis(o);
-        const target = Math.max(-M_MAX[o.kind], Math.min(M_MAX[o.kind], CHI[o.kind] * (f.bx * u.x + f.by * u.y)));
-        if (o.kind === 'iron') o.m = Math.abs(target) < 0.04 ? 0 : target;
-        else if (Math.abs(target) > 0.18 && (Math.abs(target) > Math.abs(o.m) || Math.sign(target) !== Math.sign(o.m))) {
-          // steel: once magnetised it keeps it; a strong enough field the other way re-magnetises it
-          if (Math.sign(target) === Math.sign(o.m) || o.m === 0 || Math.abs(target) > 0.5) o.m = target;
-        }
-      }
-    }
-
-    function forceOn(o) {
-      let fx = 0, fy = 0;
-      const mine = poles(o), others = objects.filter(q => q !== o).flatMap(poles);
-      for (const p of mine) for (const q of others) {
-        const dx = p.x - q.x, dy = p.y - q.y, d2 = dx * dx + dy * dy + 4, d = Math.sqrt(d2);
-        fx += p.s * q.s * dx / (d2 * d); fy += p.s * q.s * dy / (d2 * d);
-      }
-      return { fx, fy };
-    }
-
-    // ---------- field lines ----------
-    let lineCache = null, lineKey = '';
-    function traceLines() {
-      const key = objects.map(o => [o.x, o.y, o.ang, o.m].map(v => v.toFixed(3)).join(',')).join(';') + `|${W}x${H}`;
-      if (key === lineKey) return lineCache;
-      const ps = allPoles();
-      const ends = poleEnds();
-      const lines = [];
-      const R0 = BAR_W / 2 + 7; // seeding circle round each end face (it wraps round the bar's corners)
-      for (const start of ends) {
-        // Lines leave each end face spaced by EQUAL FLUX, in number proportional to the pole's strength, so the
-        // spacing of the drawn lines shows the field strength. From an N end trace along the field; from an
-        // S end trace against it and keep only the lines that come from far away (a line that reaches an N end
-        // was already drawn from that N end).
-        const dir = start.s > 0 ? 1 : -1;
-        const n = Math.round(LINES_PER_POLE * Math.abs(start.s));
-        const M = 720, cum = [0];
+    /* ---------------- field lines ---------------- */
+    // Lines leave each end face spaced by EQUAL FLUX, in number proportional to the pole's strength, so the spacing of the
+    // drawn lines shows the field strength. From an N end trace along the field; from an S end trace against it and keep
+    // only the lines that come from far away (a line that reaches an N end was already drawn from that N end).
+    // a few recent results are kept: the soft iron and steel scenario draws two lanes every frame
+    let lineKey = '';
+    const lineCache = new Map();
+    function traceLines(objs, nPer, box) {
+      const key = objs.map(o => [o.x, o.y, o.ang, o.m, o.L].map(v => (+v).toFixed(3)).join(',')).join(';') + '|' + nPer + '|' + [box.x0, box.y0, box.x1, box.y1].map(v => v.toFixed(1)).join(',');
+      if (lineKey === '') lineCache.clear();
+      lineKey = key;
+      if (lineCache.has(key)) return lineCache.get(key);
+      const ps = allPoles(objs), ends = objs.flatMap(faceCentres).filter(f => Math.abs(f.s) >= SHOW_M), lines = [];
+      for (const st of ends) {
+        const dir = st.s > 0 ? 1 : -1, n = Math.round(nPer * Math.abs(st.s)), R0 = st.w / 2 + 0.7, M = 480, cum = [0];
         for (let i = 0; i < M; i++) {
-          const a = (i + 0.5) / M * Math.PI * 2, ux = Math.cos(a), uy = Math.sin(a);
-          const f = fieldAt(start.x + ux * R0, start.y + uy * R0, ps);
+          const a = (i + 0.5) / M * Math.PI * 2, ux = Math.cos(a), uy = Math.sin(a), f = fieldFrom(st.x + ux * R0, st.y + uy * R0, ps);
           cum.push(cum[i] + Math.max(0, dir * (f.bx * ux + f.by * uy)));
         }
-        const total = cum[M];
-        if (!(total > 0)) continue;
+        const total = cum[M]; if (!(total > 0)) continue;
         for (let k = 0; k < n; k++) {
           const target = (k + 0.5) / n * total;
           let i = 0; while (i < M - 1 && cum[i + 1] < target) i++;
           const a0 = (i + (target - cum[i]) / Math.max(1e-12, cum[i + 1] - cum[i])) / M * Math.PI * 2;
-          let x = start.x + Math.cos(a0) * R0, y = start.y + Math.sin(a0) * R0;
-          // a seed inside a bar starts a line that runs inside the magnet (hidden under it), so it is not drawn
-          if (objects.some(q => insideBar(q, x, y, 0))) continue;
-          // run the line back from the seed to the end face it came from, so every line starts on the magnet
+          let x = st.x + Math.cos(a0) * R0, y = st.y + Math.sin(a0) * R0;
+          if (objs.some(q => inside(q, x, y, 0))) continue;   // a seed inside a bar would run hidden under it
+          // run back from the seed to the face it came from, so every line starts on the magnet
           const back = [];
-          {
-            let bx = x, by = y;
-            for (let st = 0; st < 60; st++) {
-              const f = fieldAt(bx, by, ps), m = Math.hypot(f.bx, f.by); if (m === 0) break;
-              bx -= dir * 1.2 * f.bx / m; by -= dir * 1.2 * f.by / m;
-              back.push({ x: bx, y: by });
-              if (insideBar(start.obj, bx, by, 0)) break;
-            }
-          }
+          { let bx = x, by = y;
+            for (let s = 0; s < 40; s++) { const f = fieldFrom(bx, by, ps), m = Math.hypot(f.bx, f.by); if (m === 0) break;
+              bx -= dir * 0.12 * f.bx / m; by -= dir * 0.12 * f.by / m; back.push({ x: bx, y: by }); if (inside(st.obj, bx, by, 0)) break; } }
           const pts = back.reverse().concat([{ x, y }]);
-          let endObj = null, endSign = 0;
-          for (let st = 0; st < 5000; st++) {
-            const near = ends.reduce((m, p) => Math.min(m, Math.hypot(x - p.x, y - p.y)), Infinity);
-            const stepLen = near < 40 ? 1.5 : (near < 140 ? 3 : 6);
-            let f = fieldAt(x, y, ps), m = Math.hypot(f.bx, f.by); if (m === 0) break;
-            const hx = x + dir * 0.5 * stepLen * f.bx / m, hy = y + dir * 0.5 * stepLen * f.by / m;
-            f = fieldAt(hx, hy, ps); m = Math.hypot(f.bx, f.by); if (m === 0) break;
-            x += dir * stepLen * f.bx / m; y += dir * stepLen * f.by / m;
-            pts.push({ x, y });
-            const into = objects.find(q => insideBar(q, x, y, 0));
-            if (into) {
-              // which end of that bar did it reach?
-              const l = toLocal(into, x, y);
-              endObj = into; endSign = Math.sign(l.a) * Math.sign(into.m || 1);
-              break;
-            }
-            if (x < -700 || y < -700 || x > W + 700 || y > H + 700) break;
+          let endS = null;
+          for (let s = 0; s < 4000; s++) {
+            const near = ends.reduce((mm, p) => Math.min(mm, Math.hypot(x - p.x, y - p.y)), Infinity);
+            const h = near < 4 ? 0.15 : near < 14 ? 0.3 : 0.6;
+            let f = fieldFrom(x, y, ps), m = Math.hypot(f.bx, f.by); if (m === 0) break;
+            const hx = x + dir * 0.5 * h * f.bx / m, hy = y + dir * 0.5 * h * f.by / m;
+            f = fieldFrom(hx, hy, ps); m = Math.hypot(f.bx, f.by); if (m === 0) break;
+            x += dir * h * f.bx / m; y += dir * h * f.by / m; pts.push({ x, y });
+            const into = objs.find(q => inside(q, x, y, 0));
+            if (into) { const fc = faceCentres(into).reduce((b, c) => (Math.hypot(c.x - x, c.y - y) < Math.hypot(b.x - x, b.y - y) ? c : b)); endS = fc.s; break; }
+            if (x < box.x0 - 40 || y < box.y0 - 40 || x > box.x1 + 40 || y > box.y1 + 40) break;
           }
-          if (dir < 0 && endObj && endSign > 0 && Math.abs(endObj.m) >= 0.12) continue;
-          const visible = pts.filter(p => p.x > -2 && p.y > -2 && p.x < W + 2 && p.y < H + 2);
-          if (visible.length < 4) continue;
-          lines.push({ pts, forward: dir > 0 });
+          if (dir < 0 && endS !== null && endS >= SHOW_M) continue;
+          const vis = pts.filter(p => p.x > box.x0 && p.y > box.y0 && p.x < box.x1 && p.y < box.y1);
+          if (vis.length < 4) continue;
+          lines.push({ pts, forward: dir > 0, startS: st.s, endS, from: dir > 0 ? 'N' : 'S' });
         }
       }
-      lineKey = key; lineCache = lines;
+      if (lineCache.size > 8) lineCache.delete(lineCache.keys().next().value);
+      lineCache.set(key, lines);
       return lines;
     }
 
-    // ---------- drawing ----------
-    function setup() {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      const cw = Math.round(rect.width * dpr), ch = Math.round(rect.height * dpr);
-      if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
-      const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const first = W === 0;
-      if (!first && (W !== rect.width || H !== rect.height)) {
-        const sx = rect.width / W, sy = rect.height / H;
-        objects.forEach(o => { o.x *= sx; o.y *= sy; }); compass.x *= sx; compass.y *= sy;
+    /* ---------------- scenarios ---------------- */
+    const MATS = [
+      { id: 'iron', name: 'Iron', mag: true, col: '#6b7280' }, { id: 'nickel', name: 'Nickel', mag: true, col: '#a8a29e' },
+      { id: 'cobalt', name: 'Cobalt', mag: true, col: '#64748b' }, { id: 'steel', name: 'Steel', mag: true, col: '#94a3b8' },
+      { id: 'copper', name: 'Copper', mag: false, col: '#c2410c' }, { id: 'wood', name: 'Wood', mag: false, col: '#a16207' },
+      { id: 'plastic', name: 'Plastic', mag: false, col: '#22c55e' }];
+    const PRESETS = {
+      // tab 1
+      free: { tab: 1, mode: 'run', name: 'A magnet free to turn', view: [0, 0, 28, 20], earth: true, phi0: 120, T: 10 },
+      brk: { tab: 1, mode: 'steps', name: 'Break a magnet into pieces', view: [0, 0, 28, 20], nPer: 10 },
+      mat: { tab: 1, mode: 'test', name: 'Which materials are attracted?', view: [3, 1, 50, 26] },
+      // tab 2
+      one: { tab: 2, mode: 'live', name: 'One bar magnet', view: [0, 0, 46, 30], nPer: 16 },
+      plot: { tab: 2, mode: 'steps', name: 'Plot a field line with a compass', view: [0, -2, 40, 28], nPer: 16 },
+      // tab 3
+      nn: { tab: 3, mode: 'run', name: 'Like poles facing: N and N', view: [3, 0, 62, 22], nPer: 14, T: 3, left: 0, right: Math.PI },
+      ss: { tab: 3, mode: 'run', name: 'Like poles facing: S and S', view: [3, 0, 62, 22], nPer: 14, T: 3, left: Math.PI, right: 0 },
+      ns: { tab: 3, mode: 'run', name: 'Unlike poles facing: N and S', view: [3, 0, 62, 22], nPer: 14, T: 3, left: 0, right: 0 },
+      a3: { tab: 3, mode: 'reveal', name: 'Tutorial A3: label the poles', view: [1, -1, 40, 26], nPer: 12,
+        q: 'Tutorial 8, A3: The diagram shows the magnetic field pattern of two magnets. Complete the diagram by (a) labelling the magnetic poles at A, B and C, (b) adding arrows to indicate the direction of the magnetic field lines.' },
+      a1: { tab: 3, mode: 'puzzle', name: 'Tutorial A1: find the two magnets', view: [0, 0, 50, 30],
+        q: 'Tutorial 8, A1: You are given three steel bars, identical in size and appearance. Two of the bars are magnetised and one is not. No extra apparatus is available. How would you identify the two magnets?' },
+      // tab 4
+      ind: { tab: 4, mode: 'live', name: 'Induced magnetism', view: [-3, 0, 50, 24], nPer: 14 },
+      a2: { tab: 4, mode: 'run', name: 'Tutorial A2: the compass', view: [-8, -1, 62, 22], nPer: 12, earth: true, T: 4,
+        q: 'Tutorial 8, A2: A soft iron bar and a compass are placed as shown in the diagram. State and explain which direction the compass needle will turn when the south pole of a bar magnet is brought near the soft iron bar.' },
+      fe: { tab: 4, mode: 'run', name: 'Soft iron and steel', view: [-9, 0, 60, 30], nPer: 10, T: 7 }
+    };
+
+    let P = {}, S = { scen: 'free', step: 0 };
+    let objs = [], compass = null, feat = {}, hl = {};
+    let traj = null;                          // a run's precomputed samples
+    let mats = null, testing = null;          // tab 1's materials test
+    let puzzle = null;                        // Tutorial A1
+    const sim = { t: 0, running: false, last: null };
+    let show = { lines: true, compasses: false, filings: false, reveal: false, plotLines: false };
+
+    const mode = () => (PRESETS[S.scen] || {}).mode || 'live';
+    const isRun = () => mode() === 'run', isSteps = () => mode() === 'steps';
+
+    /* ---------------- each scenario's starting objects ---------------- */
+    function startObjects(id) {
+      switch (id) {
+        case 'free': return [bar('magnet', 0, 0, -Math.PI / 2 + P.phi0 * DEG, 1)];
+        case 'brk': return brkPieces(S.step);
+        case 'mat': return [bar('magnet', -9, 0, 0, 1)];
+        case 'one': case 'plot': return [bar('magnet', 0, 0, 0, 1)];
+        case 'nn': case 'ss': case 'ns': return [bar('magnet', -10, 0, P.left, 1, { held: true }), bar('magnet', 10, 0, P.right, 1)];
+        case 'a3': return [{ kind: 'magnet', shape: 'u', x: -8, y: 2, ang: 0, m: 1, L: 12, H: 14, Wd: 3 }, bar('magnet', 9, -1.2, 0, 1, { L: 12, Wd: 3, hideLetters: true })];
+        case 'a1': return puzzleBars();
+        case 'ind': return [bar('magnet', -19, 0, Math.PI, 1), bar('iron', 8, 0, 0, 0)];
+        case 'a2': return [bar('magnet', FAR_X, 0, Math.PI, 1), bar('iron', 4, 0, 0, 0, { L: 12 })];
+        case 'fe': return [bar('magnet', FAR_X, -6.5, Math.PI, 1), bar('iron', 6, -6.5, 0, 0, { L: 12 }), bar('magnet', FAR_X, 6.5, Math.PI, 1, { lane: 1 }), bar('steel', 6, 6.5, 0, 0, { L: 12, lane: 1 })];
       }
-      W = rect.width; H = rect.height;
-      if (first) { setMode(modeEl.value); makeFilings(); }
-      return ctx;
+      return [];
+    }
+    // tab 1: one magnet, then the same length broken in two, then in four (each piece a magnet: p. 8-5)
+    function brkPieces(step) {
+      const total = 18, n = step <= 0 ? 1 : step === 1 ? 2 : 4, gap = n === 1 ? 0 : 1.6, L = (total - gap * (n - 1)) / n;
+      return Array.from({ length: n }, (_, i) => bar('magnet', -total / 2 + L / 2 + i * (L + gap), 0, 0, 1, { L }));
     }
 
-    function makeFilings() {
-      let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-      filings = [];
-      for (let i = 0; i < 1400; i++) filings.push({ fx: rnd(), fy: rnd() });
+    /* ---------------- runs: precomputed, so any moment can be shown exactly ---------------- */
+    const DT = 1 / 240;
+    // tab 1: a magnet hung from a thread, free to turn in a horizontal plane. phi = angle of its N-pole from north.
+    // phi'' = −w0² sin(phi) − c phi' (the Earth's field turns it; air and the thread slow it): RK4.
+    // damped enough that by the end of the 10 s run any start is within 0.5° of north, so "at rest" is true
+    const FREE_W0 = 2 * Math.PI / 1.6, FREE_C = 1.2;
+    function freeRun() {
+      const acc = (p, w) => -FREE_W0 * FREE_W0 * Math.sin(p) - FREE_C * w;
+      let p = P.phi0 * DEG, w = 0; const ts = [0], ph = [p], om = [w];
+      for (let t = DT; t <= P.T + 1e-9; t += DT) {
+        const k1p = w, k1w = acc(p, w), k2p = w + k1w * DT / 2, k2w = acc(p + k1p * DT / 2, w + k1w * DT / 2);
+        const k3p = w + k2w * DT / 2, k3w = acc(p + k2p * DT / 2, w + k2w * DT / 2), k4p = w + k3w * DT, k4w = acc(p + k3p * DT, w + k3w * DT);
+        p += DT * (k1p + 2 * k2p + 2 * k3p + k4p) / 6; w += DT * (k1w + 2 * k2w + 2 * k3w + k4w) / 6;
+        ts.push(t); ph.push(p); om.push(w);
+      }
+      // key moments: the first time it points north, and the turning points of its swing
+      const km = [0];
+      for (let i = 1; i < ts.length; i++) {
+        const a = ph[i - 1], b = ph[i];
+        if (km.length === 1 && a * b <= 0 && a !== b) km.push(ts[i - 1] + DT * a / (a - b));
+        if (om[i - 1] * om[i] < 0 && ts[i] > 0.05) km.push(ts[i - 1] + DT * om[i - 1] / (om[i - 1] - om[i]));
+      }
+      return { ts, ph, om, km: [...new Set(km.filter(t => t < P.T - 0.05).map(t => +t.toFixed(4)))].sort((a, b) => a - b).concat([P.T]) };
+    }
+    // tab 3: the left magnet is held; the right one slides on a smooth table, slowed by the air (page's own constants),
+    // until it touches the other magnet, reaches the stop at the edge of the table, or stops.
+    const SLIDE_M = 0.0016, SLIDE_C = 1.6, STOP_X = 24.5;
+    function slideRun() {
+      const L = objs[0], R = { ...objs[1] };
+      const fAt = x => { R.x = x; return pairForce(R, L).fx; };
+      let x = R.x, v = 0, end = null; const ts = [0], xs = [x];
+      const touch = L.x + (L.L + R.L) / 2;
+      for (let t = DT; t <= P.T + 1e-9; t += DT) {
+        const a1 = fAt(x) / SLIDE_M - SLIDE_C * v, x1 = x + v * DT / 2, v1 = v + a1 * DT / 2, a2 = fAt(x1) / SLIDE_M - SLIDE_C * v1;
+        x += v1 * DT; v += a2 * DT;
+        if (x <= touch) { x = touch; v = 0; end = end || { t, why: 'touch' }; }
+        if (x >= STOP_X) { x = STOP_X; v = 0; end = end || { t, why: 'stop' }; }
+        ts.push(t); xs.push(x);
+        if (end) break;
+      }
+      const T = ts[ts.length - 1];
+      const km = [0]; for (let k = 0.5; k < T - 0.05; k += 0.5) km.push(k); km.push(T);
+      return { ts, xs, end: end ? end.why : 'slow', T, km };
+    }
+    // tab 4: the magnet slides in (and, for soft iron and steel, out again) at a set pace. The steel keeps the most it
+    // reached, so its magnetism at any moment comes from the whole run before it.
+    const smooth = u => u <= 0 ? 0 : u >= 1 ? 1 : u * u * (3 - 2 * u);
+    const FAR_X = -32;   // far enough that soft iron shows no magnetism at all
+    function magnetX(t) {
+      // the magnet's S-pole stops 3 units (1.5 cm) from the bar in Tutorial A2, 1.5 units (0.75 cm) in soft iron and steel
+      const far = FAR_X, near = P.id === 'a2' ? -12 : -8.5;
+      if (P.id === 'a2') return far + (near - far) * smooth(t / 3);
+      if (t <= 3) return far + (near - far) * smooth(t / 3);
+      if (t <= 4) return near;
+      return near + (far - near) * smooth((t - 4) / 3);
+    }
+    function tab4Run() {
+      const ts = [], ms = [], o = startObjects(S.scen);
+      for (let i = 0; i * DT <= P.T + 1e-9; i++) {
+        const t = i * DT; o.forEach(q => { if (q.kind === 'magnet') q.x = magnetX(t); });
+        if (P.id === 'fe') { const lanes = [o.filter(q => !q.lane), o.filter(q => q.lane)]; lanes.forEach(updateInduced); } else updateInduced(o);
+        ts.push(t); ms.push(o.filter(q => q.kind !== 'magnet').map(q => q.m));
+      }
+      const km = P.id === 'a2' ? [0, 1.5, 3, 4] : [0, 1.5, 3, 4, 5.5, 7];
+      return { ts, ms, T: P.T, km };
+    }
+    function sampleAt(arr, t) { const i = Math.max(0, Math.min(arr.length - 1, Math.round(t / DT))); return arr[i]; }
+    // place every object where the run is at time t
+    function applyRun(t) {
+      if (!traj) return;
+      if (S.scen === 'free') { const i = Math.min(traj.ts.length - 1, Math.round(t / DT)); objs[0].ang = -Math.PI / 2 + traj.ph[i]; }
+      else if (currentTab === 3) { objs[1].x = sampleAt(traj.xs, Math.min(t, traj.T)); }
+      else if (currentTab === 4) {
+        const ms = sampleAt(traj.ms, t); let k = 0;
+        objs.forEach(q => { if (q.kind === 'magnet') q.x = magnetX(t); else q.m = ms[k++]; });
+      }
+    }
+    const runEnd = () => (traj ? (traj.T != null ? traj.T : P.T) : 0);
+    function buildRun() {
+      if (!isRun()) { traj = null; return; }
+      if (S.scen === 'free') { traj = freeRun(); traj.T = P.T; }
+      else if (currentTab === 3) traj = slideRun();
+      else traj = tab4Run();
+    }
+    const keyMoments = () => (isRun() && traj ? traj.km : []);
+    function frame(ts) {
+      if (!sim.running) return;
+      if (sim.last === null) sim.last = ts;
+      const dt = Math.max(0, Math.min(0.05, (ts - sim.last) / 1000)); sim.last = ts;   // never step backwards
+      sim.t = Math.min(runEnd(), sim.t + dt);
+      if (sim.t >= runEnd() - 1e-9) { sim.t = runEnd(); sim.running = false; }
+      applyRun(sim.t); update();
+      if (sim.running) requestAnimationFrame(frame);
+    }
+    function start() {
+      if (!traj) buildRun();
+      if (sim.t >= runEnd() - 1e-9) sim.t = 0;
+      sim.running = true; sim.last = null; clearFeatNoteOnly(); update(); requestAnimationFrame(frame);
+    }
+    function setTime(t) { sim.running = false; sim.last = null; sim.t = Math.max(0, Math.min(runEnd(), t)); applyRun(sim.t); update(); }
+    function resetRun() { sim.running = false; sim.last = null; sim.t = 0; applyRun(0); }
+    $('startBtn').addEventListener('click', start);
+    $('pauseBtn').addEventListener('click', () => {
+      if (sim.running) { sim.running = false; sim.last = null; update(); }
+      else if (sim.t > 0 && sim.t < runEnd()) start();
+    });
+    $('resetBtn').addEventListener('click', () => { resetRun(); update(); });
+    $('nextMoment').addEventListener('click', () => { const n = keyMoments().find(m => m > sim.t + 1e-9); if (n !== undefined) setTime(n); });
+    $('prevMoment').addEventListener('click', () => { const p = keyMoments().filter(m => m < sim.t - 1e-9).pop(); if (p !== undefined) setTime(p); });
+
+    /* ---------------- steps ---------------- */
+    // tab 2: plotting a field line with a compass (p. 8-11): put the compass by the N-pole, mark the dot where the N end of
+    // its needle points, move the compass so the other end of the needle is at the dot, and repeat; then join the dots.
+    const NEEDLE = 1.3;
+    function plotPath() {
+      const o = objs[0];
+      // start just above the N end, so the line it plots loops over the magnet into the S end and stays on the page
+      let c = toWorld(o, o.L / 2 - 1.2, -(o.Wd / 2 + 1.5));
+      const places = [], dots = [];
+      for (let k = 0; k < 40; k++) {
+        const b = fieldFrom(c.x, c.y, allPoles(objs)), m = Math.hypot(b.bx, b.by), u = { x: b.bx / m, y: b.by / m };
+        const tip = { x: c.x + u.x * NEEDLE, y: c.y + u.y * NEEDLE };
+        places.push({ x: c.x, y: c.y, ux: u.x, uy: u.y }); dots.push(tip);
+        // the next place: the tail of the needle on the dot just marked
+        const b2 = fieldFrom(tip.x, tip.y, allPoles(objs)), m2 = Math.hypot(b2.bx, b2.by);
+        c = { x: tip.x + b2.bx / m2 * NEEDLE, y: tip.y + b2.by / m2 * NEEDLE };
+        const sFace = faceCentres(o).find(q => q.s < 0);
+        if (Math.hypot(c.x - sFace.x, c.y - sFace.y) < 2.4 || inside(o, c.x, c.y, 0.6)) break;
+      }
+      return { places, dots };
+    }
+    let plotCache = null;
+    function steps() {
+      if (S.scen === 'brk') return [
+        { h: 'Break the magnet in the middle: each piece has an N-pole and an S-pole.' },
+        { h: 'Break each piece again: four pieces, and still every piece has two poles.' },
+        { h: 'All magnets have two magnetic poles. If a piece of magnet is broken into two pieces, each piece will also have two magnetic poles (notes p. 8-5).' }];
+      if (S.scen === 'plot') {
+        const n = (plotCache || (plotCache = plotPath())).places.length, L = [];
+        for (let k = 0; k < n; k++) L.push({ h: k === 0 ? 'Put the plotting compass near the N-pole. Mark a dot where the N end of the needle points.' : `Move the compass so the other end of its needle is on the last dot. Mark the next dot (${k + 1} dots).` });
+        L.push({ h: 'Join the dots with a smooth curve, and add an arrow in the direction the N end of the needle pointed: one field line, from the N-pole to the S-pole.' });
+        L.push({ h: 'Compare: it follows the magnetic field lines of the magnet.' });
+        return L;
+      }
+      return [];
+    }
+    const nSteps = () => (isSteps() ? steps().length : 0);
+    function setStep(n) {
+      S.step = Math.max(0, Math.min(nSteps(), n));
+      if (S.scen === 'brk') { objs = brkPieces(S.step); lineKey = ''; }
+      // the last step compares the plotted line with the magnet's own field lines; before it they stay hidden (predict)
+      if (S.scen === 'plot') show.lines = show.plotLines = S.step >= nSteps();
+      update();
+    }
+    $('prevStep').addEventListener('click', () => setStep(S.step - 1));
+    $('nextStep').addEventListener('click', () => { clearFeatNoteOnly(); setStep(S.step + 1); });
+    $('stepReset').addEventListener('click', () => { clearFeatNoteOnly(); setStep(0); });
+
+    /* ---------------- tab 1: testing materials ---------------- */
+    const MAT_T = 1.4;
+    function testMaterial(id) {
+      if (testing || !mats || mats[id].done) return;
+      testing = { id, t: 0, last: null };
+      requestAnimationFrame(testFrame);
+      update();
+    }
+    function testFrame(ts) {
+      if (!testing) return;
+      if (testing.last === null) testing.last = ts;
+      testing.t += Math.max(0, Math.min(0.05, (ts - testing.last) / 1000)); testing.last = ts;
+      if (testing.t >= MAT_T) { mats[testing.id].done = true; mats.order.push(testing.id); testing = null; update(); return; }
+      update(); requestAnimationFrame(testFrame);
+    }
+    function resetMats() { mats = { order: [] }; MATS.forEach(m => { mats[m.id] = { done: false }; }); testing = null; }
+
+    /* ---------------- tab 3: Tutorial A1 ---------------- */
+    const BAR_NAMES = ['X', 'Y', 'Z'];
+    function puzzleBars() {
+      const pl = puzzle ? puzzle.plain : 2;
+      // X top left, Y middle right, Z bottom left; the plain (unmagnetised) one is kind 'plain' with no magnetism of its own
+      return BAR_NAMES.map((nm, i) => bar(i === pl ? 'plain' : 'magnet', i === 1 ? 8 : -8, -8 + i * 8, i === 1 ? Math.PI : 0, i === pl ? 0 : 1, { name: nm, hideLetters: true, grey: true }));
+    }
+    function newPuzzle(plain) {
+      puzzle = { plain: plain == null ? 2 : plain, pick: null, done: false, seen: {} };
+      objs = puzzleBars();
+    }
+    // what the student has seen so far: for each pair, attract / repel, and whether a repel has happened
+    function puzzleObserve() {
+      if (!puzzle) return;
+      for (let i = 0; i < 3; i++) for (let j = i + 1; j < 3; j++) {
+        const o = objs[i], q = objs[j];
+        if (endGap(o, q) > 2.2) continue;
+        const k = pairKind(o, q); if (!k) continue;
+        const key = BAR_NAMES[i] + BAR_NAMES[j], s = puzzle.seen[key] || (puzzle.seen[key] = { a: false, r: false });
+        if (k > 0) s.a = true; else s.r = true;
+      }
+    }
+    // distance between the nearest ends of two bars (any orientation)
+    function endGap(o, q) {
+      let best = Infinity;
+      for (const a of faceCentres(o)) for (const b of faceCentres(q)) best = Math.min(best, Math.hypot(a.x - b.x, a.y - b.y));
+      return best;
+    }
+    const PZ_OPTS = ['X and Y', 'X and Z', 'Y and Z'];
+    const pzAnswer = () => [2, 1, 0][puzzle.plain];   // the two that are not the plain bar
+    function renderPuzzle() {
+      const log = Object.entries(puzzle.seen).map(([k, s]) => `<li>${k[0]} and ${k[1]}: ${s.r ? '<b>repelled</b>' : 'attracted'}${s.a && s.r ? ' (and attracted the other way round)' : ''}</li>`);
+      $('puzzleLog').innerHTML = log.join('');
+      const opts = $('puzzleOpts');
+      if (!opts.dataset.ready || opts.dataset.done !== String(puzzle.done)) {
+        opts.dataset.ready = '1'; opts.dataset.done = String(puzzle.done);
+        opts.innerHTML = PZ_OPTS.map((o, j) => `<button type="button" class="opt${puzzle.done ? (j === pzAnswer() ? ' right' : j === puzzle.pick ? ' wrong' : '') : ''}" data-j="${j}">${o}</button>`).join('');
+        opts.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+          if (puzzle.done) return; puzzle.pick = +b.dataset.j; opts.querySelectorAll('.opt').forEach(x => x.classList.toggle('picked', x === b));
+        }));
+      }
+      $('puzzleCheck').disabled = puzzle.done;
+    }
+    $('puzzleCheck').addEventListener('click', () => {
+      if (puzzle.done) return;
+      if (puzzle.pick === null) { $('puzzleFb').innerHTML = '<span class="verdict no">Pick an answer first.</span>'; return; }
+      puzzle.done = true;
+      const ok = puzzle.pick === pzAnswer(), plainName = BAR_NAMES[puzzle.plain];
+      const repelled = Object.entries(puzzle.seen).filter(([, s]) => s.r).map(([k]) => `${k[0]} and ${k[1]}`);
+      $('puzzleFb').innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> The magnets are <b>${PZ_OPTS[pzAnswer()]}</b>; bar ${plainName} is not magnetised. `
+        + `<span class="why">Repulsion is the only sure test, because a magnet attracts an unmagnetised bar too. ${repelled.length ? `You saw ${repelled.join(' and ')} repel: both bars of a pair that repel are magnets.` : 'You have not seen two bars repel yet: try turning one bar round.'}</span>`;
+      update();
+    });
+    $('puzzleNew').addEventListener('click', () => { const next = puzzle ? (puzzle.plain + 1) % 3 : 0; newPuzzle(next); $('puzzleFb').innerHTML = ''; $('puzzleOpts').dataset.ready = ''; update(); });
+
+    function loadScenario(id) {
+      const sc = PRESETS[id];
+      S.scen = id; S.step = freeMode ? 99 : 0;
+      P = JSON.parse(JSON.stringify(sc)); P.id = id;
+      plotCache = null; lineKey = '';
+      if (id === 'a1') { newPuzzle(puzzle ? puzzle.plain : 2); $('puzzleFb').innerHTML = ''; $('puzzleOpts').dataset.ready = ''; }
+      else objs = startObjects(id);
+      if (id === 'mat') resetMats();
+      compass = id === 'one' ? { x: 12, y: -6 } : id === 'a2' ? { x: 14.5, y: 0 } : null;
+      show = { lines: !['free', 'mat', 'plot'].includes(id), compasses: false, filings: id === 'brk', reveal: false, plotLines: false };
+      if (freeMode) { S.step = nSteps(); show.reveal = true; if (id === 'plot') show.lines = show.plotLines = true; }
+      if (id === 'brk') objs = brkPieces(S.step);
+      $('question').innerHTML = sc.q || '';
+      traj = null; buildRun(); resetRun();
     }
 
+    /* ---------------- drawing helpers ---------------- */
+    // what the canvas drew, for the checks: every label's box, every arrow, the panes; and the field lines drawn
+    window.__pim = { labels: [], arrows: [], panes: [], lines: [], needles: [] };
+    function setup(cv, wantH) {
+      if (wantH && Math.abs(cv.getBoundingClientRect().height - wantH) > 1) cv.style.height = wantH + 'px';
+      const r = cv.getBoundingClientRect();
+      if (r.width < 20 || r.height < 20) return null;   // hidden: never draw at no size
+      const dpr = window.devicePixelRatio || 1, cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
+      if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+      const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, r.width, r.height);
+      return { ctx, W: r.width, H: r.height };
+    }
+    // Canvas text with <i>, <sub> and <sup> runs, so symbols of physical quantities are italic, as in the notes.
+    function richText(ctx, s, x, y, measureOnly) {
+      const base = ctx.font, m = base.match(/([\d.]+)px/), size = m ? +m[1] : 12;
+      const runs = []; let it = false, sub = 0;
+      for (const tok of String(s).split(/(<\/?(?:i|sub|sup)>)/)) {
+        if (tok === '<i>') it = true; else if (tok === '</i>') it = false;
+        else if (tok === '<sub>') sub = 1; else if (tok === '<sup>') sub = -1;
+        else if (tok === '</sub>' || tok === '</sup>') sub = 0;
+        else if (tok) {
+          let f = sub ? base.replace(/[\d.]+px/, (size * 0.75).toFixed(1) + 'px') : base;
+          if (it) f = 'italic ' + f;
+          ctx.font = f; runs.push({ t: tok, f, sub, w: ctx.measureText(tok).width });
+        }
+      }
+      ctx.font = base;
+      const wd = runs.reduce((a, r) => a + r.w, 0);
+      if (measureOnly) return wd;
+      const align = ctx.textAlign;
+      let cx = align === 'center' ? x - wd / 2 : (align === 'right' || align === 'end') ? x - wd : x;
+      ctx.textAlign = 'left';
+      for (const r of runs) { ctx.font = r.f; ctx.fillText(r.t, cx, y + (r.sub === 1 ? size * 0.3 : r.sub === -1 ? -size * 0.4 : 0)); cx += r.w; }
+      ctx.textAlign = align; ctx.font = base;
+      return wd;
+    }
+    let PANE = 'scene', CW = 1e9, CH = 1e9, CX0 = 0, CY0 = 0;
+    function pane(name, x, y, w, h) { PANE = name; CX0 = x; CY0 = y; CW = x + w; CH = y + h; __pim.panes.push({ name, x, y, w, h }); }
+    function arrow(ctx, x1, y1, x2, y2, color, lw = 3, head = 10, record = true) {
+      const len = Math.hypot(x2 - x1, y2 - y1); if (len < 1.5) return;
+      if (record) __pim.arrows.push({ pane: PANE, x1, y1, x2, y2 });
+      const a = Math.atan2(y2 - y1, x2 - x1), hd = Math.min(head, len * 0.6);
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - Math.cos(a) * hd * 0.8, y2 - Math.sin(a) * hd * 0.8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - hd * Math.cos(a - 0.45), y2 - hd * Math.sin(a - 0.45)); ctx.lineTo(x2 - hd * Math.cos(a + 0.45), y2 - hd * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill();
+    }
     function headAt(ctx, x, y, ang, color, size = 6) {
       ctx.fillStyle = color;
       ctx.beginPath(); ctx.moveTo(x + Math.cos(ang) * size, y + Math.sin(ang) * size);
@@ -345,229 +859,929 @@
       ctx.lineTo(x + Math.cos(ang - 2.5) * size, y + Math.sin(ang - 2.5) * size);
       ctx.closePath(); ctx.fill();
     }
-    function arrow(ctx, x1, y1, x2, y2, color, lw = 3, head = 10) {
-      ctx.strokeStyle = color; ctx.lineWidth = lw;
-      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-      headAt(ctx, x2, y2, Math.atan2(y2 - y1, x2 - x1), color, head);
+    function labelBox(ctx, lines, x, y, align, size) {
+      ctx.font = `bold ${size}px Arial`;
+      const wd = Math.max(...lines.map(t => richText(ctx, t, 0, 0, true))), lh = size * 1.6 + 1, h = lines.length * lh - 1;
+      const x0 = Math.max(CX0 + 4, Math.min(CW - wd - 4, align === 'center' ? x - wd / 2 : align === 'right' ? x - wd : x));
+      const y0 = Math.max(CY0 + 2, Math.min(CH - h - 2, y - size * 0.8));
+      return { x: x0 - 3, y: y0, w: wd + 6, h, lh, tx: x0, size };
     }
+    const hitBox = (a, b, pad = 1) => Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) > pad && Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) > pad;
+    function crossesArrow(box) {
+      return __pim.arrows.some(a => { if (a.pane !== PANE) return false; for (let k = 0; k <= 24; k++) { const px = a.x1 + (a.x2 - a.x1) * k / 24, py = a.y1 + (a.y2 - a.y1) * k / 24;
+        if (px > box.x + 0.5 && px < box.x + box.w - 0.5 && py > box.y + 0.5 && py < box.y + box.h - 0.5) return true; } return false; });
+    }
+    function label(ctx, lines, x, y, color, align = 'center', size = 12, bg = 'rgba(255,255,255,0.92)') {
+      if (!Array.isArray(lines)) lines = [lines];
+      const b = labelBox(ctx, lines, x, y, align, size);
+      lines.forEach((t, i) => {
+        const card = { pane: PANE, text: t.replace(/<[^>]+>/g, ''), x: b.x, y: b.y + i * b.lh, w: b.w, h: size * 1.6 };
+        if (bg) { ctx.fillStyle = bg; ctx.fillRect(card.x, card.y, card.w, card.h); }
+        ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.font = `bold ${size}px Arial`; richText(ctx, t, b.tx, card.y + size * 0.8);
+        ctx.textBaseline = 'alphabetic';
+        __pim.labels.push(card);
+      });
+      return b;
+    }
+    const clear = b => !__pim.labels.some(l => l.pane === PANE && hitBox(l, b)) && !crossesArrow(b);
+    function labelAt(ctx, text, cands, color, size = 12) {
+      for (const [x, y, al] of cands) { const b = labelBox(ctx, Array.isArray(text) ? text : [text], x, y, al, size); if (clear(b)) return label(ctx, text, x, y, color, al, size); }
+      const [x, y, al] = cands[0]; return label(ctx, text, x, y, color, al, size);
+    }
+    const obstacle = (x, y, wd, h) => __pim.labels.push({ pane: PANE, obstacle: true, text: '', x, y, w: wd, h });
 
-    function drawNeedle(ctx, x, y, bx, by, len, ringR) {
+    // world (page units, y down) to the screen, fitted to the scenario's view box
+    let VIEW = { k: 1, ox: 0, oy: 0 };
+    function fitView(box, W, H) {
+      const [cx, cy, w, h] = P.view, k = Math.min(box.w / w, box.h / h);
+      VIEW = { k, ox: box.x + box.w / 2 - cx * k, oy: box.y + box.h / 2 - cy * k };
+      return { x0: (box.x - VIEW.ox) / k, y0: (box.y - VIEW.oy) / k, x1: (box.x + box.w - VIEW.ox) / k, y1: (box.y + box.h - VIEW.oy) / k };
+    }
+    const sx = x => VIEW.ox + x * VIEW.k, sy = y => VIEW.oy + y * VIEW.k;
+    const toWorldPt = (px, py) => ({ x: (px - VIEW.ox) / VIEW.k, y: (py - VIEW.oy) / VIEW.k });
+
+    function drawNeedle(ctx, x, y, bx, by, len, ringR, rec) {
       const m = Math.hypot(bx, by);
-      if (ringR) {
-        ctx.fillStyle = 'rgba(255,255,255,0.95)'; ctx.strokeStyle = '#334155'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(x, y, ringR, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      }
+      if (ringR) { ctx.fillStyle = 'rgba(255,255,255,0.95)'; ctx.strokeStyle = '#334155'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, ringR, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
       const a = m > 0 ? Math.atan2(by, bx) : -Math.PI / 2;
       const ux = Math.cos(a), uy = Math.sin(a), vx = -uy, vy = ux, wdt = len * 0.22;
-      ctx.fillStyle = '#dc2626';
-      ctx.beginPath(); ctx.moveTo(x + ux * len, y + uy * len); ctx.lineTo(x + vx * wdt, y + vy * wdt); ctx.lineTo(x - vx * wdt, y - vy * wdt); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = '#475569';
-      ctx.beginPath(); ctx.moveTo(x - ux * len, y - uy * len); ctx.lineTo(x + vx * wdt, y + vy * wdt); ctx.lineTo(x - vx * wdt, y - vy * wdt); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = COL.N; ctx.beginPath(); ctx.moveTo(x + ux * len, y + uy * len); ctx.lineTo(x + vx * wdt, y + vy * wdt); ctx.lineTo(x - vx * wdt, y - vy * wdt); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.moveTo(x - ux * len, y - uy * len); ctx.lineTo(x + vx * wdt, y + vy * wdt); ctx.lineTo(x - vx * wdt, y - vy * wdt); ctx.closePath(); ctx.fill();
+      if (rec) __pim.needles.push({ x, y, ang: a, name: rec });
+      return a;
     }
 
-    function drawBar(ctx, o, isSel) {
-      const u = axis(o);
-      ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.ang);
-      const a = BAR_L / 2, b = BAR_W / 2;
-      if (o.kind === 'magnet' || Math.abs(o.m) >= 0.12) {
-        const strength = o.kind === 'magnet' ? 1 : Math.min(1, Math.abs(o.m) / 0.6);
-        const nCol = `rgba(220,38,38,${0.35 + 0.65 * strength})`, sCol = `rgba(37,99,235,${0.35 + 0.65 * strength})`;
-        const nRight = o.m > 0; // in local coords +x is the axis direction; the N pole is on +x when m > 0
-        ctx.fillStyle = o.kind === 'magnet' ? '#e5e7eb' : (o.kind === 'iron' ? '#9ca3af' : '#6b7280');
-        ctx.fillRect(-a, -b, 2 * a, 2 * b);
-        ctx.fillStyle = nRight ? nCol : sCol; ctx.fillRect(0, -b, a, 2 * b);
-        ctx.fillStyle = nRight ? sCol : nCol; ctx.fillRect(-a, -b, a, 2 * b);
+    function drawObject(ctx, o, opts = {}) {
+      const k = VIEW.k, X = sx(o.x), Y = sy(o.y);
+      const magd = o.kind === 'magnet' || Math.abs(o.m) >= SHOW_M;
+      const strength = o.kind === 'magnet' ? 1 : Math.min(1, Math.abs(o.m) / 0.6);
+      const nCol = `rgba(220,38,38,${0.35 + 0.65 * strength})`, sCol = `rgba(37,99,235,${0.35 + 0.65 * strength})`;
+      const base = o.grey ? '#9ca3af' : o.kind === 'magnet' ? '#e5e7eb' : o.kind === 'iron' ? COL.iron : COL.steel;
+      ctx.save(); ctx.translate(X, Y); ctx.rotate(o.ang);
+      if (o.shape === 'u') {
+        const L = o.L * k, H = o.H * k, t = o.Wd * k;
+        ctx.beginPath();
+        ctx.moveTo(L / 2, -H / 2); ctx.lineTo(-L / 2 + H / 2, -H / 2); ctx.arc(-L / 2 + H / 2, 0, H / 2, -Math.PI / 2, Math.PI / 2, true); ctx.lineTo(L / 2, H / 2);
+        ctx.lineTo(L / 2, H / 2 - t); ctx.lineTo(-L / 2 + H / 2, H / 2 - t); ctx.arc(-L / 2 + H / 2, 0, H / 2 - t, Math.PI / 2, -Math.PI / 2, false); ctx.lineTo(L / 2, -H / 2 + t); ctx.closePath();
+        ctx.fillStyle = '#e5e7eb'; ctx.fill();
+        if (show.reveal || opts.fig === 'answer') {
+          ctx.fillStyle = sCol; ctx.fillRect(L / 2 - 2.4 * k, -H / 2, 2.4 * k, t);
+          ctx.fillStyle = nCol; ctx.fillRect(L / 2 - 2.4 * k, H / 2 - t, 2.4 * k, t);
+        } else { ctx.fillStyle = sCol; ctx.fillRect(L / 2 - 2.4 * k, -H / 2, 2.4 * k, t); }
+        ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1.5; ctx.stroke();
       } else {
-        ctx.fillStyle = o.kind === 'iron' ? '#9ca3af' : '#6b7280'; ctx.fillRect(-a, -b, 2 * a, 2 * b);
+        const a = o.L / 2 * k, b = o.Wd / 2 * k;
+        ctx.fillStyle = base; ctx.fillRect(-a, -b, 2 * a, 2 * b);
+        if (magd && !o.hideLetters) { const nRight = o.m > 0; ctx.fillStyle = nRight ? nCol : sCol; ctx.fillRect(0, -b, a, 2 * b); ctx.fillStyle = nRight ? sCol : nCol; ctx.fillRect(-a, -b, a, 2 * b); }
+        if (o.hideLetters && o.kind === 'magnet' && (show.reveal || opts.fig === 'answer') && !o.grey) { ctx.fillStyle = sCol; ctx.fillRect(-a, -b, a, 2 * b); ctx.fillStyle = nCol; ctx.fillRect(0, -b, a, 2 * b); }
+        ctx.strokeStyle = opts.sel ? '#f59e0b' : '#1f2937'; ctx.lineWidth = opts.sel ? 3 : 1.5; ctx.strokeRect(-a, -b, 2 * a, 2 * b);
       }
-      ctx.strokeStyle = isSel ? '#f59e0b' : '#1f2937'; ctx.lineWidth = isSel ? 3 : 1.5;
-      ctx.strokeRect(-a, -b, 2 * a, 2 * b);
-      // turn-grips at both ends
-      ctx.fillStyle = 'rgba(255,255,255,0.55)';
-      [-1, 1].forEach(sd => { for (let k = 0; k < 3; k++) ctx.fillRect(sd * (a - 8 - k * 5) - 1, -b + 6, 2, 2 * b - 12); });
       ctx.restore();
-
-      // letters stay upright
-      ctx.font = 'bold 16px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'white';
-      if (o.kind === 'magnet' || Math.abs(o.m) >= 0.12) {
-        const nSide = o.m > 0 ? 1 : -1;
-        ctx.fillText('N', o.x + u.x * nSide * BAR_L * 0.25 * 1.2, o.y + u.y * nSide * BAR_L * 0.25 * 1.2);
-        ctx.fillText('S', o.x - u.x * nSide * BAR_L * 0.25 * 1.2, o.y - u.y * nSide * BAR_L * 0.25 * 1.2);
+      // pole letters stay upright, centred in each half
+      ctx.font = `bold ${Math.max(11, Math.min(16, o.Wd * k * 0.7))}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'white';
+      if (o.shape !== 'u' && magd && !o.hideLetters) {
+        const nSide = o.m > 0 ? 1 : -1, p1 = toWorld(o, nSide * o.L / 4, 0), p2 = toWorld(o, -nSide * o.L / 4, 0);
+        ctx.fillText('N', sx(p1.x), sy(p1.y)); ctx.fillText('S', sx(p2.x), sy(p2.y));
       }
       ctx.textBaseline = 'alphabetic';
-      // name tag under the bar (upright)
-      const tag = o.kind === 'magnet' ? 'bar magnet' : o.kind === 'iron' ? 'soft iron' : 'steel';
-      ctx.font = '12px Arial'; ctx.fillStyle = '#334155';
-      const ext = Math.abs(u.x) * BAR_W / 2 + Math.abs(u.y) * BAR_L / 2;
-      const ty = o.y + ext + 16 < H - 4 ? o.y + ext + 16 : o.y - ext - 8;
-      const tagW = ctx.measureText(tag).width;
-      ctx.fillStyle = 'rgba(251,252,254,0.9)'; ctx.fillRect(o.x - tagW / 2 - 3, ty - 11, tagW + 6, 15);
-      ctx.fillStyle = '#334155'; ctx.fillText(tag, o.x, ty);
+    }
+    // field lines, compasses and filings for the objects on show
+    function drawField(ctx, box, wb, opt = {}) {
+      const ps = allPoles(objs);
+      if (show.filings) {
+        ctx.lineWidth = 1.2;
+        let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+        for (let i = 0; i < 1500; i++) {
+          const x = wb.x0 + rnd() * (wb.x1 - wb.x0), y = wb.y0 + rnd() * (wb.y1 - wb.y0);
+          if (objs.some(o => inside(o, x, y, 0.3))) continue;
+          const b = fieldFrom(x, y, ps), m = Math.hypot(b.bx, b.by); if (m === 0) continue;
+          const alpha = Math.max(0.06, Math.min(0.9, 0.5 + 0.35 * Math.log10(m * 60)));
+          ctx.strokeStyle = `rgba(51,65,85,${alpha})`; const ux = b.bx / m * 4, uy = b.by / m * 4;
+          ctx.beginPath(); ctx.moveTo(sx(x) - ux, sy(y) - uy); ctx.lineTo(sx(x) + ux, sy(y) + uy); ctx.stroke();
+        }
+      }
+      if (show.lines && P.nPer) {
+        const lines = traceLines(objs, P.nPer, wb);
+        __pim.lines = lines.map(L => ({ from: L.from, startS: L.startS, endS: L.endS, n: L.pts.length,
+          start: { x: L.pts[0].x, y: L.pts[0].y }, end: { x: L.pts[L.pts.length - 1].x, y: L.pts[L.pts.length - 1].y } }));
+        for (const L of lines) {
+          ctx.strokeStyle = COL.line; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(sx(L.pts[0].x), sy(L.pts[0].y));
+          for (let i = 1; i < L.pts.length; i++) ctx.lineTo(sx(L.pts[i].x), sy(L.pts[i].y));
+          ctx.stroke();
+          if (opt.noArrows) continue;
+          const vis = [];
+          for (let i = 0; i < L.pts.length - 1; i++) { const p = L.pts[i]; if (p.x > wb.x0 + 0.5 && p.y > wb.y0 + 0.5 && p.x < wb.x1 - 0.5 && p.y < wb.y1 - 0.5 && !objs.some(q => inside(q, p.x, p.y, 0.6))) vis.push(i); }
+          if (vis.length) { const i = vis[Math.floor(vis.length * 0.5)], a = L.pts[i], b = L.pts[i + 1];
+            headAt(ctx, sx(a.x), sy(a.y), Math.atan2(b.y - a.y, b.x - a.x) + (L.forward ? 0 : Math.PI), '#334155', 6); }
+        }
+      } else __pim.lines = [];
+      if (show.compasses) {
+        const gap = Math.max(42, VIEW.k * 3.2);
+        for (let gy = box.y + gap / 2; gy < box.y + box.h; gy += gap) for (let gx = box.x + gap / 2; gx < box.x + box.w; gx += gap) {
+          const w = toWorldPt(gx, gy); if (objs.some(o => inside(o, w.x, w.y, 1.0))) continue;
+          const b = compassField(w.x, w.y, objs, P.earth); drawNeedle(ctx, gx, gy, b.bx, b.by, 10, 12);
+        }
+      }
     }
 
+    function sceneH(W) {
+      const narrow = W < 560;
+      if (S.scen === 'fe') return narrow ? 600 : 440;
+      if (S.scen === 'free') return narrow ? 360 : 380;
+      return narrow ? 380 : 420;
+    }
     function draw() {
-      const ctx = setup();
-      updateInduced();
-      ctx.clearRect(0, 0, W, H);
-      const ps = allPoles();
-
-      if (el('showFilings').checked) {
-        ctx.lineWidth = 1.3;
-        for (const f of filings) {
-          const x = f.fx * W, y = f.fy * H;
-          if (objects.some(o => insideBar(o, x, y, 3))) continue;
-          const b = fieldAt(x, y, ps), m = Math.hypot(b.bx, b.by);
-          if (m === 0) continue;
-          const alpha = Math.max(0.08, Math.min(0.85, 0.55 + 0.35 * Math.log10(m * 6000)));
-          ctx.strokeStyle = `rgba(51,65,85,${alpha})`;
-          const ux = b.bx / m * 4, uy = b.by / m * 4;
-          ctx.beginPath(); ctx.moveTo(x - ux, y - uy); ctx.lineTo(x + ux, y + uy); ctx.stroke();
-        }
+      __pim.labels = []; __pim.arrows = []; __pim.panes = []; __pim.lines = []; __pim.needles = [];
+      const g0 = canvas.getBoundingClientRect();
+      const g = setup(canvas, sceneH(g0.width)); if (!g) return;
+      const { ctx, W, H } = g, narrow = W < 560;
+      if (S.scen === 'fe') {
+        const A = narrow ? { x: 0, y: 0, w: W, h: H * 0.56 } : { x: 0, y: 0, w: W * 0.58, h: H };
+        const G = narrow ? { x: 0, y: H * 0.56, w: W, h: H * 0.44 } : { x: W * 0.58, y: 0, w: W * 0.42, h: H };
+        pane('scene', A.x, A.y, A.w, A.h); drawScene(ctx, A);
+        pane('graph', G.x, G.y, G.w, G.h); drawGraph(ctx, G);
+        return;
       }
-
-      if (el('showLines').checked) {
-        const lines = traceLines();
-        for (const L of lines) {
-          ctx.strokeStyle = 'rgba(71,85,105,0.8)'; ctx.lineWidth = 1.4;
-          ctx.beginPath(); ctx.moveTo(L.pts[0].x, L.pts[0].y);
-          for (let i = 1; i < L.pts.length; i++) ctx.lineTo(L.pts[i].x, L.pts[i].y);
-          ctx.stroke();
-          // arrowhead N -> S, on a visible part of the line
-          const vis = [];
-          for (let i = 0; i < L.pts.length - 1; i++) {
-            const p = L.pts[i];
-            if (p.x > 8 && p.y > 8 && p.x < W - 8 && p.y < H - 8 && !objects.some(q => insideBar(q, p.x, p.y, 6))) vis.push(i);
-          }
-          let best = null;
-          if (vis.length) { const i = vis[Math.floor(vis.length * 0.5)]; best = [L.pts[i], L.pts[i + 1]]; }
-          if (best) headAt(ctx, best[0].x, best[0].y, Math.atan2(best[1].y - best[0].y, best[1].x - best[0].x) + (L.forward ? 0 : Math.PI), '#334155', 6);
-        }
+      pane('scene', 0, 0, W, H); drawScene(ctx, { x: 0, y: 0, w: W, h: H });
+    }
+    function drawScene(ctx, box) {
+      if (S.scen === 'mat') { MATL = matLayout(box.w < 560); P.view = MATL.view; objs[0].x = MATL.mag.x; objs[0].y = MATL.mag.y; }
+      const wb = fitView(box);
+      const id = S.scen;
+      if (P.earth) drawEarth(ctx, box);
+      if (id === 'mat') { drawMaterials(ctx, box, wb); return; }
+      if (id === 'fe') {
+        // two lanes, one magnet each: no lane affects the other
+        const keep = objs;
+        [keep.filter(q => !q.lane), keep.filter(q => q.lane)].forEach((lane, i) => {
+          // each lane is drawn inside its own half only
+          ctx.save(); ctx.beginPath(); ctx.rect(box.x, i ? sy(0) : box.y, box.w, i ? box.y + box.h - sy(0) : sy(0) - box.y); ctx.clip();
+          objs = lane; drawField(ctx, box, { x0: wb.x0, x1: wb.x1, y0: i ? 0 : wb.y0, y1: i ? wb.y1 : 0 });
+          lane.forEach(o => drawObject(ctx, o));
+          ctx.restore();
+        });
+        objs = keep;
+        ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(box.x, sy(0)); ctx.lineTo(box.x + box.w, sy(0)); ctx.stroke(); ctx.setLineDash([]);
+        objs.forEach(o => { if (o.kind !== 'magnet') tag(ctx, o); });
+        return;
       }
-
-      if (el('showCompass').checked) {
-        const gap = 48;
-        for (let gy = gap / 2; gy < H; gy += gap) for (let gx = gap / 2; gx < W; gx += gap) {
-          if (objects.some(o => insideBar(o, gx, gy, 12))) continue;
-          const b = fieldAt(gx, gy, ps);
-          drawNeedle(ctx, gx, gy, b.bx, b.by, 11, 13);
-        }
+      drawField(ctx, box, wb, { noArrows: id === 'a3' && !show.reveal });
+      if (id === 'plot') drawPlot(ctx);
+      objs.forEach((o, i) => drawObject(ctx, o, { sel: id === 'a1' && dragSel === i }));
+      if (id === 'free') drawFree(ctx);
+      if (['nn', 'ss', 'ns'].includes(id)) drawSlide(ctx, box);
+      if (id === 'a3') drawA3(ctx);
+      if (id === 'a1') drawPuzzle(ctx);
+      if (id === 'ind' || id === 'a2') { objs.forEach(o => tag(ctx, o)); drawForceArrows(ctx); }
+      if (id === 'one' || id === 'plot') tag(ctx, objs[0]);
+      if (compass) {
+        const b = compassField(compass.x, compass.y, objs, P.earth);
+        drawNeedle(ctx, sx(compass.x), sy(compass.y), b.bx, b.by, Math.max(14, VIEW.k * 1.5), Math.max(18, VIEW.k * 1.9), 'compass');
+        const r = Math.max(18, VIEW.k * 1.9), X = sx(compass.x), Y = sy(compass.y);
+        labelAt(ctx, id === 'a2' ? 'compass' : 'plotting compass', [[X, Y + r + 12, 'center'], [X, Y - r - 10, 'center'], [X, Y + r + 30, 'center'], [X + r + 4, Y, 'left'], [X - r - 4, Y, 'right']], '#334155', 11);
       }
-
-      objects.forEach((o, i) => drawBar(ctx, o, i === selected && objects.length > 1));
-
-      // force arrows (only when there are two objects)
-      if (objects.length > 1) {
-        objects.forEach((o, i) => {
-          const f = forceOn(o), m = Math.hypot(f.fx, f.fy);
-          if (m < 2e-6) return;
-          const other = objects[1 - i];
-          const toward = (f.fx * (other.x - o.x) + f.fy * (other.y - o.y)) > 0;
-          const len = Math.min(80, 16 + Math.sqrt(m) * 2600, 0.4 * Math.hypot(other.x - o.x, other.y - o.y));
-          const ux = f.fx / m, uy = f.fy / m;
-          const sx = o.x, sy = o.y - (Math.abs(axis(o).x) * BAR_W / 2 + Math.abs(axis(o).y) * BAR_L / 2) - 16;
-          arrow(ctx, sx, sy, sx + ux * len, sy + uy * len, toward ? '#16a34a' : '#d97706', 4, 11);
+    }
+    function tag(ctx, o) {
+      const name = o.name || (o.kind === 'magnet' ? 'bar magnet' : o.kind === 'iron' ? 'soft iron' : o.kind === 'steel' ? 'steel' : 'steel');
+      const ext = Math.abs(Math.sin(o.ang)) * o.L / 2 + Math.abs(Math.cos(o.ang)) * (o.shape === 'u' ? o.H : o.Wd) / 2;
+      labelAt(ctx, name, [[sx(o.x), sy(o.y + ext) + 14, 'center'], [sx(o.x), sy(o.y - ext) - 10, 'center']], '#334155', 11);
+    }
+    function drawEarth(ctx, box) {
+      const x = box.x + box.w - 30, y0 = box.y + 54, y1 = box.y + 16;
+      arrow(ctx, x, y0, x, y1, COL.earth, 2.5, 9);
+      label(ctx, 'north', x, y0 + 12, COL.earth, 'center', 11);
+    }
+    function drawFree(ctx) {
+      const o = objs[0];
+      // the thread it hangs from (seen from above: a dot at its middle)
+      ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(sx(o.x), sy(o.y), 4, 0, Math.PI * 2); ctx.fill();
+      // a faint line pointing north through the middle
+      ctx.strokeStyle = 'rgba(13,148,136,0.45)'; ctx.setLineDash([6, 5]); ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(sx(0), sy(-12)); ctx.lineTo(sx(0), sy(12)); ctx.stroke(); ctx.setLineDash([]);
+      label(ctx, 'hung from a thread, free to turn', sx(0), sy(11.5), '#334155', 'center', 11);
+    }
+    function drawSlide(ctx, box) {
+      const L = objs[0], R = objs[1];
+      // the table's stop at the right edge
+      ctx.fillStyle = '#475569'; ctx.fillRect(sx(STOP_X + R.L / 2), sy(-3), Math.max(4, VIEW.k * 0.5), sy(3) - sy(-3));
+      label(ctx, 'held', sx(L.x), sy(L.y + L.Wd / 2) + 14, '#334155', 'center', 11);
+      label(ctx, 'free to slide', sx(R.x), sy(R.y + R.Wd / 2) + 14, '#334155', 'center', 11);
+      drawForceArrows(ctx);
+    }
+    // force arrows on each object (green: towards the other one; amber: away)
+    function drawForceArrows(ctx) {
+      const pair = objs.length === 2 ? objs : null; if (!pair) return;
+      pair.forEach((o, i) => {
+        const q = pair[1 - i], kd = pairKind(o, q); if (!kd) return;
+        const dir = Math.sign(q.x - o.x) * kd, ext = o.Wd / 2;
+        const y = sy(o.y - ext) - 14, len = Math.min(60, 26 + 8 * VIEW.k / 10);
+        arrow(ctx, sx(o.x) - dir * len / 2, y, sx(o.x) + dir * len / 2, y, kd > 0 ? COL.attract : COL.repel, 4, 11);
+      });
+    }
+    function drawA3(ctx) {
+      const U = objs[0], B = objs[1], fs = faceCentres(U), top = fs[0], bot = fs[1], bf = faceCentres(B), cEnd = bf[0], bEnd = bf[1];
+      // each letter at the first clear spot round its pole
+      const r = show.reveal, k = VIEW.k, put = (txt, p, cands, col) => labelAt(ctx, txt, cands.map(([dx, dy, al]) => [sx(p.x) + dx, sy(p.y) + dy, al || 'center']), col, 13);
+      put('S', top, [[16, -2], [12, -k * 2.2], [-10, -k * 2.2]], COL.S);
+      put(r ? 'A = N' : 'A', bot, [[r ? 26 : 16, 4], [12, k * 2.2], [-12, k * 2.2]], r ? COL.N : '#0f172a');
+      put(r ? 'B = S' : 'B', bEnd, [[-2, -k * 2.6], [-2, k * 2.6], [-6, -k * 2.6 - 16]], r ? COL.S : '#0f172a');
+      put(r ? 'C = N' : 'C', cEnd, [[4, -k * 2.6], [4, k * 2.6], [-6, -k * 2.6]], r ? COL.N : '#0f172a');
+      labelAt(ctx, 'magnet', [[sx(U.x - U.L / 2) - 6, sy(U.y + U.H / 2) + 12, 'left'], [sx(U.x - U.L / 2), sy(U.y - U.H / 2) - 10, 'left']], '#334155', 11);
+    }
+    function drawPuzzle(ctx) {
+      objs.forEach((o, i) => {
+        const p = toWorld(o, 0, 0); ctx.font = 'bold 15px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#0f172a';
+        ctx.fillText(o.name, sx(p.x), sy(p.y)); ctx.textBaseline = 'alphabetic';
+      });
+      // a green or amber arrow on each of two bars that are close, end to end
+      for (let i = 0; i < 3; i++) for (let j = i + 1; j < 3; j++) {
+        const o = objs[i], q = objs[j]; if (endGap(o, q) > 2.2) continue;
+        const kd = pairKind(o, q); if (!kd) continue;
+        [[o, q], [q, o]].forEach(([a, b]) => {
+          const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, ux = dx / d * kd, uy = dy / d * kd, X = sx(a.x), Y = sy(a.y - a.Wd / 2) - 14;
+          arrow(ctx, X - ux * 20, Y - uy * 20, X + ux * 20, Y + uy * 20, kd > 0 ? COL.attract : COL.repel, 4, 11);
         });
       }
-
-      // plotting compass
-      const b = fieldAt(compass.x, compass.y, ps);
-      drawNeedle(ctx, compass.x, compass.y, b.bx, b.by, 19, 24);
-      ctx.fillStyle = '#334155'; ctx.font = '11px Arial'; ctx.textAlign = 'center';
-      const cy2 = compass.y + 38 < H - 2 ? compass.y + 38 : compass.y - 30;
-      ctx.fillStyle = 'rgba(251,252,254,0.9)'; ctx.fillRect(compass.x - 44, cy2 - 10, 88, 14);
-      ctx.fillStyle = '#334155'; ctx.fillText('plotting compass', compass.x, cy2);
     }
-
-    function updateReadout() {
-      const fv = el('forceValue'), iv = el('ironValue');
-      if (objects.length < 2) fv.textContent = 'Only one object';
-      else {
-        const o = objects[1], f = forceOn(o), m = Math.hypot(f.fx, f.fy);
-        const toward = (f.fx * (objects[0].x - o.x) + f.fy * (objects[0].y - o.y)) > 0;
-        fv.textContent = m < 2e-6 ? 'Too far apart to notice' : (toward ? 'Attraction (green arrows)' : 'Repulsion (amber arrows)');
+    function drawPlot(ctx) {
+      const pp = plotCache || (plotCache = plotPath()), n = Math.min(S.step, pp.places.length);
+      // the dots marked so far
+      ctx.fillStyle = COL.plot;
+      pp.dots.slice(0, n).forEach(d => { ctx.beginPath(); ctx.arc(sx(d.x), sy(d.y), 3.5, 0, Math.PI * 2); ctx.fill(); });
+      __pim.plot = { dots: n, places: pp.places.length };
+      if (S.step > pp.places.length) {
+        // joined with a smooth curve, and an arrow in the direction the needle pointed
+        const pts = [pp.places[0]].concat(pp.dots);
+        ctx.strokeStyle = COL.plot; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(sx(pts[0].x - pts[0].ux * NEEDLE), sy(pts[0].y - pts[0].uy * NEEDLE));
+        for (const p of pts) ctx.lineTo(sx(p.x), sy(p.y));
+        ctx.stroke();
+        const m = Math.floor(pts.length / 2), a = pts[m], b = pts[m + 1] || pts[m];
+        headAt(ctx, sx(a.x), sy(a.y), Math.atan2(b.y - a.y, b.x - a.x), COL.plot, 9);
       }
-      const bar = objects.find(o => o.kind !== 'magnet');
-      if (!bar) { el('ironTitle').textContent = 'Induced magnetism'; iv.textContent = 'Choose a soft-iron or steel bar'; }
-      else {
-        el('ironTitle').textContent = bar.kind === 'iron' ? 'Soft-iron bar' : 'Steel bar';
-        if (Math.abs(bar.m) < 0.12) iv.textContent = 'Not magnetised';
-        else {
-          const mag = objects.find(o => o.kind === 'magnet');
-          const u = axis(bar), nEnd = bar.m > 0 ? 1 : -1;
-          const nx = bar.x + u.x * nEnd * BAR_L / 2, ny = bar.y + u.y * nEnd * BAR_L / 2;
-          const sx = bar.x - u.x * nEnd * BAR_L / 2, sy = bar.y - u.y * nEnd * BAR_L / 2;
-          const nearIsN = Math.hypot(nx - mag.x, ny - mag.y) < Math.hypot(sx - mag.x, sy - mag.y);
-          iv.textContent = `Magnetised: near end ${nearIsN ? 'N' : 'S'}, far end ${nearIsN ? 'S' : 'N'}`;
+      // the compass where it is now
+      if (n < pp.places.length && S.step > 0) {
+        const c = pp.places[n - 1] ? pp.places[Math.min(n, pp.places.length - 1)] : pp.places[0];
+        const at = pp.places[n] || pp.places[pp.places.length - 1];
+        drawNeedle(ctx, sx(at.x), sy(at.y), at.ux, at.uy, Math.max(12, VIEW.k * NEEDLE), Math.max(15, VIEW.k * NEEDLE * 1.2), 'plot');
+        void c;
+      } else if (S.step === 0) {
+        const at = pp.places[0];
+        drawNeedle(ctx, sx(at.x), sy(at.y), at.ux, at.uy, Math.max(12, VIEW.k * NEEDLE), Math.max(15, VIEW.k * NEEDLE * 1.2), 'plot');
+      }
+    }
+    // tab 1's materials: wide screens put the magnet on the left and the materials to its right; phones put the magnet on
+    // top and the materials in rows under it, so the blocks stay big enough to read
+    function matLayout(narrow) {
+      if (!narrow) return { view: [3, 1, 50, 26], mag: { x: -9, y: 0 }, tray: i => ({ x: 6 + (i % 4) * 5.5, y: -9 + Math.floor(i / 4) * 4.5 }),
+        rowA: j => ({ x: 6 + j * 5.5, y: 6.5 }), rowN: j => ({ x: 6 + j * 5.5, y: 11.5 }), lab: { test: [4.6, -11.6], a: [3.2, 3.9], n: [3.2, 8.9] } };
+      return { view: [0, 0.5, 25, 31], mag: { x: -4, y: -11 }, tray: i => ({ x: -8.25 + (i % 4) * 5.5, y: -4 + Math.floor(i / 4) * 4 }),
+        rowA: j => ({ x: -8.25 + j * 5.5, y: 6.5 }), rowN: j => ({ x: -8.25 + j * 5.5, y: 12 }), lab: { test: [-10.5, -6.6], a: [-10.5, 3.9], n: [-10.5, 9.4] } };
+    }
+    let MATL = matLayout(false);
+    function drawMaterials(ctx, box, wb) {
+      drawObject(ctx, objs[0]); tag(ctx, objs[0]);
+      const o = objs[0], nFace = faceCentres(o).find(f => f.s > 0), L = MATL;
+      // the tray (untested), then two rows: attracted, not attracted
+      __pim.blocks = [];
+      const tray = L.tray, rowA = L.rowA, rowN = L.rowN;
+      label(ctx, 'To test', sx(L.lab.test[0]), sy(L.lab.test[1]), '#334155', 'left', 11);
+      label(ctx, 'Attracted', sx(L.lab.a[0]), sy(L.lab.a[1]), COL.attract, 'left', 11);
+      label(ctx, 'Not attracted', sx(L.lab.n[0]), sy(L.lab.n[1]), '#b45309', 'left', 11);
+      const done = mats.order, at = { yes: 0, no: 0 };
+      const posOf = {};
+      done.forEach(id => { const M = MATS.find(m => m.id === id); posOf[id] = M.mag ? rowA(at.yes++) : rowN(at.no++); });
+      MATS.forEach((M, i) => {
+        let p = posOf[M.id] || tray(i);
+        if (testing && testing.id === M.id) {
+          const t = testing.t, from = tray(i), test = { x: nFace.x + 4.5, y: nFace.y }, stuck = { x: nFace.x + 1.85, y: nFace.y };
+          if (t < 0.6) { const u = smooth(t / 0.6); p = { x: from.x + (test.x - from.x) * u, y: from.y + (test.y - from.y) * u }; }
+          else if (t < 0.9) { const u = smooth((t - 0.6) / 0.3); p = M.mag ? { x: test.x + (stuck.x - test.x) * u, y: test.y } : test; }
+          else p = M.mag ? stuck : test;
         }
+        // a block at least as wide as its name (on a phone the name sets the width)
+        ctx.font = `bold ${Math.max(9, Math.min(12, VIEW.k * 0.9))}px Arial`;
+        const bw = Math.max(3.6 * VIEW.k, ctx.measureText(M.name).width + 6), bh = 2.2 * VIEW.k;
+        ctx.fillStyle = M.col; ctx.fillRect(sx(p.x) - bw / 2, sy(p.y) - bh / 2, bw, bh);
+        ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1; ctx.strokeRect(sx(p.x) - bw / 2, sy(p.y) - bh / 2, bw, bh);
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'white';
+        ctx.fillText(M.name, sx(p.x), sy(p.y)); ctx.textBaseline = 'alphabetic';
+        __pim.blocks = (__pim.blocks || []).concat([{ name: M.name, x: sx(p.x) - bw / 2, y: sy(p.y) - bh / 2, w: bw, h: bh, text: ctx.measureText(M.name).width }]);
+      });
+    }
+    function drawGraph(ctx, G) {
+      const pad = { l: 44, r: 12, t: 26, b: 36 }, gx = G.x + pad.l, gy = G.y + pad.t, gw = G.w - pad.l - pad.r, gh = G.h - pad.t - pad.b;
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(gx, gy + gh); ctx.lineTo(gx + gw, gy + gh); ctx.stroke();
+      const X = t => gx + t / P.T * gw, Y = v => gy + gh - v / 100 * gh;
+      ctx.font = '11px Arial'; ctx.fillStyle = '#334155'; ctx.textAlign = 'right';
+      for (const v of [0, 50, 100]) { ctx.fillText(v + '%', gx - 5, Y(v) + 4); ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(gx, Y(v)); ctx.lineTo(gx + gw, Y(v)); ctx.stroke(); }
+      ctx.textAlign = 'center';
+      // the axis numbers are obstacles, so no line name is put on top of them
+      for (let t = 0; t <= P.T; t++) { ctx.fillText(String(t), X(t), gy + gh + 14); obstacle(X(t) - 5, gy + gh + 4, 10, 13); }
+      for (const v of [0, 50, 100]) obstacle(gx - 36, Y(v) - 7, 32, 13);
+      label(ctx, 'time / s', gx + gw / 2, gy + gh + 28, '#334155', 'center', 11, null);
+      label(ctx, 'magnetism of the bar (page’s own scale)', G.x + 6, G.y + 10, '#334155', 'left', 11, null);
+      if (!traj) return;
+      const upto = Math.round(sim.t / DT), series = [[0, COL.iron, 'soft iron'], [1, '#1f2937', 'steel']];
+      series.forEach(([k, col]) => {
+        ctx.strokeStyle = col; ctx.lineWidth = 2.5; ctx.beginPath();
+        for (let i = 0; i <= upto && i < traj.ts.length; i += 2) { const v = Math.abs(traj.ms[i][k]) / M_MAX[k ? 'steel' : 'iron'] * 100; if (i === 0) ctx.moveTo(X(traj.ts[i]), Y(v)); else ctx.lineTo(X(traj.ts[i]), Y(v)); }
+        ctx.stroke();
+      });
+      // the two lines' names at the right moment so they never sit on each other
+      const ms = sampleAt(traj.ms, sim.t), vi = Math.abs(ms[0]) / M_MAX.iron * 100, vs = Math.abs(ms[1]) / M_MAX.steel * 100;
+      if (sim.t > 0.3) {
+        const xi = X(sim.t), up = vs >= vi;
+        labelAt(ctx, 'steel', [[xi - 4, Y(vs) + (up ? -12 : 14), 'right'], [xi - 4, Y(vs) + (up ? 14 : -12), 'right']], '#1f2937', 11);
+        labelAt(ctx, 'soft iron', [[xi - 4, Y(vi) + (up ? 14 : -12), 'right'], [xi - 4, Y(vi) + (up ? -12 : 14), 'right'], [xi - 4, Y(vi) - 26, 'right'], [xi - 40, Y(vi) - 12, 'right']], '#475569', 11);
       }
-      const b = fieldAt(compass.x, compass.y, allPoles());
-      const deg = (Math.atan2(-b.by, b.bx) * 180 / Math.PI + 360) % 360;
-      el('compassValue').textContent = Math.hypot(b.bx, b.by) < 1e-7 ? 'No clear direction (neutral point)' : `N end points at ${deg.toFixed(0)}° (0° = right)`;
     }
 
-    // ---------- interaction ----------
-    let drag = null;
-    function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    /* ---------------- dragging ---------------- */
+    let drag = null, dragSel = null;
+    const canDrag = () => ['free', 'one', 'nn', 'ss', 'ns', 'a1', 'ind'].includes(S.scen) && !sim.running && !testing;
+    function pos(e) { const r = canvas.getBoundingClientRect(); return toWorldPt(e.clientX - r.left, e.clientY - r.top); }
     function pick(p) {
-      if (Math.hypot(p.x - compass.x, p.y - compass.y) < 28) return { kind: 'compass' };
-      for (let i = objects.length - 1; i >= 0; i--) {
-        const o = objects[i];
-        if (insideBar(o, p.x, p.y, 8)) {
-          const l = toLocal(o, p.x, p.y);
-          return { kind: Math.abs(l.a) > BAR_L * 0.3 ? 'turn' : 'move', i };
-        }
+      if (compass && S.scen === 'one' && Math.hypot(p.x - compass.x, p.y - compass.y) < 2.2) return { kind: 'compass' };
+      for (let i = objs.length - 1; i >= 0; i--) {
+        const o = objs[i];
+        if (o.held && ['nn', 'ss', 'ns'].includes(S.scen)) { /* the held magnet can still be moved before the run */ }
+        if (inside(o, p.x, p.y, 0.6)) { const l = toLocal(o, p.x, p.y); return { kind: (S.scen === 'free' || Math.abs(l.a) > o.L * 0.3) && !['nn', 'ss', 'ns', 'ind'].includes(S.scen) ? 'turn' : 'move', i }; }
       }
       return null;
     }
     canvas.addEventListener('pointerdown', e => {
+      if (S.scen === 'mat') {
+        const p = pos(e); MATS.forEach((M, i) => { const t = MATL.tray(i); if (!mats[M.id].done && Math.abs(p.x - t.x) < 2.2 && Math.abs(p.y - t.y) < 1.4) testMaterial(M.id); });
+        return;
+      }
+      if (!canDrag()) return;
       const p = pos(e), hit = pick(p); if (!hit) return;
-      if (hit.kind !== 'compass') selected = hit.i;
-      const o = hit.kind === 'compass' ? compass : objects[hit.i];
-      drag = { ...hit, dx: o.x - p.x, dy: o.y - p.y, grabAng: hit.kind === 'turn' ? Math.atan2(p.y - o.y, p.x - o.x) - o.ang : 0 };
-      canvas.setPointerCapture(e.pointerId); e.preventDefault();
+      if (hit.kind !== 'compass') dragSel = hit.i;
+      const o = hit.kind === 'compass' ? compass : objs[hit.i];
+      drag = { ...hit, dx: o.x - p.x, dy: o.y - p.y, grab: hit.kind === 'turn' ? Math.atan2(p.y - o.y, p.x - o.x) - o.ang : 0 };
+      canvas.setPointerCapture(e.pointerId); e.preventDefault(); clearFeatNoteOnly();
     });
     canvas.addEventListener('pointermove', e => {
       const p = pos(e);
-      if (!drag) { const h = pick(p); canvas.style.cursor = !h ? 'default' : h.kind === 'turn' ? 'alias' : 'grab'; return; }
+      if (!drag) { const h = S.scen !== 'mat' && canDrag() ? pick(p) : null; canvas.style.cursor = !h ? 'default' : h.kind === 'turn' ? 'alias' : 'grab'; return; }
       canvas.style.cursor = 'grabbing';
-      if (drag.kind === 'compass') {
-        compass.x = Math.max(24, Math.min(W - 24, p.x + drag.dx)); compass.y = Math.max(24, Math.min(H - 24, p.y + drag.dy));
+      const v = P.view, lim = { x0: v[0] - v[2] / 2 + 2, x1: v[0] + v[2] / 2 - 2, y0: v[1] - v[3] / 2 + 2, y1: v[1] + v[3] / 2 - 2 };
+      if (drag.kind === 'compass') { compass.x = Math.max(lim.x0, Math.min(lim.x1, p.x + drag.dx)); compass.y = Math.max(lim.y0, Math.min(lim.y1, p.y + drag.dy)); update(); return; }
+      const o = objs[drag.i], prev = { x: o.x, y: o.y, ang: o.ang };
+      if (drag.kind === 'move') {
+        o.x = Math.max(lim.x0, Math.min(lim.x1, p.x + drag.dx));
+        if (!['nn', 'ss', 'ns', 'ind'].includes(S.scen)) o.y = Math.max(lim.y0, Math.min(lim.y1, p.y + drag.dy));
+        if (['nn', 'ss', 'ns'].includes(S.scen) && drag.i === 1) o.x = Math.min(o.x, STOP_X);
+      } else {
+        o.ang = Math.atan2(p.y - o.y, p.x - o.x) - drag.grab;
+        if (S.scen === 'free') { let d = (o.ang + Math.PI / 2) / DEG; d = ((d % 360) + 360) % 360; if (d > 180) d -= 360; d = Math.max(-170, Math.min(170, d)); P.phi0 = Math.round(d); o.ang = -Math.PI / 2 + P.phi0 * DEG; }
+      }
+      if (objs.some(q => q !== o && overlap(o, q))) Object.assign(o, prev);
+      if (isRun()) { traj = null; buildRun(); sim.t = 0; }
+      if (S.scen === 'a1') puzzleObserve();
+      syncInputs(); update();
+    });
+    const endDrag = () => { drag = null; };
+    canvas.addEventListener('pointerup', endDrag);
+    canvas.addEventListener('pointercancel', endDrag);
+
+    /* ---------------- experimental controls ---------------- */
+    function buildInputs() {
+      const box = $('inputs'), id = S.scen, h = [];
+      const tg = (k, txt) => `<label class="toggle"><input type="checkbox" data-show="${k}"${show[k] ? ' checked' : ''}> ${txt}</label>`;
+      if (id === 'free') h.push(`<div class="control-group wide label-row"><label for="phi0">Start: N-pole turned from north (<span id="phi0v">${minus(P.phi0)}</span>°)</label><input type="range" id="phi0" min="-170" max="170" step="5" value="${P.phi0}"></div>`);
+      if (['one', 'nn', 'ss', 'ns', 'ind', 'a2', 'brk', 'a3', 'a1'].includes(id) && P.nPer) h.push(tg('lines', 'Field lines'));
+      if (['one', 'ind', 'a2', 'brk', 'nn', 'ss', 'ns'].includes(id)) h.push(tg('filings', 'Iron filings'));
+      if (['one', 'ind', 'nn', 'ss', 'ns'].includes(id)) h.push(tg('compasses', 'Plotting compasses'));
+      if (id === 'one') h.push('<button type="button" class="secondary" id="flipBtn">Turn the magnet round</button>');
+      if (id === 'plot') h.push(tg('plotLines', 'Show the field lines'));
+      if (id === 'a3') h.push(tg('reveal', 'Show the poles and the arrows'));
+      if (id === 'a1') h.push('<button type="button" class="secondary" id="turnBtn">Turn the selected bar round</button>');
+      if (id === 'mat') { MATS.forEach(M => h.push(`<button type="button" class="mat" data-mat="${M.id}">Test: ${M.name}</button>`)); h.push('<button type="button" class="secondary" id="matReset">Put them all back</button>'); }
+      box.innerHTML = h.join('');
+      $('expBlock').hidden = !h.length;
+      box.querySelectorAll('[data-show]').forEach(c => c.addEventListener('change', () => { show[c.dataset.show] = c.checked; if (c.dataset.show === 'plotLines') show.lines = c.checked; update(); }));
+      if ($('phi0')) $('phi0').addEventListener('input', e => { P.phi0 = +e.target.value; objs = startObjects('free'); traj = null; buildRun(); sim.t = 0; sim.running = false; applyRun(0); update(); });
+      if ($('flipBtn')) $('flipBtn').addEventListener('click', () => { objs[0].ang += Math.PI; lineKey = ''; update(); });
+      if ($('turnBtn')) $('turnBtn').addEventListener('click', () => { const o = objs[dragSel == null ? 0 : dragSel]; const prev = o.ang; o.ang += Math.PI; if (objs.some(q => q !== o && overlap(o, q))) o.ang = prev; puzzleObserve(); update(); });
+      box.querySelectorAll('[data-mat]').forEach(b => b.addEventListener('click', () => testMaterial(b.dataset.mat)));
+      if ($('matReset')) $('matReset').addEventListener('click', () => { resetMats(); update(); });
+    }
+    function syncInputs() {
+      if ($('phi0') && document.activeElement !== $('phi0')) $('phi0').value = P.phi0;
+      if ($('phi0v')) $('phi0v').textContent = minus(P.phi0);
+      document.querySelectorAll('[data-mat]').forEach(b => { b.disabled = !mats || mats[b.dataset.mat].done || !!testing; });
+      if (S.scen === 'plot') { const c = document.querySelector('[data-show="plotLines"]'); if (c) c.checked = show.plotLines; }
+      if (S.scen === 'a3') { const c = document.querySelector('[data-show="reveal"]'); if (c) c.checked = show.reveal; }
+    }
+
+    /* ---------------- readouts ---------------- */
+    function dirWords(bx, by) {
+      // a direction on the screen in words (up = north on the pages that show the Earth)
+      const a = Math.atan2(by, bx) / DEG, n = ((a % 360) + 360) % 360;
+      const names = ['right', 'down and right', 'down', 'down and left', 'left', 'up and left', 'up', 'up and right'];
+      return names[Math.round(n / 45) % 8];
+    }
+    function card(t, v, key) { return `<div class="readout-card${hl[key] ? ' hl' : ''}"><div class="title">${t}</div><div class="value">${v}</div></div>`; }
+    function freeAngle() { const o = objs[0]; let d = (o.ang + Math.PI / 2) / DEG; d = ((d % 360) + 540) % 360 - 180; return d; }
+    function readouts() {
+      const id = S.scen, out = [], el = $('readout'); let words = '', work = '';
+      el.className = 'readout';
+      if (id === 'free') {
+        const d = freeAngle(), settled = sim.t >= runEnd() - 1e-9;
+        out.push(card('Time', `${sim.t.toFixed(2)} s`, 't'), card('N-pole turned from north', `${minus(Math.abs(d) < 0.05 ? '0.0' : d.toFixed(1))}°`, 'ang'),
+          card('Pointing', Math.abs(d) < 2 ? 'north' : d > 0 ? 'east of north' : 'west of north', 'pt'));
+        words = sim.t === 0 ? 'Press Start to let the magnet go.' : settled ? `It has come to rest with its N-pole pointing north (${minus(d.toFixed(1))}° from north): the north-seeking pole.` : 'The Earth’s magnetic field turns the magnet; it swings past north, back, and settles.';
+      } else if (id === 'brk') {
+        const n = objs.length;
+        out.push(card('Pieces', String(n), 'n'), card('Poles on each piece', 'one N-pole and one S-pole', 'p'), card('Poles in all', String(2 * n), 'all'));
+        work = `<ol class="steps-list">${steps().map((s, i) => `<li class="${i < S.step ? 'lit' : ''}">${i < S.step ? s.h : '…'}</li>`).join('')}</ol>`;
+      } else if (id === 'mat') {
+        const done = mats.order, yes = done.filter(i => MATS.find(m => m.id === i).mag).map(i => MATS.find(m => m.id === i).name), no = done.filter(i => !MATS.find(m => m.id === i).mag).map(i => MATS.find(m => m.id === i).name);
+        out.push(card('Tested', `${done.length} of ${MATS.length}`, 'n'), card('Attracted (magnetic materials)', yes.join(', ') || '—', 'y'), card('Not attracted (non-magnetic)', no.join(', ') || '—', 'no'));
+        words = testing ? `Testing: ${MATS.find(m => m.id === testing.id).name}…` : done.length === MATS.length ? 'Iron, nickel, cobalt and steel are attracted: magnetic materials. Copper is a metal but is not attracted: not all metals are magnetic materials.' : 'Tap a material (on the drawing or a Test button) to bring it near the N-pole.';
+      } else if (id === 'one') {
+        const b = compassField(compass.x, compass.y, objs, false), o = objs[0], v = { x: -Math.sin(o.ang), y: Math.cos(o.ang) };
+        const ref = compassField(o.x + v.x * (o.Wd / 2 + 4), o.y + v.y * (o.Wd / 2 + 4), objs, false), ratio = Math.hypot(b.bx, b.by) / Math.hypot(ref.bx, ref.by);
+        out.push(card('Compass: N end of the needle points', dirWords(b.bx, b.by), 'dir'), card('Field strength at the compass', `${ratio < 10 ? ratio.toFixed(1) : ratio.toFixed(0)} × the field 2.0 cm beside the middle`, 'str'),
+          card('Field lines here', ratio > 3 ? 'close together' : ratio > 0.8 ? 'fairly close' : 'spread out', 'dens'));
+        words = 'Drag the plotting compass. Its N end points along the field line through it, away from the N-pole and towards the S-pole.';
+      } else if (id === 'plot') {
+        const pp = plotCache || (plotCache = plotPath());
+        out.push(card('Dots marked', `${Math.min(S.step, pp.places.length)} of ${pp.places.length}`, 'n'), card('Needle’s N end points', S.step <= pp.places.length ? 'along the field' : '—', 'd'), card('Line drawn', S.step > pp.places.length ? 'N-pole → S-pole' : 'not yet', 'l'));
+        work = `<ol class="steps-list">${steps().map((s, i) => `<li class="${i < S.step ? 'lit' : ''}">${i < S.step ? s.h : '…'}</li>`).slice(Math.max(0, S.step - 3), S.step + 1).join('')}</ol>`;
+      } else if (['nn', 'ss', 'ns'].includes(id)) {
+        const L = objs[0], R = objs[1], kd = pairKind(R, L), g = gapBetween(L, R) * CM, end = sim.t >= runEnd() - 1e-9 && sim.t > 0;
+        out.push(card('Force between the magnets', kd > 0 ? 'attraction' : kd < 0 ? 'repulsion' : 'too far apart to notice', 'f'), card('Gap between the facing poles', `${g.toFixed(1)} cm`, 'g'),
+          card('Right-hand magnet', sim.t === 0 ? 'held still' : end ? (traj.end === 'touch' ? 'touching' : traj.end === 'stop' ? 'at the stop' : 'stopped') : 'moving', 'm'));
+        words = sim.t === 0 ? 'Press Start to let go of the right-hand magnet.' : end ? (kd > 0 || traj.end === 'touch' ? 'Unlike poles attract: the magnet was pulled in until the two touched.' : 'Like poles repel: the magnet was pushed away.') : '';
+      } else if (id === 'a3') {
+        out.push(card('Pole at A', show.reveal ? 'N' : '?', 'A'), card('Pole at B', show.reveal ? 'S' : '?', 'B'), card('Pole at C', show.reveal ? 'N' : '?', 'C'));
+        words = show.reveal ? 'Field lines go from N-poles to S-poles. Lines from A run into the top tip (S), so A is N; lines run from A into B, so B is S; and lines from C run round to the top tip, so C is N.' : 'Lines join unlike poles. Lines between like poles bend away from each other. Decide A, B and C, then tick “Show the poles and the arrows”.';
+      } else if (id === 'a1') {
+        el.className = 'readout n2';
+        const pairs = [];
+        for (let i = 0; i < 3; i++) for (let j = i + 1; j < 3; j++) if (endGap(objs[i], objs[j]) <= 2.2) { const k = pairKind(objs[i], objs[j]); if (k) pairs.push(`${BAR_NAMES[i]} and ${BAR_NAMES[j]}: ${k > 0 ? 'attract' : 'repel'}`); }
+        out.push(card('Ends close together now', pairs.join('; ') || 'none', 'now'), card('Pairs that have repelled', Object.entries(puzzle.seen).filter(([, s]) => s.r).map(([k]) => `${k[0]} and ${k[1]}`).join(', ') || 'none yet', 'rep'));
+        renderPuzzle();
+      } else if (id === 'ind') {
+        const ir = objs[1], M = objs[0], kd = pairKind(ir, M);
+        out.push(card('Soft-iron bar', Math.abs(ir.m) < SHOW_M ? 'not magnetised' : `magnetised: near end ${nearPole(ir, M)}, far end ${nearPole(ir, M) === 'N' ? 'S' : 'N'}`, 'm'),
+          card('Magnet’s pole facing the bar', facingPole(M, ir), 'face'), card('Force on the bar', kd > 0 ? 'attraction' : kd < 0 ? 'repulsion' : 'too weak to notice', 'f'));
+        words = Math.abs(ir.m) < SHOW_M ? 'Drag the magnet towards the soft-iron bar.' : `The end of the iron bar nearer to the ${facingPole(M, ir)}-pole of the magnet becomes an ${nearPole(ir, M)}-pole: induced magnetism. So the bar is attracted.`;
+      } else if (id === 'a2') {
+        const ir = objs[1], M = objs[0], b = compassField(compass.x, compass.y, objs, true);
+        out.push(card('Soft-iron bar', Math.abs(ir.m) < SHOW_M ? 'not magnetised' : `left end ${nearPole(ir, M)}, right end ${nearPole(ir, M) === 'N' ? 'S' : 'N'}`, 'm'),
+          card('Compass: N end of the needle points', dirWords(b.bx, b.by), 'dir'), card('Time', `${sim.t.toFixed(1)} s`, 't'));
+        words = sim.t === 0 ? 'Press Start to bring the S-pole of the magnet near the soft-iron bar.' : sim.t >= runEnd() - 1e-9 ? 'The S-pole induces an N-pole in the near (left) end of the bar, and an S-pole in its right end. The compass needle follows the field direction, towards that S-pole: it points to the left.' : '';
+      } else if (id === 'fe') {
+        el.className = 'readout n4';
+        const fe = objs.find(q => q.kind === 'iron'), st = objs.find(q => q.kind === 'steel'), t = sim.t;
+        const where = t === 0 ? 'far away' : t < 3 - 1e-9 ? 'moving closer' : t <= 4 + 1e-9 ? 'nearest' : t < 7 - 1e-9 ? 'moving away' : 'far away again';
+        out.push(card('Magnets', where, 'w'), card('Soft iron', `${(Math.abs(fe.m) / M_MAX.iron * 100).toFixed(0)}%`, 'fe'), card('Steel', `${(Math.abs(st.m) / M_MAX.steel * 100).toFixed(0)}%`, 'st'), card('Time', `${t.toFixed(1)} s`, 't'));
+        words = t >= runEnd() - 1e-9 ? 'With the magnets taken away, the soft iron has lost its magnetism; the steel keeps it. Iron: easy to magnetise, loses it easily (soft). Steel: harder to magnetise, does not lose it easily (hard).' : '';
+      }
+      el.innerHTML = out.join('');
+      $('words').innerHTML = words; $('work').innerHTML = work;
+    }
+    // the pole an induced bar has at the end nearer the magnet, and the magnet's pole facing it
+    function nearPole(b, M) { const f = faceCentres(b); const near = f.reduce((a, c) => (Math.hypot(c.x - M.x, c.y - M.y) < Math.hypot(a.x - M.x, a.y - M.y) ? c : a)); return near.s > 0 ? 'N' : 'S'; }
+    function facingPole(M, b) { const f = faceCentres(M); const near = f.reduce((a, c) => (Math.hypot(c.x - b.x, c.y - b.y) < Math.hypot(a.x - b.x, a.y - b.y) ? c : a)); return near.s > 0 ? 'N' : 'S'; }
+
+    function update() {
+      if (S.scen !== 'fe' && S.scen !== 'a1' && S.scen !== 'mat' && !isRun()) updateInduced(objs);
+      if (S.scen === 'a1') { updateInduced(objs); puzzleObserve(); }
+      draw(); readouts(); syncInputs();
+      const run = isRun(), st = isSteps();
+      $('simGroup').hidden = !run; $('moments').hidden = !run;
+      $('stepGroup').hidden = !st;
+      if (run) {
+        const end = runEnd(), mid = sim.t > 1e-9 && sim.t < end - 1e-9;
+        $('pauseBtn').textContent = !sim.running && mid ? 'Play' : 'Pause';
+        $('pauseBtn').disabled = !sim.running && !mid;
+        $('startBtn').disabled = sim.running;
+        const km = keyMoments();
+        $('prevMoment').disabled = !km.some(m => m < sim.t - 1e-9); $('nextMoment').disabled = !km.some(m => m > sim.t + 1e-9);
+        $('speedNote').textContent = 'The clock runs in real time.';
+      }
+      if (st) { const n = nSteps(); $('stepNo').textContent = `(${Math.min(S.step, n)} of ${n})`; $('prevStep').disabled = S.step <= 0; $('nextStep').disabled = S.step >= n; $('stepReset').disabled = S.step === 0; }
+      $('puzzleBox').hidden = S.scen !== 'a1';
+    }
+    const HINTS = { one: 'Drag the plotting compass. Drag the middle of the magnet to move it, or near an end to turn it.', plot: 'Press Next to move the compass and mark the next dot.',
+      free: 'Drag the magnet to turn it before you press Start.', brk: 'Press Next to break the magnet.', mat: 'Tap a material to bring it near the N-pole.',
+      nn: 'Before Start, drag either magnet to change the gap.', ss: 'Before Start, drag either magnet to change the gap.', ns: 'Before Start, drag either magnet to change the gap.',
+      a3: 'Look at which poles the lines join.', a1: 'Drag the bars end to end; drag near an end to turn a bar. Tap a bar to select it for the Turn button.',
+      ind: 'Drag the magnet towards the bar and away again.', a2: 'Press Start: the magnet slides in from the left.', fe: 'Press Start: the magnets slide in, stay, then slide away.' };
+    function chooseScenario(id) { loadScenario(id); clearFeat(); buildInputs(); $('sceneHint').textContent = HINTS[id] || ''; update(); }
+    presetEl.addEventListener('change', () => chooseScenario(presetEl.value));
+
+    /* ---------------- the tabs ---------------- */
+    const KEYS = { N: [COL.N, 'N-pole', 'blk'], S: [COL.S, 'S-pole', 'blk'], line: ['#475569', 'Magnetic field line'], attract: [COL.attract, 'Attraction'], repel: [COL.repel, 'Repulsion'],
+      earth: [COL.earth, 'North (the Earth’s magnetic field)'], plot: [COL.plot, 'Dots marked with a plotting compass', 'dot'], iron: [COL.iron, 'Soft iron', 'blk'], steel: [COL.steel, 'Steel', 'blk'] };
+    const TABS = {
+      1: { strip: 'Answer Predict first. Then let a magnet turn freely, break a magnet into pieces, and test which materials a magnet attracts.',
+        presets: ['free', 'brk', 'mat'], hint: 'Drag the magnet to turn it before you press Start.', key: ['N', 'S', 'earth', 'line'],
+        notes: ['The magnetism of a magnet is strongest near its ends. These are called the poles of the magnet (notes p. 8-4).',
+          'If a magnet is free to turn in a horizontal plane, one end of the magnet points north. This end is called the north-seeking pole or north pole (N-pole); the other end is the south-seeking pole or south pole (S-pole) (p. 8-4).',
+          'A magnet can therefore be used as a compass for navigation (p. 8-4).',
+          'All magnets have two magnetic poles. If a piece of magnet is broken into two pieces, each piece will also have two magnetic poles (p. 8-5).',
+          'Magnets attract iron, nickel, cobalt and certain alloys such as steel: magnetic materials. Copper, wood and plastic are not attracted: non-magnetic materials. Not all metals are magnetic materials (p. 8-7).'] },
+      2: { strip: 'Answer Predict first. Then drag the plotting compass round the magnet, switch on compasses or iron filings, and plot a field line step by step.',
+        presets: ['one', 'plot'], hint: 'Drag the plotting compass. Drag the middle of the magnet to move it, or near an end to turn it.', key: ['N', 'S', 'line', 'plot'],
+        notes: ['The region around a magnet where its magnetic influence may be detected is known as the magnetic field of the magnet (notes p. 8-11).',
+          'This magnetic field may be shown by sprinkling iron filings around the magnet or by using plotting compasses (p. 8-11).',
+          'A magnetic field is represented graphically by magnetic field lines (p. 8-12).',
+          'The field lines form closed loops. They emerge from the N-pole of the magnet and enter at the S-pole (p. 8-12).',
+          'The denser the field lines, the stronger the field (p. 8-12).'] },
+      3: { strip: 'Answer Predict first. Then let go of a magnet near another one, label the poles in Tutorial A3, and find the two magnets in Tutorial A1.',
+        presets: ['nn', 'ss', 'ns', 'a3', 'a1'], hint: 'Before Start, drag either magnet to change the gap.', key: ['N', 'S', 'line', 'attract', 'repel'],
+        notes: ['Poles exert magnetic forces on one another (notes p. 8-6).',
+          'Like poles (2 norths or 2 souths) repel each other (p. 8-6).',
+          'Unlike poles (1 north and 1 south) attract each other (p. 8-6).',
+          'Magnetic field lines go from north to south (outside the magnet) (Tutorial 8, A3 worked solution).',
+          'Repulsion is the only sure test, because a magnet attracts an unmagnetised bar too (Tutorial 8, A1 worked solution).'] },
+      4: { strip: 'Answer Predict first. Then bring a magnet near a soft-iron bar, watch the compass in Tutorial A2, and compare soft iron with steel.',
+        presets: ['ind', 'a2', 'fe'], hint: 'Drag the magnet towards the bar and away again.', key: ['N', 'S', 'line', 'iron', 'steel', 'attract'],
+        notes: ['When a piece of unmagnetised magnetic material (such as iron) is brought near to the pole of a magnet, it becomes a magnet itself: induced magnetism (notes p. 8-9).',
+          'An iron bar becomes an induced magnet when the S-pole of a magnet is brought near to it: the end nearer to the S-pole becomes an N-pole, the other end an S-pole (p. 8-9).',
+          'Iron, which is easier to magnetise but loses its magnetism easily, is called a soft magnetic material (p. 8-10).',
+          'Steel, which is harder to magnetise but does not lose its magnetism easily, is called a hard magnetic material (p. 8-10).',
+          'How quickly each bar gains or loses its magnetism on this page is the page’s own model, to show the difference.'] },
+      5: { strip: 'Answer every question, then read the summary.', key: [] }
+    };
+    const PREDICT = {
+      1: { q: 'A bar magnet is broken into two pieces. Each piece …',
+        opts: ['has an N-pole and an S-pole', 'has only one pole: one piece N, the other S', 'has no poles', 'has two N-poles'], ans: 0,
+        why: 'All magnets have two magnetic poles: each piece will also have two magnetic poles (notes p. 8-5). Choose “Break a magnet into pieces” to see.' },
+      2: { q: 'A plotting compass is placed just beyond the N-pole of a bar magnet, on the magnet’s axis. The N end of its needle points …',
+        opts: ['away from the magnet', 'towards the magnet', 'across, at right angles to the magnet'], ans: 0,
+        why: 'Field lines emerge from the N-pole (notes p. 8-12), and the compass needle follows the magnetic field direction. Drag the compass there to check.' },
+      3: { q: 'Two bar magnets lie end to end on a smooth table with their S-poles facing. When they are let go, they …',
+        opts: ['move apart', 'move together', 'stay where they are'], ans: 0,
+        why: 'Like poles (2 souths) repel each other (notes p. 8-6). Choose “Like poles facing: S and S” and press Start.' },
+      4: { q: 'A magnet is brought close to a soft-iron bar and to a steel bar, then taken away. Which bar stays magnetised?',
+        opts: ['the steel bar', 'the soft-iron bar', 'both bars', 'neither bar'], ans: 0,
+        why: 'Iron loses its magnetism easily (soft); steel does not lose its magnetism easily (hard) (notes p. 8-10). Choose “Soft iron and steel” and press Start.' }
+    };
+    const FEATS = {
+      1: [['north', 'The N-pole points north'], ['ends', 'Strongest near the ends'], ['two', 'Every piece has two poles'], ['metal', 'Not every metal: copper']],
+      2: [['out', 'Lines leave N, enter S'], ['loop', 'Closed loops'], ['dense', 'Denser lines: stronger field'], ['follow', 'A compass follows the lines']],
+      3: [['repel', 'Like poles repel'], ['attract', 'Unlike poles attract'], ['bent', 'Like poles: lines bend apart'], ['join', 'Unlike poles: lines join up'], ['test', 'A1: only repulsion proves it']],
+      4: [['near', 'Near end: the opposite pole'], ['pulled', 'So the bar is attracted'], ['soft', 'Soft iron loses it'], ['hard', 'Steel keeps it']]
+    };
+    const PROMPTS = {
+      1: ['Why is the north-seeking pole called that?', 'If you keep breaking a magnet, can you ever get a piece with one pole?', 'Is every metal a magnetic material?'],
+      2: ['Where are the field lines closest together? What does that tell you?', 'Why do field lines never cross?', 'How does a plotting compass show the direction of a field line?'],
+      3: ['How can you tell from the field lines that two poles attract?', 'In Tutorial A3, which pairs of poles are joined by lines?', 'Why does attraction not prove that a bar is a magnet?'],
+      4: ['Which end of the iron bar becomes an N-pole, and why?', 'Why would you make a permanent magnet from steel?', 'Why is soft iron used for the core of an electromagnet?'],
+      5: ['Which question did most of the class get wrong, and why?', 'Pick one wrong option: what mistake would lead a student to choose it?']
+    };
+
+    let predictPick = null;
+    function clearFeat() { feat = {}; hl = {}; syncFeatButtons(); $('featNote').textContent = ''; }
+    function clearFeatNoteOnly() { if (Object.keys(feat).length) clearFeat(); }
+    function syncFeatButtons() { document.querySelectorAll('#feats .feat').forEach(b => b.classList.toggle('on', !!feat[b.dataset.f])); }
+    // a key feature shows itself: it always reloads its scenario, then sets what shows it
+    function tapFeat(id) {
+      const on = !feat[id];
+      const want = scen => { presetEl.value = scen; chooseScenario(scen); };
+      clearFeat();
+      if (on) {
+        ({
+          north: () => { want('free'); setTime(runEnd()); hl = { ang: true }; },
+          ends: () => { want('brk'); show.filings = true; show.lines = false; buildInputs(); hl = {}; },
+          two: () => { want('brk'); S.step = 2; objs = brkPieces(2); lineKey = ''; hl = { p: true }; },
+          metal: () => { want('mat'); testMaterial('copper'); hl = { no: true }; },
+          out: () => { want('one'); compass.x = 9.6; compass.y = 0; hl = { dir: true }; },
+          loop: () => { want('one'); hl = {}; },
+          dense: () => { want('one'); compass.x = 8.2; compass.y = 1.5; hl = { str: true, dens: true }; },
+          follow: () => { want('one'); show.compasses = true; buildInputs(); hl = { dir: true }; },
+          repel: () => { want('nn'); setTime(runEnd()); hl = { f: true }; },
+          attract: () => { want('ns'); setTime(runEnd()); hl = { f: true, m: true }; },
+          bent: () => { want('nn'); hl = { f: true }; },
+          join: () => { want('ns'); hl = { f: true }; },
+          test: () => { want('a1'); hl = { rep: true }; },
+          near: () => { want('ind'); objs[0].x = -11.5; hl = { m: true }; },
+          pulled: () => { want('ind'); objs[0].x = -11.5; hl = { f: true }; },
+          soft: () => { want('fe'); setTime(runEnd()); hl = { fe: true }; },
+          hard: () => { want('fe'); setTime(runEnd()); hl = { st: true }; }
+        })[id]();
+      }
+      feat = on ? { [id]: true } : {};
+      syncFeatButtons(); syncInputs(); update();
+      $('featNote').innerHTML = on ? featNote(id) : '';
+    }
+    function featNote(id) {
+      switch (id) {
+        case 'north': return `Let go at ${minus(P.phi0)}° from north, the magnet swings past north and back, and comes to rest at ${minus(freeAngle().toFixed(1))}°: its N-pole points north. That end is the north-seeking pole.`;
+        case 'ends': return 'The iron filings cluster most thickly at the two ends: the magnetism of a magnet is strongest near its ends, its poles (notes p. 8-4).';
+        case 'two': return 'Broken into four, there are four magnets: every piece has an N-pole and an S-pole, eight poles in all. A new pair of poles appears at every break.';
+        case 'metal': return 'Copper is a metal, but a magnet does not attract it: not all metals are magnetic materials (notes p. 8-7).';
+        case 'out': { const b = compassField(compass.x, compass.y, objs, false); return `Just beyond the N-pole, on the axis, the N end of the needle points ${dirWords(b.bx, b.by)}: away from the magnet. Field lines emerge from the N-pole.`; }
+        case 'loop': return 'Every line leaves the N-pole, curves round through the space outside and enters the S-pole. Inside the magnet it carries on from S back to N, so each line is a closed loop (notes p. 8-12).';
+        case 'dense': return 'Near the pole the lines are close together, and the field at the compass is many times stronger than beside the middle of the magnet: the denser the field lines, the stronger the field (notes p. 8-12).';
+        case 'follow': return 'Every compass needle lies along the field line through it, its N end pointing the way the line goes: from N towards S.';
+        case 'repel': return 'Two N-poles facing: the right-hand magnet is pushed away (amber arrows). Like poles repel each other (notes p. 8-6).';
+        case 'attract': return 'An N-pole facing an S-pole: the right-hand magnet is pulled in until the two touch (green arrows). Unlike poles attract each other (notes p. 8-6).';
+        case 'bent': return 'Between two N-poles the lines do not join up: they are squeezed and bent away from each other, and a point midway has no field at all.';
+        case 'join': return 'Between an N-pole and an S-pole the lines run straight across the gap from one magnet into the other.';
+        case 'test': return 'A magnet attracts an unmagnetised bar too, so attraction proves nothing. Only two magnets can repel: the pair that repels are the magnets (Tutorial 8, A1).';
+        case 'near': return 'The S-pole of the magnet faces the soft-iron bar: the end of the bar nearer to it becomes an N-pole, the far end an S-pole (notes p. 8-9).';
+        case 'pulled': return 'The near end of the bar is the opposite pole to the magnet’s facing pole, and unlike poles attract: the bar is attracted.';
+        case 'soft': return 'Once the magnet is taken away, the soft iron’s magnetism falls back to 0%: iron loses its magnetism easily (soft magnetic material).';
+        case 'hard': { const st = objs.find(q => q.kind === 'steel'); return `The steel keeps ${(Math.abs(st.m) / M_MAX.steel * 100).toFixed(0)}% after the magnet has gone: steel does not lose its magnetism easily (hard magnetic material). It also needed the magnet much closer before it started to magnetise.`; }
+      }
+      return '';
+    }
+
+    function renderPredict(tab) {
+      const Q = PREDICT[tab], box = $('predictBox');
+      predictPick = null;
+      if (!Q) { box.hidden = true; return; }
+      box.hidden = false; box.classList.remove('done');
+      $('predictQ').innerHTML = Q.q;
+      $('predictFb').innerHTML = '';
+      const opts = $('predictOpts');
+      opts.innerHTML = '';
+      Q.opts.forEach((o, i) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.innerHTML = o;
+        b.addEventListener('click', () => {
+          if (opts.dataset.done) return;
+          predictPick = i; opts.querySelectorAll('.opt').forEach((x, j) => x.classList.toggle('picked', j === i));
+        });
+        opts.appendChild(b);
+      });
+      delete opts.dataset.done;
+      $('predictCheck').textContent = 'Check my answer';
+    }
+    $('predictCheck').addEventListener('click', () => {
+      const Q = PREDICT[currentTab], opts = $('predictOpts'), fb = $('predictFb');
+      if (!Q) return;
+      if (opts.dataset.done) { renderPredict(currentTab); return; }
+      if (predictPick === null) { fb.innerHTML = '<span class="verdict no">Pick an answer first.</span>'; return; }
+      opts.dataset.done = '1';
+      const ok = predictPick === Q.ans;
+      opts.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === Q.ans) x.classList.add('right'); else if (j === predictPick) x.classList.add('wrong'); });
+      $('predictBox').classList.add('done');
+      fb.innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> Your prediction: ${Q.opts[predictPick]}.`
+        + (ok ? '' : ` The answer: <b>${Q.opts[Q.ans]}</b>.`) + ` <span class="why">${Q.why}</span>`;
+      $('predictCheck').textContent = 'Try again';
+    });
+
+    function renderFeats(tab) {
+      const list = FEATS[tab] || [], el = $('feats');
+      $('featBox').hidden = !list.length;
+      el.innerHTML = '';
+      list.forEach(([id, lab]) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'feat'; b.dataset.f = id;
+        b.innerHTML = lab;
+        b.addEventListener('click', () => tapFeat(id));
+        el.appendChild(b);
+      });
+      $('featNote').textContent = '';
+      syncFeatButtons();
+    }
+    function renderKey(tab) {
+      $('ckey').innerHTML = (TABS[tab].key || []).map(k => `<span><b class="${KEYS[k][2] || ''}" style="background:${KEYS[k][0]}"></b><span>${KEYS[k][1]}</span></span>`).join('');
+    }
+    function fillPresets(list) {
+      presetEl.innerHTML = '';
+      list.forEach(id => { const o = document.createElement('option'); o.value = id; o.textContent = PRESETS[id].name; presetEl.appendChild(o); });
+      presetEl.value = list[0];
+    }
+
+    function showTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('#tabs .tab').forEach(b => { const on = +b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+      $('stepLabel').textContent = `Step ${tab} of 5`;
+      document.querySelectorAll('#stepBar i').forEach((i, n) => i.classList.toggle('on', n < tab));
+      $('strip').innerHTML = TABS[tab].strip;
+      renderKey(tab);
+      $('pageSim').hidden = tab === 5;
+      $('page5').hidden = tab !== 5;
+      sim.running = false; testing = null;
+      if (tab <= 4) {
+        const T = TABS[tab];
+        $('notes').innerHTML = '<ul>' + T.notes.map(n => `<li>${n}</li>`).join('') + '</ul>';
+        fillPresets(T.presets); chooseScenario(T.presets[0]);
+      }
+      if (tab === 5) renderQuiz();
+      renderPredict(tab);
+      renderFeats(tab);
+      $('tPrompts').innerHTML = PROMPTS[tab].map(p => `<li>${p}</li>`).join('');
+    }
+    document.querySelectorAll('#tabs .tab').forEach(b => b.addEventListener('click', () => showTab(+b.dataset.tab)));
+
+    /* ---------------- Tab 5: Challenge ---------------- */
+    // every answer matched to the notes (pp. 8-4 to 8-12), Tutorial 8's key or the colleague's worked solutions; a question whose
+    // parts share one situation is one screen
+    const QUIZ = [
+      { src: 'Notes p. 8-4', stem: 'A bar magnet is hung so that it is free to turn in a horizontal plane.', parts: [
+        { q: 'The end that comes to rest pointing north is called …', opts: ['the north-seeking pole, or N-pole', 'the south-seeking pole, or S-pole', 'the magnetic field', 'the induced pole'], ans: 0,
+          why: 'If a magnet is free to turn in a horizontal plane, one end of the magnet points north: the north-seeking pole or north pole (N-pole).' }] },
+      { src: 'Notes pp. 8-4 and 8-5', stem: '', parts: [
+        { lab: '(a)', q: 'Where is the magnetism of a bar magnet strongest?', opts: ['near its ends (its poles)', 'at its middle', 'the same all along it', 'far from the magnet'], ans: 0,
+          why: 'The magnetism of a magnet is strongest near its ends. These are called the poles of the magnet.' },
+        { lab: '(b)', q: 'A bar magnet is broken into two pieces. Each piece has …', opts: ['two magnetic poles, an N-pole and an S-pole', 'one pole only', 'no poles', 'two N-poles or two S-poles'], ans: 0,
+          why: 'All magnets have two magnetic poles: each piece will also have two magnetic poles.' }] },
+      { src: 'Notes p. 8-6', stem: '', parts: [
+        { lab: '(a)', q: 'The N-pole of one magnet is brought near the N-pole of another. They …', opts: ['repel each other', 'attract each other', 'have no effect on each other'], ans: 0,
+          why: 'Like poles (2 norths or 2 souths) repel each other.' },
+        { lab: '(b)', q: 'The N-pole of one magnet is brought near the S-pole of another. They …', opts: ['attract each other', 'repel each other', 'have no effect on each other'], ans: 0,
+          why: 'Unlike poles (1 north and 1 south) attract each other.' }] },
+      { src: 'Notes p. 8-7', stem: '', parts: [
+        { q: 'Which of these is NOT attracted by a magnet?', opts: ['copper', 'iron', 'nickel', 'cobalt'], ans: 0,
+          why: 'Iron, nickel, cobalt and certain alloys such as steel are magnetic materials. Copper, wood and plastic are non-magnetic: not all metals are magnetic materials.' }] },
+      { src: 'Notes p. 8-9', stem: 'The S-pole of a magnet is brought near to an unmagnetised iron bar.', parts: [
+        { lab: '(a)', q: 'The end of the iron bar nearer to the S-pole becomes …', opts: ['an N-pole', 'an S-pole', 'neither: the iron is not a magnet'], ans: 0,
+          why: 'The end of the iron bar nearer to the S-pole of the magnet becomes an N-pole while the other end becomes a S-pole: induced magnetism.' },
+        { lab: '(b)', q: 'The iron bar is …', opts: ['attracted to the magnet', 'repelled by the magnet', 'neither attracted nor repelled'], ans: 0,
+          why: 'Its near end is the opposite pole (N) to the magnet’s S-pole, and unlike poles attract.' }] },
+      { src: 'Notes p. 8-10; Tutorial 8, A4(a)', stem: '', parts: [
+        { lab: '(a)', q: 'A soft magnetic material, such as iron, is …', opts: ['easy to magnetise, and loses its magnetism easily', 'hard to magnetise, and does not lose its magnetism easily', 'easy to magnetise, and does not lose its magnetism easily', 'not attracted by a magnet'], ans: 0,
+          why: 'Iron, which is easier to magnetise but loses its magnetism easily, is called a soft magnetic material.' },
+        { lab: '(b)', q: 'A hard magnetic material, such as steel, is …', opts: ['harder to magnetise, but does not lose its magnetism easily', 'easy to magnetise, and loses its magnetism easily', 'impossible to magnetise', 'a non-magnetic material'], ans: 0,
+          why: 'Steel, which is harder to magnetise but does not lose its magnetism easily, is called a hard magnetic material.' }] },
+      { src: 'Tutorial 8, A4(b) and (c)', stem: '', parts: [
+        { lab: '(b)', q: 'Which would you choose for a permanent magnet?', opts: ['steel, a hard magnetic material: it must keep its magnetism for a long time', 'soft iron: it is easy to magnetise', 'copper: it is a good conductor', 'soft iron: it loses its magnetism easily'], ans: 0,
+          why: 'A permanent magnet must maintain its magnetic field for a long period without losing magnetism: a hard magnetic material (e.g. steel).' },
+        { lab: '(c)', q: 'Which would you choose for the core of an electromagnet?', opts: ['soft iron: it becomes strongly magnetic when the current flows and loses it when the current is switched off', 'steel: it keeps its magnetism', 'copper: it carries the current', 'wood: it is not attracted'], ans: 0,
+          why: 'The magnetism of an electromagnet needs to be easily turned on or off: a soft magnetic material (e.g. iron) loses its magnetism almost completely when the current is switched off.' }] },
+      { src: 'Notes pp. 8-11 and 8-12', stem: '', parts: [
+        { lab: '(a)', q: 'The magnetic field of a magnet may be shown by …', opts: ['sprinkling iron filings around it, or using plotting compasses', 'sprinkling copper filings around it', 'measuring its length', 'hanging it from a thread'], ans: 0,
+          why: 'This magnetic field may be shown by sprinkling iron filings around the magnet or by using plotting compasses.' },
+        { lab: '(b)', q: 'Magnetic field lines of a bar magnet …', opts: ['emerge from the N-pole and enter at the S-pole, forming closed loops', 'emerge from the S-pole and enter at the N-pole', 'start at the N-pole and stop at the middle', 'go straight out from both poles'], ans: 0,
+          why: 'The field lines form closed loops. They emerge from the N-pole of the magnet and enter at the S-pole.' },
+        { lab: '(c)', q: 'Where the field lines are denser, the field is …', opts: ['stronger', 'weaker', 'the same'], ans: 0, why: 'The denser the field lines, the stronger the field.' }] },
+      { src: 'Tutorial 8, A1', stem: 'You are given three steel bars, identical in size and appearance. Two of the bars are magnetised and one is not. No extra apparatus is available.', parts: [
+        { q: 'How would you identify the two magnets?', opts: ['Find the pair that repels when brought end to end (turning one round if they attract): both of that pair are magnets', 'Find a pair that attracts: both of that pair are magnets', 'Hang each bar from a thread and see which end points north', 'Find the heaviest two bars'], ans: 0,
+          why: 'Repulsion is the only sure test, because a magnet attracts an unmagnetised bar too. If two bars repel in either position, both are magnets and the third is unmagnetised. (No thread is given: “no extra apparatus”.)' }] },
+      { src: 'Tutorial 8, A2', fig: 'a2', stem: 'A soft iron bar and a compass are placed as shown. The south pole of a bar magnet is brought near the soft iron bar.', parts: [
+        { lab: '(a)', q: 'The right-hand end of the soft-iron bar (next to the compass) becomes …', opts: ['an S-pole', 'an N-pole', 'neither'], ans: 0,
+          why: 'Magnetism is induced in the bar: the left end, near the S-pole, becomes a north pole and the right end a south pole.' },
+        { lab: '(b)', q: 'The N end of the compass needle turns to point …', opts: ['to the left, towards the bar', 'to the right, away from the bar', 'up the page', 'down the page'], ans: 0,
+          why: 'Since the compass needle follows the magnetic field direction, it points towards the bar’s S-pole: to the left.' }] },
+      { src: 'Tutorial 8, A3', fig: 'a3', stem: 'The diagram shows the magnetic field pattern of two magnets. The top tip of the curved magnet is an S-pole.', parts: [
+        { lab: 'A:', q: 'The pole at A is …', opts: ['N', 'S'], ans: 0, why: 'Lines join A to the S-pole at the top tip and to B: unlike poles are joined, so A is N.' },
+        { lab: 'B:', q: 'The pole at B is …', opts: ['S', 'N'], ans: 0, why: 'Lines from A (an N-pole) run into B, so B is S.' },
+        { lab: 'C:', q: 'The pole at C is …', opts: ['N', 'S'], ans: 0, why: 'Lines from C curve round to the S-pole at the top tip: C is N. A bar magnet has an N-pole and an S-pole, and B is S.' },
+        { lab: '(b)', q: 'The arrows on the field lines point …', opts: ['from N-poles to S-poles (outside the magnets)', 'from S-poles to N-poles', 'both ways'], ans: 0,
+          why: 'Magnetic field lines go from north to south (outside the magnet).' }] }
+    ];
+    // the options are written with the right one first; turn each part's list round by a fixed amount
+    { let pc = 0; QUIZ.forEach(Q => Q.parts.forEach(Pt => { const n = Pt.opts.length, r = (pc++ * 3 + 1) % n;
+      Pt.opts = Pt.opts.slice(r).concat(Pt.opts.slice(0, r)); Pt.ans = (Pt.ans - r + n) % n; })); }
+    const QUIZ_MARKS = QUIZ.reduce((n, Q) => n + Q.parts.length, 0);
+    const partLabel = (Q, k) => Q.parts[k].lab ? Q.parts[k].lab + ' ' : Q.parts.length > 1 ? `(${'abcdefgh'[k]}) ` : '';
+    // a quiz figure, drawn by the same code as the simulation, in the state the question describes
+    function drawFig(cv, id) {
+      __pim.labels = []; __pim.arrows = []; __pim.panes = []; __pim.lines = []; __pim.needles = [];
+      const g = setup(cv); if (!g) return;
+      const keepP = P, keepO = objs, keepS = S.scen, keepShow = show, keepC = compass;
+      P = JSON.parse(JSON.stringify(PRESETS[id])); P.id = id; S.scen = id;
+      if (id === 'a2') { P.view = [-6, 0, 50, 18]; P.earth = false; objs = [bar('magnet', -18, 0, Math.PI, 1), bar('iron', 4, 0, 0, 0, { L: 12 })]; compass = null; show = { lines: false }; }
+      else { objs = startObjects('a3'); compass = null; show = { lines: true, reveal: false }; }
+      lineKey = '';
+      pane('fig', 0, 0, g.W, g.H);
+      const wb = fitView({ x: 0, y: 0, w: g.W, h: g.H });
+      if (id === 'a3') { drawField(g.ctx, { x: 0, y: 0, w: g.W, h: g.H }, wb, { noArrows: true }); objs.forEach(o => drawObject(g.ctx, o)); drawA3(g.ctx); }
+      else {
+        objs.forEach(o => drawObject(g.ctx, o)); const M = objs[0], ir = objs[1];
+        // the magnet's motion, and the compass beyond the bar (its needle as in the question: not yet turned)
+        arrow(g.ctx, sx(M.x + 8.5), sy(0), sx(M.x + 12.5), sy(0), '#334155', 2, 8);
+        drawNeedle(g.ctx, sx(14.5), sy(0), -0.7, -0.7, 13, 17, 'figcompass');
+        label(g.ctx, 'compass', sx(14.5), sy(0) + 30, '#334155', 'center', 11);
+        label(g.ctx, 'soft iron bar', sx(ir.x), sy(ir.y + ir.Wd / 2) + 14, '#334155', 'center', 11);
+      }
+      P = keepP; objs = keepO; S.scen = keepS; show = keepShow; compass = keepC; lineKey = '';
+    }
+    let quiz = { i: 0, score: 0, picks: [], done: false, missed: [] };
+    function resetQuiz() { quiz = { i: 0, score: 0, picks: [], done: false, missed: [] }; renderQuiz(); }
+    function renderQuiz() {
+      const el = $('quiz'), N = QUIZ.length;
+      if (quiz.i >= N) {
+        const list = quiz.missed.length
+          ? `<p>Go back over these:</p><ul>${quiz.missed.map(([n, k]) => { const Q = QUIZ[n];
+              return `<li>Question ${n + 1} ${partLabel(Q, k).trim()} (${Q.src}): ${(Q.stem ? Q.stem + ' ' : '') + Q.parts[k].q}</li>`; }).join('')}</ul>`
+          : '<p>Every answer right. Well done.</p>';
+        el.innerHTML = `<div class="quiz-top"><span>Summary</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div><div class="quiz-bar"><i style="width:100%"></i></div>
+          <div class="quiz-sum"><div class="quiz-q">You scored ${quiz.score} out of ${QUIZ_MARKS}.</div>${list}</div>
+          <div class="row-btns"><button type="button" id="qAgain">Try the quiz again</button></div>`;
+        $('qAgain').addEventListener('click', resetQuiz);
         return;
       }
-      const o = objects[drag.i];
-      const prev = { x: o.x, y: o.y, ang: o.ang };
-      if (drag.kind === 'move') {
-        o.x = Math.max(20, Math.min(W - 20, p.x + drag.dx)); o.y = Math.max(20, Math.min(H - 20, p.y + drag.dy));
-      } else {
-        o.ang = Math.atan2(p.y - o.y, p.x - o.x) - drag.grabAng;
+      const Q = QUIZ[quiz.i], many = Q.parts.length > 1;
+      quiz.picks = Q.parts.map(() => null);
+      el.innerHTML = `<div class="quiz-top"><span>Question ${quiz.i + 1} of ${N}</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div>
+        <div class="quiz-bar"><i style="width:${(quiz.i / N) * 100}%"></i></div>
+        ${Q.stem ? `<div class="quiz-q" id="qStem">${Q.stem}</div>` : ''}${Q.fig ? '<canvas class="qfig" id="qFig"></canvas>' : ''}<div class="quiz-src">${Q.src}${many ? ` · ${Q.parts.length} parts, answer them all` : ''}</div>
+        ${Q.parts.map((Pt, k) => `<div class="qpart" data-k="${k}">
+          <div class="${Q.stem ? 'qpart-q' : 'quiz-q'}">${partLabel(Q, k)}${Pt.q}</div>
+          <div class="opts">${Pt.opts.map((o, j) => `<button type="button" class="opt" data-j="${j}">${o}</button>`).join('')}</div>
+          <div class="feedback"></div></div>`).join('')}
+        <div class="row-btns"><button type="button" id="qSubmit">${many ? 'Submit answers' : 'Submit answer'}</button><button type="button" class="secondary" id="qReset">Reset quiz</button></div>
+        <div class="feedback" id="qFb"></div>`;
+      if (Q.fig) drawFig($('qFig'), Q.fig);
+      el.querySelectorAll('.qpart').forEach(part => {
+        const k = +part.dataset.k;
+        part.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+          if (quiz.done) return;
+          quiz.picks[k] = +b.dataset.j; part.querySelectorAll('.opt').forEach(x => x.classList.toggle('picked', x === b));
+        }));
+      });
+      $('qReset').addEventListener('click', resetQuiz);
+      $('qSubmit').addEventListener('click', () => {
+        const fb = $('qFb');
+        if (quiz.done) { quiz.i++; quiz.done = false; renderQuiz(); return; }
+        const left = quiz.picks.map((p, k) => p === null ? partLabel(Q, k).trim() || `part ${k + 1}` : null).filter(x => x !== null);
+        if (left.length) { fb.innerHTML = `<span class="verdict no">${many ? `Pick an answer for every part first (still to do: ${left.join(', ')}).` : 'Pick an answer first.'}</span>`; return; }
+        quiz.done = true; fb.innerHTML = '';
+        el.querySelectorAll('.qpart').forEach(part => {
+          const k = +part.dataset.k, Pt = Q.parts[k], ok = quiz.picks[k] === Pt.ans;
+          if (ok) quiz.score++; else quiz.missed.push([quiz.i, k]);
+          part.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === Pt.ans) x.classList.add('right'); else if (j === quiz.picks[k]) x.classList.add('wrong'); });
+          part.querySelector('.feedback').innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> <span class="why">${Pt.why}</span>`;
+        });
+        el.querySelector('.quiz-top span:last-child').textContent = `Score: ${quiz.score} of ${QUIZ_MARKS}`;
+        $('qSubmit').textContent = quiz.i + 1 < N ? 'Next question' : 'See the summary';
+      });
+    }
+
+    /* ---------------- Teacher mode ---------------- */
+    // Only the teacher link (this page's address + ?teacher) shows the button; students and the
+    // Brightspace embed use the plain address. Not a lock: the panel only changes this screen.
+    const teacher = $('teacher');
+    if (new URLSearchParams(location.search).has('teacher')) $('teacherBtn').hidden = false;
+    $('teacherBtn').addEventListener('click', () => { teacher.hidden = !teacher.hidden; });
+    $('tClose').addEventListener('click', () => { teacher.hidden = true; });
+    $('tExplain').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-explain');
+      e.target.textContent = on ? 'Show explanations' : 'Hide explanations'; e.target.classList.toggle('on', on);
+    });
+    $('tAnswers').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-answers');
+      e.target.textContent = on ? 'Show answer labels' : 'Hide answer labels'; e.target.classList.toggle('on', on);
+    });
+    // free exploration: no Predict first, every step shown at once, the A3 answer shown
+    $('tFree').addEventListener('click', e => {
+      freeMode = !freeMode; document.body.classList.toggle('free-mode', freeMode);
+      e.target.textContent = freeMode ? 'Back to the guided steps' : 'Switch to free exploration'; e.target.classList.toggle('on', freeMode);
+      showTab(currentTab);
+    });
+    const fullBtn = $('tFull');
+    if (!document.fullscreenEnabled) fullBtn.hidden = true;
+    fullBtn.addEventListener('click', () => {
+      if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {});
+    });
+    document.addEventListener('fullscreenchange', () => { fullBtn.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
+    $('tReset').addEventListener('click', () => { resetQuiz(); puzzle = null; showTab(1); });
+
+    // for the checks: the state behind the drawing
+    window.__pimState = () => {
+      const st = { tab: currentTab, scen: S.scen, step: S.step, nSteps: nSteps(), mode: mode(), t: sim.t, end: isRun() ? runEnd() : null, running: sim.running,
+        keyMoments: keyMoments(), show: { ...show }, P: JSON.parse(JSON.stringify(P)),
+        objs: objs.map(o => ({ kind: o.kind, x: o.x, y: o.y, ang: o.ang, m: o.m, L: o.L, name: o.name || null, faces: faceCentres(o).map(f => ({ x: f.x, y: f.y, s: f.s })) })) };
+      if (compass) { const b = compassField(compass.x, compass.y, objs, P.earth); st.compass = { x: compass.x, y: compass.y, bx: b.bx, by: b.by, ang: Math.atan2(b.by, b.bx) / DEG }; }
+      if (S.scen === 'free') st.freeAngle = freeAngle();
+      if (['nn', 'ss', 'ns'].includes(S.scen)) { st.kind = pairKind(objs[1], objs[0]); st.gap = gapBetween(objs[0], objs[1]); st.runEndWhy = traj && traj.end; }
+      if (S.scen === 'ind' || S.scen === 'a2') st.nearPole = nearPole(objs[1], objs[0]);
+      if (S.scen === 'mat') st.mats = JSON.parse(JSON.stringify(mats)), st.testing = !!testing;
+      if (S.scen === 'a1') st.puzzle = JSON.parse(JSON.stringify(puzzle));
+      if (S.scen === 'plot') st.plot = { places: (plotCache || plotPath()).places.length };
+      return st;
+    };
+    window.__pimSetTime = setTime;
+    window.addEventListener('resize', () => { if (currentTab <= 4) update(); else if (QUIZ[quiz.i] && QUIZ[quiz.i].fig && $('qFig')) drawFig($('qFig'), QUIZ[quiz.i].fig); });
+    showTab(1);
+  </script>
+  <script>
+    // Embedded (Brightspace): tell the page around the frame how tall this page is, so a resize script in the
+    // embed code can fit the frame to it (no blank space, no inner scrollbar). Measured from the content, not
+    // scrollHeight, which never drops below the frame's own height and so could never shrink it.
+    (function () {
+      if (window.parent === window) return;
+      let last = 0;
+      function height() {
+        const c = document.querySelector('.container'), cs = getComputedStyle(document.body);
+        return Math.ceil(c.getBoundingClientRect().bottom + window.scrollY + parseFloat(cs.paddingBottom) + parseFloat(cs.marginBottom) + 4);
       }
-      // bars cannot pass through each other
-      if (objects.some(q => q !== o && overlap(o, q))) Object.assign(o, prev);
-    });
-    const end = () => { drag = null; };
-    canvas.addEventListener('pointerup', end);
-    canvas.addEventListener('pointercancel', end);
-
-    el('rotateBtn').addEventListener('click', () => {
-      const o = objects[selected]; if (!o) return;
-      const prev = o.ang; o.ang += Math.PI / 4;
-      if (objects.some(q => q !== o && overlap(o, q))) o.ang = prev;
-    });
-    el('flipBtn').addEventListener('click', () => {
-      const o = objects[selected]; if (!o) return;
-      const prev = o.ang; o.ang += Math.PI; // turning a bar round swaps which way its poles face
-      if (objects.some(q => q !== o && overlap(o, q))) o.ang = prev;
-    });
-    modeEl.addEventListener('change', () => setMode(modeEl.value));
-
-    function frame() { draw(); updateReadout(); requestAnimationFrame(frame); }
-    requestAnimationFrame(frame);
+      function send(force) {
+        const h = height();
+        if (!force && Math.abs(h - last) < 2) return;
+        last = h;
+        window.parent.postMessage({ type: 'pim-height', page: location.pathname.split('/').pop(), height: h }, '*');
+      }
+      new ResizeObserver(() => send(false)).observe(document.querySelector('.container'));
+      window.addEventListener('load', () => send(true));
+      // the embed's script asks once it is listening, in case this page loaded first
+      window.addEventListener('message', e => { if (e.data && e.data.type === 'pim-height?') send(true); });
+      send(true);
+    })();
   </script>
   <script>
     // Phones: a swipe that starts on an empty part of a drawing scrolls the page (touch-action: pan-y),
     // and a touch the page grabbed for a drag (its own setPointerCapture call) keeps the page still.
-    // (hasPointerCapture can't tell: a touch is always captured implicitly.)
-    // The kinematics graphs are left out: a sideways drag scrubs them and an up-down one scrolls.
     document.querySelectorAll('canvas:not(.graph-canvas)').forEach(c => {
       let grabbed = false;
       const capture = c.setPointerCapture;
