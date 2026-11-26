@@ -18,41 +18,167 @@
   <!-- pim-meta:end -->
   <style>
     * { box-sizing: border-box; }
+    /* the hidden attribute must win over every display rule below */
+    [hidden] { display: none !important; }
     body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
     .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
-    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    h1 { margin: 0; font-size: 1.1rem; }
     .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
-    .controls { display: grid; grid-template-columns: repeat(3, 1fr) auto; gap: 10px; align-items: end; }
-    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-    .label-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 26px; }
-    label { font-size: 0.8rem; font-weight: 600; }
+
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 110px; }
+    .control-group.scen-group { flex: 2.2 1 260px; }
+    .control-group.button-group { flex: 2 1 280px; }
+    .control-group select { width: 100%; max-width: 100%; }
+    .controls input, .controls select, .controls button { height: 34px; }
+    label { font-size: 0.82rem; font-weight: 600; line-height: 1.2; }
+    label sub, label sup { line-height: 0; }
+    .step-no { font-weight: 400; color: #475569; }
+    input, select, button { font-size: 0.95rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; }
+    input[type=range] { width: 100%; padding: 0; height: 34px; }
+    .buttons { display: flex; gap: 6px; flex-wrap: nowrap; }
+    button { cursor: pointer; background: #2563eb; color: white; border: none; min-width: 0; flex: 1; }
+    button:hover { background: #1d4ed8; }
+    button:disabled { background: #94a3b8; cursor: default; }
+    button.secondary { background: #475569; }
+    button.secondary:hover { background: #334155; }
+    button.secondary:disabled { background: #cbd5e1; color: #475569; }
+    button.danger { background: #dc2626; }
+    button.danger:hover { background: #b91c1c; }
+    .moments { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+    .moments button { flex: none; padding: 6px 12px; }
+    .speed { font-size: 0.8rem; color: #475569; }
+    .speed:empty { display: none; }
+    .group-title { font-size: 0.78rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.03em; margin: 10px 0 4px; }
+    .inputs { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+    .inputs .control-group { flex: 0 1 auto; }
+    .inputs .control-group.wide { flex: 1 1 220px; }
+    .inputs button { flex: none; padding: 6px 12px; height: 34px; }
+    .inputs select { height: 34px; }
+    .toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 0.84rem; font-weight: 600; white-space: nowrap; }
     .label-row label { white-space: nowrap; }
-    .val { font-weight: normal; color: #334155; }
-    input[type=range] { width: 100%; }
-    button { font-size: 0.88rem; padding: 7px 12px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; white-space: nowrap; }
-    button.small { font-size: 0.76rem; padding: 4px 8px; background: #7c3aed; }
-    .toggle { display: flex; align-items: center; gap: 5px; font-size: 0.85rem; font-weight: 600; white-space: nowrap; padding-bottom: 4px; }
-    .note ul { margin: 2px 0 0; padding-left: 18px; }
-    .note li { margin: 2px 0; }
-    .readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .question { margin-top: 8px; font-size: 0.84rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 6px 10px; color: #7c2d12; }
+    .question:empty { display: none; }
+
+    .readout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout:empty { display: none; }
+    .readout.n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .readout.n4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card.hl { box-shadow: inset 0 0 0 2px #dc2626; }
     .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
     .readout-card .value { font-size: 1rem; font-weight: bold; }
-    .layout { display: grid; grid-template-columns: 1fr; gap: 8px; }
-    @media (min-width: 900px) {
-      .layout { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto; }
-      .layout > .panel { display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 0; align-content: start; }
+    .words { margin-top: 8px; font-size: 0.86rem; font-weight: 600; color: #1e3a8a; background: #eef4ff; border-radius: 8px; padding: 6px 10px; }
+    .words:empty { display: none; }
+
+    .scene-wrap { margin-top: 8px; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 0 0 4px; }
+    .hint:empty { display: none; }
+    .note { margin-top: 6px; font-size: 0.8rem; color: #475569; }
+    .note ul { margin: 2px 0 0; padding-left: 18px; }
+    .note li { margin: 2px 0; }
+    canvas { display: block; width: 100%; border-radius: 10px; background: white; }
+    #scene { height: 400px; border: 1px solid #dbeafe; touch-action: pan-y; }
+    canvas.qfig { height: 230px; border: 1px solid #e5e7eb; margin: 4px 0 8px; touch-action: pan-y; }
+
+    .work { margin-top: 8px; }
+    .work:empty { display: none; }
+    .steps-list { margin: 0; padding-left: 20px; font-size: 0.88rem; }
+    .steps-list li { margin: 3px 0; }
+    .steps-list li.lit { background: #fef9c3; border-radius: 4px; }
+
+    /* ---- the step-by-step frame: header, numbered tabs, colour key, instruction strip ---- */
+    .app-head { background: #1e293b; color: #f8fafc; border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+    .head-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .head-row h1 { flex: 1 1 260px; }
+    .steps { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #cbd5e1; }
+    .step-bar { display: flex; gap: 3px; }
+    .step-bar i { display: block; width: 18px; height: 5px; border-radius: 3px; background: #475569; }
+    .step-bar i.on { background: #fbbf24; }
+    button.teacher-btn { flex: none; background: transparent; border: 1px solid #94a3b8; color: #f8fafc; font-size: 0.82rem; padding: 5px 10px; }
+    button.teacher-btn:hover { background: #334155; }
+    /* every tab always visible: equal columns, and a long name wraps onto a second line (never a sideways scroll) */
+    .tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; margin-top: 8px; }
+    button.tab { min-width: 0; background: #f1f5f9; color: #1e293b; font-size: 0.85rem; font-weight: 600; padding: 7px 8px; border-radius: 8px; line-height: 1.2; white-space: normal; text-align: center; }
+    button.tab:hover { background: #e2e8f0; }
+    button.tab.active, button.tab.active:hover { background: #2563eb; color: white; }
+    .tab .ts { display: none; }
+    .nw { white-space: nowrap; }
+    .ckey { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 7px; font-size: 0.76rem; color: #e2e8f0; }
+    .ckey > span { display: inline-flex; align-items: center; gap: 5px; }
+    .ckey b { display: inline-block; width: 14px; height: 4px; border-radius: 2px; }
+    .ckey b.dot { width: 10px; height: 10px; border-radius: 50%; }
+    .ckey b.blk { width: 14px; height: 10px; border-radius: 2px; }
+    .strip { background: #fef9c3; border-left: 4px solid #eab308; border-radius: 6px; padding: 7px 10px; font-size: 0.86rem; margin-bottom: 8px; }
+
+    /* Predict first (above the controls), key features */
+    .learn { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 8px; }
+    .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; }
+    .box-title { font-weight: 700; font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-q { font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-box { margin-bottom: 8px; }
+    .opts { display: grid; gap: 5px; }
+    #predictOpts { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    .predict-box.done #predictOpts { display: none; }
+    .predict-box.done .predict-q { margin-bottom: 0; }
+    button.opt { flex: none; width: 100%; text-align: left; background: white; color: #1f2937; border: 1px solid #cbd5e1; font-size: 0.86rem; padding: 7px 10px; }
+    button.opt:hover { background: #f1f5f9; }
+    button.opt:disabled { background: white; color: #1f2937; cursor: default; }
+    button.opt.picked, button.opt.picked:hover { border-color: #2563eb; background: #eff6ff; box-shadow: inset 0 0 0 1px #2563eb; }
+    button.opt.right, button.opt.right:hover { border-color: #16a34a; background: #dcfce7; box-shadow: inset 0 0 0 1px #16a34a; }
+    button.opt.wrong, button.opt.wrong:hover { border-color: #dc2626; background: #fee2e2; box-shadow: inset 0 0 0 1px #dc2626; }
+    .row-btns { display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+    .row-btns button { flex: none; padding: 6px 12px; }
+    .feedback { font-size: 0.84rem; margin-top: 7px; }
+    .feedback:empty { display: none; }
+    .feedback .verdict { font-weight: 700; }
+    .feedback .verdict.ok { color: #15803d; }
+    .feedback .verdict.no { color: #b91c1c; }
+    .feats { display: flex; flex-wrap: wrap; gap: 6px; }
+    button.feat { flex: none; background: white; color: #1e293b; border: 1px solid #cbd5e1; font-size: 0.84rem; padding: 6px 11px; border-radius: 999px; }
+    button.feat:hover { background: #f1f5f9; }
+    button.feat.on, button.feat.on:hover { background: #1e293b; color: white; border-color: #1e293b; }
+    .feat-note { font-size: 0.82rem; color: #334155; margin-top: 6px; }
+    .feat-note:empty { display: none; }
+
+    /* Challenge */
+    .quiz { max-width: 760px; margin: 0 auto; }
+    .quiz-top { display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 700; margin-bottom: 4px; }
+    .quiz-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+    .quiz-bar i { display: block; height: 100%; background: #2563eb; width: 0; }
+    .quiz-q { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+    .quiz-src { font-size: 0.76rem; color: #475569; margin-bottom: 8px; }
+    .qpart { margin-top: 12px; }
+    .qpart + .qpart { border-top: 1px solid #e2e8f0; padding-top: 10px; }
+    .qpart-q { font-size: 0.92rem; font-weight: 600; margin-bottom: 6px; }
+    .quiz-sum ul { padding-left: 18px; font-size: 0.86rem; }
+    .quiz-sum li { margin: 4px 0; }
+
+    /* Teacher mode */
+    .teacher { position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 92vw); background: white; box-shadow: -4px 0 18px rgba(0,0,0,0.18); padding: 12px; overflow-y: auto; z-index: 20; }
+    .teacher h2 { font-size: 1rem; margin: 0 0 8px; }
+    .teacher .tbtns { display: grid; gap: 6px; }
+    .teacher .tbtns button { background: white; color: #1e293b; border: 1px solid #cbd5e1; flex: none; }
+    .teacher .tbtns button:hover { background: #f1f5f9; }
+    .teacher .tbtns button.on { background: #1e293b; color: white; }
+    .teacher h3 { font-size: 0.9rem; margin: 14px 0 4px; }
+    .teacher ul { padding-left: 18px; margin: 0; font-size: 0.84rem; }
+    .teacher li { margin: 4px 0; }
+    body.no-explain .strip, body.no-explain .words, body.no-explain .feedback .why, body.no-explain .feat-note { display: none; }
+    body.no-answers .readout-card .value, body.no-answers .work { filter: blur(6px); }
+    body.free-mode .predict-box { display: none; }
+
+    @media (max-width: 700px) {
+      h1 { font-size: 1rem; }
+      .readout, .readout.n4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .tab .tl { display: none; }
+      .tab .ts { display: inline; }
+      /* phones: short names in rows that wrap, so all five tabs show without scrolling */
+      .tabs { display: flex; flex-wrap: wrap; }
+      button.tab { flex: 1 1 auto; white-space: nowrap; }
     }
-    canvas { display: block; width: 100%; border-radius: 10px; touch-action: pan-y; }
-    #endCanvas, #sideCanvas { height: 360px; border: 1px solid #dbeafe; background: #fbfdff; }
-    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
-    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
-    @media (max-width: 900px) {
-      .controls { grid-template-columns: 1fr 1fr; }
-      .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-    @media (max-width: 640px) {
-      .controls { grid-template-columns: 1fr; gap: 8px; }
+    @media (max-width: 420px) {
+      .buttons button { padding: 6px 4px; }
     }
     /* Touch screens (phones, tablets; Samsung Internet reports hover: hover on a phone, so only pointer is tested):
        16 px form fields stop an iPhone zooming the page in when one is
@@ -61,6 +187,7 @@
       input:not([type=range]):not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
       button { min-height: 36px; }
       input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
+      .controls input, .controls select, .controls button, .inputs button, .inputs select { height: 36px; }
     }
   </style>
   <!-- pim-nav-style:start (generated by scripts/pim-nav.ts) -->
@@ -89,85 +216,379 @@
     <a class="pim-nav-btn pim-nav-next" href="dc-motor-animation.html" title="Next: The Simple DC Motor (Chapter 8)" aria-label="Next: The Simple DC Motor (Chapter 8)"><span class="pim-nav-text"><span class="pim-nav-kicker">Next<span class="pim-nav-ch"> &middot; Chapter 8</span></span><span class="pim-nav-name">The Simple DC Motor</span></span><span class="pim-nav-arrow" aria-hidden="true">&rsaquo;</span></a>
   </nav>
   <!-- pim-nav:end -->
-    <h1>Magnetic Force on a Current-Carrying Wire</h1>
 
-    <div class="panel">
-      <div class="controls">
-        <div class="control-group">
-          <div class="label-row"><label for="cur">Current <i>I</i> <span class="val" id="curVal"></span></label><button id="revBtn" class="small">Reverse</button></div>
-          <input id="cur" type="range" min="0" max="3" step="0.05" value="0.45" />
-        </div>
-        <div class="control-group">
-          <div class="label-row"><label for="bf">Field strength <i>B</i> <span class="val" id="bfVal"></span></label><button id="flipBtn" class="small">Swap poles</button></div>
-          <input id="bf" type="range" min="0.05" max="0.5" step="0.01" value="0.15" />
-        </div>
-        <div class="control-group">
-          <div class="label-row"><label for="len">Length of wire in the field <i>L</i> <span class="val" id="lenVal"></span></label></div>
-          <input id="len" type="range" min="1" max="20" step="0.5" value="8" />
-        </div>
-        <label class="toggle"><input type="checkbox" id="showF" checked /> Show the force</label>
+    <header class="app-head">
+      <div class="head-row">
+        <h1>Magnetic Force on a Current-Carrying Wire</h1>
+        <div class="steps"><span id="stepLabel">Step 1 of 5</span><span class="step-bar" id="stepBar"><i></i><i></i><i></i><i></i><i></i></span></div>
+        <button class="teacher-btn" id="teacherBtn" type="button" hidden>Teacher mode</button>
       </div>
-      <div class="readout">
-        <div class="readout-card"><div class="title">Force on the end-on wire, <i>F</i> = <i>BIL</i></div><div class="value" id="fEnd">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Its direction (Fleming's left-hand rule)</div><div class="value" id="dEnd">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Tilted wire: angle to the field <i>&theta;</i></div><div class="value" id="thV">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Tilted wire: <i>F</i> = <i>BIL</i> sin<i>&theta;</i></div><div class="value" id="fSide">&mdash;</div></div>
+      <div class="tabs" role="tablist" id="tabs">
+        <button class="tab" role="tab" data-tab="1" type="button"><span class="tl">1. Field of a straight wire</span><span class="ts">1. Wire</span></button>
+        <button class="tab" role="tab" data-tab="2" type="button"><span class="tl">2. Coil and solenoid</span><span class="ts">2. Solenoid</span></button>
+        <button class="tab" role="tab" data-tab="3" type="button"><span class="tl">3. Force on a wire</span><span class="ts">3. Force</span></button>
+        <button class="tab" role="tab" data-tab="4" type="button"><span class="tl">4. <span class="nw"><i>F</i> = <i>BIL</i> sin <i>&theta;</i></span></span><span class="ts">4. <span class="nw"><i>F</i> = <i>BIL</i></span></span></button>
+        <button class="tab" role="tab" data-tab="5" type="button"><span class="tl">5. Challenge</span><span class="ts">5. Challenge</span></button>
       </div>
+      <div class="ckey" id="ckey"></div>
+    </header>
+
+    <div class="strip" id="strip"></div>
+
+    <!-- tabs 1 to 4: Predict first comes first, above the controls and the picture -->
+    <div class="box predict-box" id="predictBox">
+      <div class="box-title">Predict first</div>
+      <div class="predict-q" id="predictQ"></div>
+      <div class="opts" id="predictOpts"></div>
+      <div class="feedback" id="predictFb"></div>
+      <div class="row-btns" id="predictBtns"><button id="predictCheck" type="button">Check my answer</button></div>
     </div>
 
-    <div class="layout">
+    <!-- Tabs 1 to 4 share one drawing -->
+    <section class="tab-page" id="pageSim">
       <div class="panel">
-        <div class="hint">End-on view: the wire points straight into or out of the page. Tap the wire to reverse its current. To test yourself, untick <b>Show the force</b>, reverse the current or swap the poles, predict the direction of the force, then tick it again to check.</div>
-        <canvas id="endCanvas"></canvas>
-        <div class="note"><ul>
-          <li>&odot; = current out of the page, &otimes; = current into the page.</li>
-          <li>A stronger magnet (bigger <i>B</i>) is drawn with more field lines, closer together.</li>
-          <li>The field of the magnet (left to right) and the circular field of the current add together.</li>
-          <li>On one side of the wire the two fields point the same way, so the field is stronger (field lines crowded). On the other side they oppose, so the field is weaker.</li>
-          <li>The wire is pushed from the stronger side towards the weaker side.</li>
-          <li>Check with Fleming's left-hand rule: <b>F</b>irst finger along the <b>F</b>ield, se<b>C</b>ond finger along the <b>C</b>urrent, thu<b>M</b>b gives the <b>M</b>otion.</li>
-        </ul></div>
+        <div id="simBlock">
+          <div class="controls">
+            <div class="control-group scen-group">
+              <label for="preset">Scenarios</label>
+              <select id="preset"></select>
+            </div>
+            <div class="control-group button-group" id="simGroup">
+              <label>Simulation controls</label>
+              <div class="buttons">
+                <button id="startBtn" type="button">Start</button>
+                <button id="pauseBtn" class="secondary" type="button">Pause</button>
+                <button id="resetBtn" class="danger" type="button">Reset</button>
+              </div>
+            </div>
+            <div class="control-group button-group" id="stepGroup">
+              <label>Steps <span class="step-no" id="stepNo"></span></label>
+              <div class="buttons">
+                <button id="prevStep" class="secondary" type="button" aria-label="Previous step">&lsaquo; Previous</button>
+                <button id="nextStep" type="button" aria-label="Next step">Next &rsaquo;</button>
+                <button id="stepReset" class="danger" type="button">Reset</button>
+              </div>
+            </div>
+          </div>
+          <div class="moments" id="moments">
+            <button id="prevMoment" class="secondary" type="button">&lsaquo; Previous key moment</button>
+            <button id="nextMoment" class="secondary" type="button">Next key moment &rsaquo;</button>
+            <span class="speed" id="speedNote"></span>
+          </div>
+          <div class="question" id="question"></div>
+          <div id="expBlock">
+            <div class="group-title">Experimental controls</div>
+            <div class="inputs" id="inputs"></div>
+          </div>
+        </div>
+
+        <!-- the readouts go under the drawing: nothing above the canvas may change height while a finger drags -->
+        <div class="scene-wrap">
+          <div class="hint" id="sceneHint"></div>
+          <canvas id="scene"></canvas>
+          <div class="readout" id="readout"></div>
+          <div class="words" id="words"></div>
+          <div class="work" id="work"></div>
+          <div class="note" id="notes"></div>
+        </div>
       </div>
+
+      <div class="learn">
+        <div class="box" id="featBox">
+          <div class="box-title">Key features (tap one)</div>
+          <div class="feats" id="feats"></div>
+          <div class="feat-note" id="featNote"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 5: Challenge -->
+    <section class="tab-page" id="page5" hidden>
       <div class="panel">
-        <div class="hint">Side view: drag the end of the wire to tilt it in the field.</div>
-        <canvas id="sideCanvas"></canvas>
-        <div class="note"><ul>
-          <li><i>F</i> = <i>BIL</i> sin<i>&theta;</i>, where <i>&theta;</i> is the angle between the wire and the field.</li>
-          <li>The force is biggest (<i>F</i> = <i>BIL</i>) when the wire is at 90&deg; to the field, and zero when the wire runs along the field lines.</li>
-          <li>In this view the force points into or out of the page.</li>
-          <li>Notes Example 3: 8.0 cm of wire in a 0.15 T field, carrying 0.45 A at 90&deg; to the field, feels a force of 5.4 &times; 10<sup>-3</sup> N.</li>
-        </ul></div>
+        <div class="quiz" id="quiz"></div>
       </div>
-    </div>
+    </section>
   </div>
 
-  <script>
-    const el = id => document.getElementById(id);
-    const st = { outOfPage: true, fieldRight: true, theta: Math.PI / 2, sideCurrentAlong: true, disp: 0 };
-    const I = () => +el('cur').value, B = () => +el('bf').value, L = () => +el('len').value / 100;
-    const Fmax = () => B() * I() * L();
-    // One field line per 0.02 T, so the spacing of the magnet's lines shows B (whole hundredths of a tesla, so 0.15 T is 8, not 7)
-    const fieldLines = () => Math.max(1, Math.round(Math.round(B() * 100) / 2));
-    // At most 8 arrowheads per view, spread evenly over the lines: with every line carrying one, a strong field's heads
-    // stack into a dark column (every k-th line instead dropped from 8 heads at 8 lines to 4 at 9)
-    const headOnLine = (i, n) => { const m = Math.min(n, 8); for (let j = 0; j < m; j++) if (Math.floor((j + 0.5) * n / m) === i) return true; return false; };
+  <aside class="teacher" id="teacher" hidden aria-label="Teacher mode">
+    <h2>Teacher mode</h2>
+    <div class="tbtns">
+      <button id="tExplain" type="button">Hide explanations</button>
+      <button id="tFree" type="button">Switch to free exploration</button>
+      <button id="tAnswers" type="button">Hide answer labels</button>
+      <button id="tFull" type="button">Full screen</button>
+      <button id="tReset" type="button">Reset whole applet</button>
+      <button id="tClose" type="button">Close</button>
+    </div>
+    <h3>Suggested prompts</h3>
+    <ul id="tPrompts"></ul>
+  </aside>
 
-    function setup(c) {
-      const r = c.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
-      const cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
-      if (c.width !== cw || c.height !== ch) { c.width = cw; c.height = ch; }
-      const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      return { ctx, w: r.width, h: r.height };
+  <script>
+    const $ = id => document.getElementById(id);
+    const canvas = $('scene'), presetEl = $('preset');
+    let currentTab = 1, freeMode = false;
+    const COL = { wire: '#ea580c', cur: '#9a3412', field: '#16a34a', fieldLine: 'rgba(22,163,74,0.85)', F: '#dc2626', N: '#dc2626', S: '#2563eb', grip: '#7c3aed', skin: '#f2c9a0', iron: '#9ca3af' };
+    const DEG = Math.PI / 180;
+    const minus = s => String(s).replace(/-/g, '−');
+
+    /* ---------------- numbers ---------------- */
+    // sf significant figures; an exact whole number stays whole (3 T, 5 N, 0 N); very small or large values as a × 10^n
+    function num(v, sf = 3) {
+      if (!isFinite(v)) return '—';
+      if (Math.abs(v) < 1e-12) return '0';
+      if (Math.abs(v - Math.round(v)) < 1e-9 && Math.abs(v) < 1e4) return minus(String(Math.round(v)));
+      const a = Math.abs(v);
+      if (a < 1e-2 || a >= 1e4) {
+        let e = Math.floor(Math.log10(a) + 1e-12), m = (v / 10 ** e) * (1 + 1e-12);
+        let ms = m.toPrecision(sf); if (Math.abs(+ms) >= 10) { e++; ms = (m / 10).toPrecision(sf); }
+        return `${minus(ms)} × 10<sup>${minus(e)}</sup>`;
+      }
+      return minus((v * (1 + 1e-12)).toPrecision(sf));
     }
-    function arrow(ctx, x1, y1, x2, y2, color, lw = 4, head = 12) {
-      const len = Math.hypot(x2 - x1, y2 - y1); if (len < 1.5) return;
-      const a = Math.atan2(y2 - y1, x2 - x1), hd = Math.min(head, len * 0.6);
-      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
-      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - Math.cos(a) * hd * 0.8, y2 - Math.sin(a) * hd * 0.8); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - hd * Math.cos(a - 0.45), y2 - hd * Math.sin(a - 0.45)); ctx.lineTo(x2 - hd * Math.cos(a + 0.45), y2 - hd * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill();
+    const plain = s => String(s).replace(/<[^>]+>/g, '');
+
+    /* ---------------- the model ----------------
+       Every field on this page comes from straight line currents seen end-on (• out of the page, × into it), the field the
+       notes draw for a straight wire (pp. 8-14 to 8-16): circles centred on the wire, closer together near it. The coil and
+       the solenoid are drawn cut through the middle, so each turn crosses the page twice: once • and once ×.
+       Page coordinates: x to the right, y UP the page, z out of the page towards you. */
+    function wireField(x, y, wires) {
+      let bx = 0, by = 0;
+      for (const w of wires) { if (!w.s) continue; const dx = x - w.x, dy = y - w.y, r2 = dx * dx + dy * dy + 1e-6; bx += w.s * (-dy) / r2; by += w.s * dx / r2; }
+      return { bx, by };
+    }
+    // the field lines are the lines along which this stays the same (so equal steps in it between two lines = equal flux)
+    function stream(x, y, wires) { let a = 0; for (const w of wires) if (w.s) a -= w.s * Math.log(Math.hypot(x - w.x, y - w.y) + 1e-9); return a; }
+    const cross = (a, b) => ({ x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x });
+    function dirName(v) {
+      const m = Math.max(Math.abs(v.x), Math.abs(v.y), Math.abs(v.z));
+      if (m < 1e-9) return 'none';
+      if (Math.abs(v.z) === m) return v.z > 0 ? 'out of the page' : 'into the page';
+      if (Math.abs(v.x) === m) return v.x > 0 ? 'to the right' : 'to the left';
+      return v.y > 0 ? 'up the page' : 'down the page';
+    }
+    function dirWords(bx, by) {   // a direction on the page (y up) in words
+      const a = Math.atan2(by, bx) / DEG, n = ((a % 360) + 360) % 360;
+      return ['to the right', 'up and to the right', 'up the page', 'up and to the left', 'to the left', 'down and to the left', 'down the page', 'down and to the right'][Math.round(n / 45) % 8];
+    }
+
+    // a straight wire end-on: circles at radii in a fixed ratio, so they are closer together near the wire (p. 8-14)
+    const RINGS = [1.6, 2.4, 3.6, 5.4, 8.1, 12.1];
+    const CM = 0.5;   // 1 page unit = 0.5 cm
+    // the turns of the coil (p. 8-18) and of the solenoids (p. 8-19); front = +1: the current runs UP the front of each turn
+    function turnXs(P) { const n = P.turns; return Array.from({ length: n }, (_, i) => (n === 1 ? P.x0 : P.x0 - P.len / 2 + P.len * i / (n - 1))); }
+    function wiresOf(id, Pp = P, t = sim.t) {
+      switch (id) {
+        case 'grip': case 'out': case 'in': return [{ x: 0, y: 0, s: Pp.s }];
+        case 'coil': case 'sol': case 'b1': {
+          const on = id !== 'b1' || t > 0, out = [];
+          // current up the front of a turn: it goes into the page at the top of the turn and comes out at the bottom
+          for (const x of turnXs(Pp)) out.push({ x, y: Pp.d, s: on ? -Pp.front : 0 }, { x, y: -Pp.d, s: on ? Pp.front : 0 });
+          return out;
+        }
+      }
+      return [];
+    }
+    // field lines through the inside of a coil or solenoid: seeded at equal steps of `stream` across the middle, traced
+    // until each one comes back round to where it started (a closed loop) or leaves the drawing
+    function seedYs(wires, n, x, ya, yb) {
+      const f = y => stream(x, y, wires), a0 = f(ya), a1 = f(yb), ys = [];
+      for (let k = 0; k < n; k++) {
+        const tgt = a0 + (a1 - a0) * (k + 0.5) / n; let lo = ya, hi = yb;
+        for (let j = 0; j < 60; j++) { const m = (lo + hi) / 2; if ((f(m) - tgt) * (a1 - a0) < 0) lo = m; else hi = m; }
+        ys.push((lo + hi) / 2);
+      }
+      return ys;
+    }
+    function trace(x, y, wires, wb, h = 0.12, maxN = 5000) {
+      const dir = (px, py) => { const b = wireField(px, py, wires), m = Math.hypot(b.bx, b.by) || 1e-12; return { x: b.bx / m, y: b.by / m }; };
+      const mg = 2;
+      function run(sg) {
+        const pts = [{ x, y }]; let px = x, py = y, best = 1e9;
+        for (let i = 0; i < maxN; i++) {
+          const a = dir(px, py), b = dir(px + sg * a.x * h / 2, py + sg * a.y * h / 2), c = dir(px + sg * b.x * h / 2, py + sg * b.y * h / 2), d = dir(px + sg * c.x * h, py + sg * c.y * h);
+          px += sg * h * (a.x + 2 * b.x + 2 * c.x + d.x) / 6; py += sg * h * (a.y + 2 * b.y + 2 * c.y + d.y) / 6;
+          pts.push({ x: px, y: py });
+          const dd = Math.hypot(px - x, py - y);
+          if (i > 30 && dd < 2.5 * h) { if (dd > best) { pts.push({ x, y }); return { pts, closed: true }; } best = dd; }
+          if (px < wb.x0 - mg || px > wb.x1 + mg || py < wb.y0 - mg || py > wb.y1 + mg) return { pts, closed: false };
+        }
+        return { pts, closed: false };
+      }
+      const f = run(1); if (f.closed) return [{ pts: f.pts, closed: true, fwd: true }];
+      const b = run(-1); return [{ pts: f.pts, closed: false, fwd: true }, { pts: b.pts, closed: false, fwd: false }];
+    }
+
+    /* ---------------- scenarios ---------------- */
+    const PRESETS = {
+      // tab 1: the field of a straight wire (notes pp. 8-13 to 8-17)
+      oer: { tab: 1, mode: 'run', name: 'Oersted: a compass under a wire', view: [0, 0, 26, 22], s: 1, T: 4, deflect: 60 },
+      grip: { tab: 1, mode: 'steps', name: 'The right-hand grip rule', view: [0, 0, 28, 22], s: 1 },
+      out: { tab: 1, mode: 'live', name: 'Current out of the page', view: [0, 0, 28, 22], s: 1 },
+      in: { tab: 1, mode: 'live', name: 'Current into the page', view: [0, 0, 28, 22], s: -1 },
+      plane: { tab: 1, mode: 'live', name: 'A wire in the plane of the page', view: [0, 0, 28, 20], s: 1 },
+      // tab 2: a coil and a solenoid (pp. 8-18, 8-19; Tutorial B1)
+      coil: { tab: 2, mode: 'live', name: 'A flat circular coil', view: [0, 0, 32, 22], turns: 1, x0: 0, len: 0, d: 4, front: 1, nLines: 9 },
+      sol: { tab: 2, mode: 'live', name: 'A solenoid', view: [0, 0, 44, 26], turns: 10, x0: 0, len: 18, d: 3.4, front: 1, nLines: 9 },
+      b1: { tab: 2, mode: 'run', name: 'Tutorial B1: the compass', view: [2, -2.5, 44, 30], turns: 9, x0: -4, len: 16, d: 3.2, front: 1, nLines: 9, T: 4, compass: [9.5, 0], needle0: 225,
+        q: 'Tutorial 8, B1: A compass is placed near a solenoid as shown. State and explain which direction the compass needle will turn when the switch is closed.' },
+      // tab 3: the force on a current-carrying wire (pp. 8-20 to 8-22; Tutorial B2(b))
+      flem: { tab: 3, mode: 'steps', name: 'Fleming’s left-hand rule', s: 1 },
+      ex1: { tab: 3, mode: 'run', name: 'Example 1: which way does it bend?', view: [0, 0, 26, 25], s: 1, T: 2,
+        q: 'Notes Example 1: Which way will the wire bend: (a) when the current <i>I</i> flows up? (b) when the current <i>I</i> flows down?' },
+      ex2: { tab: 3, mode: 'live', name: 'Example 2: a wire end-on', s: -1, fieldRight: 1,
+        q: 'Notes Example 2: Figure below show a current-carrying wire placed in a uniform magnetic field. Draw arrows to show the direction of magnetic force acting on the wire.' },
+      b2b: { tab: 3, mode: 'live', name: 'Tutorial B2(b): which way?', view: [0, 0, 26, 16], s: 1,
+        q: 'Tutorial 8, B2: A 120 cm long wire is placed at right angles to a uniform magnetic field as shown. The current of the wire is 2.0 A. (b) What is the direction of the current if the magnetic force is downwards?' },
+      // tab 4: F = BIL sin θ (pp. 8-23 to 8-26; Tutorial B2(a), B3, C1, C2)
+      ex3: { tab: 4, mode: 'steps', name: 'Example 3: F = BIL', view: [0, 0, 30, 18], B: 0.15, I: 0.45, Lcm: 8.0,
+        q: 'Notes Example 3: A straight current-carrying wire of length 8.0 cm is placed perpendicular to a magnetic field of magnitude 0.15 T. If the current is 0.45 A, find the magnitude of the magnetic force exerted on the wire.' },
+      ex4: { tab: 4, mode: 'reveal', name: 'Example 4: four orientations',
+        q: 'Notes Example 4: A current-carrying wire is placed in the same magnetic field in four different orientations as shown in the diagram below. Rank the magnitudes of the magnetic force from the strongest to the weakest.' },
+      b2a: { tab: 4, mode: 'steps', name: 'Tutorial B2(a): find B', view: [0, 0, 26, 16], F: 6.0, I: 2.0, Lcm: 120, sf: 2,
+        q: 'Tutorial 8, B2: A 120 cm long wire is placed at right angles to a uniform magnetic field as shown. The current of the wire is 2.0 A. (a) What is the required magnetic field if the wire is to experience a force of 6.0 N?' },
+      b3: { tab: 4, mode: 'live', name: 'Tutorial B3: turn the wire', B: 0.390, I: 5.00, L: 2.80, theta: 60, angles: [0, 60, 90, 120, 180],
+        q: 'Tutorial 8, B3: A 2.80 m long wire carries a 5.00 A of current in a 0.390 T magnetic field. Calculate the magnitude of the magnetic force on the wire assuming the angle between the magnetic field and the current is: (a) 0° (b) 60° (c) 90° (d) 120° (e) 180°' },
+      c1: { tab: 4, mode: 'steps', name: 'Tutorial C1: hold up a mass', view: [0, -1.5, 27, 19], V: 3.00, R: 4.50, m: 0.500, L: 2.50,
+        q: 'Tutorial 8, C1: A wire supports a 500 g mass in a uniform magnetic field as shown in the diagram. (a) Find the magnitude and direction of current in the circuit. (b) What is the required magnetic field if the magnetic force balances the weight of the 500 g mass?' },
+      c2: { tab: 4, mode: 'steps', name: 'Tutorial C2: a rectangle', view: [0, 0, 24, 16], B: 1.20, I: 18.0, ab: 12.5, bc: 8.00,
+        q: 'Tutorial 8, C2: A rectangular circuit is carrying a current of 18.0 A and is located in a magnetic field of 1.20 T as shown in the diagram. AB = CD = 12.5 cm and BC = AD = 8.00 cm. Find the magnitude and direction of the force on each segment in the circuit.' },
+      own: { tab: 4, mode: 'live', name: 'Your own values', B: 0.15, I: 0.45, L: 0.080, theta: 90, angles: [0, 30, 60, 90, 120, 150, 180] }
+    };
+    const G = 10;   // the notes' g, N/kg
+
+    let P = {}, S = { scen: 'oer', step: 0 };
+    let compass = null, probe = null, feat = {}, hl = {};
+    const sim = { t: 0, running: false, last: null };
+    let show = {};
+    const mode = () => (PRESETS[S.scen] || {}).mode || 'live';
+    const isRun = () => mode() === 'run', isSteps = () => mode() === 'steps';
+
+    /* ---------------- runs: closed form, so any moment is exact ---------------- */
+    // a needle that turns from one direction to another and settles (Oersted, Tutorial B1): an underdamped swing, and exactly
+    // the final direction once the run has ended (the leftover is under 0.1°)
+    const SW = 2 * Math.PI / 1.4, SC = 1.7;
+    const settle = (a0, a1, t) => (t <= 0 ? a0 : a1 + (a0 - a1) * Math.exp(-SC * t) * (Math.cos(SW * t) + SC / SW * Math.sin(SW * t)));
+    // Oersted (top view, north up the page): the angle of the needle's N end from north, + towards the east. The wire's field
+    // under it points west when the current flows north; how far it turns the needle (60°) is the page's own value.
+    const oerTarget = () => -P.s * P.deflect;
+    function oerAngle(t) { const T = runEnd(); return t >= T - 1e-9 ? oerTarget() : settle(0, oerTarget(), t); }
+    // Tutorial B1: the needle starts as in the diagram, then follows the solenoid's field once the switch is closed
+    function b1Target() { const b = wireField(P.compass[0], P.compass[1], wiresOf('b1', P, 1)); return Math.atan2(b.by, b.bx) / DEG; }
+    function b1Angle(t) { let tg = b1Target(); while (tg - P.needle0 > 180) tg -= 360; while (tg - P.needle0 < -180) tg += 360; return t >= runEnd() - 1e-9 ? tg : settle(P.needle0, tg, t); }
+    // Example 1: the wire bows out over 1.2 s, then stays bent
+    const bend = t => (t <= 0 ? 0 : t >= 1.2 ? 1 : 1 - Math.pow(1 - t / 1.2, 3));
+    const runEnd = () => (isRun() ? P.T : 0);
+    const keyMoments = () => (isRun() ? [S.scen === 'ex1' ? 1.2 : P.T] : []);
+    function frame(ts) {
+      if (!sim.running) return;
+      if (sim.last === null) sim.last = ts;
+      const dt = Math.max(0, Math.min(0.05, (ts - sim.last) / 1000)); sim.last = ts;   // never step backwards
+      sim.t = Math.min(runEnd(), sim.t + dt);
+      if (sim.t >= runEnd() - 1e-9) { sim.t = runEnd(); sim.running = false; }
+      update();
+      if (sim.running) requestAnimationFrame(frame);
+    }
+    function start() {
+      if (sim.t >= runEnd() - 1e-9) sim.t = 0;
+      sim.running = true; sim.last = null; clearFeatNoteOnly(); update(); requestAnimationFrame(frame);
+    }
+    function setTime(t) { sim.running = false; sim.last = null; sim.t = Math.max(0, Math.min(runEnd(), t)); update(); }
+    function resetRun() { sim.running = false; sim.last = null; sim.t = 0; }
+    $('startBtn').addEventListener('click', start);
+    $('pauseBtn').addEventListener('click', () => {
+      if (sim.running) { sim.running = false; sim.last = null; update(); }
+      else if (sim.t > 0 && sim.t < runEnd()) start();
+    });
+    $('resetBtn').addEventListener('click', () => { resetRun(); update(); });
+    // key moments: a run's moments, or the angles of a turning wire (Tutorial B3)
+    function moments() { return isRun() ? keyMoments() : (P.angles || []); }
+    function momentNow() { return isRun() ? sim.t : P.theta; }
+    function goMoment(v) { if (isRun()) setTime(v); else { P.theta = v; update(); } }
+    $('nextMoment').addEventListener('click', () => { const n = moments().find(m => m > momentNow() + 1e-9); if (n !== undefined) { clearFeatNoteOnly(); goMoment(n); } });
+    $('prevMoment').addEventListener('click', () => { const p = moments().filter(m => m < momentNow() - 1e-9).pop(); if (p !== undefined) { clearFeatNoteOnly(); goMoment(p); } });
+
+    /* ---------------- each worked example's numbers, from its data, in ONE place ----------------
+       The working, the cards and the drawing all read these, so they can never disagree. */
+    function solve(id = S.scen, Pp = P) {
+      switch (id) {
+        case 'ex3': { const L = Pp.Lcm / 100; return { L, F: Pp.B * Pp.I * L }; }
+        case 'b2a': { const L = Pp.Lcm / 100, IL = Pp.I * L; return { L, IL, B: Pp.F / IL }; }
+        case 'c1': { const I = Pp.V / Pp.R, W = Pp.m * G; return { I, W, B: W / (I * Pp.L) }; }
+        case 'c2': return { F: Pp.B * Pp.I * Pp.ab / 100 };
+      }
+      return {};
+    }
+
+    /* ---------------- steps: each value shows "?" until the step that finds it ---------------- */
+    function steps() {
+      const id = S.scen;
+      if (id === 'grip') { const o = P.s > 0;
+        return [{ h: 'Grip the wire with the right hand.' },
+          { h: `With the thumb in the direction of the current (${o ? 'out of' : 'into'} the page) …` },
+          { h: `… the curled fingers indicate the direction of the magnetic field: ${o ? 'anticlockwise' : 'clockwise'}, as you look at the page.` },
+          { h: `So the field lines are circles centred around the wire, going ${o ? 'anticlockwise' : 'clockwise'} (notes pp. 8-14 and 8-15).` }]; }
+      if (id === 'flem') { const up = P.s > 0;
+        return [{ h: 'Position the thumb, first and second fingers of your left hand at right angles to one another.' },
+          { h: 'Point the <b>F</b>irst finger in the direction of the magnetic <b>F</b>ield: into the page.' },
+          { h: `Point the se<b>C</b>ond finger in the direction of the <b>C</b>urrent: ${up ? 'up' : 'down'} the wire.` },
+          { h: `The thu<b>M</b>b shows the direction of the <b>M</b>otion: ${up ? 'to the left' : 'to the right'}. The wire is pushed ${up ? 'to the left' : 'to the right'}.` }]; }
+      if (id === 'ex3') { const { L, F } = solve();
+        return [{ h: `Write down the values in SI units: <i>L</i> = ${P.Lcm.toFixed(1)} cm = ${L.toFixed(3)} m, <i>B</i> = ${P.B.toFixed(2)} T, <i>I</i> = ${P.I.toFixed(2)} A.` },
+          { h: 'The wire is perpendicular to the field: <i>θ</i> = 90°, so sin <i>θ</i> = 1.' },
+          { h: `<i>F</i> = <i>BIL</i> sin <i>θ</i> = ${P.B.toFixed(2)} × ${P.I.toFixed(2)} × ${L.toFixed(3)} × 1` },
+          { h: `<i>F</i> = ${num(F)} N` }]; }
+      if (id === 'b2a') { const { L, IL, B } = solve();
+        return [{ h: `Change the length to metres: <i>L</i> = ${P.Lcm} cm = ${L.toFixed(2)} m. Also <i>I</i> = ${P.I.toFixed(1)} A and <i>F</i> = ${P.F.toFixed(1)} N.` },
+          { h: 'The wire is at right angles to the field: <i>θ</i> = 90°, so sin <i>θ</i> = 1.' },
+          { h: `<i>F</i> = <i>BIL</i> sin <i>θ</i>: ${P.F.toFixed(1)} = <i>B</i> × ${P.I.toFixed(1)} × ${L.toFixed(2)} × 1 = ${num(IL, 2)} <i>B</i>` },
+          { h: `<i>B</i> = ${P.F.toFixed(1)} ÷ ${num(IL, 2)} = ${num(B, P.sf)} T` }]; }
+      if (id === 'c1') { const { I, W, B } = solve();
+        return [{ h: `<i>I</i> = <i>V</i> ÷ <i>R</i> = ${P.V.toFixed(2)} ÷ ${P.R.toFixed(2)} = ${num(I)} A` },
+          { h: 'The current flows anticlockwise round the circuit, so in the wire inside the field it flows to the right.' },
+          { h: `The weight of the mass: <i>W</i> = <i>mg</i> = ${P.m.toFixed(1)} kg × ${G} N/kg = ${num(W)} N, downwards. (500 g = 0.5 kg.)` },
+          { h: `To balance it, the magnetic force must be ${num(W)} N upwards. Fleming’s left-hand rule: field into the page, current to the right, so the force is up.` },
+          { h: `<i>F</i> = <i>BIL</i> sin 90°: ${num(W)} = <i>B</i> × ${num(I)} × ${P.L.toFixed(2)}, so <i>B</i> = ${num(B)} T` }]; }
+      if (id === 'c2') { const { F } = solve();
+        return [{ h: `AB: the current flows to the right, at 90° to the field. <i>F</i> = <i>BIL</i> = ${P.B.toFixed(2)} × ${P.I.toFixed(1)} × ${(P.ab / 100).toFixed(3)} = ${num(F)} N, out of the page.` },
+          { h: 'BC: the current flows down, along the field line (the opposite way): <i>θ</i> = 180°, sin 180° = 0, so <i>F</i> = 0 N.' },
+          { h: `CD: the current flows to the left, at 90° to the field: <i>F</i> = ${num(F)} N, into the page.` },
+          { h: 'DA: the current flows up, along the field: <i>θ</i> = 0°, so <i>F</i> = 0 N.' }]; }
+      return [];
+    }
+    const nSteps = () => (isSteps() ? steps().length : 0);
+    function setStep(n) { S.step = Math.max(0, Math.min(nSteps(), n)); update(); }
+    $('prevStep').addEventListener('click', () => setStep(S.step - 1));
+    $('nextStep').addEventListener('click', () => { clearFeatNoteOnly(); setStep(S.step + 1); });
+    $('stepReset').addEventListener('click', () => { clearFeatNoteOnly(); setStep(0); });
+
+    function loadScenario(id) {
+      const sc = PRESETS[id];
+      S.scen = id; S.step = 0;
+      P = JSON.parse(JSON.stringify(sc)); P.id = id;
+      compass = id === 'out' || id === 'in' ? { x: 0, y: 4.6 } : id === 'coil' ? { x: 7, y: 0 } : id === 'sol' ? { x: 14, y: 0 } : null;
+      probe = id === 'plane' ? { x: 4.6, y: 2 } : null;
+      show = { lines: true, compasses: false, force: true, reveal: false };
+      if (freeMode) { S.step = nSteps(); show.reveal = true; }
+      $('question').innerHTML = sc.q || '';
+      lineCache = {};
+      resetRun();
+    }
+
+    /* ---------------- drawing helpers ---------------- */
+    // what the canvas drew, for the checks: every label's box, every arrow, the panes, the field lines
+    window.__pim = { labels: [], arrows: [], panes: [], lines: [], needles: [], marks: [] };
+    function setup(cv, wantH) {
+      if (wantH && Math.abs(cv.getBoundingClientRect().height - wantH) > 1) cv.style.height = wantH + 'px';
+      const r = cv.getBoundingClientRect();
+      if (r.width < 20 || r.height < 20) return null;   // hidden: never draw at no size
+      const dpr = window.devicePixelRatio || 1, cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
+      if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+      const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, r.width, r.height);
+      return { ctx, W: r.width, H: r.height };
     }
     // Canvas text with <i>, <sub> and <sup> runs, so symbols of physical quantities are italic, as in the notes.
-    // Honours ctx.textAlign; returns the width. measureOnly = true draws nothing.
     function richText(ctx, s, x, y, measureOnly) {
       const base = ctx.font, m = base.match(/([\d.]+)px/), size = m ? +m[1] : 12;
       const runs = []; let it = false, sub = 0;
@@ -182,208 +603,1135 @@
         }
       }
       ctx.font = base;
-      const w = runs.reduce((a, r) => a + r.w, 0);
-      if (measureOnly) return w;
+      const wd = runs.reduce((a, r) => a + r.w, 0);
+      if (measureOnly) return wd;
       const align = ctx.textAlign;
-      let cx = align === 'center' ? x - w / 2 : (align === 'right' || align === 'end') ? x - w : x;
+      let cx = align === 'center' ? x - wd / 2 : (align === 'right' || align === 'end') ? x - wd : x;
       ctx.textAlign = 'left';
       for (const r of runs) { ctx.font = r.f; ctx.fillText(r.t, cx, y + (r.sub === 1 ? size * 0.3 : r.sub === -1 ? -size * 0.4 : 0)); cx += r.w; }
       ctx.textAlign = align; ctx.font = base;
-      return w;
+      return wd;
     }
+    let PANE = 'scene', CW = 1e9, CH = 1e9, CX0 = 0, CY0 = 0;
+    function pane(name, x, y, w, h) { PANE = name; CX0 = x; CY0 = y; CW = x + w; CH = y + h; __pim.panes.push({ name, x, y, w, h }); }
+    function arrow(ctx, x1, y1, x2, y2, color, lw = 3, head = 10, record = true) {
+      const len = Math.hypot(x2 - x1, y2 - y1); if (len < 1.5) return;
+      if (record) __pim.arrows.push({ pane: PANE, x1, y1, x2, y2, color });
+      const a = Math.atan2(y2 - y1, x2 - x1), hd = Math.min(head, len * 0.6);
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - Math.cos(a) * hd * 0.8, y2 - Math.sin(a) * hd * 0.8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - hd * Math.cos(a - 0.45), y2 - hd * Math.sin(a - 0.45)); ctx.lineTo(x2 - hd * Math.cos(a + 0.45), y2 - hd * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill();
+    }
+    function headAt(ctx, x, y, ang, color, size = 6) {
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.moveTo(x + Math.cos(ang) * size, y + Math.sin(ang) * size);
+      ctx.lineTo(x + Math.cos(ang + 2.5) * size, y + Math.sin(ang + 2.5) * size);
+      ctx.lineTo(x + Math.cos(ang - 2.5) * size, y + Math.sin(ang - 2.5) * size);
+      ctx.closePath(); ctx.fill();
+    }
+    function labelBox(ctx, lines, x, y, align, size) {
+      ctx.font = `bold ${size}px Arial`;
+      const wd = Math.max(...lines.map(t => richText(ctx, t, 0, 0, true))), lh = size * 1.6 + 1, h = lines.length * lh - 1;
+      const x0 = Math.max(CX0 + 4, Math.min(CW - wd - 4, align === 'center' ? x - wd / 2 : align === 'right' ? x - wd : x));
+      const y0 = Math.max(CY0 + 2, Math.min(CH - h - 2, y - size * 0.8));
+      return { x: x0 - 3, y: y0, w: wd + 6, h, lh, tx: x0, size };
+    }
+    const hitBox = (a, b, pad = 1) => Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) > pad && Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) > pad;
+    function crossesArrow(box) {
+      return __pim.arrows.some(a => { if (a.pane !== PANE) return false; for (let k = 0; k <= 24; k++) { const px = a.x1 + (a.x2 - a.x1) * k / 24, py = a.y1 + (a.y2 - a.y1) * k / 24;
+        if (px > box.x + 0.5 && px < box.x + box.w - 0.5 && py > box.y + 0.5 && py < box.y + box.h - 0.5) return true; } return false; });
+    }
+    function label(ctx, lines, x, y, color, align = 'center', size = 12, bg = 'rgba(255,255,255,0.92)') {
+      if (!Array.isArray(lines)) lines = [lines];
+      const b = labelBox(ctx, lines, x, y, align, size);
+      lines.forEach((t, i) => {
+        const card = { pane: PANE, text: plain(t), x: b.x, y: b.y + i * b.lh, w: b.w, h: size * 1.6 };
+        if (bg) { ctx.fillStyle = bg; ctx.fillRect(card.x, card.y, card.w, card.h); }
+        ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.font = `bold ${size}px Arial`; richText(ctx, t, b.tx, card.y + size * 0.8);
+        ctx.textBaseline = 'alphabetic';
+        __pim.labels.push(card);
+      });
+      return b;
+    }
+    const clear = b => !__pim.labels.some(l => l.pane === PANE && hitBox(l, b)) && !crossesArrow(b);
+    // try the spots in turn; a label with no clear spot is left out (rule: never a label on top of another)
+    function labelAt(ctx, text, cands, color, size = 12, must = true) {
+      for (const [x, y, al] of cands) { const b = labelBox(ctx, Array.isArray(text) ? text : [text], x, y, al, size); if (clear(b)) return label(ctx, text, x, y, color, al, size); }
+      if (!must) return null;
+      const [x, y, al] = cands[0]; return label(ctx, text, x, y, color, al, size);
+    }
+    const obstacle = (x, y, wd, h) => __pim.labels.push({ pane: PANE, obstacle: true, text: '', x, y, w: wd, h });
 
-    function tag(ctx, t, x, y, color, align = 'center') {
-      ctx.font = 'bold 12px Arial'; ctx.textAlign = align; ctx.textBaseline = 'middle';
-      const tw = richText(ctx, t, 0, 0, true), x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
-      ctx.fillStyle = 'rgba(251,253,255,0.92)'; ctx.fillRect(x0 - 3, y - 8, tw + 6, 16);
-      ctx.fillStyle = color; richText(ctx, t, x, y); ctx.textBaseline = 'alphabetic';
+    // world (page units, y UP) to the screen, fitted to the scenario's view box [cx, cy, w, h]
+    let VIEW = { k: 1, ox: 0, oy: 0 };
+    function fitView(box, v = P.view) {
+      const [cx, cy, w, h] = v, k = Math.min(box.w / w, box.h / h);
+      VIEW = { k, ox: box.x + box.w / 2 - cx * k, oy: box.y + box.h / 2 + cy * k };
+      return { x0: (box.x - VIEW.ox) / k, x1: (box.x + box.w - VIEW.ox) / k, y1: (VIEW.oy - box.y) / k, y0: (VIEW.oy - box.y - box.h) / k };
     }
-    function poles(ctx, w, h, top, bot) {
-      const left = st.fieldRight ? 'N' : 'S', right = st.fieldRight ? 'S' : 'N';
-      [[0, left], [w - 44, right]].forEach(([x, p]) => {
-        ctx.fillStyle = p === 'N' ? '#dc2626' : '#2563eb';
-        ctx.fillRect(x, top, 44, bot - top);
-        ctx.fillStyle = 'white'; ctx.font = 'bold 22px Arial'; ctx.textAlign = 'center'; ctx.fillText(p, x + 22, (top + bot) / 2 + 8);
+    const sx = x => VIEW.ox + x * VIEW.k, sy = y => VIEW.oy - y * VIEW.k;
+    const toWorldPt = (px, py) => ({ x: (px - VIEW.ox) / VIEW.k, y: (VIEW.oy - py) / VIEW.k });
+
+    // a compass: (bx, by) is the direction on the page (y up) its N end points to
+    function drawNeedle(ctx, x, y, bx, by, len, ringR, rec) {
+      if (ringR) { ctx.fillStyle = 'rgba(255,255,255,0.95)'; ctx.strokeStyle = '#334155'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, ringR, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+      const a = Math.atan2(-by, bx);
+      const ux = Math.cos(a), uy = Math.sin(a), vx = -uy, vy = ux, wdt = len * 0.22;
+      ctx.fillStyle = COL.N; ctx.beginPath(); ctx.moveTo(x + ux * len, y + uy * len); ctx.lineTo(x + vx * wdt, y + vy * wdt); ctx.lineTo(x - vx * wdt, y - vy * wdt); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.moveTo(x - ux * len, y - uy * len); ctx.lineTo(x + vx * wdt, y + vy * wdt); ctx.lineTo(x - vx * wdt, y - vy * wdt); ctx.closePath(); ctx.fill();
+      if (rec) __pim.needles.push({ x, y, ang: Math.atan2(by, bx) / DEG, name: rec });
+    }
+    // a wire seen end-on: • current out of the page, × into it
+    function wireEnd(ctx, X, Y, s, r = 11) {
+      ctx.fillStyle = '#fef3c7'; ctx.strokeStyle = COL.cur; ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.arc(X, Y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = COL.cur; ctx.strokeStyle = COL.cur;
+      if (s > 0) { ctx.beginPath(); ctx.arc(X, Y, r * 0.3, 0, Math.PI * 2); ctx.fill(); }
+      else if (s < 0) { const q = r * 0.55; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(X - q, Y - q); ctx.lineTo(X + q, Y + q); ctx.moveTo(X + q, Y - q); ctx.lineTo(X - q, Y + q); ctx.stroke(); }
+      obstacle(X - r, Y - r, 2 * r, 2 * r);
+    }
+    // a field mark: × into the page or • out of it (green, as in the notes)
+    function fieldMark(ctx, X, Y, s, size = 5, color = COL.field) {
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = Math.max(1.4, size * 0.38);
+      if (s < 0) { ctx.beginPath(); ctx.moveTo(X - size, Y - size); ctx.lineTo(X + size, Y + size); ctx.moveTo(X + size, Y - size); ctx.lineTo(X - size, Y + size); ctx.stroke(); }
+      else { ctx.beginPath(); ctx.arc(X, Y, Math.max(2.4, size * 0.6), 0, Math.PI * 2); ctx.fill(); }
+      __pim.marks.push({ x: X, y: Y, s });
+    }
+    // the two poles of a magnet, left and right of a box (px)
+    function poleBlocks(ctx, box, fieldRight, wPx = 40) {
+      const left = fieldRight > 0 ? 'N' : 'S', right = fieldRight > 0 ? 'S' : 'N';
+      [[box.x, left], [box.x + box.w - wPx, right]].forEach(([x, p]) => {
+        ctx.fillStyle = p === 'N' ? COL.N : COL.S; ctx.fillRect(x, box.y, wPx, box.h);
+        ctx.fillStyle = 'white'; ctx.font = 'bold 20px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(p, x + wPx / 2, box.y + box.h / 2); ctx.textBaseline = 'alphabetic';
+        obstacle(x, box.y, wPx, box.h);
       });
     }
-    // Force direction for the end-on wire: F = I L x B with the field along +/-x and the current along +/-z (out of page = +z)
-    function endForceUp() { const bs = st.fieldRight ? 1 : -1, is = st.outOfPage ? 1 : -1; return bs * is > 0; } // z x x = +y (up)
-
-    // ---------- end-on view with the combined ("catapult") field ----------
-    let endGeo = null, endGeoLines = [];
-    function drawEnd() {
-      const { ctx, w, h } = setup(el('endCanvas'));
-      ctx.clearRect(0, 0, w, h);
-      const top = 20, bot = h - 20;
-      poles(ctx, w, h, top, bot);
-      const x0 = 50, x1 = w - 50;
-      const F = Fmax(), up = endForceUp(), show = el('showF').checked;
-      // with the force hidden the wire stays put, so its movement can't give the answer away
-      st.disp += ((show && I() > 0 && B() > 0 ? (up ? -1 : 1) * Math.min(60, 12 + F * 6000) : 0) - st.disp) * 0.08;
-      const cx = (x0 + x1) / 2, cy = h / 2 + st.disp;
-      const B0 = Math.max(B(), 1e-4) * (st.fieldRight ? 1 : -1);
-      // Strength of the wire's own circular field, in display units. Real values put the neutral point a fraction of
-      // a millimetre from the wire, inside the drawn wire, where it cut lines off; here it sits ~34 px away on the
-      // weak side, so the lines from the magnet all pass round the wire.
-      const RN = 34;
-      const k = (I() > 0 ? 1 : 0) * Math.abs(B0) * (RN * RN + 30) / RN * (st.outOfPage ? 1 : -1);
-      // Image currents mirrored in the top and bottom edges of the gap (opposite current, repeated every 2 gap heights)
-      // make the field run along those edges, so no line seeded between the poles can leave through them. Without
-      // them the outermost line left the gap whenever the wire sat off-centre.
-      const srcs = [];
-      for (let n = -3; n <= 3; n++) { srcs.push({ y: cy + n * 2 * (bot - top), s: 1 }); srcs.push({ y: 2 * top - cy + n * 2 * (bot - top), s: -1 }); }
-      const field = (x, y) => {
-        // uniform field along x, plus anticlockwise (for current out of page) circular field, in maths axes (y up)
-        let bx = B0, by = 0;
-        for (const q of srcs) {
-          const dx = x - cx, dy = -(y - q.y); const r2 = dx * dx + dy * dy + 30;
-          bx += q.s * k * (-dy) / r2; by += q.s * k * dx / r2;
-        }
-        return { bx, by: -by }; // back to canvas axes
-      };
-      // stream lines (RK4 on the unit direction) seeded evenly along the upstream side; each runs to the far pole
-      ctx.strokeStyle = 'rgba(71,85,105,0.75)'; ctx.lineWidth = 1.4;
-      const dir = (x, y) => { const f = field(x, y), m = Math.hypot(f.bx, f.by) || 1e-12; return { x: f.bx / m, y: f.by / m }; };
-      const rk = (x, y, hS) => {
-        const a = dir(x, y), b = dir(x + a.x * hS / 2, y + a.y * hS / 2), c = dir(x + b.x * hS / 2, y + b.y * hS / 2), d = dir(x + c.x * hS, y + c.y * hS);
-        return { x: x + hS * (a.x + 2 * b.x + 2 * c.x + d.x) / 6, y: y + hS * (a.y + 2 * b.y + 2 * c.y + d.y) / 6 };
-      };
-      const headOn = (mid) => { ctx.fillStyle = 'rgba(71,85,105,0.9)'; ctx.beginPath(); ctx.moveTo(mid.x + Math.cos(mid.a) * 6, mid.y + Math.sin(mid.a) * 6); ctx.lineTo(mid.x + Math.cos(mid.a + 2.5) * 6, mid.y + Math.sin(mid.a + 2.5) * 6); ctx.lineTo(mid.x + Math.cos(mid.a - 2.5) * 6, mid.y + Math.sin(mid.a - 2.5) * 6); ctx.closePath(); ctx.fill(); };
-      const ends = [];
-      const n = fieldLines();
+    // One field line per 0.02 T (whole hundredths, so 0.15 T is 8), spaced evenly; at most 8 arrowheads
+    const linesFor = B => Math.max(3, Math.round(Math.round(B * 100) / 2));
+    const headOnLine = (i, n) => { const m = Math.min(n, 8); for (let j = 0; j < m; j++) if (Math.floor((j + 0.5) * n / m) === i) return true; return false; };
+    function uniformLines(ctx, x0, x1, y0, y1, n, right) {
       for (let i = 0; i < n; i++) {
-        let x = st.fieldRight ? x0 : x1, y = top + (bot - top) * (i + 0.5) / n;
-        ctx.beginPath(); ctx.moveTo(x, y);
-        let mid = null;
-        for (let steps = 0; steps < 3000; steps++) {
-          const q = rk(x, y, 2);
-          if (steps === 75) mid = { x: q.x, y: q.y, a: Math.atan2(q.y - y, q.x - x) };
-          x = q.x; y = q.y; ctx.lineTo(x, y);
-          if (x < x0 - 1 || x > x1 + 1 || y < top || y > bot) break;
-        }
-        ctx.stroke();
-        ends.push({ x, y });
-        if (mid && headOnLine(i, n)) headOn(mid);
+        const y = y0 + (y1 - y0) * (i + 0.5) / n, a = right > 0 ? x0 : x1, b = right > 0 ? x1 : x0;
+        if (headOnLine(i, n)) arrow(ctx, a, y, b, y, COL.fieldLine, 1.4, 8, false);
+        else { ctx.strokeStyle = COL.fieldLine; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(a, y); ctx.lineTo(b, y); ctx.stroke(); }
+        __pim.lines.push({ y, kind: 'uniform' });
       }
-      endGeoLines = ends;
-      // the wire
-      ctx.fillStyle = '#fef3c7'; ctx.strokeStyle = '#92400e'; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(cx, cy, 14, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#92400e'; ctx.strokeStyle = '#92400e';
-      if (st.outOfPage) { ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.fill(); }
-      else { ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(cx - 7, cy - 7); ctx.lineTo(cx + 7, cy + 7); ctx.moveTo(cx + 7, cy - 7); ctx.lineTo(cx - 7, cy + 7); ctx.stroke(); }
-      endGeo = { cx, cy };
-      if (F > 0 && !show) tag(ctx, 'Which way is the force? Predict, then tick Show the force.', cx, top + 14, '#7c3aed');
-      else if (F > 0) {
-        const len = Math.min(90, 20 + F * 9000);
-        arrow(ctx, cx + 22, cy, cx + 22, cy + (up ? -len : len), '#dc2626', 4.5);
-        tag(ctx, `<i>F</i> = ${(F * 1000).toFixed(2)} mN`, cx + 32, cy + (up ? -len * 0.6 : len * 0.6), '#b91c1c', 'left');
-        if (n >= 3) { // with one or two lines there is no crowding to point at
-          tag(ctx, 'weaker field', cx - 70, cy + (up ? -48 : 48), '#475569');
-          tag(ctx, 'stronger field', cx - 70, cy + (up ? 48 : -48), '#475569');
-        }
-      } else tag(ctx, I() === 0 ? 'No current, so no force' : 'No field, so no force', cx, cy - 40, '#475569');
-      tag(ctx, st.outOfPage ? 'current out of the page' : 'current into the page', cx, bot - 12, '#92400e');
     }
 
-    // ---------- side view: tilt the wire ----------
-    let sideGeo = null;
-    function drawSide() {
-      const { ctx, w, h } = setup(el('sideCanvas'));
-      ctx.clearRect(0, 0, w, h);
-      const top = 20, bot = h - 20;
-      poles(ctx, w, h, top, bot);
-      // uniform field lines
-      ctx.strokeStyle = 'rgba(71,85,105,0.55)'; ctx.lineWidth = 1.3;
-      const nLines = fieldLines();
-      for (let i = 0; i < nLines; i++) {
-        const y = top + (bot - top) * (i + 0.5) / nLines;
-        const a = st.fieldRight ? 60 : w - 60, b = st.fieldRight ? w - 60 : 60;
-        if (headOnLine(i, nLines)) arrow(ctx, a, y, b, y, 'rgba(71,85,105,0.55)', 1.3, 8);
-        else { ctx.beginPath(); ctx.moveTo(a, y); ctx.lineTo(b, y); ctx.stroke(); }
+    /* ---------------- the drawing ---------------- */
+    let lineCache = {};
+    function sceneH(W) {
+      const narrow = W < 560, id = S.scen;
+      if (id === 'flem') return narrow ? 540 : 400;
+      if (id === 'ex4') return narrow ? 560 : 300;
+      if (id === 'b3' || id === 'own') return narrow ? 660 : 400;
+      if (['b2a', 'b2b'].includes(id)) return narrow ? 300 : 320;
+      if (['ex3', 'c2'].includes(id)) return narrow ? 330 : 360;
+      if (id === 'sol') return narrow ? 330 : 400;
+      return narrow ? 380 : 420;
+    }
+    function draw() {
+      for (const k in __pim) __pim[k] = [];
+      const g0 = canvas.getBoundingClientRect();
+      const g = setup(canvas, sceneH(g0.width)); if (!g) return;
+      drawScene(g.ctx, { x: 0, y: 0, w: g.W, h: g.H }, {});
+    }
+    function drawScene(ctx, box, opt) {
+      const id = S.scen;
+      pane('scene', box.x, box.y, box.w, box.h);
+      ({ oer: drawOer, grip: drawWireEnd, out: drawWireEnd, in: drawWireEnd, plane: drawPlane, coil: drawCoil, sol: drawCoil, b1: drawCoil,
+        flem: drawFlem, ex1: drawEx1, ex2: drawEx2, b2b: drawB2, ex3: drawEx3, ex4: drawEx4, b2a: drawB2, b3: drawTurn, own: drawTurn, c1: drawC1, c2: drawC2 })[id](ctx, box, opt);
+    }
+
+    // tab 1: Oersted's compass, seen from above; north is up the page
+    function drawOer(ctx, box) {
+      fitView(box);
+      const k = VIEW.k, on = sim.t > 0, X = sx(0), Y = sy(0), R = 4.2 * k;
+      arrow(ctx, box.x + 26, box.y + 64, box.x + 26, box.y + 22, '#0f766e', 3, 10);
+      label(ctx, 'North', box.x + 26, box.y + 78, '#0f766e', 'center', 12);
+      // the compass, then the wire held just above it
+      const a = oerAngle(sim.t) * DEG;
+      drawNeedle(ctx, X, Y, Math.sin(a), Math.cos(a), R * 0.82, R, 'oer');
+      ctx.strokeStyle = 'rgba(234,88,12,0.55)'; ctx.lineWidth = Math.max(8, 0.7 * k); ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(X, sy(-9.5)); ctx.lineTo(X, sy(9.5)); ctx.stroke(); ctx.lineCap = 'butt';
+      if (on) { const up = P.s > 0; arrow(ctx, X + 0.9 * k + 10, sy(up ? 4.8 : 8.2), X + 0.9 * k + 10, sy(up ? 8.2 : 4.8), COL.cur, 3, 10);
+        label(ctx, `<i>I</i> (flowing ${up ? 'north' : 'south'})`, X + 0.9 * k + 18, sy(6.5), COL.cur, 'left'); }
+      labelAt(ctx, 'wire, just above the compass', [[X - 0.9 * k - 8, sy(-7.5), 'right'], [X + 0.9 * k + 8, sy(-7.5), 'left']], COL.cur);
+      label(ctx, on ? 'switch closed: current flows' : 'switch open: no current', box.x + box.w / 2, box.y + box.h - 14, on ? COL.cur : '#475569');
+    }
+
+    // tab 1: one wire end-on (out of or into the page), and the right-hand grip rule
+    function drawWireEnd(ctx, box, opt) {
+      const wb = fitView(box), k = VIEW.k, X = sx(0), Y = sy(0), id = S.scen, s = P.s;
+      const step = id === 'grip' ? S.step : 9, showLines = id === 'grip' ? step >= 4 : show.lines;
+      ctx.save(); ctx.beginPath(); ctx.rect(box.x, box.y, box.w, box.h); ctx.clip();
+      if (showLines) {
+        RINGS.forEach((r, i) => {
+          ctx.strokeStyle = COL.fieldLine; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(X, Y, r * k, 0, Math.PI * 2); ctx.stroke();
+          __pim.lines.push({ r, kind: 'ring' });
+          if (!opt.noArrows) [0, Math.PI].forEach(t => { const px = X + Math.cos(t) * r * k, py = Y - Math.sin(t) * r * k;
+            // out of the page: anticlockwise (up on the right, down on the left)
+            const up = (t === 0) === (s > 0); headAt(ctx, px, py, up ? -Math.PI / 2 : Math.PI / 2, '#15803d', 6); });
+        });
       }
-      const cx = w / 2, cy = h / 2, half = Math.min(w, h) * 0.3;
-      const th = st.theta;
-      const d = { x: Math.cos(th), y: -Math.sin(th) };
-      const p1 = { x: cx - d.x * half, y: cy - d.y * half }, p2 = { x: cx + d.x * half, y: cy + d.y * half };
-      ctx.strokeStyle = '#b45309'; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke(); ctx.lineCap = 'butt';
-      // current arrow along the wire
-      const s = st.sideCurrentAlong ? 1 : -1;
-      arrow(ctx, cx - d.x * 30 * s, cy - d.y * 30 * s, cx + d.x * 30 * s, cy + d.y * 30 * s, '#fde68a', 3, 10);
-      tag(ctx, '<i>I</i>', cx + d.x * 44 * s + 10, cy + d.y * 44 * s - 10, '#92400e');
-      // theta arc from the field direction
-      const fieldAng = st.fieldRight ? 0 : Math.PI;
-      const wireAng = Math.atan2(-d.y * s, d.x * s); // current direction in maths angle
-      let dth = wireAng - fieldAng; while (dth > Math.PI) dth -= 2 * Math.PI; while (dth < -Math.PI) dth += 2 * Math.PI;
-      ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, 44, -fieldAng, -(fieldAng + dth), dth > 0); ctx.stroke();
-      const thetaDeg = Math.abs(dth) * 180 / Math.PI;
-      tag(ctx, `<i>θ</i> = ${thetaDeg.toFixed(0)}°`, cx + Math.cos(fieldAng + dth / 2) * 64, cy - Math.sin(fieldAng + dth / 2) * 64, '#6d28d9');
-      // force: in or out of the page. F = I (d x B): d = (cos a, sin a), B = (+-1, 0) -> z = -sin(a) * (+-1)
-      const Fz = Math.sin(wireAng) * (st.fieldRight ? -1 : 1);
-      const Fs = Fmax() * Math.abs(Math.sin(dth));
-      const r = 10 + 26 * Math.min(1, Fs / 0.01);
-      if (Fs > 1e-7 && !el('showF').checked) tag(ctx, 'Force hidden: predict into or out of the page', cx, bot - 16, '#7c3aed');
-      else if (Fs > 1e-7) {
-        ctx.strokeStyle = '#dc2626'; ctx.fillStyle = '#dc2626'; ctx.lineWidth = 3;
-        // the circle and its label stay between the poles (on a phone cx + 90 ran them onto the right-hand pole)
-        const fLabel = `<i>F</i> ${Fz > 0 ? 'out of' : 'into'} the page: ${(Fs * 1000).toFixed(2)} mN`;
-        ctx.font = 'bold 12px Arial'; const fw = richText(ctx, fLabel, 0, 0, true);
-        const gapL = 44 + 6, gapR = w - 44 - 6;
-        const fx = Math.max(gapL + fw / 2, Math.min(cx + 90, gapR - 36, gapR - fw / 2)), fy = cy + 90 > bot - 40 ? cy - 90 : cy + 90;
-        ctx.beginPath(); ctx.arc(fx, fy, r, 0, Math.PI * 2); ctx.stroke();
-        if (Fz > 0) { ctx.beginPath(); ctx.arc(fx, fy, r * 0.25, 0, Math.PI * 2); ctx.fill(); }
-        else { ctx.beginPath(); ctx.moveTo(fx - r * 0.6, fy - r * 0.6); ctx.lineTo(fx + r * 0.6, fy + r * 0.6); ctx.moveTo(fx + r * 0.6, fy - r * 0.6); ctx.lineTo(fx - r * 0.6, fy + r * 0.6); ctx.stroke(); }
-        tag(ctx, fLabel, fx, fy + r + 14, '#b91c1c');
-      } else tag(ctx, 'Wire along the field: <i>F</i> = 0', cx, bot - 16, '#b91c1c');
-      ctx.fillStyle = '#b45309'; ctx.beginPath(); ctx.arc(p2.x, p2.y, 9, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.stroke();
-      sideGeo = { cx, cy, p1, p2, thetaDeg, Fs, Fz };
+      ctx.restore();
+      // the wire is drawn last, but its place is taken now, so no label is placed on it
+      const wr = Math.max(9, 0.6 * k); obstacle(X - wr, Y - wr, 2 * wr, 2 * wr);
+      if (id === 'grip') {
+        // the right hand round the wire: the curled fingers (a ring), the thumb along the wire
+        if (step >= 1) { ctx.strokeStyle = 'rgba(232,170,120,0.85)'; ctx.lineWidth = 0.9 * k; ctx.beginPath(); ctx.arc(X, Y, 1.25 * k, 0, Math.PI * 2); ctx.stroke(); }
+        if (step >= 1) label(ctx, 'right hand gripping the wire', X, Y + 2.6 * k + 12, '#9a3412');
+        if (step >= 2) label(ctx, `thumb: ${s > 0 ? 'out of' : 'into'} the page, along the current`, X, Y - 2.6 * k - 12, '#9a3412');
+        if (step >= 3) {
+          const R2 = 1.9 * k, a0 = s > 0 ? 0.25 : Math.PI * 2 - 0.25, a1 = s > 0 ? Math.PI * 1.6 : Math.PI * 0.4;
+          ctx.strokeStyle = COL.grip; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(X, Y, R2, -a0, -a1, s > 0); ctx.stroke();
+          const ex = X + Math.cos(a1) * R2, ey = Y - Math.sin(a1) * R2, tang = s > 0 ? Math.atan2(-Math.cos(a1), -Math.sin(a1)) : Math.atan2(Math.cos(a1), Math.sin(a1));
+          headAt(ctx, ex, ey, tang, COL.grip, 9);
+          labelAt(ctx, [`fingers curl ${s > 0 ? 'anticlockwise' : 'clockwise'}:`, 'this is the field'], [[X + R2 + 12, Y - 6, 'left'], [X - R2 - 12, Y - 6, 'right'], [X, Y + R2 + 34, 'center'], [X, Y + 2.6 * k + 44, 'center']], COL.grip);
+        }
+      }
+      wireEnd(ctx, X, Y, s, Math.max(9, 0.6 * k));
+      if (compass && !opt.fig) {
+        const b = wireField(compass.x, compass.y, wiresOf(id));
+        drawNeedle(ctx, sx(compass.x), sy(compass.y), b.bx, b.by, 13, 17, 'compass');
+      }
+      if (show.compasses && !opt.fig) compassGrid(ctx, box, wb, wiresOf(id));
+      if (id !== 'grip') label(ctx, s > 0 ? 'current out of the page (•)' : 'current into the page (×)', box.x + box.w / 2, box.y + box.h - 14, COL.cur);
+    }
+    // plotting compasses over the whole drawing, each following the field where it sits
+    function compassGrid(ctx, box, wb, wires) {
+      const gap = Math.max(44, VIEW.k * 3.4);
+      for (let gy = box.y + gap / 2; gy < box.y + box.h - 10; gy += gap) for (let gx = box.x + gap / 2; gx < box.x + box.w; gx += gap) {
+        const w = toWorldPt(gx, gy); if (wires.some(q => Math.hypot(w.x - q.x, w.y - q.y) < 1.1)) continue;
+        const b = wireField(w.x, w.y, wires); if (Math.hypot(b.bx, b.by) < 1e-9) continue;
+        drawNeedle(ctx, gx, gy, b.bx, b.by, 9, 11);
+      }
     }
 
-    function sup(n) { return String(n).replace(/-/g, '⁻').replace(/\d/g, d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]); }
-    function sci(x, dp = 2) { if (x === 0) return '0'; const e = Math.floor(Math.log10(Math.abs(x))); return `${(x / 10 ** e).toFixed(dp)} × 10${sup(e)}`; }
-
-    function updateReadout() {
-      el('curVal').textContent = `(${I().toFixed(2)} A)`; el('bfVal').textContent = `(${B().toFixed(2)} T)`; el('lenVal').textContent = `(${(+el('len').value).toFixed(1)} cm)`;
-      const F = Fmax();
-      el('fEnd').textContent = `${(F * 1000).toFixed(2)} mN = ${sci(F)} N`;
-      el('dEnd').textContent = F <= 0 ? 'No force' : !el('showF').checked ? 'Hidden: predict it' : endForceUp() ? 'Up the page' : 'Down the page';
-      if (sideGeo) { el('thV').textContent = `${sideGeo.thetaDeg.toFixed(0)}°`; el('fSide').textContent = `${(sideGeo.Fs * 1000).toFixed(2)} mN`; }
+    // tab 1: a wire in the plane of the page (p. 8-17): the field beside it is × on one side and • on the other
+    function drawPlane(ctx, box) {
+      fitView(box);
+      const k = VIEW.k, s = P.s, X = sx(0);
+      if (s) {
+        // columns farther apart away from the wire, marks smaller: a weaker field
+        [1.5, 3.1, 5.1, 7.7, 11].forEach(d => [-1, 1].forEach(side => {
+          for (let y = -8; y <= 8; y += 2.4) {
+            // current up: × (into the page) on the right, • on the left (right-hand grip)
+            const m = side * s > 0 ? -1 : 1;
+            fieldMark(ctx, sx(side * d), sy(y), m, Math.max(2.6, 7.5 / Math.sqrt(d)));
+          }
+        }));
+      }
+      ctx.strokeStyle = COL.wire; ctx.lineWidth = Math.max(6, 0.5 * k); ctx.beginPath(); ctx.moveTo(X, sy(-9.6)); ctx.lineTo(X, sy(9.6)); ctx.stroke();
+      obstacle(X - 4, sy(9.6), 8, 19.2 * k);
+      if (s) { const up = s > 0; arrow(ctx, X - 18, sy(up ? 4 : 8), X - 18, sy(up ? 8 : 4), COL.cur, 3, 10); label(ctx, `<i>I</i> ${up ? 'up' : 'down'}`, X - 26, sy(6), COL.cur, 'right'); }
+      else label(ctx, 'no current: no field', X, sy(0), '#475569');
+      if (probe) {
+        const b = s ? -Math.sign(probe.x) * s : 0, PX = sx(probe.x), PY = sy(probe.y);
+        ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(PX, PY, 13, 0, Math.PI * 2); ctx.stroke();
+        __pim.needles.push({ x: PX, y: PY, name: 'probe' });
+        labelAt(ctx, 'probe', [[PX, PY - 26, 'center'], [PX, PY + 26, 'center']], '#6d28d9', 11, false);
+      }
     }
 
-    // ---------- interaction ----------
-    const endC = el('endCanvas'), sideC = el('sideCanvas');
-    const pos = (c, e) => { const r = c.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
-    endC.addEventListener('pointerdown', e => { const p = pos(endC, e); if (endGeo && Math.hypot(p.x - endGeo.cx, p.y - endGeo.cy) < 30) st.outOfPage = !st.outOfPage; });
-    endC.addEventListener('pointermove', e => { const p = pos(endC, e); endC.style.cursor = endGeo && Math.hypot(p.x - endGeo.cx, p.y - endGeo.cy) < 30 ? 'pointer' : 'default'; });
-    let dragSide = false;
-    sideC.addEventListener('pointerdown', e => {
-      const p = pos(sideC, e); if (!sideGeo) return;
-      const near = q => Math.hypot(p.x - q.x, p.y - q.y) < 26;
-      if (near(sideGeo.p2) || near(sideGeo.p1)) { dragSide = true; sideC.setPointerCapture(e.pointerId); e.preventDefault(); }
-      else if (Math.hypot(p.x - sideGeo.cx, p.y - sideGeo.cy) < 40) st.sideCurrentAlong = !st.sideCurrentAlong;
-    });
-    sideC.addEventListener('pointermove', e => {
-      const p = pos(sideC, e);
-      if (!dragSide) { sideC.style.cursor = sideGeo && (Math.hypot(p.x - sideGeo.p2.x, p.y - sideGeo.p2.y) < 26 || Math.hypot(p.x - sideGeo.p1.x, p.y - sideGeo.p1.y) < 26) ? 'grab' : 'default'; return; }
-      let a = Math.atan2(-(p.y - sideGeo.cy), p.x - sideGeo.cx);
-      // snap to whole degrees; the wire is a line, so keep 0..180
-      a = Math.round(a * 180 / Math.PI); if (a < 0) a += 180; if (a > 180) a -= 180;
-      st.theta = a * Math.PI / 180;
-    });
-    const endDrag = () => { dragSide = false; };
-    sideC.addEventListener('pointerup', endDrag); sideC.addEventListener('pointercancel', endDrag);
-    el('revBtn').addEventListener('click', () => { st.outOfPage = !st.outOfPage; st.sideCurrentAlong = !st.sideCurrentAlong; });
-    el('flipBtn').addEventListener('click', () => { st.fieldRight = !st.fieldRight; });
+    // tab 2: the coil and the solenoids, cut through the middle; Tutorial B1 adds a core, a circuit and a compass
+    function drawCoil(ctx, box, opt) {
+      const id = S.scen, wb = fitView(box), k = VIEW.k, on = id !== 'b1' || sim.t > 0 || opt.figOn;
+      const wires = wiresOf(id, P, on ? 1 : 0), xs = turnXs(P), d = P.d;
+      if (id === 'b1') {
+        // the soft-iron core, and the circuit: battery and switch under the solenoid
+        ctx.fillStyle = '#d1d5db'; ctx.fillRect(sx(P.x0 - P.len / 2 - 1.4), sy(d - 0.9), (P.len + 2.8) * k, (2 * d - 1.8) * k);
+        label(ctx, 'soft iron', sx(P.x0 - P.len / 2 - 1.4) - 6, sy(d + 1.3), '#475569', 'right', 11);
+        const xl = sx(P.x0 - P.len / 2), xr = sx(P.x0 + P.len / 2), yb = sy(-d - 5);
+        ctx.strokeStyle = '#334155'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(xl, sy(-d)); ctx.lineTo(xl, yb); ctx.lineTo(sx(P.x0 - 3), yb); ctx.moveTo(sx(P.x0 - 2), yb); ctx.lineTo(sx(P.x0 + 2.4), yb);
+        ctx.moveTo(sx(P.x0 + 4.4), yb); ctx.lineTo(xr, yb); ctx.lineTo(xr, sy(-d)); ctx.stroke();
+        // the cell: long plate and short plate
+        ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(sx(P.x0 - 3), yb - 13); ctx.lineTo(sx(P.x0 - 3), yb + 13); ctx.moveTo(sx(P.x0 - 2), yb - 7); ctx.lineTo(sx(P.x0 - 2), yb + 7); ctx.stroke();
+        // the switch: open before the run, closed after
+        ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(sx(P.x0 + 2.4), yb, 3, 0, Math.PI * 2); ctx.arc(sx(P.x0 + 4.4), yb, 3, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(sx(P.x0 + 2.4), yb); ctx.lineTo(sx(P.x0 + 4.4), on ? yb : yb - 1.4 * k); ctx.stroke();
+        label(ctx, on ? 'switch closed' : 'switch open', sx(P.x0 + 3.4), yb + 20, '#334155', 'center', 11);
+      }
+      // the turns: a thin loop each; the front half solid with an arrow showing which way the current goes round
+      xs.forEach(x => {
+        const X = sx(x), rx = Math.max(4, (id === 'coil' ? 1.1 : 0.5) * k), ry = d * k;
+        ctx.strokeStyle = 'rgba(194,65,12,0.35)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.ellipse(X, sy(0), rx, ry, 0, Math.PI / 2, Math.PI * 1.5); ctx.stroke(); ctx.setLineDash([]);
+        ctx.strokeStyle = COL.wire; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.ellipse(X, sy(0), rx, ry, 0, -Math.PI / 2, Math.PI / 2); ctx.stroke();
+        if ((on || opt.fig) && (id === 'coil' || x === xs[Math.floor(xs.length / 2)])) { const up = P.front > 0;
+          arrow(ctx, X + rx, sy(up ? -d * 0.35 : d * 0.35), X + rx, sy(up ? d * 0.35 : -d * 0.35), COL.cur, 2.5, 9); }
+      });
+      // field lines through the inside, traced round
+      if (on && show.lines) {
+        const key = id + P.front + (on ? 1 : 0) + Math.round(wb.x0) + '_' + Math.round(wb.x1) + '_' + Math.round(wb.y0) + '_' + Math.round(wb.y1);
+        if (!lineCache[key]) {
+          const ys = seedYs(wires, P.nLines, P.x0, -d + (id === 'coil' ? 0.9 : 0.75), d - (id === 'coil' ? 0.9 : 0.75));
+          lineCache[key] = ys.map(y => ({ seed: { x: P.x0, y }, parts: trace(P.x0, y, wires, wb) }));
+        }
+        ctx.save(); ctx.beginPath(); ctx.rect(box.x, box.y, box.w, box.h); ctx.clip();
+        for (const L of lineCache[key]) {
+          for (const part of L.parts) { ctx.strokeStyle = COL.fieldLine; ctx.lineWidth = 1.4; ctx.beginPath(); part.pts.forEach((p, i) => (i ? ctx.lineTo(sx(p.x), sy(p.y)) : ctx.moveTo(sx(p.x), sy(p.y)))); ctx.stroke(); }
+          __pim.lines.push({ seed: L.seed, closed: L.parts.length === 1 && L.parts[0].closed, n: L.parts.reduce((a, q) => a + q.pts.length, 0) });
+          if (opt.noArrows) continue;
+          // arrowheads: one inside, and one at the far side of the loop. Inside a solenoid the heads are staggered along the
+          // axis (all at the middle they stacked into a column that read as one more line)
+          const li = lineCache[key].indexOf(L), sh = ((li % 3) - 1) * (id === 'coil' ? 1.6 : P.len * 0.28);
+          const inPt = sh ? (L.parts[0].pts.find((p, j, a) => j > 0 && Math.abs(p.y) < d && (a[j - 1].x - P.x0 - sh) * (p.x - P.x0 - sh) <= 0) || L.seed) : L.seed;
+          const b = wireField(inPt.x, inPt.y, wires); headAt(ctx, sx(inPt.x), sy(inPt.y), Math.atan2(-b.by, b.bx), '#15803d', 6);
+          const part = L.parts[0];
+          if (part.closed) {
+            let far = part.pts[0], fd = 0;
+            for (const p of part.pts) { const dd = Math.abs(p.y - L.seed.y) + Math.abs(p.x - L.seed.x); if (dd > fd) { fd = dd; far = p; } }
+            if (far.x > wb.x0 + 0.5 && far.x < wb.x1 - 0.5 && far.y > wb.y0 + 0.5 && far.y < wb.y1 - 0.5) { const bf = wireField(far.x, far.y, wires); headAt(ctx, sx(far.x), sy(far.y), Math.atan2(-bf.by, bf.bx), '#15803d', 6); }
+          }
+        }
+        ctx.restore();
+      }
+      // where each turn crosses the page: • and ×
+      wires.forEach(w => wireEnd(ctx, sx(w.x), sy(w.y), w.s, Math.max(6, Math.min(10, 0.42 * k))));
+      // the poles: the field inside comes out of the N end
+      if (on && !opt.hidePoles) {
+        const dir = Math.sign(wireField(P.x0, 0, wires).bx), half = P.len / 2 + (id === 'coil' ? 3.0 : 1.6);
+        [[dir, 'N', COL.N], [-dir, 'S', COL.S]].forEach(([sd, t, c]) => label(ctx, t, sx(P.x0 + sd * half), sy(0), c, 'center', 16));
+      }
+      if (id === 'coil' || id === 'sol') label(ctx, `front of ${id === 'coil' ? 'the coil' : 'each turn'}: current ${P.front > 0 ? 'up' : 'down'}`, box.x + box.w / 2, box.y + box.h - 14, COL.cur);
+      const c = id === 'b1' ? { x: P.compass[0], y: P.compass[1] } : compass;
+      if (c && !opt.noCompass) {
+        if (id === 'b1') { const a = (opt.fig ? P.needle0 : b1Angle(sim.t)) * DEG; drawNeedle(ctx, sx(c.x), sy(c.y), Math.cos(a), Math.sin(a), 13, 17, 'compass'); label(ctx, 'compass', sx(c.x), sy(c.y) + 30, '#334155', 'center', 11); }
+        else { const b = wireField(c.x, c.y, wires); drawNeedle(ctx, sx(c.x), sy(c.y), b.bx, b.by, 13, 17, 'compass'); }
+      }
+      if (show.compasses && on && !opt.fig) compassGrid(ctx, box, wb, wires);
+    }
 
-    function frame() { drawEnd(); drawSide(); updateReadout(); requestAnimationFrame(frame); }
-    requestAnimationFrame(frame);
+    // tab 3: Fleming's left-hand rule: the wire of Example 1(a), and three arrows at right angles
+    // (into the page is drawn slanting up to the right)
+    const obl = v => ({ x: v.x + 0.5 * -v.z, y: v.y + 0.34 * -v.z });
+    function drawFlem(ctx, box, opt) {
+      const narrow = box.w < 560, A = narrow ? { x: box.x, y: box.y, w: box.w, h: box.h * 0.45 } : { x: box.x, y: box.y, w: box.w * 0.4, h: box.h };
+      const Bx = narrow ? { x: box.x, y: box.y + box.h * 0.45, w: box.w, h: box.h * 0.55 } : { x: box.x + box.w * 0.4, y: box.y, w: box.w * 0.6, h: box.h };
+      const st = opt.fig ? 0 : S.step, up = P.s > 0, Iv = { x: 0, y: up ? 1 : -1, z: 0 }, Bv = { x: 0, y: 0, z: -1 }, Fv = cross(Iv, Bv);
+      // the wire in its field
+      pane('wire', A.x, A.y, A.w, A.h);
+      const cx = A.x + A.w / 2, top = A.y + 30, bot = A.y + A.h - 30;
+      for (let y = top + 10; y <= bot - 6; y += 30) for (let x = cx - 80; x <= cx + 80; x += 40) if (Math.abs(x - cx) > 10) fieldMark(ctx, x, y, -1, 5);
+      ctx.strokeStyle = COL.wire; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(cx, top - 14); ctx.lineTo(cx, bot + 14); ctx.stroke();
+      arrow(ctx, cx + 16, up ? A.y + A.h / 2 + 22 : A.y + A.h / 2 - 22, cx + 16, up ? A.y + A.h / 2 - 22 : A.y + A.h / 2 + 22, COL.cur, 3, 10);
+      label(ctx, '<i>I</i>', cx + 30, A.y + A.h / 2, COL.cur, 'left');
+      label(ctx, 'field into the page (×)', cx, A.y + 12, COL.field, 'center', 11);
+      if (st >= 4) arrow(ctx, cx - 14, A.y + A.h / 2, cx - 14 + Fv.x * 60, A.y + A.h / 2, COL.F, 4, 12), label(ctx, '<i>F</i>', cx - 14 + Fv.x * 70, A.y + A.h / 2 - 16, COL.F);
+      // the left hand: three arrows from one point
+      pane('hand', Bx.x, Bx.y, Bx.w, Bx.h);
+      const ox = Bx.x + Bx.w * 0.5, oy = Bx.y + Bx.h * 0.56, Lh = Math.min(Bx.w, Bx.h) * 0.32;
+      const end = v => { const p = obl(v); return { x: ox + p.x * Lh, y: oy - p.y * Lh }; };
+      if (st >= 1) { ctx.setLineDash([5, 5]); ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5;
+        [{ x: 1, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }, { x: 0, y: 0, z: 1 }].forEach(v => { const a = end(v), b = end({ x: -v.x, y: -v.y, z: -v.z }); ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(a.x, a.y); ctx.stroke(); });
+        ctx.setLineDash([]); ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.arc(ox, oy, 4, 0, Math.PI * 2); ctx.fill(); }
+      const tri = [[2, Bv, COL.field, 'First finger: Field'], [3, Iv, COL.cur, 'seCond finger: Current'], [4, Fv, COL.F, 'thuMb: Motion']];
+      tri.forEach(([n, v, c, t]) => { if (st < n) return; const e = end(v); arrow(ctx, ox, oy, e.x, e.y, c, 4, 13);
+        labelAt(ctx, t, [[e.x + 8, e.y - 12, 'left'], [e.x - 8, e.y - 12, 'right'], [e.x, e.y + 18, 'center'], [e.x, e.y - 22, 'center']], c, 12); });
+      if (st === 0) label(ctx, 'Press Next to place the fingers', ox, oy, '#475569');
+    }
+
+    // tab 3: Example 1, a wire hanging between clamps in a field into the page
+    function drawEx1(ctx, box, opt) {
+      fitView(box);
+      const k = VIEW.k, t = opt.fig ? 0 : sim.t, on = t > 0, up = P.s > 0, Fv = cross({ x: 0, y: up ? 1 : -1, z: 0 }, { x: 0, y: 0, z: -1 });
+      for (let y = -7; y <= 7; y += 2.3) for (const x of [-7.5, -5, -2.5, 2.5, 5, 7.5]) fieldMark(ctx, sx(x), sy(y), -1, 5);
+      // the clamps: above the top end and below the bottom end of the wire
+      ctx.fillStyle = '#9ca3af'; ctx.fillRect(sx(-1.6), sy(11.3), 3.2 * k, 0.9 * k); ctx.fillRect(sx(-1.6), sy(-10.4), 3.2 * k, 0.9 * k);
+      obstacle(sx(-1.6), sy(11.3), 3.2 * k, 0.9 * k); obstacle(sx(-1.6), sy(-10.4), 3.2 * k, 0.9 * k);
+      labelAt(ctx, 'magnetic field of a permanent magnet: into the page', [[box.x + box.w / 2, box.y + 12, 'center'], [box.x + box.w / 2, box.y + box.h - 10, 'center'], [box.x + 6, box.y + 12, 'left']], COL.field, 11);
+      const bulge = bend(t) * 2.3 * Fv.x;
+      ctx.strokeStyle = COL.wire; ctx.lineWidth = Math.max(5, 0.45 * k); ctx.beginPath();
+      for (let i = 0; i <= 40; i++) { const y = -10.4 + 20.8 * i / 40, x = bulge * Math.cos(Math.PI * y / 20.8); i ? ctx.lineTo(sx(x), sy(y)) : ctx.moveTo(sx(x), sy(y)); }
+      ctx.stroke();
+      if (on) {
+        arrow(ctx, sx(bulge * 0.55) + 16, sy(up ? 5.2 : 8.2), sx(bulge * 0.55) + 16, sy(up ? 8.2 : 5.2), COL.cur, 3, 10);
+        label(ctx, `<i>I</i> ${up ? 'up' : 'down'}`, sx(bulge * 0.55) + 24, sy(6.7), COL.cur, 'left');
+        if (show.force) { const x0 = sx(bulge) + Fv.x * 10; arrow(ctx, x0, sy(0), x0 + Fv.x * 2.6 * k, sy(0), COL.F, 4.5, 12); label(ctx, '<i>F</i>', x0 + Fv.x * (2.6 * k + 14), sy(0) - 16, COL.F); }
+      } else label(ctx, ['<i>I</i> = 0', '<i>F</i> = 0'], sx(0) - 14, sy(0), '#334155', 'right');
+    }
+
+    // tab 3: Example 2, the wire end-on between two poles. The drawing adds the magnet's field and the circular field of the
+    // current: crowded on one side of the wire, spread out on the other (the page's picture of why the force acts)
+    function drawEx2(ctx, box, opt) {
+      const top = box.y + 18, bot = box.y + box.h - 18, x0 = box.x + 48, x1 = box.x + box.w - 48;
+      poleBlocks(ctx, { x: box.x, y: top, w: box.w, h: bot - top }, P.fieldRight, 40);
+      const cx = (x0 + x1) / 2, cy = (top + bot) / 2, B0 = 0.15 * P.fieldRight, n = linesFor(0.15);
+      const RN = 34, kk = Math.abs(B0) * (RN * RN + 30) / RN * P.s;
+      const srcs = [];
+      for (let m = -3; m <= 3; m++) { srcs.push({ y: cy + m * 2 * (bot - top), s: 1 }); srcs.push({ y: 2 * top - cy + m * 2 * (bot - top), s: -1 }); }
+      const field = (x, y) => { let bx = B0, by = 0; for (const q of srcs) { const dx = x - cx, dy = -(y - q.y), r2 = dx * dx + dy * dy + 30; bx += q.s * kk * (-dy) / r2; by += q.s * kk * dx / r2; } return { bx, by: -by }; };
+      const dir = (x, y) => { const f = field(x, y), m = Math.hypot(f.bx, f.by) || 1e-12; return { x: f.bx / m, y: f.by / m }; };
+      const rk = (x, y, h) => { const a = dir(x, y), b = dir(x + a.x * h / 2, y + a.y * h / 2), c = dir(x + b.x * h / 2, y + b.y * h / 2), d = dir(x + c.x * h, y + c.y * h); return { x: x + h * (a.x + 2 * b.x + 2 * c.x + d.x) / 6, y: y + h * (a.y + 2 * b.y + 2 * c.y + d.y) / 6 }; };
+      ctx.strokeStyle = COL.fieldLine; ctx.lineWidth = 1.4;
+      for (let i = 0; i < n; i++) {
+        let x = P.fieldRight > 0 ? x0 : x1, y = top + (bot - top) * (i + 0.5) / n; ctx.beginPath(); ctx.moveTo(x, y); let mid = null;
+        for (let st = 0; st < 3000; st++) { const q = rk(x, y, 2); if (st === 70) mid = { x: q.x, y: q.y, a: Math.atan2(q.y - y, q.x - x) }; x = q.x; y = q.y; ctx.lineTo(x, y); if (x < x0 - 1 || x > x1 + 1 || y < top || y > bot) break; }
+        ctx.stroke(); __pim.lines.push({ end: { x, y }, kind: 'end-on' });
+        if (mid && headOnLine(i, n) && !opt.noArrows) headAt(ctx, mid.x, mid.y, mid.a, '#15803d', 6);
+      }
+      wireEnd(ctx, cx, cy, P.s, 14);
+      const Fv = cross({ x: 0, y: 0, z: P.s }, { x: P.fieldRight, y: 0, z: 0 });
+      if (show.force && !opt.fig) { arrow(ctx, cx + 22, cy, cx + 22, cy - Fv.y * 70, COL.F, 4.5, 12); label(ctx, '<i>F</i>', cx + 36, cy - Fv.y * 50, COL.F, 'left'); }
+      label(ctx, `<i>I</i> ${P.s > 0 ? '(out of the page)' : '(into the page)'}`, cx - 22, cy + 26, COL.cur, 'right');
+      label(ctx, 'magnetic field', cx, top + 12, COL.field, 'center', 11);
+    }
+
+    // a horizontal wire in a field into the page (Tutorial B2)
+    function drawB2(ctx, box) {
+      fitView(box);
+      const k = VIEW.k, id = S.scen, s = P.s;
+      for (let y = -5.4; y <= 5.4; y += 2.7) for (let x = -10; x <= 10; x += 2.5) if (Math.abs(y) > 0.5) fieldMark(ctx, sx(x), sy(y), -1, 5);
+      ctx.strokeStyle = COL.wire; ctx.lineWidth = Math.max(5, 0.45 * k); ctx.beginPath(); ctx.moveTo(sx(-11), sy(0)); ctx.lineTo(sx(11), sy(0)); ctx.stroke();
+      label(ctx, 'wire', sx(-11.2), sy(0) - 18, COL.cur, 'left', 11);
+      label(ctx, 'magnetic field into the page', box.x + box.w / 2, box.y + 12, COL.field, 'center', 11);
+      if (id === 'b2b') {
+        const Fv = cross({ x: s, y: 0, z: 0 }, { x: 0, y: 0, z: -1 });
+        arrow(ctx, sx(-2.5 * s), sy(0) - 16, sx(2.5 * s), sy(0) - 16, COL.cur, 3, 10); label(ctx, `<i>I</i> to the ${s > 0 ? 'right' : 'left'}`, sx(0), sy(0) - 34, COL.cur);
+        arrow(ctx, sx(4.5), sy(0), sx(4.5), sy(Fv.y * 4), COL.F, 4.5, 12); label(ctx, '<i>F</i>', sx(4.5) + 14, sy(Fv.y * 3), COL.F, 'left');
+      } else {
+        const st = S.step;
+        arrow(ctx, sx(2.5), sy(0) - 16, sx(-2.5), sy(0) - 16, COL.cur, 3, 10); label(ctx, `<i>I</i> = ${P.I.toFixed(1)} A`, sx(0), sy(0) - 34, COL.cur);
+        arrow(ctx, sx(5), sy(0), sx(5), sy(-4), COL.F, 4.5, 12); label(ctx, `<i>F</i> = ${P.F.toFixed(1)} N`, sx(5) + 14, sy(-3), COL.F, 'left');
+        label(ctx, `<i>L</i> = ${P.Lcm} cm${st >= 1 ? ` = ${solve().L.toFixed(2)} m` : ''}`, sx(-6), sy(0) + 22, COL.cur);
+        label(ctx, `<i>B</i> = ${st >= 4 ? num(solve().B, P.sf) + ' T' : '?'}`, box.x + box.w - 16, box.y + 34, COL.field, 'right', 13);
+      }
+    }
+
+    // tab 4: Example 3, a wire across a uniform field between two poles
+    function drawEx3(ctx, box) {
+      const pole = { x: box.x + 6, y: box.y + 26, w: box.w - 12, h: box.h - 52 };
+      poleBlocks(ctx, pole, 1, 40);
+      uniformLines(ctx, pole.x + 44, pole.x + pole.w - 44, pole.y, pole.y + pole.h, linesFor(P.B), 1);
+      const cx = box.x + box.w / 2, y0 = pole.y + 10, y1 = pole.y + pole.h - 10, st = S.step;
+      ctx.strokeStyle = COL.wire; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(cx, y0 - 22); ctx.lineTo(cx, y1 + 22); ctx.stroke();
+      arrow(ctx, cx - 16, (y0 + y1) / 2 + 24, cx - 16, (y0 + y1) / 2 - 24, COL.cur, 3, 10);
+      label(ctx, `<i>I</i> = ${P.I.toFixed(2)} A`, cx - 26, (y0 + y1) / 2, COL.cur, 'right');
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(cx + 22, y0); ctx.lineTo(cx + 22, y1); ctx.moveTo(cx + 16, y0); ctx.lineTo(cx + 28, y0); ctx.moveTo(cx + 16, y1); ctx.lineTo(cx + 28, y1); ctx.stroke();
+      label(ctx, `<i>L</i> = ${P.Lcm.toFixed(1)} cm`, cx + 30, y0 + 16, '#334155', 'left');
+      label(ctx, `<i>B</i> = ${P.B.toFixed(2)} T`, box.x + box.w / 2, box.y + 12, COL.field);
+      // the force acts on the wire, into the page: its symbol on the wire, its value under the poles
+      if (st >= 4) { wireEnd(ctx, cx, y1 - 16, -1, 11); label(ctx, `<i>F</i> = ${num(solve().F)} N, into the page`, cx, box.y + box.h - 12, COL.F, 'center'); }
+      label(ctx, 'not to scale', box.x + 8, box.y + 12, '#64748b', 'left', 11);
+    }
+
+    // tab 4: Example 4, the same field, four orientations
+    function drawEx4(ctx, box, opt) {
+      const narrow = box.w < 560, cols = narrow ? 2 : 4, rows = narrow ? 2 : 1, pw = box.w / cols, ph = box.h / rows;
+      const rev = show.reveal && !opt.fig, s45 = Math.sin(45 * DEG);
+      const W4 = [['A', 45, s45], ['B', 90, 1], ['C', 0, 0], ['D', 'in', 1]];
+      W4.forEach(([L, ang, f], i) => {
+        const x = box.x + (i % cols) * pw, y = box.y + Math.floor(i / cols) * ph;
+        pane('p' + L, x, y, pw, ph);
+        const cx = x + pw / 2, cy = y + ph * 0.42, hw = Math.min(pw * 0.38, 90);
+        [-1, 0, 1].forEach(j => arrow(ctx, cx - hw, cy + j * ph * 0.2, cx + hw, cy + j * ph * 0.2, COL.fieldLine, 1.5, 8, false));
+        if (ang === 'in') { wireEnd(ctx, cx, cy + ph * 0.1, -1, 11); label(ctx, '<i>I</i> into the page', cx, cy + ph * 0.1 + 24, COL.cur, 'center', 11); }
+        else {
+          const a = ang * DEG, L2 = Math.min(ph * 0.3, 60), ux = Math.cos(a), uy = Math.sin(a);
+          ctx.strokeStyle = '#64748b'; ctx.lineWidth = 12; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(cx - ux * L2, cy + uy * L2); ctx.lineTo(cx + ux * L2, cy - uy * L2); ctx.stroke();
+          ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 8; ctx.stroke(); ctx.lineCap = 'butt';
+          arrow(ctx, cx - ux * L2 * 0.5, cy + uy * L2 * 0.5, cx + ux * L2 * 0.5, cy - uy * L2 * 0.5, '#111827', 2, 8);
+        }
+        label(ctx, `(${L})`, cx, y + ph * 0.8, '#111827', 'center', 13);
+        label(ctx, rev ? `<i>F</i> = ${ang === 'in' || ang === 90 ? '<i>BIL</i>' : ang === 0 ? '0' : `${num(f)} <i>BIL</i>`}` : '<i>F</i> = ?', cx, y + ph * 0.93, rev ? COL.F : '#475569', 'center', 12);
+      });
+      pane('scene', box.x, box.y, box.w, box.h);
+    }
+
+    // tab 4: Tutorial B3 and your own values: a wire turned in a uniform field, and the F–θ graph
+    function drawTurn(ctx, box) {
+      const narrow = box.w < 560;
+      const A = narrow ? { x: box.x, y: box.y, w: box.w, h: box.h * 0.56 } : { x: box.x, y: box.y, w: box.w * 0.58, h: box.h };
+      const Gp = narrow ? { x: box.x, y: box.y + box.h * 0.56, w: box.w, h: box.h * 0.44 } : { x: box.x + box.w * 0.58, y: box.y, w: box.w * 0.42, h: box.h };
+      pane('scene', A.x, A.y, A.w, A.h);
+      const pole = { x: A.x + 4, y: A.y + 24, w: A.w - 8, h: A.h - 48 };
+      poleBlocks(ctx, pole, 1, 36);
+      uniformLines(ctx, pole.x + 40, pole.x + pole.w - 40, pole.y, pole.y + pole.h, linesFor(P.B), 1);
+      const cx = pole.x + pole.w / 2, cy = pole.y + pole.h / 2, half = Math.min(pole.w - 90, pole.h) * 0.42, th = P.theta * DEG;
+      const ux = Math.cos(th), uy = Math.sin(th), p1 = { x: cx - ux * half, y: cy + uy * half }, p2 = { x: cx + ux * half, y: cy - uy * half };
+      ctx.strokeStyle = COL.wire; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke(); ctx.lineCap = 'butt';
+      arrow(ctx, cx - ux * half * 0.35, cy + uy * half * 0.35, cx + ux * half * 0.35, cy - uy * half * 0.35, '#fde68a', 3, 10, false);
+      ctx.fillStyle = COL.wire; ctx.beginPath(); ctx.arc(p2.x, p2.y, 8, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.stroke();
+      // θ: from the field direction (to the right) round to the current
+      if (P.theta > 0.5) { ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, 34, 0, -th, true); ctx.stroke(); }
+      labelAt(ctx, `<i>θ</i> = ${Math.round(P.theta)}°`, [[cx + Math.cos(th / 2) * 54, cy - Math.sin(th / 2) * 54, 'center'], [cx + 60, cy + 18, 'left'], [cx - 60, cy + 18, 'right']], '#6d28d9', 12);
+      labelAt(ctx, '<i>I</i>', [[p2.x + 14, p2.y - 14, 'left'], [p2.x - 14, p2.y - 14, 'right'], [p2.x + 14, p2.y + 14, 'left']], COL.cur, 12);
+      const F = fTurn();
+      // the force, into the page: its symbol on the wire, its value along the bottom between the poles
+      if (F > 1e-9) { wireEnd(ctx, cx - ux * half * 0.62, cy + uy * half * 0.62, -1, 10); label(ctx, `<i>F</i> into the page: ${num(F)} N`, cx, pole.y + pole.h + 12, COL.F, 'center', 12); }
+      else label(ctx, 'wire along the field: <i>F</i> = 0', cx, pole.y + pole.h - 22, COL.F);
+      label(ctx, `<i>B</i> = ${gv('B')} T, <i>I</i> = ${gv('I')} A, <i>L</i> = ${gv('L')} m (not to scale)`, A.x + A.w / 2, A.y + 10, '#334155', 'center', 11);
+      geomTurn = { cx, cy, half, p1, p2 };
+      // the graph: F against θ
+      pane('graph', Gp.x, Gp.y, Gp.w, Gp.h);
+      const gx0 = Gp.x + 52, gx1 = Gp.x + Gp.w - 14, gy0 = Gp.y + Gp.h - 40, gy1 = Gp.y + 22, Fm = P.B * P.I * P.L;
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(gx0, gy1); ctx.lineTo(gx0, gy0); ctx.lineTo(gx1, gy0); ctx.stroke();
+      ctx.font = '11px Arial'; ctx.fillStyle = '#334155'; ctx.textAlign = 'center';
+      [0, 45, 90, 135, 180].forEach(d => { const x = gx0 + (gx1 - gx0) * d / 180; ctx.fillText(d + '°', x, gy0 + 14); });
+      ctx.textAlign = 'right'; ctx.fillText('0', gx0 - 4, gy0 + 4);
+      ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(gx0, gy1); ctx.lineTo(gx1, gy1); ctx.stroke(); ctx.setLineDash([]);
+      ctx.textAlign = 'left'; ctx.fillStyle = '#334155'; richText(ctx, `<i>BIL</i> = ${num(Fm)} N`, gx0 + 6, gy1 - 6);
+      ctx.textAlign = 'center'; ctx.font = 'bold 12px Arial'; richText(ctx, '<i>θ</i>', (gx0 + gx1) / 2, gy0 + 30);
+      ctx.save(); ctx.translate(Gp.x + 12, (gy0 + gy1) / 2); ctx.rotate(-Math.PI / 2); richText(ctx, '<i>F</i> / N', 0, 0); ctx.restore();
+      ctx.strokeStyle = COL.F; ctx.lineWidth = 2; ctx.beginPath();
+      for (let d = 0; d <= 180; d += 2) { const x = gx0 + (gx1 - gx0) * d / 180, y = gy0 - (gy0 - gy1) * Math.sin(d * DEG); d ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke();
+      const px = gx0 + (gx1 - gx0) * P.theta / 180, py = gy0 - (gy0 - gy1) * Math.sin(th);
+      ctx.fillStyle = '#7c3aed'; ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
+      __pim.graphPt = { theta: P.theta, F };
+      pane('scene', A.x, A.y, A.w, A.h);
+    }
+    let geomTurn = null;
+    const fTurn = () => P.B * P.I * P.L * Math.abs(Math.sin(P.theta * DEG));
+    // a given value as the question writes it (B3: 0.390 T, 5.00 A, 2.80 m); your own values to 2 decimal places
+    const gv = k => (S.scen === 'b3' ? { B: '0.390', I: '5.00', L: '2.80' }[k] : P[k].toFixed(2));
+
+    // tab 4: Tutorial C1, a wire holding up a 500 g mass
+    function drawC1(ctx, box, opt) {
+      fitView(box);
+      const k = VIEW.k, st = opt.fig ? 0 : S.step, { I, W, B } = solve();
+      for (let y = 1; y >= -7; y -= 2) for (let x = -9; x <= 9; x += 2.4) if (!(Math.abs(x) < 1.6 && y < -4)) fieldMark(ctx, sx(x), sy(y), -1, 5);
+      const L = -10, R = 10, T = 5.5, Bt = -4;
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(sx(-6.5), sy(T)); ctx.lineTo(sx(L), sy(T)); ctx.lineTo(sx(L), sy(Bt)); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(sx(-5.5), sy(T)); ctx.lineTo(sx(-2), sy(T)); ctx.moveTo(sx(0.2), sy(T)); ctx.lineTo(sx(4.5), sy(T)); ctx.moveTo(sx(8.5), sy(T)); ctx.lineTo(sx(R), sy(T)); ctx.lineTo(sx(R), sy(Bt)); ctx.stroke();
+      ctx.strokeStyle = COL.wire; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(sx(L), sy(Bt)); ctx.lineTo(sx(R), sy(Bt)); ctx.stroke();
+      // cell (long plate = +, on the left), switch, resistor
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(sx(-6.5), sy(T) - 14); ctx.lineTo(sx(-6.5), sy(T) + 14); ctx.moveTo(sx(-5.5), sy(T) - 8); ctx.lineTo(sx(-5.5), sy(T) + 8); ctx.stroke();
+      ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(sx(-2), sy(T), 3, 0, Math.PI * 2); ctx.arc(sx(0.2), sy(T), 3, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(sx(-2), sy(T)); ctx.lineTo(sx(0.2), sy(T)); ctx.stroke();
+      ctx.strokeRect(sx(4.5), sy(T) - 9, 4 * k, 18);
+      label(ctx, `${P.V.toFixed(2)} V`, sx(-6), sy(T) - 26, '#334155', 'center', 11);
+      label(ctx, `${P.R.toFixed(2)} Ω`, sx(6.5), sy(T) - 26, '#334155', 'center', 11);
+      // the mass, hung from the middle of the wire
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(sx(0), sy(Bt)); ctx.lineTo(sx(0), sy(-5.4)); ctx.stroke();
+      ctx.fillStyle = '#e5e7eb'; ctx.fillRect(sx(-1.4), sy(-5.4), 2.8 * k, 1.8 * k); ctx.strokeRect(sx(-1.4), sy(-5.4), 2.8 * k, 1.8 * k);
+      ctx.fillStyle = '#111827'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('500 g', sx(0), sy(-6.3)); ctx.textBaseline = 'alphabetic';
+      obstacle(sx(-1.4), sy(-5.4), 2.8 * k, 1.8 * k);
+      ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(sx(L), sy(-9.2)); ctx.lineTo(sx(R), sy(-9.2)); ctx.stroke();
+      headAt(ctx, sx(L), sy(-9.2), Math.PI, '#334155', 6); headAt(ctx, sx(R), sy(-9.2), 0, '#334155', 6);
+      label(ctx, `${P.L.toFixed(2)} m`, sx(0), sy(-9.2) + 14, '#334155', 'center', 11);
+      if (st >= 2) {   // anticlockwise: up the right side, left along the top, down the left, right along the bottom
+        arrow(ctx, sx(R) + 12, sy(-1), sx(R) + 12, sy(2.4), COL.cur, 2.5, 9); arrow(ctx, sx(L) - 12, sy(2.4), sx(L) - 12, sy(-1), COL.cur, 2.5, 9);
+        arrow(ctx, sx(-8), sy(Bt) - 12, sx(-4.5), sy(Bt) - 12, COL.cur, 2.5, 9); label(ctx, `<i>I</i> = ${num(I)} A`, sx(-6.2), sy(Bt) - 28, COL.cur, 'center', 11);
+      }
+      // the weight: from the mass down, stopping short of the dimension line
+      if (st >= 3) { arrow(ctx, sx(-2.4), sy(-6.3), sx(-2.4), sy(-8.4), '#334155', 3.5, 10); label(ctx, `<i>W</i> = ${num(W)} N`, sx(-2.4) - 8, sy(-7.6), '#334155', 'right', 11); }
+      if (st >= 4) { arrow(ctx, sx(4.6), sy(Bt), sx(4.6), sy(Bt) - 2.6 * k, COL.F, 3.5, 10); label(ctx, `<i>F</i> = ${num(W)} N`, sx(4.6) + 10, sy(Bt) - 1.8 * k, COL.F, 'left', 11); }
+      label(ctx, `<i>B</i> = ${st >= 5 ? num(B) + ' T' : '?'} (into the page)`, box.x + box.w - 10, box.y + box.h - 14, COL.field, 'right', 12);
+    }
+
+    // tab 4: Tutorial C2, a rectangle of wire in a field pointing up the page
+    function drawC2(ctx, box, opt) {
+      fitView(box);
+      const k = VIEW.k, st = opt.fig ? 0 : S.step, hw = P.ab / 2, hh = P.bc / 2, { F } = solve();
+      [-9, -4.5, 0, 4.5, 9].forEach(x => arrow(ctx, sx(x), sy(-7.4), sx(x), sy(7.4), COL.fieldLine, 1.5, 9, false));
+      ctx.strokeStyle = '#111827'; ctx.lineWidth = 3; ctx.strokeRect(sx(-hw), sy(hh), 2 * hw * k, 2 * hh * k);
+      // A→B→C→D→A
+      arrow(ctx, sx(-1), sy(hh), sx(1.4), sy(hh), '#111827', 3, 10); arrow(ctx, sx(hw), sy(1), sx(hw), sy(-1.4), '#111827', 3, 10);
+      arrow(ctx, sx(1), sy(-hh), sx(-1.4), sy(-hh), '#111827', 3, 10); arrow(ctx, sx(-hw), sy(-1), sx(-hw), sy(1.4), '#111827', 3, 10);
+      [['A', -hw, hh, 'right', -1], ['B', hw, hh, 'left', -1], ['C', hw, -hh, 'left', 1], ['D', -hw, -hh, 'right', 1]].forEach(([t, x, y, al, dy]) => label(ctx, t, sx(x) + (al === 'left' ? 8 : -8), sy(y) + dy * 12, '#111827', al, 13));
+      const segs = [[1, 0, hh + 1.9, 1, `AB: ${num(F)} N, out of the page`], [2, hw + 0.5, 0, 0, 'BC: 0 N'], [3, 0, -hh - 1.9, -1, `CD: ${num(F)} N, into the page`], [4, -hw - 0.5, 0, 0, 'DA: 0 N']];
+      segs.forEach(([n, x, y, s, t]) => { if (st < n) return;
+        if (s) { wireEnd(ctx, sx(x) - 74, sy(y), s, 9); label(ctx, t, sx(x) - 60, sy(y), COL.F, 'left', 11); }
+        else label(ctx, t, sx(x) + (x > 0 ? 10 : -10), sy(y), COL.F, x > 0 ? 'left' : 'right', 11); });
+      label(ctx, `<i>B</i> = ${P.B.toFixed(2)} T, up the page`, box.x + box.w - 8, box.y + 12, COL.field, 'right', 11);
+      label(ctx, `<i>I</i> = ${P.I.toFixed(1)} A`, box.x + 8, box.y + 12, '#111827', 'left', 11);
+    }
+
+    /* ---------------- dragging ---------------- */
+    let drag = null;
+    function pos(e) { const r = canvas.getBoundingClientRect(); return { px: e.clientX - r.left, py: e.clientY - r.top }; }
+    function pick(p) {
+      const id = S.scen;
+      if (compass && ['out', 'in', 'coil', 'sol'].includes(id)) { const w = toWorldPt(p.px, p.py); if (Math.hypot(w.x - compass.x, w.y - compass.y) < Math.max(1.6, 20 / VIEW.k)) return 'compass'; }
+      if (probe && id === 'plane') { const w = toWorldPt(p.px, p.py); if (Math.hypot(w.x - probe.x, w.y - probe.y) < Math.max(1.6, 20 / VIEW.k)) return 'probe'; }
+      if ((id === 'b3' || id === 'own') && geomTurn) { const g = geomTurn; if (Math.hypot(p.px - g.p2.x, p.py - g.p2.y) < 26 || Math.hypot(p.px - g.p1.x, p.py - g.p1.y) < 26) return 'wire'; }
+      return null;
+    }
+    canvas.addEventListener('pointerdown', e => {
+      const p = pos(e), id = S.scen;
+      if (id === 'ex2') { const r = canvas.getBoundingClientRect(), cx = r.width / 2, cy = r.height / 2; if (Math.hypot(p.px - cx, p.py - cy) < 30) { P.s = -P.s; clearFeatNoteOnly(); update(); } return; }
+      const hit = pick(p); if (!hit) return;
+      drag = hit; canvas.setPointerCapture(e.pointerId); e.preventDefault(); clearFeatNoteOnly();
+    });
+    canvas.addEventListener('pointermove', e => {
+      const p = pos(e);
+      if (!drag) { canvas.style.cursor = pick(p) ? 'grab' : (S.scen === 'ex2' ? 'pointer' : 'default'); return; }
+      canvas.style.cursor = 'grabbing';
+      if (drag === 'wire') {
+        const g = geomTurn; let a = Math.atan2(-(p.py - g.cy), p.px - g.cx) / DEG;
+        a = Math.round(a); if (a < 0) a += 180; if (a > 180) a -= 180;   // a wire is a line: 0° to 180°
+        P.theta = a; update(); return;
+      }
+      const w = toWorldPt(p.px, p.py), v = P.view, lim = { x0: v[0] - v[2] / 2 + 1.5, x1: v[0] + v[2] / 2 - 1.5, y0: v[1] - v[3] / 2 + 1.5, y1: v[1] + v[3] / 2 - 1.5 };
+      const q = { x: Math.max(lim.x0, Math.min(lim.x1, w.x)), y: Math.max(lim.y0, Math.min(lim.y1, w.y)) };
+      if (drag === 'compass') { if (wiresOf(S.scen).some(c => Math.hypot(q.x - c.x, q.y - c.y) < 1.2)) return; compass.x = q.x; compass.y = q.y; }
+      else { if (Math.abs(q.x) < 0.9) q.x = q.x < 0 ? -0.9 : 0.9; probe.x = q.x; probe.y = q.y; }
+      update();
+    });
+    const endDrag = () => { drag = null; };
+    canvas.addEventListener('pointerup', endDrag);
+    canvas.addEventListener('pointercancel', endDrag);
+
+    /* ---------------- experimental controls ---------------- */
+    function buildInputs() {
+      const box = $('inputs'), id = S.scen, h = [];
+      const tg = (k, txt) => `<label class="toggle"><input type="checkbox" data-show="${k}"${show[k] ? ' checked' : ''}> ${txt}</label>`;
+      const sel = (key, lab, opts) => `<div class="control-group"><label for="sel_${key}">${lab}</label><select id="sel_${key}" data-key="${key}">${opts.map(([v, t]) => `<option value="${v}"${String(P[key]) === String(v) ? ' selected' : ''}>${t}</option>`).join('')}</select></div>`;
+      if (id === 'oer') h.push(sel('s', 'The current flows', [[1, 'north'], [-1, 'south']]));
+      if (id === 'plane') h.push(sel('s', 'Current in the wire', [[1, 'up'], [-1, 'down'], [0, 'off']]));
+      if (id === 'ex1') h.push(sel('s', 'Current <i>I</i> flows', [[1, 'up'], [-1, 'down']]));
+      if (id === 'b2b') h.push(sel('s', 'Current <i>I</i> flows', [[1, 'to the right'], [-1, 'to the left']]));
+      if (['grip', 'coil', 'sol', 'flem', 'ex2'].includes(id)) h.push('<button type="button" class="secondary" id="revBtn">Reverse the current</button>');
+      if (id === 'ex2') h.push('<button type="button" class="secondary" id="swapBtn">Swap the poles</button>', tg('force', 'Show the force'));
+      if (id === 'ex1') h.push(tg('force', 'Show the force'));
+      if (['out', 'in', 'coil', 'sol', 'b1'].includes(id)) h.push(tg('lines', 'Field lines'));
+      if (['out', 'in', 'coil', 'sol'].includes(id)) h.push(tg('compasses', 'Plotting compasses'));
+      if (id === 'ex4') h.push(tg('reveal', 'Show the answer'));
+      if (id === 'own') [['I', 'Current <i>I</i>', 0.05, 5, 0.05, 'A'], ['B', 'Field <i>B</i>', 0.05, 0.5, 0.01, 'T'], ['L', 'Length <i>L</i>', 0.01, 0.3, 0.01, 'm']].forEach(([k, lab, mn, mx, stp, u]) =>
+        h.push(`<div class="control-group wide label-row"><label for="sl_${k}">${lab} (<span id="v_${k}">${P[k].toFixed(2)}</span> ${u})</label><input type="range" id="sl_${k}" data-k="${k}" min="${mn}" max="${mx}" step="${stp}" value="${P[k]}"></div>`));
+      box.innerHTML = h.join('');
+      $('expBlock').hidden = !h.length;
+      box.querySelectorAll('[data-show]').forEach(c => c.addEventListener('change', () => { show[c.dataset.show] = c.checked; clearFeatNoteOnly(); update(); }));
+      box.querySelectorAll('select[data-key]').forEach(c => c.addEventListener('change', () => { P[c.dataset.key] = +c.value; resetRun(); clearFeatNoteOnly(); update(); }));
+      box.querySelectorAll('input[data-k]').forEach(c => c.addEventListener('input', () => { P[c.dataset.k] = +c.value; clearFeatNoteOnly(); update(); }));
+      if ($('revBtn')) $('revBtn').addEventListener('click', () => { if ('front' in P) P.front = -P.front; else P.s = -P.s; lineCache = {}; clearFeatNoteOnly(); update(); });
+      if ($('swapBtn')) $('swapBtn').addEventListener('click', () => { P.fieldRight = -P.fieldRight; clearFeatNoteOnly(); update(); });
+    }
+    function syncInputs() {
+      document.querySelectorAll('#inputs [data-show]').forEach(c => { c.checked = !!show[c.dataset.show]; });
+      document.querySelectorAll('#inputs select[data-key]').forEach(c => { if (document.activeElement !== c) c.value = String(P[c.dataset.key]); });
+      document.querySelectorAll('#inputs input[data-k]').forEach(c => { if (document.activeElement !== c) c.value = P[c.dataset.k]; const v = $('v_' + c.dataset.k); if (v) v.textContent = P[c.dataset.k].toFixed(2); });
+    }
+
+    /* ---------------- readouts ---------------- */
+    function card(t, v, key) { return `<div class="readout-card${hl[key] ? ' hl' : ''}"><div class="title">${t}</div><div class="value">${v}</div></div>`; }
+    const q = (ok, v) => (ok ? v : '?');
+    function oerWords(a) { if (Math.abs(a) < 0.05) return 'north'; return `${Math.abs(a).toFixed(1)}° ${a < 0 ? 'west' : 'east'} of north`; }
+    function readouts() {
+      const id = S.scen, out = [], el = $('readout'); let words = '', work = '';
+      el.className = 'readout';
+      const stepsList = (all) => `<ol class="steps-list">${steps().map((s, i) => `<li class="${i < S.step ? 'lit' : ''}">${i < S.step ? s.h : '…'}</li>`).join('')}</ol>`;
+      if (id === 'oer') {
+        const on = sim.t > 0, a = oerAngle(sim.t), end = sim.t >= runEnd() - 1e-9;
+        out.push(card('Current in the wire', on ? `flowing ${P.s > 0 ? 'north' : 'south'}` : 'none (switch open)', 'cur'), card('Compass needle (N end)', `points ${oerWords(a)}`, 'ndl'), card('Time', `${sim.t.toFixed(2)} s`, 't'));
+        words = !on ? 'Press Start to close the switch: a current flows in the wire above the compass.' : end ? `The needle has come to rest ${oerWords(a)}: the current in the wire deflected it. Reverse the current and it turns the other way.` : 'The needle swings round …';
+      } else if (id === 'grip') {
+        const o = P.s > 0;
+        out.push(card('Current (the thumb)', q(S.step >= 2, o ? 'out of the page' : 'into the page'), 'cur'), card('Field (the curled fingers)', q(S.step >= 3, o ? 'anticlockwise' : 'clockwise'), 'fld'), card('Field lines', q(S.step >= 4, 'circles centred on the wire'), 'lines'));
+        work = stepsList();
+      } else if (id === 'out' || id === 'in') {
+        const b = wireField(compass.x, compass.y, wiresOf(id)), r = Math.hypot(compass.x, compass.y) * CM;
+        out.push(card('Field lines', `circles, ${P.s > 0 ? 'anticlockwise' : 'clockwise'}`, 'lines'), card('Compass: N end points', dirWords(b.bx, b.by), 'dir'), card('Distance from the wire', `${r.toFixed(1)} cm (lines ${r < 1.6 ? 'close together' : r < 3.2 ? 'fairly close' : 'far apart'})`, 'dist'));
+        words = `Thumb ${P.s > 0 ? 'out of' : 'into'} the page, fingers curl ${P.s > 0 ? 'anticlockwise' : 'clockwise'}. Drag the compass round the wire: its needle always lies along the circle through it.`;
+      } else if (id === 'plane') {
+        const s = P.s, f = s ? (-Math.sign(probe.x) * s < 0 ? 'into the page (×)' : 'out of the page (•)') : 'none';
+        out.push(card('Current', s > 0 ? 'up the wire' : s < 0 ? 'down the wire' : 'off', 'cur'), card('Field at the probe', f, 'pf'), card('Probe is on the', `${probe.x > 0 ? 'right' : 'left'} of the wire, ${(Math.abs(probe.x) * CM).toFixed(1)} cm away`, 'side'));
+        words = s ? `On the right of the wire the field points ${s > 0 ? 'into' : 'out of'} the page, on the left ${s > 0 ? 'out of' : 'into'} it: the circles of field pass through the page at the two sides of the wire.` : 'With no current there is no magnetic field.';
+      } else if (id === 'coil' || id === 'sol' || id === 'b1') {
+        const on = id !== 'b1' || sim.t > 0, wires = wiresOf(id, P, on ? 1 : 0), inD = on ? Math.sign(wireField(P.x0, 0, wires).bx) : 0;
+        const poles = inD ? (inD < 0 ? 'left end N, right end S' : 'left end S, right end N') : 'none (no current)';
+        if (id === 'b1') {
+          const a = b1Angle(sim.t), end = sim.t >= runEnd() - 1e-9;
+          out.push(card('Switch', on ? 'closed' : 'open', 'sw'), card('Solenoid’s poles', poles, 'poles'), card('Compass: N end points', dirWords(Math.cos(a * DEG), Math.sin(a * DEG)), 'dir'));
+          words = !on ? 'Press Start to close the switch.' : end ? 'Right-hand grip rule: the left end becomes a North Pole and the right end a South Pole. The field next to the right end points into it, so the compass points left.' : '';
+        } else {
+          const b = wireField(compass.x, compass.y, wires);
+          out.push(card(id === 'coil' ? 'Faces of the coil' : 'Ends of the solenoid', poles, 'poles'), card('Field inside', id === 'coil' ? 'perpendicular to the coil' : 'strong and uniform', 'inside'), card('Compass: N end points', dirWords(b.bx, b.by), 'dir'));
+          words = id === 'coil' ? 'Every field line through the middle of the coil runs round outside it from one face to the other, like a short bar magnet.' : 'Inside, the lines are straight, parallel and close together: a strong, uniform field. Outside, the lines are like those of a bar magnet.';
+        }
+      } else if (id === 'flem') {
+        const up = P.s > 0;
+        out.push(card('First finger: Field', q(S.step >= 2, 'into the page'), 'ff'), card('seCond finger: Current', q(S.step >= 3, up ? 'up' : 'down'), 'sc'), card('thuMb: Motion', q(S.step >= 4, up ? 'to the left' : 'to the right'), 'tm'));
+        work = stepsList();
+      } else if (id === 'ex1') {
+        const on = sim.t > 0, Fv = cross({ x: 0, y: P.s, z: 0 }, { x: 0, y: 0, z: -1 });
+        out.push(card('Current <i>I</i>', on ? (P.s > 0 ? 'up' : 'down') : '0', 'cur'), card('Force on the wire', on ? dirName(Fv) : 'none', 'f'), card('Wire', !on ? 'straight' : `bent ${dirName(Fv)}`, 'w'));
+        words = !on ? 'With no current, there is no force: the wire hangs straight. Press Start to switch the current on.' : sim.t >= 1.2 ? `Fleming’s left-hand rule: First finger into the page, seCond finger ${P.s > 0 ? 'up' : 'down'}, so the thuMb points ${dirName(Fv).replace('to the ', '')}: the wire bends ${dirName(Fv)}.` : '';
+      } else if (id === 'ex2') {
+        const Fv = cross({ x: 0, y: 0, z: P.s }, { x: P.fieldRight, y: 0, z: 0 });
+        out.push(card('Field', P.fieldRight > 0 ? 'to the right' : 'to the left', 'b'), card('Current', P.s > 0 ? 'out of the page' : 'into the page', 'cur'), card('Force on the wire', show.force ? dirName(Fv) : 'hidden: predict it', 'f'));
+        words = show.force ? `First finger ${P.fieldRight > 0 ? 'to the right' : 'to the left'}, seCond finger ${P.s > 0 ? 'out of' : 'into'} the page: the thuMb points ${dirName(Fv).replace('the page', 'the page')}.` : 'Use Fleming’s left-hand rule, then tick Show the force to check.';
+      } else if (id === 'b2b') {
+        const Fv = cross({ x: P.s, y: 0, z: 0 }, { x: 0, y: 0, z: -1 });
+        out.push(card('Field', 'into the page', 'b'), card('Current', P.s > 0 ? 'to the right' : 'to the left', 'cur'), card('Force on the wire', Fv.y < 0 ? 'downwards' : 'upwards', 'f'));
+        words = Fv.y < 0 ? 'Field into the page and current to the left give a downward force: the answer to B2(b) is “to the left”.' : 'Current to the right gives an upward force, not the downward force B2(b) asks for. Change the current.';
+      } else if (id === 'ex3') {
+        const { L, F } = solve();
+        out.push(card('<i>L</i>', q(S.step >= 1, `${L.toFixed(3)} m`), 'L'), card('sin <i>θ</i>', q(S.step >= 2, 'sin 90° = 1'), 'th'), card('<i>F</i>', q(S.step >= 4, `${num(F)} N`), 'F'));
+        work = stepsList();
+      } else if (id === 'b2a') {
+        const { L, IL, B } = solve();
+        out.push(card('<i>L</i>', q(S.step >= 1, `${L.toFixed(2)} m`), 'L'), card('<i>IL</i>', q(S.step >= 3, `${num(IL, 2)} A m`), 'IL'), card('<i>B</i>', q(S.step >= 4, `${num(B, P.sf)} T`), 'B'));
+        work = stepsList();
+      } else if (id === 'b3' || id === 'own') {
+        el.className = 'readout n4';
+        const F = fTurn();
+        out.push(card('Angle <i>θ</i>', `${Math.round(P.theta)}°`, 'th'), card('sin <i>θ</i>', num(Math.abs(Math.sin(P.theta * DEG))), 'sin'), card('<i>F</i> = <i>BIL</i> sin <i>θ</i>', `${num(F)} N`, 'F'), card('Direction of <i>F</i>', F > 1e-9 ? 'into the page' : 'none', 'dir'));
+        work = `<div class="steps-list" style="padding-left:0"><i>F</i> = <i>BIL</i> sin <i>θ</i> = ${gv('B')} × ${gv('I')} × ${gv('L')} × sin ${Math.round(P.theta)}° = ${num(F)} N</div>`;
+        words = F < 1e-9 ? 'The wire runs along the field lines: there is no force.' : Math.abs(P.theta - 90) < 0.5 ? 'At 90° to the field, sin θ = 1: the biggest force, F = BIL.' : '';
+      } else if (id === 'ex4') {
+        el.className = 'readout n4';
+        const r = show.reveal;
+        out.push(card('(A) at an angle', q(r, `${num(Math.sin(45 * DEG))} <i>BIL</i>`), 'A'), card('(B) at 90°', q(r, '<i>BIL</i>'), 'B'), card('(C) along the field', q(r, '0'), 'C'), card('(D) into the page, at 90°', q(r, '<i>BIL</i>'), 'D'));
+        words = r ? 'Strongest to weakest: B and D (equal: the wire is at 90° to the field), then A, then C (along the field, no force). This page draws A at 45°.' : 'Decide the ranking, then tick Show the answer.';
+      } else if (id === 'c1') {
+        const { I, W, B } = solve();
+        out.push(card('Current <i>I</i>', q(S.step >= 1, `${num(I)} A`) + (S.step >= 2 ? ', anticlockwise' : ''), 'I'), card('Weight <i>W</i>', q(S.step >= 3, `${num(W)} N`), 'W'), card('Field <i>B</i>', q(S.step >= 5, `${num(B)} T`), 'B'));
+        work = stepsList();
+      } else if (id === 'c2') {
+        el.className = 'readout n4';
+        const { F } = solve();
+        out.push(card('AB', q(S.step >= 1, `${num(F)} N, out`), 'AB'), card('BC', q(S.step >= 2, '0 N'), 'BC'), card('CD', q(S.step >= 3, `${num(F)} N, in`), 'CD'), card('DA', q(S.step >= 4, '0 N'), 'DA'));
+        work = stepsList();
+      }
+      el.innerHTML = out.join('');
+      $('words').innerHTML = words; $('work').innerHTML = work;
+    }
+
+    function update() {
+      draw(); readouts(); syncInputs();
+      const run = isRun(), st = isSteps(), ang = !!P.angles;
+      $('simGroup').hidden = !run; $('moments').hidden = !(run || ang);
+      $('stepGroup').hidden = !st;
+      if (run) {
+        const end = runEnd(), mid = sim.t > 1e-9 && sim.t < end - 1e-9;
+        $('pauseBtn').textContent = !sim.running && mid ? 'Play' : 'Pause';
+        $('pauseBtn').disabled = !sim.running && !mid;
+        $('startBtn').disabled = sim.running;
+        $('speedNote').textContent = 'The clock runs in real time.';
+        $('prevMoment').textContent = '‹ Previous key moment'; $('nextMoment').textContent = 'Next key moment ›';
+      } else if (ang) { $('speedNote').textContent = `Angles from the question: ${P.angles.join('°, ')}°`; $('prevMoment').textContent = '‹ Previous angle'; $('nextMoment').textContent = 'Next angle ›'; }
+      if (run || ang) { const km = moments(), now = momentNow(); $('prevMoment').disabled = !km.some(m => m < now - 1e-9); $('nextMoment').disabled = !km.some(m => m > now + 1e-9); }
+      if (st) { const n = nSteps(); $('stepNo').textContent = `(${Math.min(S.step, n)} of ${n})`; $('prevStep').disabled = S.step <= 0; $('nextStep').disabled = S.step >= n; $('stepReset').disabled = S.step === 0; }
+    }
+    const HINTS = { oer: 'Press Start to close the switch.', grip: 'Press Next to follow the rule.', out: 'Drag the compass round the wire.', in: 'Drag the compass round the wire.', plane: 'Drag the probe to either side of the wire.',
+      coil: 'Drag the compass. Reverse the current to swap the faces.', sol: 'Drag the compass, inside or outside the solenoid.', b1: 'Press Start to close the switch.',
+      flem: 'Press Next to place the fingers.', ex1: 'Choose the current, then press Start.', ex2: 'Tap the wire, or use the buttons, to reverse the current or swap the poles.', b2b: 'Change the current until the force is downwards.',
+      ex3: 'Press Next for each step.', ex4: 'Rank the four, then tick Show the answer.', b2a: 'Press Next for each step.', b3: 'Drag the end of the wire to turn it, or step through the angles.',
+      c1: 'Press Next for each step.', c2: 'Press Next for each side.', own: 'Set your own values; drag the end of the wire to turn it.' };
+    function chooseScenario(id) { loadScenario(id); clearFeat(); buildInputs(); $('sceneHint').textContent = HINTS[id] || ''; update(); }
+    presetEl.addEventListener('change', () => chooseScenario(presetEl.value));
+
+    /* ---------------- the tabs ---------------- */
+    const KEYS = { wire: [COL.wire, 'Wire', 'blk'], cur: [COL.cur, 'Current <i>I</i>'], line: [COL.field, 'Magnetic field line'], mark: [COL.field, 'Field into (×) or out of (•) the page', 'dot'],
+      F: [COL.F, 'Force <i>F</i>'], N: [COL.N, 'N-pole', 'blk'], S: [COL.S, 'S-pole', 'blk'], grip: [COL.grip, 'Curled fingers (right hand)'] };
+    const TABS = {
+      1: { strip: 'Answer Predict first. Then switch on a current over a compass, follow the right-hand grip rule, and explore the field round a wire.',
+        presets: ['oer', 'grip', 'out', 'in', 'plane'], key: ['wire', 'cur', 'line', 'mark', 'grip'],
+        notes: ['In 1819, Danish scientist Hans Christian Oersted found that a compass needle was deflected by a current-carrying wire (notes p. 8-13).',
+          'The magnetic field lines produced by a current in a straight wire are circles centred around the wire. The field lines near the wire are closer together than those located farther away (p. 8-14).',
+          'Right-hand grip rule: grip the wire with the right hand. With the thumb in the direction of the current, the curled fingers indicate the direction of the magnetic field (p. 8-15).',
+          'The symbol • represents the direction of the current out of the page; the symbol × represents the direction of the current into the page (p. 8-16).',
+          'For a wire in the plane of the page, the magnetic fields on both sides of it are drawn with the symbols × and • (p. 8-17).',
+          'How far the wire turns the compass needle in Oersted’s experiment is this page’s own value.'] },
+      2: { strip: 'Answer Predict first. Then look at the field of a flat coil and of a solenoid, and work out Tutorial B1.',
+        presets: ['coil', 'sol', 'b1'], key: ['wire', 'cur', 'line', 'N', 'S'],
+        notes: ['At the centre of a flat circular coil, the field lines are perpendicular to the plane of the coil. Outside the coil, the field lines run in closed paths from one face of the coil to the other (notes p. 8-18).',
+          'The field lines are similar to that produced by a short bar magnet, and the coil acts as if it has a N-pole on one face and a S-pole on the other (p. 8-18).',
+          'The right-hand grip rule gives the field direction of any short section of the coil (p. 8-18).',
+          'A solenoid is a long coil having many turns of wire. When a current is passed through it, each turn produces a magnetic field; together the turns give a strong magnetic field within the solenoid (p. 8-19).',
+          'The magnetic field is strong and uniform in the region inside the solenoid. The magnetic field outside the solenoid is similar to that of a bar magnet (p. 8-19).',
+          'This page draws the coil and the solenoid cut through the middle: each turn crosses the page twice, once with its current out of the page (•) and once into it (×).'] },
+      3: { strip: 'Answer Predict first. Then place the fingers of Fleming’s left-hand rule, and find which way the force pushes a wire.',
+        presets: ['flem', 'ex1', 'ex2', 'b2b'], key: ['wire', 'cur', 'mark', 'line', 'F'],
+        notes: ['If we place a current-carrying wire in a magnetic field, the wire will experience a force (notes p. 8-20).',
+          'Fleming’s left-hand rule: position the thumb, first and second fingers of your left hand at right angles to one another. Point the First finger in the direction of the magnetic Field and the seCond finger in the direction of the Current. The thuMb will then show the direction of the Motion of the wire (p. 8-20).',
+          'With no current there is no force: <i>I</i> = 0, <i>F</i> = 0 (p. 8-21).',
+          'In Example 2 the drawing adds the magnet’s field to the circular field of the current: the lines are crowded on one side of the wire and spread out on the other, and the wire is pushed towards the spread-out side (this page’s picture).'] },
+      4: { strip: 'Answer Predict first. Then work out the size of the force with <i>F</i> = <i>BIL</i> sin <i>θ</i>, and turn a wire in a field.',
+        presets: ['ex3', 'ex4', 'b2a', 'b3', 'c1', 'c2', 'own'], key: ['wire', 'cur', 'line', 'F'],
+        notes: ['The magnitude of the magnetic force on the wire: <i>F</i> = <i>BIL</i> sin <i>θ</i>, where <i>F</i> = magnetic force in newton (N), <i>I</i> = current in ampere (A), <i>L</i> = length in metre (m), <i>B</i> = magnetic field in tesla (T), <i>θ</i> = angle between wire and magnetic field (notes p. 8-23).',
+          'The formula <i>F</i> = <i>IBL</i> is only applicable when the current is perpendicular to the magnetic field (p. 8-24).',
+          'A wire along the field lines (<i>θ</i> = 0° or 180°) feels no force: sin <i>θ</i> = 0 (Tutorial 8, B3 and C2).',
+          'Change a length in cm to metres first (Tutorial 8, B2: 120 cm = 1.20 m).'] },
+      5: { strip: 'Answer every question, then read the summary.', key: [] }
+    };
+    const PREDICT = {
+      1: { q: 'A long straight wire carries a current out of the page. Its magnetic field lines are …',
+        opts: ['circles round the wire, going anticlockwise', 'circles round the wire, going clockwise', 'straight lines pointing away from the wire', 'there is no magnetic field'], ans: 0,
+        why: 'Right-hand grip rule: thumb out of the page, the curled fingers point anticlockwise; the field lines are circles centred around the wire (notes pp. 8-14, 8-15). Choose “Current out of the page” to see.' },
+      2: { q: 'A current flows through a long solenoid. The magnetic field inside it is …',
+        opts: ['strong and uniform', 'zero', 'strongest at the ends, zero in the middle', 'in circles round the axis of the solenoid'], ans: 0,
+        why: 'The magnetic field is strong and uniform in the region inside the solenoid (notes p. 8-19). Choose “A solenoid” to see.' },
+      3: { q: 'A vertical wire is in a magnetic field directed into the page. A current flows up the wire. The wire is pushed …',
+        opts: ['to the left', 'to the right', 'up the page', 'into the page'], ans: 0,
+        why: 'Fleming’s left-hand rule: First finger into the page (Field), seCond finger up (Current): the thuMb points to the left (notes Example 1). Step through “Fleming’s left-hand rule” to check.' },
+      4: { q: 'A current-carrying wire in a magnetic field is turned until it lies along the field lines. The force on it …',
+        opts: ['becomes zero', 'is the biggest it can be', 'doubles', 'stays the same'], ans: 0,
+        why: '<i>F</i> = <i>BIL</i> sin <i>θ</i>; along the field <i>θ</i> = 0° and sin 0° = 0 (notes p. 8-23). Choose “Tutorial B3: turn the wire” and go to 0°.' }
+    };
+    const FEATS = {
+      1: [['oer', 'A current deflects a compass'], ['circles', 'Circles centred on the wire'], ['closer', 'Closer together near the wire'], ['reverse', 'Reverse the current: the field reverses'], ['sides', 'In the page: × one side, • the other']],
+      2: [['face', 'A coil has an N face and an S face'], ['uniform', 'Inside: strong and uniform'], ['bar', 'Outside: like a bar magnet'], ['swap', 'Reverse the current: the poles swap'], ['b1', 'B1: the needle points left']],
+      3: [['none', 'No current: no force'], ['ff', 'First finger: Field'], ['revI', 'Reverse the current: the force reverses'], ['swapB', 'Swap the poles: the force reverses'], ['both', 'Reverse both: the same force']],
+      4: [['max', 'Biggest at 90°'], ['zero', 'Zero along the field'], ['same', 'The same at 60° and 120°'], ['cm', 'Change cm to m first'], ['rank', 'Example 4: B and D strongest']]
+    };
+    const PROMPTS = {
+      1: ['What did Oersted’s compass show?', 'Where are the field lines of a wire closest together, and what does that tell you?', 'Use the right-hand grip rule on a wire with current into the page.'],
+      2: ['Why is the field inside a solenoid stronger than round one wire?', 'How do you find which end of a solenoid is the N-pole?', 'In Tutorial B1, why does the compass point left?'],
+      3: ['Which finger is the field, which is the current?', 'What happens to the force if both the current and the field are reversed?', 'Why is there no force when there is no current?'],
+      4: ['Why is the force zero when the wire lies along the field?', 'Why do 60° and 120° give the same force?', 'What goes wrong if the length is left in cm?'],
+      5: ['Which question did most of the class get wrong, and why?', 'Pick one wrong option: what mistake would lead a student to choose it?']
+    };
+
+    let predictPick = null;
+    function clearFeat() { feat = {}; hl = {}; syncFeatButtons(); $('featNote').textContent = ''; }
+    function clearFeatNoteOnly() { if (Object.keys(feat).length) clearFeat(); }
+    function syncFeatButtons() { document.querySelectorAll('#feats .feat').forEach(b => b.classList.toggle('on', !!feat[b.dataset.f])); }
+    // a key feature shows itself: it always reloads its scenario, then sets what shows it
+    function tapFeat(id) {
+      const on = !feat[id];
+      const want = scen => { presetEl.value = scen; chooseScenario(scen); };
+      clearFeat();
+      if (on) {
+        ({
+          oer: () => { want('oer'); setTime(runEnd()); hl = { ndl: true }; },
+          circles: () => { want('out'); hl = { lines: true }; },
+          closer: () => { want('out'); compass.x = 0; compass.y = 2.0; hl = { dist: true }; },
+          reverse: () => { want('in'); hl = { lines: true, dir: true }; },
+          sides: () => { want('plane'); hl = { pf: true }; },
+          face: () => { want('coil'); hl = { poles: true }; },
+          uniform: () => { want('sol'); compass.x = 0; compass.y = 0; hl = { inside: true, dir: true }; },
+          bar: () => { want('sol'); show.compasses = true; buildInputs(); hl = { poles: true }; },
+          swap: () => { want('sol'); P.front = -P.front; lineCache = {}; hl = { poles: true }; },
+          b1: () => { want('b1'); setTime(runEnd()); hl = { dir: true, poles: true }; },
+          none: () => { want('ex1'); hl = { f: true }; },
+          ff: () => { want('flem'); S.step = 2; hl = { ff: true }; },
+          revI: () => { want('ex1'); P.s = -1; setTime(runEnd()); hl = { f: true }; },
+          swapB: () => { want('ex2'); P.fieldRight = -1; hl = { f: true }; },
+          both: () => { want('ex2'); P.fieldRight = -1; P.s = 1; hl = { f: true }; },
+          max: () => { want('b3'); P.theta = 90; hl = { F: true }; },
+          zero: () => { want('b3'); P.theta = 0; hl = { F: true }; },
+          same: () => { want('b3'); P.theta = 120; hl = { F: true }; },
+          cm: () => { want('b2a'); S.step = 1; hl = { L: true }; },
+          rank: () => { want('ex4'); show.reveal = true; buildInputs(); hl = { B: true, D: true }; }
+        })[id]();
+      }
+      feat = on ? { [id]: true } : {};
+      syncFeatButtons(); syncInputs(); update();
+      $('featNote').innerHTML = on ? featNote(id) : '';
+    }
+    function featNote(id) {
+      switch (id) {
+        case 'oer': return `With the current flowing north, the needle has turned to point ${oerWords(oerAngle(runEnd()))}: the current in the wire deflected the compass needle (notes p. 8-13).`;
+        case 'circles': return 'The field lines are circles centred around the wire (notes p. 8-14). For a current out of the page they go anticlockwise.';
+        case 'closer': return `The compass is ${(Math.hypot(compass.x, compass.y) * CM).toFixed(1)} cm from the wire, where the circles are close together: the field lines near the wire are closer together than those farther away (p. 8-14).`;
+        case 'reverse': return 'With the current into the page, the circles go clockwise: reversing the current reverses the field (right-hand grip rule).';
+        case 'sides': return `The probe is on the ${probe.x > 0 ? 'right' : 'left'}: with the current up, the field points ${probe.x > 0 ? 'into' : 'out of'} the page there, and the other way on the other side (p. 8-17).`;
+        case 'face': return 'The lines go in through one face and come out through the other: the coil acts as if it has a N-pole on one face and a S-pole on the other (p. 8-18).';
+        case 'uniform': return 'At the centre of the solenoid the compass points along the axis. Inside, the lines are straight, parallel and evenly spaced: the field is strong and uniform (p. 8-19).';
+        case 'bar': return 'The plotting compasses outside follow the same pattern as round a bar magnet: out of the N end, round, and into the S end (p. 8-19).';
+        case 'swap': return 'With the current reversed, the field inside points the other way: the N and S ends of the solenoid swap.';
+        case 'b1': return 'The left end of the solenoid is the N-pole and the right end the S-pole, so the compass beside the right end points to the left (Tutorial 8, B1).';
+        case 'none': return 'Before the current is switched on, I = 0, so F = 0: the wire hangs straight (notes p. 8-21).';
+        case 'ff': return 'The First finger points along the magnetic Field: here into the page.';
+        case 'revI': return 'Current down instead of up: the wire is now pushed to the right. Reversing the current reverses the force (Example 1(b)).';
+        case 'swapB': return 'With the poles swapped the field points to the left, and the force on the same current points up instead of down.';
+        case 'both': return 'Field to the left AND current out of the page: the force points down, as in Example 2. Reversing both leaves the force the same.';
+        case 'max': return `At 90°, sin θ = 1: F = BIL = ${num(fTurn())} N, the biggest force (Tutorial 8, B3(c)).`;
+        case 'zero': return 'At 0° the wire lies along the field: sin 0° = 0, so F = 0 N (Tutorial 8, B3(a)).';
+        case 'same': return `At 120°, sin 120° = sin 60°: F = ${num(fTurn())} N, the same as at 60° (Tutorial 8, B3(b) and (d)).`;
+        case 'cm': return '120 cm = 1.20 m. Leaving it in cm would make B 100 times too small (0.025 T).';
+        case 'rank': return 'B and D are at 90° to the field: F = BIL. A is at an angle: F = BIL sin θ, smaller. C lies along the field: F = 0. Ranking: B/D, A, C.';
+      }
+      return '';
+    }
+
+    function renderPredict(tab) {
+      const Q = PREDICT[tab], box = $('predictBox');
+      predictPick = null;
+      if (!Q) { box.hidden = true; return; }
+      box.hidden = false; box.classList.remove('done');
+      $('predictQ').innerHTML = Q.q;
+      $('predictFb').innerHTML = '';
+      const opts = $('predictOpts');
+      opts.innerHTML = '';
+      Q.opts.forEach((o, i) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.innerHTML = o;
+        b.addEventListener('click', () => {
+          if (opts.dataset.done) return;
+          predictPick = i; opts.querySelectorAll('.opt').forEach((x, j) => x.classList.toggle('picked', j === i));
+        });
+        opts.appendChild(b);
+      });
+      delete opts.dataset.done;
+      $('predictCheck').textContent = 'Check my answer';
+    }
+    $('predictCheck').addEventListener('click', () => {
+      const Q = PREDICT[currentTab], opts = $('predictOpts'), fb = $('predictFb');
+      if (!Q) return;
+      if (opts.dataset.done) { renderPredict(currentTab); return; }
+      if (predictPick === null) { fb.innerHTML = '<span class="verdict no">Pick an answer first.</span>'; return; }
+      opts.dataset.done = '1';
+      const ok = predictPick === Q.ans;
+      opts.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === Q.ans) x.classList.add('right'); else if (j === predictPick) x.classList.add('wrong'); });
+      $('predictBox').classList.add('done');
+      fb.innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> Your prediction: ${Q.opts[predictPick]}.`
+        + (ok ? '' : ` The answer: <b>${Q.opts[Q.ans]}</b>.`) + ` <span class="why">${Q.why}</span>`;
+      $('predictCheck').textContent = 'Try again';
+    });
+
+    function renderFeats(tab) {
+      const list = FEATS[tab] || [], el = $('feats');
+      $('featBox').hidden = !list.length;
+      el.innerHTML = '';
+      list.forEach(([id, lab]) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'feat'; b.dataset.f = id;
+        b.innerHTML = lab;
+        b.addEventListener('click', () => tapFeat(id));
+        el.appendChild(b);
+      });
+      $('featNote').textContent = '';
+      syncFeatButtons();
+    }
+    function renderKey(tab) {
+      $('ckey').innerHTML = (TABS[tab].key || []).map(k => `<span><b class="${KEYS[k][2] || ''}" style="background:${KEYS[k][0]}"></b><span>${KEYS[k][1]}</span></span>`).join('');
+    }
+    function fillPresets(list) {
+      presetEl.innerHTML = '';
+      list.forEach(id => { const o = document.createElement('option'); o.value = id; o.textContent = PRESETS[id].name; presetEl.appendChild(o); });
+      presetEl.value = list[0];
+    }
+
+    function showTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('#tabs .tab').forEach(b => { const on = +b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+      $('stepLabel').textContent = `Step ${tab} of 5`;
+      document.querySelectorAll('#stepBar i').forEach((i, n) => i.classList.toggle('on', n < tab));
+      $('strip').innerHTML = TABS[tab].strip;
+      renderKey(tab);
+      $('pageSim').hidden = tab === 5;
+      $('page5').hidden = tab !== 5;
+      sim.running = false;
+      if (tab <= 4) {
+        const T = TABS[tab];
+        $('notes').innerHTML = '<ul>' + T.notes.map(n => `<li>${n}</li>`).join('') + '</ul>';
+        fillPresets(T.presets); chooseScenario(T.presets[0]);
+      }
+      if (tab === 5) renderQuiz();
+      renderPredict(tab);
+      renderFeats(tab);
+      $('tPrompts').innerHTML = PROMPTS[tab].map(p => `<li>${p}</li>`).join('');
+    }
+    document.querySelectorAll('#tabs .tab').forEach(b => b.addEventListener('click', () => showTab(+b.dataset.tab)));
+
+    /* ---------------- Tab 5: Challenge ---------------- */
+    // every answer matched to the notes (pp. 8-13 to 8-26), Tutorial 8's key or the colleague's worked solutions; parts that
+    // share one situation are one screen
+    const QUIZ = [
+      { src: 'Notes p. 8-13', stem: '', parts: [
+        { q: 'In 1819, Hans Christian Oersted found that a compass needle was deflected by …', opts: ['a current-carrying wire', 'a charged rod', 'a piece of copper', 'a beam of light'], ans: 0,
+          why: 'Oersted found that a compass needle was deflected by a current-carrying wire: the magnetic effect of current.' }] },
+      { src: 'Notes p. 8-14', stem: 'A current flows in a long straight wire.', parts: [
+        { q: 'Its magnetic field lines are …', opts: ['circles centred around the wire', 'straight lines along the wire', 'straight lines pointing away from the wire', 'loops from one end of the wire to the other'], ans: 0,
+          why: 'The field lines are circles centred around the wire.' },
+        { q: 'Compared with the field lines far from the wire, the lines near the wire are …', opts: ['closer together', 'farther apart', 'the same distance apart'], ans: 0,
+          why: 'The field lines near the wire are closer together than those located farther away.' }] },
+      { src: 'Notes pp. 8-15 and 8-16', fig: 'in', stem: 'A long straight wire is perpendicular to the page, and its current flows into the page (×).', parts: [
+        { q: 'As you look at the page, its field lines go round the wire …', opts: ['clockwise', 'anticlockwise', 'neither: they point straight away from the wire'], ans: 0,
+          why: 'Right-hand grip rule: with the thumb into the page, the curled fingers point clockwise.' }] },
+      { src: 'Notes p. 8-17', stem: 'A long straight wire lies in the plane of the page. Its current flows up the page.', parts: [
+        { q: 'On the right of the wire, the magnetic field points …', opts: ['into the page (×)', 'out of the page (•)', 'up the page', 'to the right'], ans: 0,
+          why: 'Thumb up the wire: the curled fingers go into the page on the right of the wire.' },
+        { q: 'On the left of the wire, it points …', opts: ['out of the page (•)', 'into the page (×)', 'down the page', 'to the left'], ans: 0,
+          why: 'The curled fingers come out of the page on the left of the wire.' }] },
+      { src: 'Notes pp. 8-18 and 8-19', stem: 'A current flows through a solenoid, a long coil having many turns of wire.', parts: [
+        { q: 'The magnetic field inside the solenoid is …', opts: ['strong and uniform', 'zero', 'strongest at the ends and zero in the middle', 'in circles round each turn only'], ans: 0,
+          why: 'The magnetic field is strong and uniform in the region inside the solenoid.' },
+        { q: 'Outside the solenoid, the field is similar to that of …', opts: ['a bar magnet', 'a single straight wire', 'a uniform field', 'nothing: there is no field outside'], ans: 0,
+          why: 'The magnetic field outside the solenoid is similar to that of a bar magnet.' }] },
+      { src: 'Tutorial 8, B1', fig: 'b1', stem: 'A compass is placed near a solenoid as shown. The current flows up the front of each turn. The switch is closed.', parts: [
+        { q: 'The left end of the solenoid becomes …', opts: ['an N-pole', 'an S-pole', 'neither'], ans: 0,
+          why: 'Using the right-hand grip rule, the left end becomes a North Pole and the right end a South Pole.' },
+        { q: 'The N end of the compass needle turns to point …', opts: ['to the left', 'to the right', 'up the page', 'down the page'], ans: 0,
+          why: 'The right end is a South Pole, so the field next to it points into it: the compass points left.' }] },
+      { src: 'Notes p. 8-20', stem: 'Fleming’s left-hand rule.', parts: [
+        { q: 'The First finger points in the direction of …', opts: ['the magnetic Field', 'the Current', 'the Motion of the wire'], ans: 0, why: 'Point the First finger in the direction of the magnetic Field.' },
+        { q: 'The seCond finger points in the direction of …', opts: ['the Current', 'the magnetic Field', 'the Motion of the wire'], ans: 0, why: 'Point the seCond finger in the direction of the Current.' },
+        { q: 'The thuMb shows the direction of …', opts: ['the Motion of the wire (the force on it)', 'the magnetic Field', 'the Current'], ans: 0, why: 'The thuMb will then show the direction of the Motion of the wire.' }] },
+      { src: 'Notes p. 8-21, Example 1', fig: 'ex1', stem: 'A vertical wire hangs in a magnetic field directed into the page. Which way will the wire bend:', parts: [
+        { q: 'when the current <i>I</i> flows up?', opts: ['to the left', 'to the right', 'out of the page', 'it does not bend'], ans: 0,
+          why: 'First finger into the page, seCond finger up: the thuMb points left.' },
+        { q: 'when the current <i>I</i> flows down?', opts: ['to the right', 'to the left', 'into the page', 'it does not bend'], ans: 0,
+          why: 'Reversing the current reverses the force: the wire bends to the right.' }] },
+      { src: 'Notes p. 8-22, Example 2', fig: 'ex2', stem: 'A wire carrying a current into the page is placed in a uniform magnetic field pointing to the right.', parts: [
+        { q: 'The magnetic force on the wire points …', opts: ['down the page', 'up the page', 'to the right', 'to the left'], ans: 0,
+          why: 'Fleming’s left-hand rule: First finger to the right (Field), seCond finger into the page (Current): the thuMb points down.' }] },
+      { src: 'Notes pp. 8-24 and 8-26 (Example 4)', fig: 'ex4', stem: 'The same wire is placed in the same magnetic field in the four orientations shown.', parts: [
+        { q: 'The formula <i>F</i> = <i>IBL</i> is only applicable when the current is … to the magnetic field.', opts: ['perpendicular', 'parallel', 'at 45°'], ans: 0,
+          why: 'The formula F = IBL is only applicable when the current is perpendicular to the magnetic field.' },
+        { q: 'From the strongest force to the weakest, the orientations are …', opts: ['B and D (equal), then A, then C', 'A, B, C, D', 'C, then A, then B and D', 'all four the same'], ans: 0,
+          why: 'B and D are at 90° to the field (F = BIL), A is at an angle (F = BIL sin θ, smaller) and C lies along the field (F = 0): B/D, A, C.' }] },
+      { src: 'Notes p. 8-25, Example 3', stem: 'A straight current-carrying wire of length 8.0 cm is placed perpendicular to a magnetic field of magnitude 0.15 T. The current is 0.45 A.', parts: [
+        { q: 'The magnitude of the magnetic force on the wire is …', opts: ['5.40 × 10<sup>−3</sup> N', '0.540 N', '5.40 N', '0 N'], ans: 0,
+          why: 'L = 8.0 cm = 0.080 m; F = BIL sin 90° = 0.15 × 0.45 × 0.080 × 1 = 5.40 × 10<sup>−3</sup> N. (0.540 N leaves L in cm.)' }] },
+      { src: 'Tutorial 8, B2', stem: 'A 120 cm long wire is placed at right angles to a uniform magnetic field directed into the page. The current of the wire is 2.0 A.', parts: [
+        { lab: '(a)', q: 'What is the required magnetic field if the wire is to experience a force of 6.0 N?', opts: ['2.5 T', '0.025 T', '12 T', '3.0 T'], ans: 0,
+          why: '120 cm = 1.20 m; F = BIL sin 90°: 6.0 = B × 2.0 × 1.20, so B = 2.5 T. (0.025 T leaves L in cm.)' },
+        { lab: '(b)', q: 'What is the direction of the current if the magnetic force is downwards?', opts: ['to the left', 'to the right', 'into the page', 'out of the page'], ans: 0,
+          why: 'Using Fleming’s left-hand rule, current flows to the left.' }] },
+      { src: 'Tutorial 8, B3', stem: 'A 2.80 m long wire carries a 5.00 A current in a 0.390 T magnetic field. Find the magnitude of the force when the angle between the magnetic field and the current is:', parts: [
+        { lab: '(b) 60°:', q: '', opts: ['4.73 N', '2.73 N', '5.46 N', '0 N'], ans: 0, why: 'F = BIL sin 60° = 0.390 × 5.00 × 2.80 × sin 60° = 4.73 N. (2.73 N uses cos 60°.)' },
+        { lab: '(c) 90°:', q: '', opts: ['5.46 N', '0 N', '4.73 N', '2.73 N'], ans: 0, why: 'F = BIL sin 90° = 0.390 × 5.00 × 2.80 = 5.46 N.' },
+        { lab: '(e) 180°:', q: '', opts: ['0 N', '5.46 N', '4.73 N', '2.73 N'], ans: 0, why: 'sin 180° = 0: the wire lies along the field, F = 0 N.' }] },
+      { src: 'Tutorial 8, C1', fig: 'c1', stem: 'A wire supports a 500 g mass in a uniform magnetic field directed into the page, as shown.', parts: [
+        { lab: '(a)', q: 'The current in the circuit is …', opts: ['0.667 A, anticlockwise', '0.667 A, clockwise', '1.50 A, anticlockwise', '13.5 A, clockwise'], ans: 0,
+          why: 'I = V ÷ R = 3.00 ÷ 4.50 = 0.667 A, anticlockwise.' },
+        { lab: '(b)', q: 'The magnetic field needed for the magnetic force to balance the weight of the mass is …', opts: ['3 T', '3000 T', '0.3 T', '7.50 T'], ans: 0,
+          why: 'W = 0.5 kg × 10 N/kg = 5 N; F = BIL: 5 = B × 0.667 × 2.50, so B = 3 T. (3000 T leaves the mass in g; 0.3 T uses the mass, not the weight.)' }] },
+      { src: 'Tutorial 8, C2', fig: 'c2', stem: 'A rectangular circuit carries a current of 18.0 A in a magnetic field of 1.20 T pointing up the page, as shown. AB = CD = 12.5 cm and BC = AD = 8.00 cm.', parts: [
+        { q: 'The force on AB is …', opts: ['2.70 N, out of the page', '2.70 N, into the page', '1.73 N, out of the page', '270 N, out of the page'], ans: 0,
+          why: 'F = BIL sin 90° = 1.20 × 18.0 × 0.125 = 2.70 N; by Fleming’s left-hand rule, out of the page.' },
+        { q: 'The force on BC is …', opts: ['0 N', '1.73 N, out of the page', '2.70 N, into the page', '1.73 N, into the page'], ans: 0,
+          why: 'BC runs along the field lines: sin 180° = 0, so F = 0 N.' }] }
+    ];
+    // the options are written with the right one first; turn each part's list round by a fixed amount
+    { let pc = 0; QUIZ.forEach(Q => Q.parts.forEach(Pt => { const n = Pt.opts.length, r = (pc++ * 3 + 1) % n;
+      Pt.opts = Pt.opts.slice(r).concat(Pt.opts.slice(0, r)); Pt.ans = (Pt.ans - r + n) % n; })); }
+    const QUIZ_MARKS = QUIZ.reduce((n, Q) => n + Q.parts.length, 0);
+    const partLabel = (Q, k) => Q.parts[k].lab ? Q.parts[k].lab + ' ' : Q.parts.length > 1 ? `(${'abcdefgh'[k]}) ` : '';
+    // a quiz figure, drawn by the same code as the simulation, in the state the question describes (no answers on it)
+    function drawFig(cv, id) {
+      for (const k in __pim) __pim[k] = [];
+      const g = setup(cv); if (!g) return;
+      const keep = { P, S: { ...S }, show, sim: { ...sim }, compass, probe };
+      P = JSON.parse(JSON.stringify(PRESETS[id])); P.id = id; S.scen = id; S.step = 0; sim.t = 0; sim.running = false;
+      show = { lines: true, force: false, reveal: false, compasses: false }; compass = null; probe = null;
+      const opt = { fig: true, noArrows: id === 'in', noCompass: false, hidePoles: true, figOn: false };
+      drawScene(g.ctx, { x: 0, y: 0, w: g.W, h: g.H }, opt);
+      P = keep.P; Object.assign(S, keep.S); show = keep.show; Object.assign(sim, keep.sim); compass = keep.compass; probe = keep.probe;
+    }
+    let quiz = { i: 0, score: 0, picks: [], done: false, missed: [] };
+    function resetQuiz() { quiz = { i: 0, score: 0, picks: [], done: false, missed: [] }; renderQuiz(); }
+    function renderQuiz() {
+      const el = $('quiz'), N = QUIZ.length;
+      if (quiz.i >= N) {
+        const list = quiz.missed.length
+          ? `<p>Go back over these:</p><ul>${quiz.missed.map(([n, k]) => { const Q = QUIZ[n];
+              return `<li>Question ${n + 1} ${partLabel(Q, k).trim()} (${Q.src}): ${(Q.stem ? Q.stem + ' ' : '') + Q.parts[k].q}</li>`; }).join('')}</ul>`
+          : '<p>Every answer right. Well done.</p>';
+        el.innerHTML = `<div class="quiz-top"><span>Summary</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div><div class="quiz-bar"><i style="width:100%"></i></div>
+          <div class="quiz-sum"><div class="quiz-q">You scored ${quiz.score} out of ${QUIZ_MARKS}.</div>${list}</div>
+          <div class="row-btns"><button type="button" id="qAgain">Try the quiz again</button></div>`;
+        $('qAgain').addEventListener('click', resetQuiz);
+        return;
+      }
+      const Q = QUIZ[quiz.i], many = Q.parts.length > 1;
+      quiz.picks = Q.parts.map(() => null);
+      el.innerHTML = `<div class="quiz-top"><span>Question ${quiz.i + 1} of ${N}</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div>
+        <div class="quiz-bar"><i style="width:${(quiz.i / N) * 100}%"></i></div>
+        ${Q.stem ? `<div class="quiz-q" id="qStem">${Q.stem}</div>` : ''}${Q.fig ? '<canvas class="qfig" id="qFig"></canvas>' : ''}<div class="quiz-src">${Q.src}${many ? ` · ${Q.parts.length} parts, answer them all` : ''}</div>
+        ${Q.parts.map((Pt, k) => `<div class="qpart" data-k="${k}">
+          <div class="${Q.stem ? 'qpart-q' : 'quiz-q'}">${partLabel(Q, k)}${Pt.q}</div>
+          <div class="opts">${Pt.opts.map((o, j) => `<button type="button" class="opt" data-j="${j}">${o}</button>`).join('')}</div>
+          <div class="feedback"></div></div>`).join('')}
+        <div class="row-btns"><button type="button" id="qSubmit">${many ? 'Submit answers' : 'Submit answer'}</button><button type="button" class="secondary" id="qReset">Reset quiz</button></div>
+        <div class="feedback" id="qFb"></div>`;
+      if (Q.fig) drawFig($('qFig'), Q.fig);
+      el.querySelectorAll('.qpart').forEach(part => {
+        const k = +part.dataset.k;
+        part.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+          if (quiz.done) return;
+          quiz.picks[k] = +b.dataset.j; part.querySelectorAll('.opt').forEach(x => x.classList.toggle('picked', x === b));
+        }));
+      });
+      $('qReset').addEventListener('click', resetQuiz);
+      $('qSubmit').addEventListener('click', () => {
+        const fb = $('qFb');
+        if (quiz.done) { quiz.i++; quiz.done = false; renderQuiz(); return; }
+        const left = quiz.picks.map((p, k) => p === null ? partLabel(Q, k).trim() || `part ${k + 1}` : null).filter(x => x !== null);
+        if (left.length) { fb.innerHTML = `<span class="verdict no">${many ? `Pick an answer for every part first (still to do: ${left.join(', ')}).` : 'Pick an answer first.'}</span>`; return; }
+        quiz.done = true; fb.innerHTML = '';
+        el.querySelectorAll('.qpart').forEach(part => {
+          const k = +part.dataset.k, Pt = Q.parts[k], ok = quiz.picks[k] === Pt.ans;
+          if (ok) quiz.score++; else quiz.missed.push([quiz.i, k]);
+          part.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === Pt.ans) x.classList.add('right'); else if (j === quiz.picks[k]) x.classList.add('wrong'); });
+          part.querySelector('.feedback').innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> <span class="why">${Pt.why}</span>`;
+        });
+        el.querySelector('.quiz-top span:last-child').textContent = `Score: ${quiz.score} of ${QUIZ_MARKS}`;
+        $('qSubmit').textContent = quiz.i + 1 < N ? 'Next question' : 'See the summary';
+      });
+    }
+
+    /* ---------------- Teacher mode ---------------- */
+    // Only the teacher link (this page's address + ?teacher) shows the button; students and the
+    // Brightspace embed use the plain address. Not a lock: the panel only changes this screen.
+    const teacher = $('teacher');
+    if (new URLSearchParams(location.search).has('teacher')) $('teacherBtn').hidden = false;
+    $('teacherBtn').addEventListener('click', () => { teacher.hidden = !teacher.hidden; });
+    $('tClose').addEventListener('click', () => { teacher.hidden = true; });
+    $('tExplain').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-explain');
+      e.target.textContent = on ? 'Show explanations' : 'Hide explanations'; e.target.classList.toggle('on', on);
+    });
+    $('tAnswers').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-answers');
+      e.target.textContent = on ? 'Show answer labels' : 'Hide answer labels'; e.target.classList.toggle('on', on);
+    });
+    // free exploration: no Predict first, every step shown at once, the Example 4 answer shown
+    $('tFree').addEventListener('click', e => {
+      freeMode = !freeMode; document.body.classList.toggle('free-mode', freeMode);
+      e.target.textContent = freeMode ? 'Back to the guided steps' : 'Switch to free exploration'; e.target.classList.toggle('on', freeMode);
+      showTab(currentTab);
+    });
+    const fullBtn = $('tFull');
+    if (!document.fullscreenEnabled) fullBtn.hidden = true;
+    fullBtn.addEventListener('click', () => {
+      if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {});
+    });
+    document.addEventListener('fullscreenchange', () => { fullBtn.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
+    $('tReset').addEventListener('click', () => { resetQuiz(); showTab(1); });
+
+    // for the checks: the state behind the drawing
+    window.__pimState = () => {
+      const id = S.scen, st = { tab: currentTab, scen: id, step: S.step, nSteps: nSteps(), mode: mode(), t: sim.t, end: isRun() ? runEnd() : null, running: sim.running,
+        keyMoments: moments(), show: { ...show }, P: JSON.parse(JSON.stringify(P)) };
+      if (compass) { const b = wireField(compass.x, compass.y, wiresOf(id)); st.compass = { x: compass.x, y: compass.y, bx: b.bx, by: b.by, ang: Math.atan2(b.by, b.bx) / DEG }; }
+      if (probe) st.probe = { ...probe };
+      if (id === 'oer') st.needle = oerAngle(sim.t);
+      if (id === 'b1') st.needle = b1Angle(sim.t);
+      if (['coil', 'sol', 'b1'].includes(id)) { const w = wiresOf(id, P, id === 'b1' ? (sim.t > 0 ? 1 : 0) : 1); st.insideBx = wireField(P.x0, 0, w).bx; }
+      if (id === 'ex1') st.bend = bend(sim.t), st.force = cross({ x: 0, y: P.s, z: 0 }, { x: 0, y: 0, z: -1 });
+      if (id === 'ex2') st.force = cross({ x: 0, y: 0, z: P.s }, { x: P.fieldRight, y: 0, z: 0 });
+      if (id === 'b2b') st.force = cross({ x: P.s, y: 0, z: 0 }, { x: 0, y: 0, z: -1 });
+      if (id === 'flem') st.force = cross({ x: 0, y: P.s, z: 0 }, { x: 0, y: 0, z: -1 });
+      if (id === 'b3' || id === 'own') st.F = fTurn();
+      return st;
+    };
+    window.__pimSetTime = setTime;
+    window.addEventListener('resize', () => { lineCache = {}; if (currentTab <= 4) update(); else if (QUIZ[quiz.i] && QUIZ[quiz.i].fig && $('qFig')) drawFig($('qFig'), QUIZ[quiz.i].fig); });
+    showTab(1);
+  </script>
+  <script>
+    // Embedded (Brightspace): tell the page around the frame how tall this page is, so a resize script in the
+    // embed code can fit the frame to it (no blank space, no inner scrollbar). Measured from the content, not
+    // scrollHeight, which never drops below the frame's own height and so could never shrink it.
+    (function () {
+      if (window.parent === window) return;
+      let last = 0;
+      function height() {
+        const c = document.querySelector('.container'), cs = getComputedStyle(document.body);
+        return Math.ceil(c.getBoundingClientRect().bottom + window.scrollY + parseFloat(cs.paddingBottom) + parseFloat(cs.marginBottom) + 4);
+      }
+      function send(force) {
+        const h = height();
+        if (!force && Math.abs(h - last) < 2) return;
+        last = h;
+        window.parent.postMessage({ type: 'pim-height', page: location.pathname.split('/').pop(), height: h }, '*');
+      }
+      new ResizeObserver(() => send(false)).observe(document.querySelector('.container'));
+      window.addEventListener('load', () => send(true));
+      // the embed's script asks once it is listening, in case this page loaded first
+      window.addEventListener('message', e => { if (e.data && e.data.type === 'pim-height?') send(true); });
+      send(true);
+    })();
   </script>
   <script>
     // Phones: a swipe that starts on an empty part of a drawing scrolls the page (touch-action: pan-y),
     // and a touch the page grabbed for a drag (its own setPointerCapture call) keeps the page still.
-    // (hasPointerCapture can't tell: a touch is always captured implicitly.)
-    // The kinematics graphs are left out: a sideways drag scrubs them and an up-down one scrolls.
     document.querySelectorAll('canvas:not(.graph-canvas)').forEach(c => {
       let grabbed = false;
       const capture = c.setPointerCapture;
