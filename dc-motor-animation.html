@@ -18,47 +18,168 @@
   <!-- pim-meta:end -->
   <style>
     * { box-sizing: border-box; }
+    /* the hidden attribute must win over every display rule below */
+    [hidden] { display: none !important; }
     body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
     .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
-    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    h1 { margin: 0; font-size: 1.1rem; }
     .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
-    .groups { display: grid; grid-template-columns: auto 1fr; gap: 8px; }
-    .group { border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 8px 8px; }
-    .group-title { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #64748b; margin-bottom: 6px; }
-    .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-    .sim-buttons { display: grid; grid-template-columns: auto auto; gap: 6px; }
-    .exp { display: grid; grid-template-columns: 1fr 1fr auto; gap: 14px; align-items: end; }
-    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-    .label-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-    label { font-size: 0.8rem; font-weight: 600; }
-    .label-row label { white-space: nowrap; }
-    .val { font-weight: normal; color: #334155; }
-    input[type=range] { width: 100%; }
-    .toggle { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 600; white-space: nowrap; padding-bottom: 2px; line-height: 1.25; }
-    button { font-size: 0.86rem; padding: 7px 12px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; white-space: nowrap; }
-    button.go { background: #2563eb; }
+
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 110px; }
+    .control-group.scen-group { flex: 2.2 1 260px; }
+    .control-group.button-group { flex: 2 1 280px; }
+    .control-group select { width: 100%; max-width: 100%; }
+    .controls input, .controls select, .controls button { height: 34px; }
+    label { font-size: 0.82rem; font-weight: 600; line-height: 1.2; }
+    label sub, label sup { line-height: 0; }
+    .step-no { font-weight: 400; color: #475569; }
+    input, select, button { font-size: 0.95rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; }
+    input[type=range] { width: 100%; padding: 0; height: 34px; }
+    .buttons { display: flex; gap: 6px; flex-wrap: nowrap; }
+    button { cursor: pointer; background: #2563eb; color: white; border: none; min-width: 0; flex: 1; }
+    button:hover { background: #1d4ed8; }
+    button:disabled { background: #94a3b8; cursor: default; }
+    button.secondary { background: #475569; }
+    button.secondary:hover { background: #334155; }
+    button.secondary:disabled { background: #cbd5e1; color: #475569; }
     button.danger { background: #dc2626; }
-    button.small { font-size: 0.76rem; padding: 4px 8px; background: #7c3aed; }
-    button:disabled { opacity: 0.4; cursor: default; }
-    .readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    button.danger:hover { background: #b91c1c; }
+    .moments { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+    .moments button { flex: none; padding: 6px 12px; }
+    .speed { font-size: 0.8rem; color: #475569; }
+    .speed:empty { display: none; }
+    .group-title { font-size: 0.78rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.03em; margin: 10px 0 4px; }
+    .inputs { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+    .inputs .control-group { flex: 0 1 auto; }
+    .inputs .control-group.wide { flex: 1 1 220px; }
+    .inputs button { flex: none; padding: 6px 12px; height: 34px; }
+    .toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 0.84rem; font-weight: 600; white-space: nowrap; }
+    .label-row label { white-space: nowrap; }
+    .question { margin-top: 8px; font-size: 0.84rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 6px 10px; color: #7c2d12; }
+    .question:empty { display: none; }
+    .game { margin-top: 8px; font-size: 0.9rem; font-weight: 700; background: #ecfeff; border: 1px solid #a5f3fc; border-radius: 8px; padding: 8px 10px; color: #155e75; }
+    .game:empty { display: none; }
+
+    .readout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout:empty { display: none; }
+    .readout.n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .readout.n4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card.hl { box-shadow: inset 0 0 0 2px #dc2626; }
     .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
-    .readout-card .value { font-size: 0.98rem; font-weight: bold; }
-    .views { display: grid; grid-template-columns: 1fr; gap: 8px; }
-    @media (min-width: 900px) { .views { grid-template-columns: 1fr 1fr; } }
-    .view-title { font-size: 0.85rem; font-weight: 700; margin: 0 0 4px; }
-    canvas { display: block; width: 100%; border-radius: 10px; touch-action: pan-y; }
-    #sceneCanvas, #motorCanvas { height: 360px; border: 1px solid #dbeafe; background: #fbfdff; }
-    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 6px; }
+    .readout-card .value { font-size: 1rem; font-weight: bold; }
+    .words { margin-top: 8px; font-size: 0.86rem; font-weight: 600; color: #1e3a8a; background: #eef4ff; border-radius: 8px; padding: 6px 10px; }
+    .words:empty { display: none; }
+
+    .scene-wrap { margin-top: 8px; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 0 0 4px; }
+    .hint:empty { display: none; }
     .note { margin-top: 6px; font-size: 0.8rem; color: #475569; }
-    @media (max-width: 900px) {
-      .groups { grid-template-columns: 1fr; }
-      .exp { grid-template-columns: 1fr 1fr; }
-      .exp .toggle { grid-column: 1 / -1; }
+    .note ul { margin: 2px 0 0; padding-left: 18px; }
+    .note li { margin: 2px 0; }
+    canvas { display: block; width: 100%; border-radius: 10px; background: white; }
+    #scene { height: 420px; border: 1px solid #dbeafe; touch-action: pan-y; }
+    canvas.qfig { height: 240px; border: 1px solid #e5e7eb; margin: 4px 0 8px; touch-action: pan-y; }
+
+    .work { margin-top: 8px; }
+    .work:empty { display: none; }
+    .steps-list { margin: 0; padding-left: 20px; font-size: 0.88rem; }
+    .steps-list li { margin: 3px 0; }
+    .steps-list li.lit { background: #fef9c3; border-radius: 4px; }
+
+    /* ---- the step-by-step frame: header, numbered tabs, colour key, instruction strip ---- */
+    .app-head { background: #1e293b; color: #f8fafc; border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+    .head-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .head-row h1 { flex: 1 1 260px; }
+    .steps { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #cbd5e1; }
+    .step-bar { display: flex; gap: 3px; }
+    .step-bar i { display: block; width: 18px; height: 5px; border-radius: 3px; background: #475569; }
+    .step-bar i.on { background: #fbbf24; }
+    button.teacher-btn { flex: none; background: transparent; border: 1px solid #94a3b8; color: #f8fafc; font-size: 0.82rem; padding: 5px 10px; }
+    button.teacher-btn:hover { background: #334155; }
+    /* every tab always visible: equal columns, and a long name wraps onto a second line (never a sideways scroll) */
+    .tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; margin-top: 8px; }
+    button.tab { min-width: 0; background: #f1f5f9; color: #1e293b; font-size: 0.85rem; font-weight: 600; padding: 7px 8px; border-radius: 8px; line-height: 1.2; white-space: normal; text-align: center; }
+    button.tab:hover { background: #e2e8f0; }
+    button.tab.active, button.tab.active:hover { background: #2563eb; color: white; }
+    .tab .ts { display: none; }
+    .nw { white-space: nowrap; }
+    .ckey { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 7px; font-size: 0.76rem; color: #e2e8f0; }
+    .ckey > span { display: inline-flex; align-items: center; gap: 5px; }
+    .ckey b { display: inline-block; width: 14px; height: 4px; border-radius: 2px; }
+    .ckey b.dot { width: 10px; height: 10px; border-radius: 50%; }
+    .ckey b.blk { width: 14px; height: 10px; border-radius: 2px; }
+    .strip { background: #fef9c3; border-left: 4px solid #eab308; border-radius: 6px; padding: 7px 10px; font-size: 0.86rem; margin-bottom: 8px; }
+
+    /* Predict first (above the controls), key features */
+    .learn { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 8px; }
+    .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; }
+    .box-title { font-weight: 700; font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-q { font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-box { margin-bottom: 8px; }
+    .opts { display: grid; gap: 5px; }
+    #predictOpts { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    .predict-box.done #predictOpts { display: none; }
+    .predict-box.done .predict-q { margin-bottom: 0; }
+    button.opt { flex: none; width: 100%; text-align: left; background: white; color: #1f2937; border: 1px solid #cbd5e1; font-size: 0.86rem; padding: 7px 10px; }
+    button.opt:hover { background: #f1f5f9; }
+    button.opt:disabled { background: white; color: #1f2937; cursor: default; }
+    button.opt.picked, button.opt.picked:hover { border-color: #2563eb; background: #eff6ff; box-shadow: inset 0 0 0 1px #2563eb; }
+    button.opt.right, button.opt.right:hover { border-color: #16a34a; background: #dcfce7; box-shadow: inset 0 0 0 1px #16a34a; }
+    button.opt.wrong, button.opt.wrong:hover { border-color: #dc2626; background: #fee2e2; box-shadow: inset 0 0 0 1px #dc2626; }
+    .row-btns { display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+    .row-btns button { flex: none; padding: 6px 12px; }
+    .feedback { font-size: 0.84rem; margin-top: 7px; }
+    .feedback:empty { display: none; }
+    .feedback .verdict { font-weight: 700; }
+    .feedback .verdict.ok { color: #15803d; }
+    .feedback .verdict.no { color: #b91c1c; }
+    .feats { display: flex; flex-wrap: wrap; gap: 6px; }
+    button.feat { flex: none; background: white; color: #1e293b; border: 1px solid #cbd5e1; font-size: 0.84rem; padding: 6px 11px; border-radius: 999px; }
+    button.feat:hover { background: #f1f5f9; }
+    button.feat.on, button.feat.on:hover { background: #1e293b; color: white; border-color: #1e293b; }
+    .feat-note { font-size: 0.82rem; color: #334155; margin-top: 6px; }
+    .feat-note:empty { display: none; }
+
+    /* Challenge */
+    .quiz { max-width: 760px; margin: 0 auto; }
+    .quiz-top { display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 700; margin-bottom: 4px; }
+    .quiz-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+    .quiz-bar i { display: block; height: 100%; background: #2563eb; width: 0; }
+    .quiz-q { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+    .quiz-src { font-size: 0.76rem; color: #475569; margin-bottom: 8px; }
+    .qpart { margin-top: 12px; }
+    .qpart + .qpart { border-top: 1px solid #e2e8f0; padding-top: 10px; }
+    .qpart-q { font-size: 0.92rem; font-weight: 600; margin-bottom: 6px; }
+    .quiz-sum ul { padding-left: 18px; font-size: 0.86rem; }
+    .quiz-sum li { margin: 4px 0; }
+
+    /* Teacher mode */
+    .teacher { position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 92vw); background: white; box-shadow: -4px 0 18px rgba(0,0,0,0.18); padding: 12px; overflow-y: auto; z-index: 20; }
+    .teacher h2 { font-size: 1rem; margin: 0 0 8px; }
+    .teacher .tbtns { display: grid; gap: 6px; }
+    .teacher .tbtns button { background: white; color: #1e293b; border: 1px solid #cbd5e1; flex: none; }
+    .teacher .tbtns button:hover { background: #f1f5f9; }
+    .teacher .tbtns button.on { background: #1e293b; color: white; }
+    .teacher h3 { font-size: 0.9rem; margin: 14px 0 4px; }
+    .teacher ul { padding-left: 18px; margin: 0; font-size: 0.84rem; }
+    .teacher li { margin: 4px 0; }
+    body.no-explain .strip, body.no-explain .words, body.no-explain .feedback .why, body.no-explain .feat-note { display: none; }
+    body.no-answers .readout-card .value, body.no-answers .work { filter: blur(6px); }
+    body.free-mode .predict-box { display: none; }
+
+    @media (max-width: 700px) {
+      h1 { font-size: 1rem; }
+      .readout, .readout.n4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .tab .tl { display: none; }
+      .tab .ts { display: inline; }
+      /* phones: short names in rows that wrap, so all five tabs show without scrolling */
+      .tabs { display: flex; flex-wrap: wrap; }
+      button.tab { flex: 1 1 auto; white-space: nowrap; }
     }
-    @media (max-width: 640px) {
-      .exp { grid-template-columns: 1fr; gap: 8px; }
-      .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (max-width: 420px) {
+      .buttons button { padding: 6px 4px; }
     }
     /* Touch screens (phones, tablets; Samsung Internet reports hover: hover on a phone, so only pointer is tested):
        16 px form fields stop an iPhone zooming the page in when one is
@@ -67,6 +188,7 @@
       input:not([type=range]):not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
       button { min-height: 36px; }
       input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
+      .controls input, .controls select, .controls button, .inputs button { height: 36px; }
     }
   </style>
   <!-- pim-nav-style:start (generated by scripts/pim-nav.ts) -->
@@ -95,136 +217,385 @@
     <a class="pim-nav-btn pim-nav-next" href="wave-properties-generator.html" title="Next: Transverse and Longitudinal Waves (Chapter 9)" aria-label="Next: Transverse and Longitudinal Waves (Chapter 9)"><span class="pim-nav-text"><span class="pim-nav-kicker">Next<span class="pim-nav-ch"> &middot; Chapter 9</span></span><span class="pim-nav-name">Transverse and Longitudinal Waves</span></span><span class="pim-nav-arrow" aria-hidden="true">&rsaquo;</span></a>
   </nav>
   <!-- pim-nav:end -->
-    <h1>The Simple DC Motor</h1>
 
-    <div class="panel">
-      <div class="groups">
-        <div class="group">
-          <div class="group-title">Simulation controls</div>
-          <div class="sim-buttons">
-            <button id="runBtn" class="go">Switch on</button>
-            <button id="pauseBtn">Pause</button>
-            <button id="stepBtn" title="Turn the coil on by 15 degrees">Next step &#9654;</button>
-            <button id="resetBtn" class="danger">Stop and reset</button>
-          </div>
-        </div>
-        <div class="group">
-          <div class="group-title">Experimental controls</div>
-          <div class="exp">
-            <div class="control-group">
-              <div class="label-row"><label for="current">Current <i>I</i> <span class="val" id="currentVal"></span></label><button id="revBtn" class="small">Reverse</button></div>
-              <input id="current" type="range" min="0" max="1.5" step="0.05" value="0.6" />
-            </div>
-            <div class="control-group">
-              <div class="label-row"><label for="field">Field <i>B</i> <span class="val" id="fieldVal"></span></label><button id="flipBtn" class="small">Swap poles</button></div>
-              <input id="field" type="range" min="0.05" max="0.5" step="0.01" value="0.2" />
-            </div>
-            <label class="toggle"><input type="checkbox" id="comm" checked /> <span>Split-ring commutator<br />(untick: complete rings)</span></label>
-          </div>
-        </div>
+    <header class="app-head">
+      <div class="head-row">
+        <h1>The Simple DC Motor</h1>
+        <div class="steps"><span id="stepLabel">Step 1 of 5</span><span class="step-bar" id="stepBar"><i></i><i></i><i></i><i></i><i></i></span></div>
+        <button class="teacher-btn" id="teacherBtn" type="button" hidden>Teacher mode</button>
       </div>
-      <div class="readout">
-        <div class="readout-card"><div class="title">Force on each side, <i>F</i> = <i>BIL</i> (<i>L</i> = 5 cm)</div><div class="value" id="fV">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Current in the coil</div><div class="value" id="iV">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Speed</div><div class="value" id="sV">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Coil position</div><div class="value" id="pV">&mdash;</div></div>
+      <div class="tabs" role="tablist" id="tabs">
+        <button class="tab" role="tab" data-tab="1" type="button"><span class="tl">1. Name the parts</span><span class="ts">1. Parts</span></button>
+        <button class="tab" role="tab" data-tab="2" type="button"><span class="tl">2. Forces on the coil</span><span class="ts">2. Forces</span></button>
+        <button class="tab" role="tab" data-tab="3" type="button"><span class="tl">3. The commutator</span><span class="ts">3. Commutator</span></button>
+        <button class="tab" role="tab" data-tab="4" type="button"><span class="tl">4. A faster motor</span><span class="ts">4. Faster</span></button>
+        <button class="tab" role="tab" data-tab="5" type="button"><span class="tl">5. Challenge</span><span class="ts">5. Challenge</span></button>
       </div>
+      <div class="ckey" id="ckey"></div>
+    </header>
+
+    <div class="strip" id="strip"></div>
+
+    <!-- tabs 1 to 4: Predict first comes first, above the controls and the picture -->
+    <div class="box predict-box" id="predictBox">
+      <div class="box-title">Predict first</div>
+      <div class="predict-q" id="predictQ"></div>
+      <div class="opts" id="predictOpts"></div>
+      <div class="feedback" id="predictFb"></div>
+      <div class="row-btns" id="predictBtns"><button id="predictCheck" type="button">Check my answer</button></div>
     </div>
 
-    <div class="panel">
-      <div class="hint">Switch on and watch it run. Press <b>Pause</b>, then <b>Next step</b> to turn the coil 15&deg; at a time and watch the current reverse as the coil passes the vertical. You can also grab a side of the coil (left picture) and turn it by hand. Then untick the commutator and try again.</div>
-      <div class="views">
-        <div>
-          <div class="view-title">Looking along the axle (from the commutator end)</div>
-          <canvas id="sceneCanvas"></canvas>
+    <!-- Tabs 1 to 4 share one drawing -->
+    <section class="tab-page" id="pageSim">
+      <div class="panel">
+        <div id="simBlock">
+          <div class="controls">
+            <div class="control-group scen-group">
+              <label for="preset">Scenarios</label>
+              <select id="preset"></select>
+            </div>
+            <div class="control-group button-group" id="simGroup">
+              <label>Simulation controls</label>
+              <div class="buttons">
+                <button id="startBtn" type="button">Start</button>
+                <button id="pauseBtn" class="secondary" type="button">Pause</button>
+                <button id="resetBtn" class="danger" type="button">Reset</button>
+              </div>
+            </div>
+            <div class="control-group button-group" id="stepGroup">
+              <label>Steps <span class="step-no" id="stepNo"></span></label>
+              <div class="buttons">
+                <button id="prevStep" class="secondary" type="button" aria-label="Previous step">&lsaquo; Previous</button>
+                <button id="nextStep" type="button" aria-label="Next step">Next &rsaquo;</button>
+                <button id="stepReset" class="danger" type="button">Reset</button>
+              </div>
+            </div>
+          </div>
+          <div class="moments" id="moments">
+            <button id="prevMoment" class="secondary" type="button">&lsaquo; Previous key moment</button>
+            <button id="nextMoment" class="secondary" type="button">Next key moment &rsaquo;</button>
+            <span class="speed" id="speedNote"></span>
+          </div>
+          <div class="question" id="question"></div>
+          <div id="expBlock">
+            <div class="group-title">Experimental controls</div>
+            <div class="inputs" id="inputs"></div>
+          </div>
+          <div class="game" id="game"></div>
         </div>
-        <div>
-          <div class="view-title">The whole motor</div>
-          <canvas id="motorCanvas"></canvas>
+
+        <!-- the readouts go under the drawing: nothing above the canvas may change height while a finger drags -->
+        <div class="scene-wrap">
+          <div class="hint" id="sceneHint"></div>
+          <canvas id="scene"></canvas>
+          <div class="readout" id="readout"></div>
+          <div class="words" id="words"></div>
+          <div class="work" id="work"></div>
+          <div class="note" id="notes"></div>
         </div>
       </div>
-      <div class="note"><ul>
-        <li>The two long sides of the coil carry current in opposite directions (&odot; out of the page, &otimes; into it).</li>
-        <li>Fleming's left-hand rule pushes one side up and the other down, with the <b>same-sized</b> force <i>F</i> = <i>BIL</i>, always at right angles to the field. The pair of forces turns the coil.</li>
-        <li>A stronger magnet (bigger <i>B</i>) is drawn with more field lines, closer together.</li>
-        <li>The turning effect is biggest when the coil is horizontal, because the forces are then furthest from the axle (measured at right angles).</li>
-        <li>It is <b>zero when the coil is vertical</b>, where both forces act in line with the axle.</li>
-        <li>At the vertical position the gaps in the <b>split-ring commutator</b> X and Y are at the carbon brushes P and Q, so for a moment no current flows. The coil's <b>inertia</b> carries it past that point.</li>
-        <li>Then the half-rings have swapped brushes, so the current in the coil reverses and the forces keep turning it the same way.</li>
-        <li>Without the commutator, each end of the coil is joined to its own complete ring (a slip ring), so the current in the coil never reverses. The forces reverse after the vertical position, and the coil just rocks back and forth and stops.</li>
-      </ul></div>
-    </div>
+
+      <div class="learn">
+        <div class="box" id="featBox">
+          <div class="box-title">Key features (tap one)</div>
+          <div class="feats" id="feats"></div>
+          <div class="feat-note" id="featNote"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 5: Challenge -->
+    <section class="tab-page" id="page5" hidden>
+      <div class="panel">
+        <div class="quiz" id="quiz"></div>
+      </div>
+    </section>
   </div>
 
+  <aside class="teacher" id="teacher" hidden aria-label="Teacher mode">
+    <h2>Teacher mode</h2>
+    <div class="tbtns">
+      <button id="tExplain" type="button">Hide explanations</button>
+      <button id="tFree" type="button">Switch to free exploration</button>
+      <button id="tAnswers" type="button">Hide answer labels</button>
+      <button id="tFull" type="button">Full screen</button>
+      <button id="tReset" type="button">Reset whole applet</button>
+      <button id="tClose" type="button">Close</button>
+    </div>
+    <h3>Suggested prompts</h3>
+    <ul id="tPrompts"></ul>
+  </aside>
+
   <script>
-    const el = id => document.getElementById(id);
-    const J = 2e-5;        // notional moment of inertia (kg m^2), chosen so the default spins at a watchable rate
-    const FRICTION = 1e-5; // notional load/friction (N m per rad/s)
-    const SIDE = 0.05;     // length of each side of the coil in the field (m)
-    const WIDTH = 0.04;    // coil width (m)
-    const GAP = 6 * Math.PI / 180;  // half-width of the commutator gaps: no current within 6 degrees of vertical
-    const STEP = Math.PI / 12;      // Next step turns the coil 15 degrees
-    // psi: angle of side A around the axle, measured clockwise on screen from "pointing right"
-    const START_PSI = Math.PI * 0.85;
-    const sim = { psi: START_PSI, omega: 0, running: false, paused: false, sign: 1, grabbing: false, currentDir: 1, poleSwap: false };
-    const P = () => ({ I: +el('current').value, B: +el('field').value });
-    const F = () => { const p = P(); return p.B * p.I * SIDE; };
+    const $ = id => document.getElementById(id);
+    const canvas = $('scene'), presetEl = $('preset');
+    let currentTab = 1, freeMode = false;
+    const COL = { coil: '#b45309', coilOff: '#a8a29e', cur: '#ea580c', field: '#16a34a', fieldLine: 'rgba(22,163,74,0.8)', F: '#dc2626', N: '#dc2626', S: '#2563eb',
+      X: '#d97706', Y: '#0d9488', brush: '#1f2937', d: '#7c3aed', turn: '#7c3aed', hl: 'rgba(250,204,21,0.6)' };
+    const DEG = Math.PI / 180;
+    const minus = s => String(s).replace(/-/g, '−');
 
-    // Current in side A: +1 = out of the page, -1 = into it, 0 = none.
-    // With the commutator, whichever side is on the LEFT is always "out", and the current is cut off while the
-    // brushes sit in the gaps (coil within GAP of vertical).
-    function currentA(psi) {
-      if (!el('comm').checked) return 1;
-      const c = Math.cos(psi);
-      if (Math.abs(c) < Math.sin(GAP)) return 0;
-      return c < 0 ? 1 : -1;
-    }
-    // Torque in the clockwise (increasing psi) sense
-    function torque(psi) {
-      const f = F() * sim.sign;
-      return -f * WIDTH * Math.cos(psi) * currentA(psi);
-    }
-    const on = () => sim.running && P().I > 0;
-
-    function step(dt) {
-      if (sim.grabbing || sim.paused) return;
-      if (!sim.running && Math.abs(sim.omega) < 1e-9) return;
-      const n = 20;
-      for (let i = 0; i < n; i++) {
-        const h = dt / n;
-        const tq = sim.running ? torque(sim.psi) : 0;
-        sim.omega += (tq - FRICTION * sim.omega) / J * h;
-        sim.psi += sim.omega * h;
+    /* ---------------- numbers ---------------- */
+    // sf significant figures; an exact whole number stays whole; very small or large values as a × 10^n
+    function num(v, sf = 3) {
+      if (!isFinite(v)) return '—';
+      if (Math.abs(v) < 1e-12) return '0';
+      if (Math.abs(v - Math.round(v)) < 1e-9 && Math.abs(v) < 1e4) return minus(String(Math.round(v)));
+      const a = Math.abs(v);
+      if (a < 1e-2 || a >= 1e4) {
+        let e = Math.floor(Math.log10(a) + 1e-12), m = (v / 10 ** e) * (1 + 1e-12);
+        let ms = m.toPrecision(sf); if (Math.abs(+ms) >= 10) { e++; ms = (m / 10).toPrecision(sf); }
+        return `${minus(ms)} × 10<sup>${minus(e)}</sup>`;
       }
-      if (!sim.running && Math.abs(sim.omega) < 0.02) sim.omega = 0;
+      return minus((v * (1 + 1e-12)).toPrecision(sf));
+    }
+    const plain = s => String(s).replace(/<[^>]+>/g, '');
+
+    /* ---------------- the motor model: ONE place for every formula ----------------
+       Looking along the axle from the commutator end (as the notes draw (a), (b) and (c) on p. 8-33): x to the right,
+       y up, z out of the page towards you. The coil's side AB is at angle psi from the +x direction (anticlockwise);
+       side CD is opposite it. The current flows A to B (away from you, into the page) whenever half-ring X touches
+       brush P, as on p. 8-32 (battery, P, X, coil, Y, Q). bx = +1: N-pole on the left, field to the right. */
+    const BASE = { N: 1, B: 0.20, I: 0.60, L: 0.050, w: 0.040 };   // this page's own values (the notes give none)
+    const GAP = 6 * DEG, GAP_SIN = Math.sin(GAP);                    // the half-rings' gaps: no current within 6° of vertical
+    const J = 7.5e-5, FR = 5e-5;                                     // this page's own inertia (kg m²) and friction (N m s)
+    // F = BIL on each long side of the coil, times the number of turns
+    const sideForce = M => M.N * M.B * M.I * M.L;
+    const inGap = psi => Math.abs(Math.cos(psi)) < GAP_SIN - 1e-9;
+    // current in side AB: -1 into the page (A to B), +1 out of the page (B to A), 0 none
+    function currentAB(M, psi) {
+      if (M.comm === 'split') { if (inGap(psi)) return 0; return (Math.cos(psi) > 0 ? 1 : -1) * M.dir; }
+      return -M.dir;   // complete rings, or a coil fed straight from the supply: always A to B
+    }
+    const halfRingOnP = (M, psi) => (M.comm !== 'split' ? 'X' : inGap(psi) ? '' : Math.cos(psi) < 0 ? 'X' : 'Y');
+    // the upward force on side AB (N); side CD gets the same force the other way
+    const forceAB = (M, psi) => currentAB(M, psi) * M.bx * sideForce(M);
+    // the moment of the pair of forces about the axle, + anticlockwise (as seen from the commutator end):
+    // each force F acts at a perpendicular distance d = (w/2)|cos psi| from the axle (the forces are vertical)
+    function turning(M, psi) {
+      const F = Math.abs(forceAB(M, psi)), d = M.w / 2 * Math.abs(Math.cos(psi)), xAB = M.w / 2 * Math.cos(psi);
+      const total = 2 * xAB * forceAB(M, psi);   // x × F for AB, plus the same again for CD
+      return { F, d, each: F * d, total: Math.abs(total) < 1e-15 ? 0 : total, sense: Math.abs(total) < 1e-15 ? 0 : Math.sign(total) };
+    }
+    const maxTurning = M => M.w * sideForce(M);   // coil horizontal: 2 × F × (w/2)
+
+    // the coil turning: J d²psi/dt² = (moment of the pair) − FR × (angular speed); RK4 in 1 ms steps
+    const H = 1 / 1000;
+    const deriv = (M, s) => [s[1], (turning(M, s[0]).total - FR * s[1]) / J];
+    function rk4(M, s, h) {
+      const k1 = deriv(M, s), k2 = deriv(M, [s[0] + h / 2 * k1[0], s[1] + h / 2 * k1[1]]);
+      const k3 = deriv(M, [s[0] + h / 2 * k2[0], s[1] + h / 2 * k2[1]]), k4 = deriv(M, [s[0] + h * k3[0], s[1] + h * k3[1]]);
+      return [s[0] + h / 6 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]), s[1] + h / 6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1])];
+    }
+    function trajectory(M, psi0, T) {
+      const n = Math.ceil(T / H) + 2, ps = new Float64Array(n), om = new Float64Array(n);
+      let s = [psi0, 0]; ps[0] = psi0; om[0] = 0;
+      for (let k = 1; k < n; k++) { s = rk4(M, s, H); ps[k] = s[0]; om[k] = s[1]; }
+      return { M, psi0, ps, om, n };
+    }
+    // the state at any moment: from the stored step before it, one RK4 step of the leftover time (so key moments are exact)
+    function stateAt(tr, t) {
+      const k = Math.max(0, Math.min(tr.n - 2, Math.floor(t / H + 1e-9))), dt = t - k * H, s = [tr.ps[k], tr.om[k]];
+      return dt < 1e-12 ? s : rk4(tr.M, s, dt);
+    }
+    // first moment after `after` where g(state) crosses zero (bisection inside the 1 ms step)
+    function crossTime(tr, g, after = 0) {
+      const k0 = Math.max(0, Math.floor(after / H));
+      for (let k = k0; k < tr.n - 1; k++) {
+        const a = g([tr.ps[k], tr.om[k]]), b = g([tr.ps[k + 1], tr.om[k + 1]]);
+        if (k * H < after - 1e-12) continue;
+        if (a === 0 && k * H > after + 1e-9) return k * H;
+        if (a * b < 0 || (b === 0 && a !== 0)) {
+          let lo = 0, hi = H;
+          for (let j = 0; j < 60; j++) { const m = (lo + hi) / 2; if (g(rk4(tr.M, [tr.ps[k], tr.om[k]], m)) * a > 0) lo = m; else hi = m; }
+          return k * H + hi;
+        }
+      }
+      return null;
+    }
+    const turnsPerSecond = om => om / (2 * Math.PI);
+
+    /* ---------------- scenarios ---------------- */
+    const ANG15 = Array.from({ length: 25 }, (_, i) => i * 15);
+    const PRESETS = {
+      // tab 1: the parts (notes pp. 8-32 and 8-34)
+      parts: { tab: 1, mode: 'steps', view: 'motor', name: 'The parts of a DC motor', bx: 1, dir: 1, comm: 'split', psi: 180 },
+      path: { tab: 1, mode: 'steps', view: 'motor', name: 'The path of the current', bx: 1, dir: 1, comm: 'split', psi: 180 },
+      find: { tab: 1, mode: 'game', view: 'motor', name: 'Try it!: find the part', bx: 1, dir: 1, comm: 'split', psi: 180,
+        q: 'Notes p. 8-34, Try it!: In a simple DC motor, ____ creates the magnetic field. ____ is used to allow the coil to rotate by reversing the current through the coil every half-revolution. ____ are used as electrical contacts between the coil and the external circuit.' },
+      // tab 2: the forces on a coil (pp. 8-27 to 8-30)
+      coil: { tab: 2, mode: 'steps', view: 'coil3d', name: 'A coil between two poles', bx: 1, dir: 1, comm: 'none', psi: 180,
+        q: 'Notes p. 8-27: What happens if a current-carrying coil is placed between the poles of magnets? Current flows in the direction ABCD.' },
+      ex5: { tab: 2, mode: 'live', view: 'end', name: 'Example 5: draw the forces', bx: -1, dir: -1, comm: 'none', psi: 125,
+        q: 'Notes Example 5: The diagram below shows a current-carrying coil placed between two poles of two magnets. Draw arrows to show direction of the magnetic forces acting on the coil.' },
+      turn: { tab: 2, mode: 'live', view: 'end', name: 'Turn the coil by hand', bx: 1, dir: 1, comm: 'none', psi: 180, angles: [0, 45, 90, 135, 180] },
+      // tab 3: the split-ring commutator (pp. 8-32 to 8-34)
+      run: { tab: 3, mode: 'run', view: 'both', name: 'The motor runs', bx: 1, dir: 1, comm: 'split', psi: 180 },
+      half: { tab: 3, mode: 'live', view: 'both', name: 'Turn it 15° at a time', bx: 1, dir: 1, comm: 'split', psi: 180, angles: ANG15 },
+      rings: { tab: 3, mode: 'run', view: 'both', name: 'Without a split-ring commutator', bx: 1, dir: 1, comm: 'rings', psi: 180, T: 16 },
+      // tab 4: a bigger turning effect (p. 8-29): motor A as before, motor B with one change
+      dI: { tab: 4, mode: 'run', view: 'race', name: 'Double the current', change: { I: 1.20 }, what: 'twice the current' },
+      dN: { tab: 4, mode: 'run', view: 'race', name: 'Double the number of turns', change: { N: 2 }, what: 'twice the number of turns' },
+      dA: { tab: 4, mode: 'run', view: 'race', name: 'Double the area of the coil', change: { w: 0.080 }, what: 'twice the area inside the field' },
+      dB: { tab: 4, mode: 'run', view: 'race', name: 'Double the field strength', change: { B: 0.40 }, what: 'twice the field strength' },
+      own: { tab: 4, mode: 'run', view: 'race', name: 'Your own values', change: { I: 0.60, N: 1, w: 0.040, B: 0.20, dir: 1 }, what: 'your own values' }
+    };
+    const RACE_T = 6;
+
+    let P = {}, S = { scen: 'parts', step: 0 };
+    let feat = {}, hl = {}, show = {}, psiLive = Math.PI;
+    const sim = { t: 0, running: false, last: null };
+    const mode = () => (PRESETS[S.scen] || {}).mode || 'live';
+    const isRun = () => mode() === 'run', isSteps = () => mode() === 'steps';
+    const view = () => (PRESETS[S.scen] || {}).view;
+    // the motor described by the scenario (with the page's values)
+    function motorOf(Pp = P) { return { ...BASE, comm: Pp.comm, dir: Pp.dir, bx: Pp.bx }; }
+    function motorB(Pp = P) { return { ...BASE, comm: 'split', dir: 1, bx: 1, ...(Pp.change || {}) }; }
+    const motorA = () => ({ ...BASE, comm: 'split', dir: 1, bx: 1 });
+
+    /* ---------------- runs ---------------- */
+    let TR = null, TRB = null, KM = [], RUN_END = 0;
+    // which way the coil sets off, +1 anticlockwise
+    const rotOf = tr => Math.sign(turning(tr.M, tr.psi0).total) || 1;
+    function buildRun() {
+      TR = TRB = null; KM = []; RUN_END = 0;
+      const id = S.scen;
+      if (id === 'run') {
+        TR = trajectory(motorOf(), P.psi * DEG, 20);
+        const rot = rotOf(TR), at = deg => crossTime(TR, s => rot * (s[0] - TR.psi0) - deg * DEG);
+        RUN_END = at(720);   // two whole revolutions
+        KM = [90, 90 + GAP / DEG, 180, 270, 270 + GAP / DEG, 360].map(at).concat([RUN_END]);
+      } else if (id === 'rings') {
+        TR = trajectory(motorOf(), P.psi * DEG, P.T + 0.1);
+        const rot = rotOf(TR), v = crossTime(TR, s => rot * (s[0] - TR.psi0) - 90 * DEG);
+        const stop = crossTime(TR, s => s[1], v);
+        RUN_END = P.T; KM = [v, stop, RUN_END];
+      } else if (view() === 'race') {
+        TR = trajectory(motorA(), Math.PI, RACE_T + 0.1); TRB = trajectory(motorB(), Math.PI, RACE_T + 0.1);
+        RUN_END = RACE_T; KM = [2, 4, 6];
+      }
+    }
+    // the coil's state now: angle psi (rad) and angular speed (rad/s)
+    function coilNow(tr = TR) {
+      if (!isRun()) return [psiLive, 0];
+      if (!tr) return [P.psi * DEG, 0];
+      // Without the commutator the coil comes to rest at the vertical, where the forces act through the axle: at the end
+      // of the run it is drawn exactly there (the swing left at 16 s is under 0.5°)
+      if (S.scen === 'rings' && sim.t >= RUN_END - 1e-9) return [tr.psi0 + rotOf(tr) * 90 * DEG, 0];
+      return stateAt(tr, sim.t);
+    }
+    const runEnd = () => (isRun() ? RUN_END : 0);
+    function frame(ts) {
+      if (!sim.running) return;
+      if (sim.last === null) sim.last = ts;
+      const dt = Math.max(0, Math.min(0.05, (ts - sim.last) / 1000)); sim.last = ts;   // never step backwards
+      sim.t = Math.min(runEnd(), sim.t + dt);
+      if (sim.t >= runEnd() - 1e-9) { sim.t = runEnd(); sim.running = false; }
+      update();
+      if (sim.running) requestAnimationFrame(frame);
+    }
+    function start() {
+      if (sim.t >= runEnd() - 1e-9) sim.t = 0;
+      sim.running = true; sim.last = null; clearFeatNoteOnly(); update(); requestAnimationFrame(frame);
+    }
+    function setTime(t) { sim.running = false; sim.last = null; sim.t = Math.max(0, Math.min(runEnd(), t)); update(); }
+    function resetRun() { sim.running = false; sim.last = null; sim.t = 0; }
+    $('startBtn').addEventListener('click', start);
+    $('pauseBtn').addEventListener('click', () => {
+      if (sim.running) { sim.running = false; sim.last = null; update(); }
+      else if (sim.t > 0 && sim.t < runEnd()) start();
+    });
+    $('resetBtn').addEventListener('click', () => { resetRun(); update(); });
+    // key moments: a run's moments, or the angles of a coil turned by hand
+    const thetaOf = psi => { let a = Math.round((psi - Math.PI) / DEG * 1e6) / 1e6; return a; };   // turned from position (a)
+    function moments() { return isRun() ? KM : (P.angles || []); }
+    function momentNow() { return isRun() ? sim.t : thetaOf(psiLive); }
+    function goMoment(v) { if (isRun()) setTime(v); else { psiLive = Math.PI + v * DEG; update(); } }
+    $('nextMoment').addEventListener('click', () => { const n = moments().find(m => m > momentNow() + 1e-6); if (n !== undefined) { clearFeatNoteOnly(); goMoment(n); } });
+    $('prevMoment').addEventListener('click', () => { const p = moments().filter(m => m < momentNow() - 1e-6).pop(); if (p !== undefined) { clearFeatNoteOnly(); goMoment(p); } });
+
+    /* ---------------- steps ---------------- */
+    const PARTS = {
+      magnet: 'a permanent magnet (its N- and S-poles)', coil: 'the coil', axle: 'the axle', comm: 'the split-ring commutator (half-rings X and Y)',
+      brush: 'a carbon brush (P or Q)', battery: 'the battery', switch: 'the switch'
+    };
+    function steps() {
+      const id = S.scen;
+      if (id === 'parts') return [
+        { h: 'Two <b>permanent magnets</b> create the magnetic field: a uniform field from the N-pole to the S-pole (notes pp. 8-32 and 8-34).', part: 'magnet' },
+        { h: 'A rectangular <b>coil</b> ABCD sits in the field. It rotates on an <b>axle</b>, drawn as the dashed line.', part: 'coil' },
+        { h: 'The ends of the coil are connected to a <b>split-ring commutator</b> XY. The commutator rotates with the coil.', part: 'comm' },
+        { h: 'The commutator rubs against two carbon <b>brushes</b>, P and Q. They stay still: they are the electrical contacts between the coil and the external circuit.', part: 'brush' },
+        { h: 'A <b>battery</b> and a <b>switch</b> complete the circuit. When the switch is closed, the current flows.', part: 'battery' }];
+      if (id === 'path') return [
+        { h: 'Close the switch: the current leaves the battery …', at: 'the wire from the battery' },
+        { h: '… and flows through brush P …', at: 'brush P' },
+        { h: '… into half-ring X, which is joined to end A of the coil …', at: 'half-ring X' },
+        { h: '… round the coil, from A to B, across from B to C, then from C to D …', at: 'the coil (A to B to C to D)' },
+        { h: '… out of end D into half-ring Y …', at: 'half-ring Y' },
+        { h: '… through brush Q and back to the battery (notes p. 8-32).', at: 'brush Q and the wire back to the battery' }];
+      if (id === 'coil') return [
+        { h: 'The current flows round the coil in the direction ABCD.' },
+        { h: 'The currents in AB and CD are in opposite directions: from A to B, away from you, and from C to D, towards you.' },
+        { h: 'Fleming’s left-hand rule on AB: First finger along the Field (N to S, to the right), seCond finger along the Current (A to B): the thuMb points down. Side AB is pushed down.' },
+        { h: 'On CD the current is the other way: side CD is pushed up, with a force of the same size.' },
+        { h: 'This pair of forces produces a turning effect which turns the coil (notes p. 8-28): anticlockwise, as you look from the end where the current goes in.' }];
+      return [];
+    }
+    const nSteps = () => (isSteps() ? steps().length : 0);
+    function setStep(n) { S.step = Math.max(0, Math.min(nSteps(), n)); update(); }
+    $('prevStep').addEventListener('click', () => setStep(S.step - 1));
+    $('nextStep').addEventListener('click', () => { clearFeatNoteOnly(); setStep(S.step + 1); });
+    $('stepReset').addEventListener('click', () => { clearFeatNoteOnly(); setStep(0); });
+
+    /* ---------------- tab 1 game: find the part ---------------- */
+    const ROUNDS = [
+      { ask: 'Tap the part that creates the magnetic field.', ans: 'magnet', src: 'notes p. 8-34' },
+      { ask: 'Tap the part that reverses the current through the coil every half-revolution.', ans: 'comm', src: 'notes p. 8-34' },
+      { ask: 'Tap one of the parts used as electrical contacts between the coil and the external circuit.', ans: 'brush', src: 'notes p. 8-34' },
+      { ask: 'Tap the part that rotates on the axle in the uniform magnetic field.', ans: 'coil', src: 'notes p. 8-32' },
+      { ask: 'Tap the part that the current leaves to flow through P and X, the coil, then Y and Q.', ans: 'battery', src: 'notes p. 8-32' }
+    ];
+    let game = { round: 0, tries: 0, first: 0, last: null, done: false };
+    function resetGame() { game = { round: 0, tries: 0, first: 0, last: null, done: false }; }
+    function tapPart(name) {
+      if (game.done || !name) return;
+      const R = ROUNDS[game.round], ok = name === R.ans;
+      game.tries++;
+      game.last = { name, ok, round: game.round };
+      if (ok) {
+        if (game.tries === 1) game.first++;
+        game.round++; game.tries = 0;
+        if (game.round >= ROUNDS.length) game.done = true;
+      }
+      update();
     }
 
-    // Next step: turn to the next multiple of 15 degrees in the direction the coil is turning
-    // (or would turn), so the vertical (90 and 270 degrees) is always one of the stops.
-    function nextStep() {
-      let dir = Math.sign(sim.omega);
-      if (!dir) dir = Math.sign(torque(sim.psi)) || 1;
-      const k = sim.psi / STEP;
-      const target = dir > 0 ? (Math.floor(k + 1e-6) + 1) * STEP : (Math.ceil(k - 1e-6) - 1) * STEP;
-      sim.psi = target;
+    function loadScenario(id) {
+      const sc = PRESETS[id];
+      S.scen = id; S.step = 0;
+      P = JSON.parse(JSON.stringify(sc)); P.id = id;
+      psiLive = (sc.psi || 180) * DEG;
+      show = { forces: id !== 'ex5', d: true, comm: true };
+      if (id === 'find') resetGame();
+      if (freeMode) { S.step = nSteps(); show.forces = true; }
+      $('question').innerHTML = sc.q || '';
+      resetRun(); buildRun();
     }
 
-    function setup(c) {
-      const r = c.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
-      const cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
-      if (c.width !== cw || c.height !== ch) { c.width = cw; c.height = ch; }
-      const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      return { ctx, w: r.width, h: r.height };
-    }
-    function arrow(ctx, x1, y1, x2, y2, color, lw = 4, head = 11) {
-      const len = Math.hypot(x2 - x1, y2 - y1); if (len < 1.5) return;
-      const a = Math.atan2(y2 - y1, x2 - x1), hd = Math.min(head, len * 0.6);
-      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
-      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - Math.cos(a) * hd * 0.8, y2 - Math.sin(a) * hd * 0.8); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - hd * Math.cos(a - 0.45), y2 - hd * Math.sin(a - 0.45)); ctx.lineTo(x2 - hd * Math.cos(a + 0.45), y2 - hd * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill();
+    /* ---------------- drawing helpers ---------------- */
+    // what the canvas drew, for the checks: every label's box, every arrow, the panes, the parts
+    window.__pim = { labels: [], arrows: [], panes: [], parts: [], lines: [], coils: [], corners: [] };
+    function setup(cv, wantH) {
+      if (wantH && Math.abs(cv.getBoundingClientRect().height - wantH) > 1) cv.style.height = wantH + 'px';
+      const r = cv.getBoundingClientRect();
+      if (r.width < 20 || r.height < 20) return null;   // hidden: never draw at no size
+      const dpr = window.devicePixelRatio || 1, cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
+      if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+      const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, r.width, r.height);
+      return { ctx, W: r.width, H: r.height };
     }
     // Canvas text with <i>, <sub> and <sup> runs, so symbols of physical quantities are italic, as in the notes.
-    // Honours ctx.textAlign; returns the width. measureOnly = true draws nothing.
     function richText(ctx, s, x, y, measureOnly) {
       const base = ctx.font, m = base.match(/([\d.]+)px/), size = m ? +m[1] : 12;
       const runs = []; let it = false, sub = 0;
@@ -239,258 +610,1036 @@
         }
       }
       ctx.font = base;
-      const w = runs.reduce((a, r) => a + r.w, 0);
-      if (measureOnly) return w;
+      const wd = runs.reduce((a, r) => a + r.w, 0);
+      if (measureOnly) return wd;
       const align = ctx.textAlign;
-      let cx = align === 'center' ? x - w / 2 : (align === 'right' || align === 'end') ? x - w : x;
+      let cx = align === 'center' ? x - wd / 2 : (align === 'right' || align === 'end') ? x - wd : x;
       ctx.textAlign = 'left';
       for (const r of runs) { ctx.font = r.f; ctx.fillText(r.t, cx, y + (r.sub === 1 ? size * 0.3 : r.sub === -1 ? -size * 0.4 : 0)); cx += r.w; }
       ctx.textAlign = align; ctx.font = base;
-      return w;
+      return wd;
     }
-
-    function tag(ctx, t, x, y, color, align = 'center', font = 'bold 12px Arial') {
-      ctx.font = font; ctx.textAlign = align; ctx.textBaseline = 'middle';
-      const tw = richText(ctx, t, 0, 0, true), x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
-      ctx.fillStyle = 'rgba(251,253,255,0.92)'; ctx.fillRect(x0 - 3, y - 8, tw + 6, 16);
-      ctx.fillStyle = color; richText(ctx, t, x, y); ctx.textBaseline = 'alphabetic';
+    let PANE = 'scene', CW = 1e9, CH = 1e9, CX0 = 0, CY0 = 0;
+    function pane(name, x, y, w, h) { PANE = name; CX0 = x; CY0 = y; CW = x + w; CH = y + h; __pim.panes.push({ name, x, y, w, h }); }
+    function arrow(ctx, x1, y1, x2, y2, color, lw = 3, head = 10, record = true) {
+      const len = Math.hypot(x2 - x1, y2 - y1); if (len < 1.5) return;
+      if (record) __pim.arrows.push({ pane: PANE, x1, y1, x2, y2, color });
+      const a = Math.atan2(y2 - y1, x2 - x1), hd = Math.min(head, len * 0.6);
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - Math.cos(a) * hd * 0.8, y2 - Math.sin(a) * hd * 0.8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - hd * Math.cos(a - 0.45), y2 - hd * Math.sin(a - 0.45)); ctx.lineTo(x2 - hd * Math.cos(a + 0.45), y2 - hd * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill();
     }
-    function wireEnd(ctx, x, y, cur, color) {
-      ctx.fillStyle = 'white'; ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = color; ctx.strokeStyle = color;
-      if (cur > 0) { ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.fill(); }
-      else if (cur < 0) { ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(x - 6, y - 6); ctx.lineTo(x + 6, y + 6); ctx.moveTo(x + 6, y - 6); ctx.lineTo(x - 6, y + 6); ctx.stroke(); }
+    function labelBox(ctx, lines, x, y, align, size) {
+      ctx.font = `bold ${size}px Arial`;
+      const wd = Math.max(...lines.map(t => richText(ctx, t, 0, 0, true))), lh = size * 1.6 + 1, h = lines.length * lh - 1;
+      const x0 = Math.max(CX0 + 4, Math.min(CW - wd - 4, align === 'center' ? x - wd / 2 : align === 'right' ? x - wd : x));
+      const y0 = Math.max(CY0 + 2, Math.min(CH - h - 2, y - size * 0.8));
+      return { x: x0 - 3, y: y0, w: wd + 6, h, lh, tx: x0, size };
     }
-    const poleNames = () => sim.poleSwap ? ['S', 'N'] : ['N', 'S']; // [left, right]
-    const POLE_COL = { N: '#dc2626', S: '#2563eb' };
-
-    // ---------- view 1: looking along the axle ----------
-    let geo = null;
-    function drawScene() {
-      const { ctx, w, h } = setup(el('sceneCanvas'));
-      ctx.clearRect(0, 0, w, h);
-      const [leftPole, rightPole] = poleNames();
-      [[0, leftPole], [w - 50, rightPole]].forEach(([x, p]) => { ctx.fillStyle = POLE_COL[p]; ctx.fillRect(x, 30, 50, h - 60); ctx.fillStyle = 'white'; ctx.font = 'bold 22px Arial'; ctx.textAlign = 'center'; ctx.fillText(p, x + 25, h / 2 + 8); });
-      const toRight = leftPole === 'N';
-      // one field line per 0.02 T, as on the motor-effect page, so the spacing shows B (whole hundredths, so 0.15 T is 8);
-      // at most 8 arrowheads, spread evenly, so a strong field's heads don't stack into a column
-      const nLines = Math.max(1, Math.round(Math.round(P().B * 100) / 2)), nHeads = Math.min(nLines, 8);
-      const heads = new Set(Array.from({ length: nHeads }, (_, j) => Math.floor((j + 0.5) * nLines / nHeads)));
-      ctx.strokeStyle = 'rgba(100,116,139,0.35)'; ctx.lineWidth = 1.3;
-      for (let i = 0; i < nLines; i++) {
-        const y = 30 + (h - 60) * (i + 0.5) / nLines, a = toRight ? 58 : w - 58, b = toRight ? w - 58 : 58;
-        if (heads.has(i)) arrow(ctx, a, y, b, y, 'rgba(100,116,139,0.35)', 1.3, 8);
-        else { ctx.beginPath(); ctx.moveTo(a, y); ctx.lineTo(b, y); ctx.stroke(); }
-      }
-      const cx = w / 2, cy = h / 2 - 6, r = Math.min(w * 0.26, h * 0.3);
-      const A = { x: cx + r * Math.cos(sim.psi), y: cy + r * Math.sin(sim.psi) }, Bs = { x: cx - r * Math.cos(sim.psi), y: cy - r * Math.sin(sim.psi) };
-      ctx.strokeStyle = '#b45309'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(Bs.x, Bs.y); ctx.stroke();
-      ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.arc(cx, cy, 6, 0, Math.PI * 2); ctx.fill();
-      const iA = on() ? currentA(sim.psi) * sim.currentDir : 0; // +1: side A's current is out of the page
-      const f = F(), len = Math.min(80, 12 + f * 30000);
-      if (iA !== 0 && f > 0) {
-        const upA = iA * (toRight ? 1 : -1) > 0;
-        arrow(ctx, A.x, A.y, A.x, A.y + (upA ? -len : len), '#16a34a', 4);
-        arrow(ctx, Bs.x, Bs.y, Bs.x, Bs.y + (upA ? len : -len), '#16a34a', 4);
-        tag(ctx, '<i>F</i>', A.x + 16, A.y + (upA ? -len * 0.6 : len * 0.6), '#15803d', 'left');
-        tag(ctx, '<i>F</i>', Bs.x + 16, Bs.y + (upA ? len * 0.6 : -len * 0.6), '#15803d', 'left');
-      }
-      wireEnd(ctx, A.x, A.y, iA, iA ? '#b45309' : '#94a3b8');
-      wireEnd(ctx, Bs.x, Bs.y, -iA, iA ? '#b45309' : '#94a3b8');
-      tag(ctx, 'A', A.x + (A.x >= cx ? 22 : -22), A.y - 16, '#92400e');
-      tag(ctx, 'B', Bs.x + (Bs.x >= cx ? 22 : -22), Bs.y - 16, '#92400e');
-      if (Math.abs(Math.cos(sim.psi)) < 0.08) tag(ctx, el('comm').checked ? 'Coil vertical: no current, no turning effect' : 'Coil vertical: forces in line with the axle', cx, 16, '#b91c1c');
-      if (on() && !sim.paused && iA === 0 && Math.abs(sim.omega) < 1e-6) tag(ctx, 'Stuck at the vertical: no current flows here. Turn the coil a little by hand.', cx, 36, '#b91c1c');
-      geo = { cx, cy, r, A, Bs };
-      tag(ctx, on() ? 'current ON' : 'current OFF', cx, h - 14, on() ? '#15803d' : '#64748b');
-      if (sim.paused) tag(ctx, 'PAUSED', 50 + 34, 44, '#7c3aed');
+    const hitBox = (a, b, pad = 1) => Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) > pad && Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) > pad;
+    function crossesArrow(box) {
+      return __pim.arrows.some(a => { if (a.pane !== PANE) return false; for (let k = 0; k <= 24; k++) { const px = a.x1 + (a.x2 - a.x1) * k / 24, py = a.y1 + (a.y2 - a.y1) * k / 24;
+        if (px > box.x + 0.5 && px < box.x + box.w - 0.5 && py > box.y + 0.5 && py < box.y + box.h - 0.5) return true; } return false; });
     }
-
-    // ---------- view 2: the whole motor (oblique drawing) ----------
-    // World: x to the right, y up, z along the axle towards the commutator (towards the viewer of view 1).
-    function drawMotor() {
-      const { ctx, w, h } = setup(el('motorCanvas'));
-      ctx.clearRect(0, 0, w, h);
-      const s = Math.min(w / 4.9, h / 3.6);
-      const ox = w * 0.5, oy = h * 0.38;
-      // oblique drawing seen from the front, a little above and to the right: the front (commutator end, +z)
-      // comes down and to the left, so tops and right-hand faces are visible
-      const pr = (x, y, z) => ({ x: ox + s * (x - 0.42 * z), y: oy - s * (y - 0.3 * z) });
-      const [leftPole, rightPole] = poleNames();
-      const R = 0.62, Lz = 0.9, CZ = Lz + 0.45, RC = 0.2;
-      const box = (x0, x1, y0, y1, z0, z1, col, label) => {
-        const P = (x, y, z) => pr(x, y, z);
-        const poly = pts => { ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath(); };
-        ctx.strokeStyle = 'rgba(15,23,42,0.5)'; ctx.lineWidth = 1;
-        ctx.fillStyle = col; ctx.globalAlpha = 0.75;
-        poly([P(x0, y1, z0), P(x1, y1, z0), P(x1, y1, z1), P(x0, y1, z1)]); ctx.fill(); ctx.stroke(); // top
-        ctx.globalAlpha = 0.6;
-        poly([P(x1, y0, z0), P(x1, y1, z0), P(x1, y1, z1), P(x1, y0, z1)]); ctx.fill(); ctx.stroke(); // right-hand face
-        ctx.globalAlpha = 0.95;
-        poly([P(x0, y0, z1), P(x1, y0, z1), P(x1, y1, z1), P(x0, y1, z1)]); ctx.fill(); ctx.stroke(); // front
-        ctx.globalAlpha = 1;
-        const c = P((x0 + x1) / 2, (y0 + y1) / 2, z1);
-        ctx.fillStyle = 'white'; ctx.font = 'bold 20px Arial'; ctx.textAlign = 'center'; ctx.fillText(label, c.x, c.y + 7);
-      };
-      // magnets, drawn first (they are behind/beside the coil)
-      box(-1.95, -1.15, -0.85, 0.85, -Lz - 0.1, Lz - 0.1, POLE_COL[leftPole], leftPole);
-      box(1.15, 1.95, -0.85, 0.85, -Lz - 0.1, Lz - 0.1, POLE_COL[rightPole], rightPole);
-      // field direction between the poles
-      const toRight = leftPole === 'N';
-      [-0.55, 0.05, 0.6].forEach(y => { const a = pr(toRight ? -1.05 : 1.05, y, -Lz - 0.05), b = pr(toRight ? 1.05 : -1.05, y, -Lz - 0.05); arrow(ctx, a.x, a.y, b.x, b.y, 'rgba(100,116,139,0.4)', 1.3, 8); });
-
-      // coil: side A at angle psi (screen-clockwise in view 1 = world (cos, -sin))
-      const ax = R * Math.cos(sim.psi), ay = -R * Math.sin(sim.psi);
-      const A0 = pr(ax, ay, -Lz), A1 = pr(ax, ay, Lz), B0 = pr(-ax, -ay, -Lz), B1 = pr(-ax, -ay, Lz);
-      const iA = on() ? currentA(sim.psi) * sim.currentDir : 0;
-      const coilCol = iA ? '#b45309' : '#a8a29e';
-      // axle
-      ctx.strokeStyle = '#475569'; ctx.lineWidth = 3;
-      const ax0 = pr(0, 0, -Lz - 0.35), ax1 = pr(0, 0, CZ + 0.35);
-      ctx.beginPath(); ctx.moveTo(ax0.x, ax0.y); ctx.lineTo(ax1.x, ax1.y); ctx.stroke();
-      // coil loop: back end, both long sides, front leads to the commutator
-      ctx.strokeStyle = coilCol; ctx.lineWidth = 4; ctx.lineJoin = 'round';
-      ctx.beginPath(); ctx.moveTo(A1.x, A1.y); ctx.lineTo(A0.x, A0.y); ctx.lineTo(B0.x, B0.y); ctx.lineTo(B1.x, B1.y); ctx.stroke();
-      // half-rings: X joined to side A, Y joined to side B; gaps at right angles to the coil
-      const ringPt = (ang, z) => pr(RC * Math.cos(ang), -RC * Math.sin(ang), z);
-      const halves = [['X', sim.psi, A1], ['Y', sim.psi + Math.PI, B1]];
-      const comm = el('comm').checked;
-      const Z1 = CZ + 0.2, Z2 = CZ - 0.2; // the two complete rings: A's end on the outer one, B's on the inner one
-      halves.forEach(([name, mid, end]) => {
-        const lead = ringPt(mid, comm ? CZ - 0.12 : (name === 'X' ? Z1 : Z2) - 0.04);
-        ctx.strokeStyle = coilCol; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(end.x, end.y); ctx.lineTo(lead.x, lead.y); ctx.stroke();
+    function label(ctx, lines, x, y, color, align = 'center', size = 12, bg = 'rgba(255,255,255,0.92)') {
+      if (!Array.isArray(lines)) lines = [lines];
+      const b = labelBox(ctx, lines, x, y, align, size);
+      lines.forEach((t, i) => {
+        const card = { pane: PANE, text: plain(t), x: b.x, y: b.y + i * b.lh, w: b.w, h: size * 1.6 };
+        if (bg) { ctx.fillStyle = bg; ctx.fillRect(card.x, card.y, card.w, card.h); }
+        ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.font = `bold ${size}px Arial`; richText(ctx, t, b.tx, card.y + size * 0.8);
+        ctx.textBaseline = 'alphabetic';
+        __pim.labels.push(card);
       });
-      if (!comm) {
-        [[Z2, '#92400e'], [Z1, '#b45309']].forEach(([z, col]) => { // inner ring first, so the outer one is drawn in front
-          ctx.strokeStyle = col; ctx.lineWidth = 7; ctx.beginPath();
-          for (let k = 0; k <= 48; k++) { const p = ringPt(k / 48 * Math.PI * 2, z); if (k) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); }
-          ctx.stroke();
-        });
+      return b;
+    }
+    const clear = b => !__pim.labels.some(l => l.pane === PANE && hitBox(l, b)) && !crossesArrow(b);
+    // try the spots in turn; a label with no clear spot is left out (never a label on top of another)
+    function labelAt(ctx, text, cands, color, size = 12, must = true) {
+      for (const [x, y, al] of cands) { const b = labelBox(ctx, Array.isArray(text) ? text : [text], x, y, al, size); if (clear(b)) return label(ctx, text, x, y, color, al, size); }
+      if (!must) return null;
+      const [x, y, al] = cands[0]; return label(ctx, text, x, y, color, al, size);
+    }
+    const obstacle = (x, y, wd, h) => __pim.labels.push({ pane: PANE, obstacle: true, text: '', x, y, w: wd, h });
+    // a part of the motor, for tapping: its outline shapes and a point that is on it and on nothing else
+    function part(name, shape, tap) {
+      let p = __pim.parts.find(q => q.name === name && q.pane === PANE);
+      if (!p) { p = { name, pane: PANE, shapes: [], tap: null }; __pim.parts.push(p); }
+      p.shapes.push(shape); if (tap && !p.tap) p.tap = tap;
+    }
+    function inShape(sh, x, y) {
+      if (sh.type === 'rect') return x >= sh.x && x <= sh.x + sh.w && y >= sh.y && y <= sh.y + sh.h;
+      if (sh.type === 'circle') return Math.hypot(x - sh.x, y - sh.y) <= sh.r;
+      if (sh.type === 'segs') return sh.segs.some(([a, b]) => { const dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy || 1; const u = Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / L2)); return Math.hypot(x - a.x - u * dx, y - a.y - u * dy) <= sh.tol; });
+      if (sh.type === 'poly') { let ins = false; const p = sh.pts; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { if ((p[i].y > y) !== (p[j].y > y) && x < (p[j].x - p[i].x) * (y - p[i].y) / (p[j].y - p[i].y) + p[i].x) ins = !ins; } return ins; }
+      return false;
+    }
+    function hitPart(x, y) {
+      for (const n of ['brush', 'comm', 'switch', 'battery', 'coil', 'axle', 'magnet']) {
+        const p = __pim.parts.find(q => q.name === n); if (p && p.shapes.some(sh => inShape(sh, x, y))) return n;
       }
-      if (comm) {
-        halves.forEach(([name, mid]) => {
-          ctx.strokeStyle = name === 'X' ? '#b45309' : '#92400e'; ctx.lineWidth = 9; ctx.lineCap = 'butt';
-          ctx.beginPath();
-          for (let k = 0; k <= 16; k++) { const a = mid - Math.PI / 2 + GAP + (Math.PI - 2 * GAP) * k / 16, p = ringPt(a, CZ); if (k) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); }
-          ctx.stroke();
-        });
-        // X and Y labels inside the ring (outside it they would sit under the brushes when the coil is horizontal)
-        halves.forEach(([name, mid]) => {
-          const lp = pr(RC * 0.5 * Math.cos(mid), -RC * 0.5 * Math.sin(mid), CZ);
-          ctx.fillStyle = '#7c2d12'; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-          ctx.fillText(name, lp.x, lp.y); ctx.textBaseline = 'alphabetic';
-        });
-      } else {
-        tag(ctx, 'complete rings: the current in the coil never reverses', pr(0, -0.9, CZ).x, h - 12, '#64748b', 'center', '11px Arial');
-      }
-      // brushes P (right) and Q (left), wires down to the battery
-      // with complete rings, P presses on A's ring and Q on B's (P to X, as in the notes)
-      const bR = pr(RC + 0.13, 0, comm ? CZ : Z1), bL = pr(-RC - 0.13, 0, comm ? CZ : Z2);
-      ctx.fillStyle = '#1f2937';
-      ctx.fillRect(bR.x - 2, bR.y - 7, 16, 14); ctx.fillRect(bL.x - 14, bL.y - 7, 16, 14);
-      tag(ctx, 'P', bR.x + 24, bR.y - 12, '#111827', 'center', 'bold 11px Arial');
-      tag(ctx, 'Q', bL.x - 24, bL.y - 12, '#111827', 'center', 'bold 11px Arial');
-      const batY = Math.min(h - 26, bR.y + s * 0.95), bx = (bR.x + bL.x) / 2;
-      const wireCol = on() ? '#0f172a' : '#94a3b8';
-      ctx.strokeStyle = wireCol; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(bR.x + 14, bR.y); ctx.lineTo(bR.x + 40, bR.y); ctx.lineTo(bR.x + 40, batY); ctx.lineTo(bx + 10, batY);
-      ctx.moveTo(bL.x - 14, bL.y); ctx.lineTo(bL.x - 40, bL.y); ctx.lineTo(bL.x - 40, batY); ctx.lineTo(bx - 10, batY); ctx.stroke();
-      // battery: long plate = +. With the current reversed, the battery is turned round.
-      const plusRight = sim.currentDir > 0;
-      ctx.lineWidth = 3; ctx.strokeStyle = '#0f172a';
-      const longX = plusRight ? bx + 6 : bx - 6, shortX = plusRight ? bx - 6 : bx + 6;
-      ctx.beginPath(); ctx.moveTo(longX, batY - 13); ctx.lineTo(longX, batY + 13); ctx.stroke();
-      ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(shortX, batY - 7); ctx.lineTo(shortX, batY + 7); ctx.stroke();
-      ctx.fillStyle = '#0f172a'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
-      ctx.fillText('+', longX + (plusRight ? 9 : -9), batY - 14); ctx.fillText('−', shortX + (plusRight ? -9 : 9), batY - 14);
-      tag(ctx, on() ? 'battery' : 'battery (switched off)', bx, batY + 24, '#334155', 'center', '11px Arial');
+      return null;
+    }
+    // One field line per 0.02 T (whole hundredths), spaced evenly; at most 8 arrowheads (rule 15)
+    const linesFor = B => Math.max(3, Math.round(Math.round(B * 100) / 2));
+    const headOnLine = (i, n) => { const m = Math.min(n, 8); for (let j = 0; j < m; j++) if (Math.floor((j + 0.5) * n / m) === i) return true; return false; };
+    function title(ctx, box, t) {
+      ctx.font = 'bold 12px Arial'; ctx.fillStyle = '#334155'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      richText(ctx, t, box.x + 8, box.y + 12); ctx.textBaseline = 'alphabetic';
+      ctx.font = 'bold 12px Arial'; const w = richText(ctx, t, 0, 0, true);
+      __pim.labels.push({ pane: PANE, text: plain(t), x: box.x + 5, y: box.y + 3, w: w + 6, h: 19, title: true });
+    }
+    function glow(ctx, draw) { ctx.save(); ctx.strokeStyle = COL.hl; ctx.fillStyle = COL.hl; ctx.lineWidth = 12; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; draw(); ctx.restore(); }
 
-      // current arrows along the long sides (z direction) and forces on them
-      if (iA !== 0) {
-        const mid = (p, q) => ({ x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 });
-        const along = (p0, p1, outwards) => { // outwards: current flows towards +z (out of view 1's page)
-          const a = outwards ? p0 : p1, b = outwards ? p1 : p0, m = mid(p0, p1);
-          const ux = (b.x - a.x), uy = (b.y - a.y), L = Math.hypot(ux, uy);
-          arrow(ctx, m.x - ux / L * 14, m.y - uy / L * 14, m.x + ux / L * 14, m.y + uy / L * 14, '#ea580c', 3, 9);
-        };
-        along(A0, A1, iA > 0); along(B0, B1, iA < 0);
-        const f = F();
-        if (f > 0) {
-          const upA = iA * (toRight ? 1 : -1) > 0, len = Math.min(0.75, 0.15 + f * 300);
-          [[ax, ay, upA], [-ax, -ay, !upA]].forEach(([x, y, up]) => {
-            const a = pr(x, y, 0.15), b = pr(x, y + (up ? len : -len), 0.15);
-            arrow(ctx, a.x, a.y, b.x, b.y, '#16a34a', 4);
+    /* ---------------- view 1: looking along the axle from the commutator end (p. 8-33) ---------------- */
+    // opt: { kR px per metre, kF px per newton, forces, d, comm ('split' | 'rings' | 'none'), sense, omega, fig, sideNames, title, curSym }
+    function endGeom(box) {
+      const top = box.y + 28, bot = box.y + box.h - 30, poleW = Math.max(24, Math.min(44, box.w * 0.085));
+      const Hh = (bot - top) / 2 - 6, gapHalf = (box.w - 2 * poleW - 12) / 2;
+      const rMax = Math.max(18, Math.min(0.56 * Hh, gapHalf - 34));
+      return { top, bot, poleW, Hh, rMax, cx: box.x + box.w / 2, cy: (top + bot) / 2 };
+    }
+    function drawEnd(ctx, box, M, psi, opt) {
+      const g = endGeom(box), { top, bot, poleW, cx, cy } = g;
+      const left = M.bx > 0 ? 'N' : 'S', right = M.bx > 0 ? 'S' : 'N';
+      if (opt.title) title(ctx, box, opt.title);
+      // the magnets' poles and their field (rule 15: one line per 0.02 T)
+      [[box.x + 6, left], [box.x + box.w - 6 - poleW, right]].forEach(([x, p]) => {
+        ctx.fillStyle = p === 'N' ? COL.N : COL.S; ctx.fillRect(x, top, poleW, bot - top);
+        ctx.fillStyle = 'white'; ctx.font = 'bold 20px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(p, x + poleW / 2, cy); ctx.textBaseline = 'alphabetic';
+        obstacle(x, top, poleW, bot - top);
+      });
+      const n = linesFor(M.B), xa = box.x + 6 + poleW + 4, xb = box.x + box.w - 6 - poleW - 4;
+      for (let i = 0; i < n; i++) {
+        const y = top + (bot - top) * (i + 0.5) / n, a = M.bx > 0 ? xa : xb, b = M.bx > 0 ? xb : xa;
+        if (headOnLine(i, n)) arrow(ctx, a, y, b, y, COL.fieldLine, 1.3, 8, false);
+        else { ctx.strokeStyle = COL.fieldLine; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(a, y); ctx.lineTo(b, y); ctx.stroke(); }
+        __pim.lines.push({ pane: PANE, y });
+      }
+      // the coil: side AB at angle psi, side CD opposite
+      const r = opt.kR * M.w / 2, c = Math.cos(psi), s = Math.sin(psi);
+      const A = { x: cx + r * c, y: cy - r * s }, C = { x: cx - r * c, y: cy + r * s };
+      const iAB = opt.on === false ? 0 : currentAB(M, psi);
+      __pim.coils.push({ pane: PANE, cx, cy, r, psi, A, C, iAB });
+      ctx.strokeStyle = iAB ? COL.coil : COL.coilOff; ctx.lineWidth = 5; if (opt.dashed) ctx.setLineDash([6, 5]);
+      ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(C.x, C.y); ctx.stroke(); ctx.setLineDash([]);
+      // the perpendicular distances from the axle to each force's line of action (the forces are vertical)
+      const T = turning(M, psi), Fpx = Math.min(g.Hh - r - 14, opt.kF * sideForce(M)), up = forceAB(M, psi);
+      if (opt.d && Math.abs(c) > 0.03 && iAB) {
+        ctx.setLineDash([3, 4]); ctx.strokeStyle = COL.d; ctx.lineWidth = 1.2;
+        [A, C].forEach(Q => { ctx.beginPath(); ctx.moveTo(Q.x, top + 4); ctx.lineTo(Q.x, bot - 4); ctx.stroke(); });
+        ctx.setLineDash([]); ctx.lineWidth = 2;
+        [A, C].forEach(Q => { ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(Q.x, cy); ctx.stroke(); ctx.beginPath(); ctx.moveTo(Q.x, cy - 5); ctx.lineTo(Q.x, cy + 5); ctx.stroke(); });
+      }
+      // the commutator seen end-on, with the brushes P (left) and Q (right), as on p. 8-33
+      const comm = opt.comm || 'none';
+      const rc = Math.max(9, Math.min(17, r * 0.3));
+      if (comm === 'split') {
+        ctx.lineWidth = 6; ctx.lineCap = 'butt';
+        [['X', psi, COL.X], ['Y', psi + Math.PI, COL.Y]].forEach(([nm, mid, col]) => {
+          ctx.strokeStyle = col; ctx.beginPath();
+          // canvas angles go clockwise, so the screen angle of a direction psi is -psi
+          ctx.arc(cx, cy, rc, -(mid + Math.PI / 2 - GAP), -(mid - Math.PI / 2 + GAP), false);
+          ctx.stroke();
+        });
+        obstacle(cx - rc - 4, cy - rc - 4, 2 * rc + 8, 2 * rc + 8);
+      } else if (comm === 'rings') {
+        ctx.strokeStyle = COL.X; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(cx, cy, rc, 0, 2 * Math.PI); ctx.stroke();
+        obstacle(cx - rc - 4, cy - rc - 4, 2 * rc + 8, 2 * rc + 8);
+      }
+      if (comm !== 'none') {
+        ctx.fillStyle = COL.brush;
+        ctx.fillRect(cx - rc - 4 - 12, cy - 5, 12, 10); ctx.fillRect(cx + rc + 4, cy - 5, 12, 10);
+        obstacle(cx - rc - 16, cy - 5, 12, 10); obstacle(cx + rc + 4, cy - 5, 12, 10);
+      }
+      ctx.fillStyle = '#334155'; ctx.beginPath(); ctx.arc(cx, cy, 3.5, 0, Math.PI * 2); ctx.fill();
+      // the two coil sides end-on: • current out of the page, × into it
+      const end = (Q, sg) => {
+        const R0 = 11; ctx.fillStyle = '#fef3c7'; ctx.strokeStyle = sg ? COL.coil : COL.coilOff; ctx.lineWidth = 2.4;
+        ctx.beginPath(); ctx.arc(Q.x, Q.y, R0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = COL.coil; ctx.strokeStyle = COL.coil;
+        if (sg > 0) { ctx.beginPath(); ctx.arc(Q.x, Q.y, 3.4, 0, Math.PI * 2); ctx.fill(); }
+        else if (sg < 0) { ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(Q.x - 6, Q.y - 6); ctx.lineTo(Q.x + 6, Q.y + 6); ctx.moveTo(Q.x + 6, Q.y - 6); ctx.lineTo(Q.x - 6, Q.y + 6); ctx.stroke(); }
+        obstacle(Q.x - R0, Q.y - R0, 2 * R0, 2 * R0);
+      };
+      end(A, iAB); end(C, -iAB);
+      part('coil', { type: 'segs', segs: [[A, C]], tol: 11 }, A);
+      // the forces: equal in size, opposite in direction, always at right angles to the field (vertical)
+      if (opt.forces && iAB && Fpx > 2) {
+        const dirA = up > 0 ? -1 : 1;
+        arrow(ctx, A.x, A.y + dirA * 12, A.x, A.y + dirA * (12 + Fpx), COL.F, 3.5, 11);
+        arrow(ctx, C.x, C.y - dirA * 12, C.x, C.y - dirA * (12 + Fpx), COL.F, 3.5, 11);
+      }
+      // the sense of the turning effect (or of the motion, on a run)
+      const sense = opt.motion !== undefined ? opt.motion : (opt.sense ? T.sense : 0);
+      if (sense) {
+        const R1 = Math.min(r + 26, g.Hh + 4), a0 = sense > 0 ? 60 : 120, a1 = sense > 0 ? 120 : 60;
+        ctx.strokeStyle = COL.turn; ctx.lineWidth = 2.5; ctx.beginPath();
+        ctx.arc(cx, cy, R1, -a0 * DEG, -a1 * DEG, sense > 0); ctx.stroke();
+        const ex = cx + R1 * Math.cos(a1 * DEG), ey = cy - R1 * Math.sin(a1 * DEG), tang = Math.atan2(-Math.cos(a1 * DEG) * sense, -Math.sin(a1 * DEG) * sense);
+        ctx.fillStyle = COL.turn; ctx.beginPath(); ctx.moveTo(ex + 9 * Math.cos(tang), ey + 9 * Math.sin(tang));
+        ctx.lineTo(ex + 9 * Math.cos(tang + 2.5), ey + 9 * Math.sin(tang + 2.5)); ctx.lineTo(ex + 9 * Math.cos(tang - 2.5), ey + 9 * Math.sin(tang - 2.5)); ctx.closePath(); ctx.fill();
+        obstacle(cx - R1 * 0.55, cy - R1 - 7, R1 * 1.1, 14);
+      }
+      // labels: the commutator letters, then the sides, the forces, d
+      if (comm === 'split') {
+        const lx = a => [cx + (rc + 12) * Math.cos(a), cy - (rc + 12) * Math.sin(a), 'center'];
+        labelAt(ctx, 'X', [lx(psi + 0.9), lx(psi - 0.9), lx(psi + 1.4)], COL.X, 11, false);
+        labelAt(ctx, 'Y', [lx(psi + Math.PI + 0.9), lx(psi + Math.PI - 0.9), lx(psi + Math.PI + 1.4)], COL.Y, 11, false);
+      }
+      if (comm !== 'none') {
+        labelAt(ctx, 'P', [[cx - rc - 10, cy + 16, 'center'], [cx - rc - 10, cy - 16, 'center'], [cx - rc - 26, cy, 'right']], COL.brush, 11, false);
+        labelAt(ctx, 'Q', [[cx + rc + 10, cy + 16, 'center'], [cx + rc + 10, cy - 16, 'center'], [cx + rc + 26, cy, 'left']], COL.brush, 11, false);
+      }
+      const names = opt.sideNames || ['AB', 'CD'];
+      [[A, names[0], c, s], [C, names[1], -c, -s]].forEach(([Q, nm, cc, ss]) => {
+        if (!nm) return;
+        const ox = cc >= 0 ? 1 : -1;
+        labelAt(ctx, nm, [[Q.x + ox * 18, Q.y - 16, ox > 0 ? 'left' : 'right'], [Q.x + ox * 18, Q.y + 16, ox > 0 ? 'left' : 'right'], [Q.x - ox * 18, Q.y - 16, ox > 0 ? 'right' : 'left'], [Q.x, Q.y - 26, 'center'], [Q.x, Q.y + 26, 'center']], COL.coil, 11, false);
+      });
+      if (opt.forces && iAB && Fpx > 2) {
+        const dirA = up > 0 ? -1 : 1;
+        [[A, dirA], [C, -dirA]].forEach(([Q, dd]) => {
+          const ty = Q.y + dd * (12 + Fpx * 0.75);
+          labelAt(ctx, '<i>F</i>', [[Q.x + 9, ty, 'left'], [Q.x - 9, ty, 'right'], [Q.x + 9, Q.y + dd * (12 + Fpx * 0.4), 'left'], [Q.x - 9, Q.y + dd * (12 + Fpx * 0.4), 'right']], COL.F, 13, false);
+        });
+      }
+      if (opt.d && Math.abs(c) > 0.03 && iAB) {
+        [A, C].forEach(Q => { const mx = (cx + Q.x) / 2; labelAt(ctx, '<i>d</i>', [[mx, cy - 13, 'center'], [mx, cy + 13, 'center']], COL.d, 13, false); });
+      }
+      if (opt.sense && T.sense) labelAt(ctx, 'turning effect', [[cx, cy - Math.min(r + 26, g.Hh + 4) - 20, 'center'], [cx, bot + 14, 'center']], COL.turn, 11, false);
+      if (opt.curSym) {
+        labelAt(ctx, '<i>I</i> (out of page)', [[A.x, A.y - 26, 'center'], [A.x + 16, A.y - 16, 'left']], '#111827', 11, false);
+        labelAt(ctx, '<i>I</i> (into page)', [[C.x, C.y + 26, 'center'], [C.x + 16, C.y + 16, 'left']], '#111827', 11, false);
+      }
+      if (opt.turnsText) label(ctx, opt.turnsText, box.x + box.w / 2, bot + 15, '#334155', 'center', 11, null);
+      return { A, C, cx, cy, r };
+    }
+
+    /* ---------------- view 2: the whole motor (oblique drawing, after p. 8-32) ---------------- */
+    // World: x to the right, y up, z along the axle towards the commutator (towards the viewer of view 1).
+    // opt: { comm, on, labels (parts to name), hl (part to light), path (steps of the current lit), forces, title, fig }
+    function drawMotor(ctx, box, M, psi, opt) {
+      if (opt.title) title(ctx, box, opt.title);
+      const comm = opt.comm;
+      // on a narrow canvas the magnets are drawn thinner, so the coil and the commutator get the width
+      const MX = box.w < 560 ? 1.5 : 1.95;
+      // the drawing reaches from the magnets' tops (1.15 s above oy) down to the battery (2.5 s with it, 1.1 s without)
+      const s = Math.min((box.w - 16) / (2 * MX + 0.9), comm === 'none' ? (box.h - 28 - 34) / 2.35 : (box.h - 28 - 40) / 2.55);
+      const ox = box.x + box.w / 2 - 0.04 * s, oy = box.y + 28 + 1.2 * s;
+      const pr = (x, y, z) => ({ x: ox + s * (x - 0.42 * z), y: oy - s * (y - 0.3 * z) });
+      const poly = pts => { ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath(); };
+      const left = M.bx > 0 ? 'N' : 'S', right = M.bx > 0 ? 'S' : 'N';
+      const R = 0.62, Lz = 0.9, CZ = Lz + 0.45, RC = 0.2;
+      const LS = box.w < 420 ? 10 : 11;   // the parts' names: smaller on a phone, where the drawing is crowded
+      const on = !!opt.on, iAB = on ? currentAB(M, psi) : 0;
+      // magnets (drawn first: they are behind and beside the coil)
+      const box3 = (x0, x1, y0, y1, z0, z1, col, txt) => {
+        const faces = [[pr(x0, y1, z0), pr(x1, y1, z0), pr(x1, y1, z1), pr(x0, y1, z1)], [pr(x1, y0, z0), pr(x1, y1, z0), pr(x1, y1, z1), pr(x1, y0, z1)], [pr(x0, y0, z1), pr(x1, y0, z1), pr(x1, y1, z1), pr(x0, y1, z1)]];
+        ctx.strokeStyle = 'rgba(15,23,42,0.5)'; ctx.lineWidth = 1; ctx.fillStyle = col;
+        [0.75, 0.6, 0.95].forEach((al, i) => { ctx.globalAlpha = al; poly(faces[i]); ctx.fill(); ctx.stroke(); });
+        ctx.globalAlpha = 1;
+        const c = pr((x0 + x1) / 2, (y0 + y1) / 2, z1);
+        ctx.fillStyle = 'white'; ctx.font = 'bold 20px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(txt, c.x, c.y); ctx.textBaseline = 'alphabetic';
+        faces.forEach(f => part('magnet', { type: 'poly', pts: f }, c));
+        if (opt.hl === 'magnet') glow(ctx, () => { poly(faces[2]); ctx.stroke(); });
+        obstacle(c.x - 14, c.y - 14, 28, 28);   // labels may sit on a magnet's face, never on its letter
+      };
+      box3(-MX, -1.15, -0.85, 0.85, -Lz - 0.1, Lz - 0.1, M.bx > 0 ? COL.N : COL.S, left);
+      box3(1.15, MX, -0.85, 0.85, -Lz - 0.1, Lz - 0.1, M.bx > 0 ? COL.S : COL.N, right);
+      // field direction between the poles: 3 arrows (they show the direction, not the strength)
+      [-0.55, 0.05, 0.6].forEach(y => { const a = pr(M.bx > 0 ? -1.05 : 1.05, y, -Lz - 0.05), b = pr(M.bx > 0 ? 1.05 : -1.05, y, -Lz - 0.05); arrow(ctx, a.x, a.y, b.x, b.y, COL.fieldLine, 1.3, 8, false); });
+
+      // the coil: side AB at (R cos psi, R sin psi), from A (front, +z) to B (back); CD opposite, from C (back) to D (front)
+      const ax = R * Math.cos(psi), ay = R * Math.sin(psi);
+      const A = pr(ax, ay, Lz), B = pr(ax, ay, -Lz), Cc = pr(-ax, -ay, -Lz), D = pr(-ax, -ay, Lz);
+      __pim.corners.push({ pane: PANE, A, B, C: Cc, D });
+      const coilCol = iAB || opt.coilOn ? COL.coil : COL.coilOff;
+      // the axle, dashed as in the notes
+      const ax0 = pr(0, 0, -Lz - 0.4), ax1 = pr(0, 0, comm === 'none' ? Lz + (opt.turnArrow ? 1.25 : 0.35) : CZ + 0.35);
+      ctx.strokeStyle = '#475569'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(ax0.x, ax0.y); ctx.lineTo(ax1.x, ax1.y); ctx.stroke(); ctx.setLineDash([]);
+      part('axle', { type: 'segs', segs: [[ax0, pr(0, 0, -Lz)]], tol: 7 }, pr(0, 0, -Lz - 0.25));
+      if (opt.hl === 'coil') glow(ctx, () => { ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineTo(Cc.x, Cc.y); ctx.lineTo(D.x, D.y); ctx.stroke(); });
+      ctx.strokeStyle = coilCol; ctx.lineWidth = 4; ctx.lineJoin = 'round';
+      ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineTo(Cc.x, Cc.y); ctx.lineTo(D.x, D.y); ctx.stroke();
+      part('coil', { type: 'segs', segs: [[A, B], [B, Cc], [Cc, D]], tol: 9 }, pr(ax, ay, -Lz * 0.45));
+      // leads from A and D: to the half-rings X and Y, to two complete rings, or straight out to the supply
+      const ringPt = (ang, z) => pr(RC * Math.cos(ang), RC * Math.sin(ang), z);
+      const Z1 = CZ + 0.2, Z2 = CZ - 0.2;   // complete rings: A's end on the outer one, D's on the inner one
+      if (comm === 'none') {
+        const a2 = pr(ax, ay, Lz + 0.55), d2 = pr(-ax, -ay, Lz + 0.55);
+        ctx.strokeStyle = coilCol; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(a2.x, a2.y); ctx.moveTo(D.x, D.y); ctx.lineTo(d2.x, d2.y); ctx.stroke();
+        obstacle(Math.min(a2.x, A.x) - 2, Math.min(a2.y, A.y) - 2, Math.abs(a2.x - A.x) + 4, Math.abs(a2.y - A.y) + 4);
+        labelAt(ctx, 'to the supply', [[a2.x - 6, a2.y + 2, 'right'], [d2.x + 6, d2.y + 2, 'left'], [d2.x, d2.y + 16, 'center']], '#475569', 11, false);
+      } else {
+        [[A, psi, comm === 'split' ? CZ - 0.12 : Z1 - 0.04], [D, psi + Math.PI, comm === 'split' ? CZ - 0.12 : Z2 - 0.04]].forEach(([end, mid, z]) => {
+          const lead = ringPt(mid, z); ctx.strokeStyle = coilCol; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(end.x, end.y); ctx.lineTo(lead.x, lead.y); ctx.stroke();
+        });
+      }
+      // the commutator: half-ring X joined to A, Y joined to D; the gaps are at right angles to the coil
+      let commC = null, partLabels = () => {};
+      if (comm === 'split' || comm === 'rings') {
+        commC = pr(0, 0, CZ);
+        const ringPts = [];
+        if (comm === 'split') {
+          [['X', psi, COL.X], ['Y', psi + Math.PI, COL.Y]].forEach(([nm, mid, col]) => {
+            ctx.strokeStyle = col; ctx.lineWidth = 9; ctx.lineCap = 'butt'; ctx.beginPath();
+            for (let k = 0; k <= 16; k++) { const a = mid - Math.PI / 2 + GAP + (Math.PI - 2 * GAP) * k / 16, p = ringPt(a, CZ); ringPts.push(p); if (k) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); }
+            ctx.stroke();
+          });
+        } else {
+          [[Z2, COL.Y], [Z1, COL.X]].forEach(([z, col]) => {
+            ctx.strokeStyle = col; ctx.lineWidth = 7; ctx.beginPath();
+            for (let k = 0; k <= 48; k++) { const p = ringPt(k / 48 * Math.PI * 2, z); ringPts.push(p); if (k) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); }
+            ctx.stroke();
           });
         }
+        const xs = ringPts.map(p => p.x), ys = ringPts.map(p => p.y), bb = { x: Math.min(...xs) - 5, y: Math.min(...ys) - 5, w: Math.max(...xs) - Math.min(...xs) + 10, h: Math.max(...ys) - Math.min(...ys) + 10 };
+        part('comm', { type: 'rect', ...bb }, commC);
+        obstacle(bb.x, bb.y, bb.w, bb.h);
+        if (opt.hl === 'comm') glow(ctx, () => { ctx.strokeRect(bb.x, bb.y, bb.w, bb.h); });
       }
-      // labels on the coil sides
-      const mA = pr(ax * 1.18, ay * 1.18 + 0.12, -Lz * 0.55), mB = pr(-ax * 1.18, -ay * 1.18 + 0.12, -Lz * 0.55);
-      tag(ctx, 'A', mA.x, mA.y, '#92400e', 'center', 'bold 11px Arial'); tag(ctx, 'B', mB.x, mB.y, '#92400e', 'center', 'bold 11px Arial');
-      // key
-      ctx.font = '11px Arial'; ctx.textAlign = 'left'; ctx.fillStyle = '#ea580c'; ctx.fillText('→ current', 8, 16);
-      ctx.fillStyle = '#16a34a'; richText(ctx, '→ force <i>F</i>', 8, 31);
+      // brushes P (left) and Q (right), and the circuit: battery and switch below
+      if (comm !== 'none') {
+        const bP = pr(-RC - 0.13, 0, comm === 'split' ? CZ : Z1), bQ = pr(RC + 0.13, 0, comm === 'split' ? CZ : Z2);
+        const rP = { x: bP.x - 14, y: bP.y - 7, w: 16, h: 14 }, rQ = { x: bQ.x - 2, y: bQ.y - 7, w: 16, h: 14 };
+        if (opt.hl === 'brush') glow(ctx, () => { ctx.strokeRect(rP.x, rP.y, rP.w, rP.h); ctx.strokeRect(rQ.x, rQ.y, rQ.w, rQ.h); });
+        ctx.fillStyle = COL.brush; ctx.fillRect(rP.x, rP.y, rP.w, rP.h); ctx.fillRect(rQ.x, rQ.y, rQ.w, rQ.h);
+        part('brush', { type: 'rect', x: rP.x - 4, y: rP.y - 4, w: rP.w + 8, h: rP.h + 8 }, { x: rP.x + 4, y: rP.y + 7 });
+        part('brush', { type: 'rect', x: rQ.x - 4, y: rQ.y - 4, w: rQ.w + 8, h: rQ.h + 8 });
+        obstacle(rP.x, rP.y, rP.w, rP.h); obstacle(rQ.x, rQ.y, rQ.w, rQ.h);
+        const batY = Math.min(box.y + box.h - 30, Math.max(bP.y, bQ.y) + s * 0.95), bx = (bP.x + bQ.x) / 2;
+        const xL = bP.x - 44, xR = bQ.x + 44;
+        const lit = k => opt.path === undefined ? on : opt.path >= k;
+        const wire = (pts, k) => { ctx.strokeStyle = lit(k) ? '#0f172a' : '#94a3b8'; ctx.lineWidth = 2; ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.stroke(); };
+        // left wire: battery (+) to the switch, then up to P; right wire: Q down to the battery (−)
+        const swX = xL, swY = (bP.y + batY) / 2;
+        wire([{ x: bx - 10, y: batY }, { x: xL, y: batY }, { x: xL, y: swY + 14 }], 1);
+        wire([{ x: xL, y: swY - 14 }, { x: xL, y: bP.y }, { x: rP.x, y: bP.y }], 1);
+        wire([{ x: rQ.x + rQ.w, y: bQ.y }, { x: xR, y: bQ.y }, { x: xR, y: batY }, { x: bx + 10, y: batY }], 6);
+        // the switch: closed when the current is on
+        const closed = opt.path !== undefined ? opt.path >= 1 : on;
+        ctx.fillStyle = '#0f172a'; [swY + 14, swY - 14].forEach(y => { ctx.beginPath(); ctx.arc(swX, y, 3, 0, Math.PI * 2); ctx.fill(); });
+        ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(swX, swY + 14);
+        if (closed) ctx.lineTo(swX, swY - 14); else ctx.lineTo(swX - 16, swY - 10); ctx.stroke();
+        part('switch', { type: 'rect', x: swX - 20, y: swY - 18, w: 26, h: 36 }, { x: swX - 3, y: swY });
+        obstacle(swX - 18, swY - 16, 22, 32);
+        // battery: the long plate (+) on P's side, so the current flows from the battery through P (p. 8-32);
+        // with the current reversed the battery is turned round
+        const plusLeft = M.dir > 0, longX = plusLeft ? bx - 6 : bx + 6, shortX = plusLeft ? bx + 6 : bx - 6;
+        if (opt.hl === 'battery') glow(ctx, () => { ctx.strokeRect(bx - 16, batY - 18, 32, 36); });
+        ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(longX, batY - 13); ctx.lineTo(longX, batY + 13); ctx.stroke();
+        ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(shortX, batY - 7); ctx.lineTo(shortX, batY + 7); ctx.stroke();
+        ctx.fillStyle = '#0f172a'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center';
+        ctx.fillText('+', longX + (plusLeft ? -9 : 9), batY - 14); ctx.fillText('−', shortX + (plusLeft ? 9 : -9), batY - 14);
+        part('battery', { type: 'rect', x: bx - 18, y: batY - 20, w: 36, h: 40 }, { x: bx, y: batY });
+        obstacle(bx - 18, batY - 22, 36, 44);
+        // the path of the current, step by step (tab 1) or whenever it flows
+        const curArrow = (p, q, k) => { if (!lit(k)) return; const m = { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 }, L = Math.hypot(q.x - p.x, q.y - p.y) || 1, ux = (q.x - p.x) / L, uy = (q.y - p.y) / L; arrow(ctx, m.x - ux * 9, m.y - uy * 9, m.x + ux * 9, m.y + uy * 9, COL.cur, 3, 8); };
+        if (opt.path !== undefined) {
+          const sg = M.dir > 0;
+          if (sg) { curArrow({ x: bx - 10, y: batY }, { x: xL, y: batY }, 1); curArrow({ x: xL, y: bP.y }, { x: rP.x, y: bP.y }, 2); curArrow({ x: xR, y: bQ.y }, { x: xR, y: batY }, 6); }
+        }
+        // labels for named parts
+        // (placed after the coil's corner letters, so a part's name never covers a letter)
+        partLabels = () => {
+          const L = opt.labels || {};
+          if (L.switch) labelAt(ctx, 'switch', [[swX - 22, swY, 'right'], [swX + 8, swY, 'left']], '#334155', LS);
+          if (L.battery) labelAt(ctx, 'battery', [[bx, batY + 26, 'center'], [bx + 22, batY, 'left']], '#334155', LS);
+          if (L.brush) {
+            labelAt(ctx, 'brush P', [[rP.x - 4, rP.y + 24, 'right'], [rP.x - 4, rP.y - 12, 'right'], [rP.x + 8, rP.y + 30, 'center'], [rP.x - 22, rP.y + 40, 'right'], [rP.x + 8, rP.y + 46, 'center'], [rP.x - 4, rP.y - 28, 'right']], COL.brush, LS);
+            labelAt(ctx, 'brush Q', [[rQ.x + rQ.w + 4, rQ.y + 24, 'left'], [rQ.x + rQ.w + 4, rQ.y - 12, 'left'], [rQ.x + 8, rQ.y + 30, 'center'], [rQ.x + rQ.w + 22, rQ.y + 40, 'left'], [rQ.x + 8, rQ.y + 46, 'center']], COL.brush, LS);
+          }
+        };
+      }
+      // current arrows along the long sides, and the forces on them
+      const along = (p0, p1, k) => { const m = { x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2 }, L = Math.hypot(p1.x - p0.x, p1.y - p0.y) || 1, ux = (p1.x - p0.x) / L, uy = (p1.y - p0.y) / L; arrow(ctx, m.x - ux * 12, m.y - uy * 12, m.x + ux * 12, m.y + uy * 12, COL.cur, 3, 9); };
+      const showCur = opt.path !== undefined ? opt.path >= 4 : (opt.curStep !== undefined ? opt.curStep >= 1 : iAB !== 0);
+      const sAB = opt.path !== undefined || opt.curStep !== undefined ? -M.dir : iAB;
+      if (showCur && sAB) {
+        if (sAB < 0) { along(A, B); along(Cc, D); along(B, Cc); } else { along(B, A); along(D, Cc); along(Cc, B); }
+      }
+      // the forces' arrows first, then the curved arrow and its obstacle, then the forces' letters (so nothing lands on them)
+      const fTips = [];
+      if (opt.forcesOn) {
+        const up = sAB * M.bx > 0, len = 0.55;
+        if (opt.forcesOn.ab) { const a = pr(ax, ay, 0), b = pr(ax, ay + (up ? len : -len), 0); arrow(ctx, a.x, a.y, b.x, b.y, COL.F, 4, 11); fTips.push(b); }
+        if (opt.forcesOn.cd) { const a = pr(-ax, -ay, 0), b = pr(-ax, -ay + (up ? -len : len), 0); arrow(ctx, a.x, a.y, b.x, b.y, COL.F, 4, 11); fTips.push(b); }
+      }
+      const fLetters = () => fTips.forEach(b => labelAt(ctx, '<i>F</i>', [[b.x + 10, b.y, 'left'], [b.x - 10, b.y, 'right'], [b.x + 10, b.y + (b.y > oy ? -14 : 14), 'left']], COL.F, 13, false));
+      if (!opt.turnArrow) fLetters();
+      if (opt.turnArrow) {
+        // a curved arrow round the axle, in front of the coil (clear of both force arrows): anticlockwise as you look from the front
+        const c0 = pr(0, 0, Lz + 1.2), rr = s * 0.2; ctx.strokeStyle = COL.turn; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(c0.x, c0.y, rr, -40 * DEG, -140 * DEG, true); ctx.stroke();
+        const a1 = 140 * DEG, ex = c0.x + rr * Math.cos(a1), ey = c0.y - rr * Math.sin(a1), tg = Math.atan2(-Math.cos(a1), -Math.sin(a1));
+        ctx.fillStyle = COL.turn; ctx.beginPath(); ctx.moveTo(ex + 9 * Math.cos(tg), ey + 9 * Math.sin(tg)); ctx.lineTo(ex + 9 * Math.cos(tg + 2.5), ey + 9 * Math.sin(tg + 2.5)); ctx.lineTo(ex + 9 * Math.cos(tg - 2.5), ey + 9 * Math.sin(tg - 2.5)); ctx.closePath(); ctx.fill();
+        obstacle(c0.x - rr - 4, c0.y - rr - 6, 2 * rr + 8, rr + 12);
+        fLetters();
+        labelAt(ctx, 'turning effect', [[c0.x, c0.y + 14, 'center'], [c0.x - rr - 8, c0.y - rr / 2, 'right'], [c0.x, c0.y - rr - 14, 'center']], COL.turn, 11, false);
+      }
+      // the coil's letters (A, B, C, D at the corners), and the half-rings' letters
+      if (comm === 'split' && opt.ringLetters !== false) {
+        [['X', psi, COL.X], ['Y', psi + Math.PI, COL.Y]].forEach(([nm, mid, col]) => { const p = pr(RC * 0.45 * Math.cos(mid), RC * 0.45 * Math.sin(mid), CZ); ctx.fillStyle = col; ctx.font = 'bold 11px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(nm, p.x, p.y); ctx.textBaseline = 'alphabetic'; obstacle(p.x - 5, p.y - 7, 10, 14); });
+      }
+      if (opt.corners) {
+        [[A, 'A'], [B, 'B'], [Cc, 'C'], [D, 'D']].forEach(([p, t]) => labelAt(ctx, t, [[p.x - 12, p.y + 4, 'right'], [p.x + 12, p.y + 4, 'left'], [p.x, p.y - 14, 'center'], [p.x, p.y + 16, 'center'], [p.x - 12, p.y - 10, 'right'], [p.x + 12, p.y - 10, 'left']], COL.coil, 12, true));
+      }
+      partLabels();
+      const L = opt.labels || {};
+      if (L.magnet) { const m0 = pr((-MX - 1.15) / 2, -0.85, Lz - 0.1), m1 = pr((MX + 1.15) / 2, -0.85, Lz - 0.1), ml = pr(-MX, -0.85, Lz - 0.1);
+        labelAt(ctx, 'permanent magnet', [[m0.x, m0.y + 14, 'center'], [m0.x, m0.y + 30, 'center'], [ml.x, m0.y + 30, 'left'], [ml.x, m0.y + 46, 'left'], [m0.x, m0.y + 62, 'center']], '#334155', LS);
+        labelAt(ctx, 'permanent magnet', [[m1.x, m1.y + 14, 'center'], [m1.x, m1.y + 30, 'center']], '#334155', LS); }
+      if (L.coil) labelAt(ctx, 'coil ABCD', [[B.x + 10, B.y - 14, 'left'], [B.x - 10, B.y - 14, 'right'], [Cc.x + 10, Cc.y - 14, 'left']], COL.coil, LS);
+      if (L.axle) labelAt(ctx, 'axle', [[ax0.x + 6, ax0.y - 12, 'left'], [ax0.x - 6, ax0.y - 12, 'right']], '#475569', LS);
+      if (L.comm && commC) {
+        const b = labelAt(ctx, ['split-ring', 'commutator XY'], [[commC.x + 30, commC.y + 30, 'left'], [commC.x - 30, commC.y + 30, 'right'], [commC.x, commC.y + 44, 'center'], [commC.x + 30, commC.y - 44, 'left'], [box.x + box.w / 2, box.y + box.h - 34, 'center']], '#92400e', LS);
+        // a name that had to sit away from the commutator gets a thin line to it
+        if (b && Math.hypot(b.x + b.w / 2 - commC.x, b.y - commC.y) > 70) { ctx.strokeStyle = '#92400e'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(b.x + b.w / 2, b.y); ctx.lineTo(commC.x, commC.y + s * 0.2); ctx.stroke(); }
+      }
+      return { s, pr };
     }
 
-    function updateReadout() {
-      const p = P();
-      el('currentVal').textContent = `(${p.I.toFixed(2)} A)`; el('fieldVal').textContent = `(${p.B.toFixed(2)} T)`;
-      const iA = on() ? currentA(sim.psi) : 0;
-      el('fV').textContent = iA ? `${(F() * 1000).toFixed(2)} mN` : '0';
-      el('iV').textContent = !on() ? 'Off' : iA ? `${p.I.toFixed(2)} A, ${iA * sim.currentDir > 0 ? 'out of' : 'into'} the page at A` : 'Cut off (brushes in the gaps)';
-      el('sV').textContent = `${(Math.abs(sim.omega) / (2 * Math.PI)).toFixed(2)} rev/s ${Math.abs(sim.omega) > 0.05 ? (sim.omega > 0 ? '(clockwise)' : '(anticlockwise)') : ''}`;
-      const c = Math.abs(Math.cos(sim.psi));
-      el('pV').textContent = c > 0.92 ? 'Horizontal: biggest turning effect' : c < 0.08 ? 'Vertical: no turning effect' : 'In between';
-      el('runBtn').textContent = sim.running ? 'Switch off' : 'Switch on';
-      el('pauseBtn').textContent = sim.paused ? 'Play' : 'Pause';
-      el('stepBtn').disabled = !sim.paused;
+    /* ---------------- the drawing ---------------- */
+    function sceneH(W) {
+      const narrow = W < 560, v = view();
+      if (v === 'both') return narrow ? 720 : 410;
+      if (v === 'race') return narrow ? 680 : 400;
+      if (v === 'end') return narrow ? 380 : 420;
+      if (v === 'coil3d') return narrow ? 300 : 400;
+      return narrow ? 350 : 440;
+    }
+    function draw() {
+      for (const k in __pim) __pim[k] = [];
+      const g0 = canvas.getBoundingClientRect();
+      const g = setup(canvas, sceneH(g0.width)); if (!g) return;
+      drawScene(g.ctx, { x: 0, y: 0, w: g.W, h: g.H }, {});
+    }
+    // the force scale and the coil scale for one end-on pane (or several that must match)
+    function endScales(box, motors) {
+      const g = endGeom(box), wMax = Math.max(...motors.map(m => m.w)), Fmax = Math.max(...motors.map(sideForce));
+      const kR = g.rMax / (wMax / 2), kF = Math.min(0.85 * g.rMax, g.Hh - g.rMax - 14) / Fmax;
+      return { kR, kF };
+    }
+    function drawScene(ctx, box, opt) {
+      const id = S.scen, v = view(), M = motorOf();
+      const [psi, om] = coilNow();
+      if (v === 'motor') {
+        pane('motor', box.x, box.y, box.w, box.h);
+        const st = steps(), k = S.step;
+        const labels = {}, hlPart = id === 'parts' && k > 0 ? st[k - 1].part : (id === 'find' && game.showMe ? ROUNDS[game.round].ans : null);
+        if (id === 'parts') st.slice(0, k).forEach(x => { labels[x.part] = true; if (x.part === 'coil') labels.axle = true; if (x.part === 'battery') labels.switch = true; });
+        drawMotor(ctx, box, M, psi, { comm: 'split', on: id === 'path' && k >= 1, labels, hl: hlPart, path: id === 'path' ? k : undefined, corners: id !== 'find', title: 'The whole motor (after notes p. 8-32)', coilOn: id === 'path' && k >= 4 });
+      } else if (v === 'coil3d') {
+        pane('coil', box.x, box.y, box.w, box.h);
+        const k = S.step;
+        drawMotor(ctx, box, M, psi, { comm: 'none', on: false, coilOn: true, curStep: opt.fig ? 1 : k, corners: true, title: 'A coil between the poles of two magnets',
+          forcesOn: opt.fig ? null : { ab: k >= 3, cd: k >= 4 }, turnArrow: !opt.fig && k >= 5 });
+      } else if (v === 'end') {
+        pane('end', box.x, box.y, box.w, box.h);
+        const sc = endScales(box, [M]);
+        const ex5 = id === 'ex5';
+        drawEnd(ctx, box, M, opt.psi !== undefined ? opt.psi : psi, { ...sc, forces: !opt.fig && show.forces, d: !ex5 && !opt.fig && show.d, sense: !ex5 && !opt.fig, comm: 'none', dashed: ex5,
+          sideNames: ex5 ? ['', ''] : ['AB', 'CD'], curSym: ex5, title: 'Looking along the axle' });
+      } else if (v === 'both') {
+        const narrow = box.w < 560;
+        // a quiz figure shows only the view along the axle, on the whole canvas
+        const b1 = opt.fig ? box : narrow ? { x: box.x, y: box.y, w: box.w, h: 380 } : { x: box.x, y: box.y, w: box.w * 0.47, h: box.h };
+        const b2 = narrow ? { x: box.x, y: box.y + 380, w: box.w, h: box.h - 380 } : { x: box.x + box.w * 0.47, y: box.y, w: box.w * 0.53, h: box.h };
+        const commMode = id === 'half' && !show.comm ? 'rings' : M.comm, MM = { ...M, comm: commMode };
+        const runOn = !isRun() || sim.t > 0;
+        pane('end', b1.x, b1.y, b1.w, b1.h);
+        const sc = endScales(b1, [MM]);
+        const motion = isRun() && Math.abs(om) > 0.05 ? Math.sign(om) : 0;
+        drawEnd(ctx, b1, MM, opt.psi !== undefined ? opt.psi : psi, { ...sc, forces: !opt.fig, d: false, sense: !isRun() && !opt.fig, motion: isRun() ? motion : undefined, comm: commMode, on: opt.fig ? true : runOn, title: 'Along the axle, from the commutator end' });
+        if (!opt.fig) {
+          // a divider between the two views
+          ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1; ctx.beginPath();
+          if (narrow) { ctx.moveTo(box.x + 8, b2.y); ctx.lineTo(box.x + box.w - 8, b2.y); } else { ctx.moveTo(b2.x, box.y + 8); ctx.lineTo(b2.x, box.y + box.h - 8); }
+          ctx.stroke();
+          pane('motor', b2.x, b2.y, b2.w, b2.h);
+          drawMotor(ctx, b2, MM, psi, { comm: commMode, on: runOn, title: 'The whole motor', ringLetters: true });
+        }
+      } else if (v === 'race') {
+        const narrow = box.w < 560, MA = motorA(), MB = motorB();
+        const b1 = narrow ? { x: box.x, y: box.y, w: box.w, h: box.h / 2 } : { x: box.x, y: box.y, w: box.w / 2, h: box.h };
+        const b2 = narrow ? { x: box.x, y: box.y + box.h / 2, w: box.w, h: box.h / 2 } : { x: box.x + box.w / 2, y: box.y, w: box.w / 2, h: box.h };
+        // both panes on one scale, so a bigger coil or a bigger force looks bigger
+        const sA = endScales(b1, [MA, MB]);
+        const [pA, oA] = coilNow(TR), [pB, oB] = coilNow(TRB);
+        const nT = m => `${m.N} turn${m.N === 1 ? '' : 's'}, <i>B</i> = ${m.B.toFixed(2)} T, <i>I</i> = ${m.I.toFixed(2)} A, coil ${num(m.w * 100)} cm wide`;
+        pane('A', b1.x, b1.y, b1.w, b1.h);
+        drawEnd(ctx, b1, MA, pA, { ...sA, forces: true, comm: 'split', motion: Math.abs(oA) > 0.05 ? Math.sign(oA) : 0, on: true, title: 'Motor A: as before', turnsText: nT(MA) });
+        ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1; ctx.beginPath();
+        if (narrow) { ctx.moveTo(box.x + 8, b2.y); ctx.lineTo(box.x + box.w - 8, b2.y); } else { ctx.moveTo(b2.x, box.y + 8); ctx.lineTo(b2.x, box.y + box.h - 8); }
+        ctx.stroke();
+        pane('B', b2.x, b2.y, b2.w, b2.h);
+        drawEnd(ctx, b2, MB, pB, { ...sA, forces: true, comm: 'split', motion: Math.abs(oB) > 0.05 ? Math.sign(oB) : 0, on: true, title: `Motor B: ${P.what}`, turnsText: nT(MB) });
+      }
     }
 
-    // ---------- interaction ----------
-    const refreshSign = () => { sim.sign = sim.currentDir * (sim.poleSwap ? -1 : 1); };
-    const sc = el('sceneCanvas');
-    function pos(e) { const r = sc.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
-    const nearSide = p => geo && (Math.hypot(p.x - geo.A.x, p.y - geo.A.y) < 26 || Math.hypot(p.x - geo.Bs.x, p.y - geo.Bs.y) < 26);
-    let grabOff = 0, lastPsi = 0, lastT = 0;
-    sc.addEventListener('pointerdown', e => {
-      const p = pos(e); if (!nearSide(p)) return;
-      sim.grabbing = true; sim.omega = 0;
-      grabOff = sim.psi - Math.atan2(p.y - geo.cy, p.x - geo.cx);
-      lastPsi = sim.psi; lastT = performance.now();
-      sc.setPointerCapture(e.pointerId); e.preventDefault();
-    });
-    sc.addEventListener('pointermove', e => {
+    /* ---------------- dragging and tapping ---------------- */
+    let drag = null;
+    function pos(e) { const r = canvas.getBoundingClientRect(); return { px: e.clientX - r.left, py: e.clientY - r.top }; }
+    function pickCoil(p) {
+      if (!['turn', 'half'].includes(S.scen)) return null;
+      const c = __pim.coils.find(q => q.pane === 'end'); if (!c) return null;
+      if (Math.hypot(p.px - c.A.x, p.py - c.A.y) < 24) return { c, off: 0 };
+      if (Math.hypot(p.px - c.C.x, p.py - c.C.y) < 24) return { c, off: Math.PI };
+      return null;
+    }
+    canvas.addEventListener('pointerdown', e => {
       const p = pos(e);
-      if (!sim.grabbing) { sc.style.cursor = nearSide(p) ? 'grab' : 'default'; return; }
-      let target = Math.atan2(p.y - geo.cy, p.x - geo.cx) + grabOff;
-      while (target - sim.psi > Math.PI) target -= 2 * Math.PI; while (target - sim.psi < -Math.PI) target += 2 * Math.PI;
-      const now = performance.now();
-      sim.omega = (target - lastPsi) / Math.max(0.016, (now - lastT) / 1000) * 0.5; // a flick keeps some spin
-      sim.psi = target; lastPsi = target; lastT = now;
+      if (S.scen === 'find') { const n = hitPart(p.px, p.py); if (n) { game.showMe = false; tapPart(n); } return; }
+      const hit = pickCoil(p); if (!hit) return;
+      drag = hit; canvas.setPointerCapture(e.pointerId); e.preventDefault(); clearFeatNoteOnly();
     });
-    const end = () => { sim.grabbing = false; };
-    sc.addEventListener('pointerup', end); sc.addEventListener('pointercancel', end);
+    canvas.addEventListener('pointermove', e => {
+      const p = pos(e);
+      if (!drag) { canvas.style.cursor = pickCoil(p) || (S.scen === 'find' && hitPart(p.px, p.py)) ? 'pointer' : 'default'; return; }
+      canvas.style.cursor = 'grabbing';
+      const c = drag.c; let a = Math.atan2(-(p.py - c.cy), p.px - c.cx) - drag.off;
+      // whole degrees, measured from position (a); kept between 0° and 360° turned
+      let th = Math.round((a - Math.PI) / DEG); th = ((th % 360) + 360) % 360;
+      psiLive = Math.PI + th * DEG; update();
+    });
+    const endDrag = () => { drag = null; };
+    canvas.addEventListener('pointerup', endDrag);
+    canvas.addEventListener('pointercancel', endDrag);
 
-    el('runBtn').addEventListener('click', () => { sim.running = !sim.running; });
-    el('pauseBtn').addEventListener('click', () => { sim.paused = !sim.paused; });
-    el('stepBtn').addEventListener('click', () => { if (sim.paused) nextStep(); });
-    el('revBtn').addEventListener('click', () => { sim.currentDir *= -1; refreshSign(); });
-    el('flipBtn').addEventListener('click', () => { sim.poleSwap = !sim.poleSwap; refreshSign(); });
-    el('resetBtn').addEventListener('click', () => { sim.running = false; sim.paused = false; sim.omega = 0; sim.psi = START_PSI; });
-
-    let last = null;
-    function frame(ts) {
-      if (last === null) last = ts;
-      const dt = Math.max(0, Math.min(0.05, (ts - last) / 1000)); last = ts;
-      step(dt); drawScene(); drawMotor(); updateReadout();
-      requestAnimationFrame(frame);
+    /* ---------------- experimental controls ---------------- */
+    function buildInputs() {
+      const box = $('inputs'), id = S.scen, h = [];
+      const tg = (k, txt) => `<label class="toggle"><input type="checkbox" data-show="${k}"${show[k] ? ' checked' : ''}> ${txt}</label>`;
+      if (['ex5', 'turn', 'run'].includes(id)) h.push('<button type="button" class="secondary" id="revBtn">Reverse the current</button>', '<button type="button" class="secondary" id="swapBtn">Swap the poles</button>');
+      if (id === 'ex5') h.push(tg('forces', 'Show the forces'));
+      if (id === 'turn') h.push(tg('forces', 'Show the forces'), tg('d', 'Show the distances <i>d</i>'));
+      if (id === 'half') h.push(tg('comm', 'Split-ring commutator (untick: complete rings)'));
+      if (id === 'find') h.push('<button type="button" class="secondary" id="showMe">Show me</button>', '<button type="button" class="danger" id="gameReset">Start again</button>');
+      if (id === 'own') {
+        [['I', 'Current <i>I</i>', 0.1, 1.5, 0.05, 'A', 2], ['N', 'Number of turns', 1, 4, 1, '', 0], ['w', 'Coil width', 0.02, 0.08, 0.005, 'cm', 1], ['B', 'Field <i>B</i>', 0.05, 0.5, 0.01, 'T', 2]].forEach(([k, lab, mn, mx, stp, u, dp]) =>
+          h.push(`<div class="control-group wide label-row"><label for="sl_${k}">Motor B: ${lab} (<span id="v_${k}"></span>${u ? ' ' + u : ''})</label><input type="range" id="sl_${k}" data-k="${k}" data-dp="${dp}" min="${mn}" max="${mx}" step="${stp}" value="${P.change[k]}"></div>`));
+        h.push('<button type="button" class="secondary" id="revB">Reverse motor B’s current</button>');
+      }
+      box.innerHTML = h.join('');
+      $('expBlock').hidden = !h.length;
+      box.querySelectorAll('[data-show]').forEach(c => c.addEventListener('change', () => { show[c.dataset.show] = c.checked; clearFeatNoteOnly(); update(); }));
+      box.querySelectorAll('input[data-k]').forEach(c => c.addEventListener('input', () => { P.change[c.dataset.k] = +c.value; resetRun(); buildRun(); clearFeatNoteOnly(); update(); }));
+      if ($('revBtn')) $('revBtn').addEventListener('click', () => { P.dir = -P.dir; resetRun(); buildRun(); clearFeatNoteOnly(); update(); });
+      if ($('swapBtn')) $('swapBtn').addEventListener('click', () => { P.bx = -P.bx; resetRun(); buildRun(); clearFeatNoteOnly(); update(); });
+      if ($('revB')) $('revB').addEventListener('click', () => { P.change.dir = -P.change.dir; resetRun(); buildRun(); clearFeatNoteOnly(); update(); });
+      if ($('showMe')) $('showMe').addEventListener('click', () => { if (game.done) return; game.showMe = true; game.tries++; update(); });
+      if ($('gameReset')) $('gameReset').addEventListener('click', () => { resetGame(); update(); });
     }
-    requestAnimationFrame(frame);
+    function syncInputs() {
+      document.querySelectorAll('#inputs [data-show]').forEach(c => { c.checked = !!show[c.dataset.show]; });
+      document.querySelectorAll('#inputs input[data-k]').forEach(c => {
+        const k = c.dataset.k, v = P.change[k];
+        if (document.activeElement !== c) c.value = v;
+        const el = $('v_' + k); if (el) el.textContent = k === 'w' ? (v * 100).toFixed(1) : k === 'N' ? String(v) : v.toFixed(+c.dataset.dp);
+      });
+    }
+
+    /* ---------------- readouts ---------------- */
+    function card(t, v, key) { return `<div class="readout-card${hl[key] ? ' hl' : ''}"><div class="title">${t}</div><div class="value">${v}</div></div>`; }
+    const q = (ok, v) => (ok ? v : '?');
+    const sideWords = sg => (sg < 0 ? 'into the page (A to B)' : sg > 0 ? 'out of the page (B to A)' : 'cut off');
+    const senseWords = sg => (sg > 0 ? 'anticlockwise' : sg < 0 ? 'clockwise' : 'none');
+    // where the coil is; on a run, how far it has turned since the start (in whole degrees), otherwise its angle from (a)
+    function positionWords(psi) {
+      const c = Math.abs(Math.cos(psi)), turned = Math.round(Math.abs(psi - Math.PI) / DEG), th = ((Math.round((psi - Math.PI) / DEG) % 360) + 360) % 360;
+      const where = c > 0.999 ? 'horizontal' : c < 1e-6 ? 'vertical' : 'in between';
+      return `${where} (turned ${isRun() ? turned : th}°)`;
+    }
+    // how many times the current in the coil has reversed since the start (each time the coil gets past a vertical)
+    function reversals(tr, psi) { const turned = Math.abs(psi - tr.psi0) / DEG; return turned < 90 + GAP / DEG - 1e-6 ? 0 : Math.floor((turned - 90 - GAP / DEG + 1e-6) / 180) + 1; }
+    function readouts() {
+      const id = S.scen, out = [], el = $('readout'); let words = '', work = '';
+      el.className = 'readout';
+      const stepsList = () => `<ol class="steps-list">${steps().map((s, i) => `<li class="${i < S.step ? 'lit' : ''}">${i < S.step ? s.h : '…'}</li>`).join('')}</ol>`;
+      const M = motorOf(), [psi, om] = coilNow();
+      if (id === 'parts') {
+        const st = steps(), k = S.step;
+        out.push(card('Parts named', `${k} of ${st.length}`, 'n'), card('Lit up now', k ? PARTS[st[k - 1].part].replace(/^a /, '') : '—', 'p'));
+        el.className = 'readout n2'; work = stepsList();
+      } else if (id === 'path') {
+        const st = steps(), k = S.step;
+        out.push(card('Switch', k >= 1 ? 'closed' : 'open', 'sw'), card('The current has reached', k ? st[k - 1].at : 'nowhere yet', 'at'));
+        el.className = 'readout n2'; work = stepsList();
+      } else if (id === 'find') {
+        el.className = 'readout n2';
+        out.push(card('Parts found', `${game.round} of ${ROUNDS.length}`, 'r'), card('Found at the first tap', `${game.first} of ${game.round}`, 'f'));
+        if (game.done) words = `All five found, ${game.first} of them at the first tap. The Try it! answers: a permanent magnet creates the magnetic field; a split-ring commutator reverses the current through the coil every half-revolution; two brushes are the electrical contacts.`;
+        else if (game.last) words = game.last.ok ? `Yes: that is ${PARTS[game.last.name]} (${ROUNDS[game.last.round].src}).` : `That is ${PARTS[game.last.name]}. Try again.`;
+        else if (game.showMe) words = 'The part is lit up in yellow. Tap it.';
+      } else if (id === 'coil') {
+        const k = S.step;
+        out.push(card('Current in AB', q(k >= 1, 'A to B, away from you'), 'ab'), card('Current in CD', q(k >= 1, 'C to D, towards you'), 'cd'), card('Force on AB', q(k >= 3, 'down'), 'fab'), card('Force on CD', q(k >= 4, 'up'), 'fcd'));
+        el.className = 'readout n4'; work = stepsList();
+      } else if (id === 'ex5') {
+        const sTop = currentAB(M, psi), F = forceAB(M, psi), T = turning(M, psi);
+        out.push(card('Field', M.bx > 0 ? 'to the right (N to S)' : 'to the left (N to S)', 'b'),
+          card(`Force on the ${sTop > 0 ? '•' : '×'} side (top left)`, show.forces ? (F > 0 ? 'up' : 'down') : 'hidden: predict it', 'f1'),
+          card(`Force on the ${sTop > 0 ? '×' : '•'} side (bottom right)`, show.forces ? (F > 0 ? 'down' : 'up') : 'hidden: predict it', 'f2'));
+        words = show.forces ? `Fleming’s left-hand rule on the top-left side: First finger along the Field (${M.bx > 0 ? 'to the right' : 'to the left'}), seCond finger ${sTop > 0 ? 'out of' : 'into'} the page: the thuMb points ${F > 0 ? 'up' : 'down'}. The other side carries the current the other way, so its force is ${F > 0 ? 'down' : 'up'}: the coil turns ${senseWords(T.sense)}.`
+          : 'Use Fleming’s left-hand rule on each side, then tick Show the forces to check.';
+      } else if (id === 'turn') {
+        el.className = 'readout n4';
+        const T = turning(M, psi);
+        out.push(card('Coil', positionWords(psi), 'pos'), card('Force on each side, <i>F</i> = <i>BIL</i>', `${num(T.F)} N`, 'F'),
+          card('Distance <i>d</i> from the axle', `${num(T.d * 100)} cm`, 'd'), card('Turning effect, 2 × <i>F</i> × <i>d</i>', T.sense ? `${num(Math.abs(T.total))} N m, ${senseWords(T.sense)}` : '0', 'T'));
+        work = `<div class="steps-list" style="padding-left:0"><i>F</i> = <i>BIL</i> = ${BASE.B.toFixed(2)} × ${BASE.I.toFixed(2)} × ${BASE.L.toFixed(3)} = ${num(T.F)} N on each side. Each force’s moment about the axle = <i>F</i> × <i>d</i> = ${num(T.F)} × ${(T.d).toFixed(4)} = ${num(T.each)} N m; both turn the coil the same way: ${num(Math.abs(T.total))} N m.</div>`;
+        const c = Math.abs(Math.cos(psi));
+        words = c > 0.999 ? 'Horizontal: the forces are as far from the axle as they can be (d = half the coil’s width), so the turning effect is the biggest.'
+          : c < 1e-6 ? 'Vertical: both forces act along lines through the axle (d = 0), so they have no turning effect.'
+          : T.sense < 0 ? 'Past the vertical the forces still push AB down and CD up, so now they turn the coil back the other way. A motor needs the current to reverse here: that is the commutator’s job (tab 3).' : 'The forces stay vertical while the coil turns, so their distance d from the axle, and the turning effect, get smaller.';
+      } else if (id === 'run' || id === 'half' || id === 'rings') {
+        el.className = 'readout n4';
+        const MM = { ...M, comm: id === 'half' && !show.comm ? 'rings' : M.comm }, on = !isRun() || sim.t > 0;
+        const sAB = on ? currentAB(MM, psi) : 0, ring = MM.comm === 'split' ? halfRingOnP(MM, psi) : '', T = turning(MM, psi);
+        out.push(card('Coil', positionWords(psi), 'pos'),
+          card('Touching brush P', !on ? '—' : MM.comm === 'split' ? (ring ? `half-ring ${ring}` : 'neither: P is in a gap') : 'A’s complete ring', 'ring'),
+          card('Current in side AB', on ? sideWords(sAB) : 'off (switch open)', 'cur'),
+          isRun() ? card('Turning', Math.abs(om) > 0.05 ? `${senseWords(Math.sign(om))}, ${turnsPerSecond(Math.abs(om)).toFixed(2)} turns per second` : 'at rest', 'mot')
+            : card('Turning effect', senseWords(on ? T.sense : 0), 'T'));
+        if (id === 'run') {
+          const nRev = TR ? reversals(TR, psi) : 0, end = sim.t >= RUN_END - 1e-9, th = Math.abs(psi - TR.psi0) / DEG;
+          if (!sim.t) words = 'Press Start to close the switch.';
+          else if (end) words = `Two whole revolutions: the current in the coil reversed ${nRev} times, once every half-revolution, and the coil always turned the same way.`;
+          else if (inGap(psi)) words = '(b) The coil is vertical: neither X nor Y is in contact with P or Q, so the current is cut off. The coil continues to rotate because of its inertia.';
+          else words = `${nRev ? `(c) X and Y have exchanged places: the current in the coil has reversed ${nRev} time${nRev > 1 ? 's' : ''}. ` : ''}The forces push the left side down and the right side up, so the coil keeps turning ${senseWords(rotOf(TR))}.`;
+          void th;
+        } else if (id === 'half') {
+          if (MM.comm === 'split') words = inGap(psi) ? 'In the gaps: neither X nor Y touches P or Q, so no current flows and there is no turning effect.' : `Half-ring ${ring} touches P. The side on the left always carries the current into the page, so the turning effect is always ${senseWords(T.sense)}.`;
+          else words = 'With complete rings the current in AB never reverses: past the vertical the turning effect is the other way, and the coil is turned back.';
+        } else {
+          const end = sim.t >= RUN_END - 1e-9;
+          words = !sim.t ? 'Press Start to close the switch.' : end ? 'Without the split-ring commutator the current in the coil never reverses. Past the vertical the forces turn the coil back: it rocks to and fro and comes to rest vertical.' : 'The current in AB never reverses …';
+        }
+      } else if (view() === 'race') {
+        el.className = 'readout n4';
+        const MA = motorA(), MB = motorB(), [pA, oA] = coilNow(TR), [pB, oB] = coilNow(TRB);
+        const sp = (o) => (Math.abs(o) > 0.05 ? `${turnsPerSecond(Math.abs(o)).toFixed(2)} turns per second${o < 0 ? ', clockwise' : ''}` : 'at rest');
+        out.push(card('Motor A: biggest turning effect', `${num(maxTurning(MA))} N m`, 'tA'), card('Motor B: biggest turning effect', `${num(maxTurning(MB))} N m`, 'tB'),
+          card(`Motor A after ${sim.t.toFixed(1)} s`, sp(oA), 'sA'), card(`Motor B after ${sim.t.toFixed(1)} s`, sp(oB), 'sB'));
+        const ratio = maxTurning(MB) / maxTurning(MA);
+        work = `<div class="steps-list" style="padding-left:0">Biggest turning effect (coil horizontal) = number of turns × <i>BIL</i> × width. A: ${MA.N} × ${MA.B.toFixed(2)} × ${MA.I.toFixed(2)} × ${MA.L.toFixed(3)} × ${MA.w.toFixed(3)} = ${num(maxTurning(MA))} N m. B: ${MB.N} × ${MB.B.toFixed(2)} × ${MB.I.toFixed(2)} × ${MB.L.toFixed(3)} × ${MB.w.toFixed(3)} = ${num(maxTurning(MB))} N m.</div>`;
+        const end = sim.t >= RUN_END - 1e-9;
+        words = !sim.t ? `Motor B has ${P.what}. Press Start to switch both on together.` : end ? (Math.abs(ratio - 1) < 1e-9 ? 'The same turning effect: both motors run at the same speed.' + (MB.dir < 0 ? ' Reversing the current only made motor B turn the other way.' : '')
+          : `Motor B’s turning effect is ${num(ratio)} times motor A’s, and after ${RACE_T} s it turns ${num(Math.abs(oB / oA))} times as fast.`) : '';
+      }
+      el.innerHTML = out.join('');
+      $('words').innerHTML = words; $('work').innerHTML = work;
+      $('game').innerHTML = id === 'find' ? (game.done ? 'Well done: all five parts found.' : `Part ${game.round + 1} of ${ROUNDS.length}: ${ROUNDS[game.round].ask}`) : '';
+    }
+
+    function update() {
+      draw(); readouts(); syncInputs();
+      const run = isRun(), st = isSteps(), ang = !!P.angles;
+      $('simGroup').hidden = !run; $('moments').hidden = !(run || ang);
+      $('stepGroup').hidden = !st;
+      if (run) {
+        const end = runEnd(), mid = sim.t > 1e-9 && sim.t < end - 1e-9;
+        $('pauseBtn').textContent = !sim.running && mid ? 'Play' : 'Pause';
+        $('pauseBtn').disabled = !sim.running && !mid;
+        $('startBtn').disabled = sim.running;
+        $('speedNote').textContent = 'The clock runs in real time.';
+        $('prevMoment').textContent = '‹ Previous key moment'; $('nextMoment').textContent = 'Next key moment ›';
+      } else if (ang) { $('speedNote').textContent = `Turned from the horizontal: ${P.angles.length > 6 ? 'every 15°' : P.angles.join('°, ') + '°'}`; $('prevMoment').textContent = '‹ Previous angle'; $('nextMoment').textContent = 'Next angle ›'; }
+      if (run || ang) { const km = moments(), now = momentNow(); $('prevMoment').disabled = !km.some(m => m < now - 1e-6); $('nextMoment').disabled = !km.some(m => m > now + 1e-6); }
+      if (st) { const n = nSteps(); $('stepNo').textContent = `(${Math.min(S.step, n)} of ${n})`; $('prevStep').disabled = S.step <= 0; $('nextStep').disabled = S.step >= n; $('stepReset').disabled = S.step === 0; }
+    }
+    const HINTS = { parts: 'Press Next to name each part.', path: 'Press Next to follow the current.', find: 'Tap a part of the motor.', coil: 'Press Next for each step.',
+      ex5: 'Predict the forces, then tick Show the forces.', turn: 'Drag a side of the coil to turn it, or step through the angles.',
+      run: 'Press Start to close the switch, then use the key moments.', half: 'Step through the angles, or drag a side of the coil (left picture).', rings: 'Press Start to close the switch.',
+      dI: 'Press Start: both motors are switched on together.', dN: 'Press Start: both motors are switched on together.', dA: 'Press Start: both motors are switched on together.',
+      dB: 'Press Start: both motors are switched on together.', own: 'Set motor B’s values, then press Start.' };
+    function chooseScenario(id) { loadScenario(id); clearFeat(); buildInputs(); $('sceneHint').textContent = HINTS[id] || ''; update(); }
+    presetEl.addEventListener('change', () => chooseScenario(presetEl.value));
+
+    /* ---------------- the tabs ---------------- */
+    const KEYS = { coil: [COL.coil, 'Coil', 'blk'], cur: [COL.cur, 'Current'], line: [COL.field, 'Magnetic field line'], F: [COL.F, 'Force <i>F</i>'], N: [COL.N, 'N-pole', 'blk'], S: [COL.S, 'S-pole', 'blk'],
+      X: [COL.X, 'Half-ring X', 'blk'], Y: [COL.Y, 'Half-ring Y', 'blk'], d: [COL.d, 'Distance <i>d</i>'], turn: [COL.turn, 'Turning'] };
+    const TABS = {
+      1: { strip: 'Answer Predict first. Then name each part of a simple DC motor, follow the current round it, and find the parts in the notes’ Try it!',
+        presets: ['parts', 'path', 'find'], key: ['N', 'S', 'coil', 'X', 'Y', 'cur'],
+        notes: ['A DC motor consists of a rectangular coil that rotates on an axle (represented by the dotted line) in a uniform magnetic field (notes p. 8-32).',
+          'The ends of the coil are connected to a split-ring commutator XY. The commutator rotates with the coil and rubs against two carbon brushes, P and Q (p. 8-32).',
+          'When the switch is closed, the current flows from the battery through P and X through the coil and back to the battery through Y and Q (p. 8-32).',
+          'A permanent magnet creates the magnetic field; a split-ring commutator reverses the current through the coil every half-revolution; two brushes are the electrical contacts between the coil and the external circuit (p. 8-34, Try it!).'] },
+      2: { strip: 'Answer Predict first. Then find the forces on a current-carrying coil between two poles, and turn the coil to see when they turn it.',
+        presets: ['coil', 'ex5', 'turn'], key: ['N', 'S', 'coil', 'line', 'F', 'd', 'turn'],
+        notes: ['The currents in AB and CD are in opposite directions. Thus from Fleming’s left-hand rule, side AB is pushed down and side CD is pushed up. This pair of forces produces a turning effect which turns the coil (notes p. 8-28).',
+          'The forces are always at right angles to the field, so in this field they stay vertical however the coil is turned.',
+          'Moment of a force = force × perpendicular distance from the pivot to its line of action (Chapter 4). Here the pivot is the axle, and the distance <i>d</i> is half the coil’s width when the coil is horizontal, 0 when it is vertical.',
+          'The current, the field, and the coil (5.0 cm long in the field, 4.0 cm wide, one turn) are this page’s own values: <i>B</i> = 0.20 T, <i>I</i> = 0.60 A.'] },
+      3: { strip: 'Answer Predict first. Then run the motor and stop at the key moments (a), (b) and (c), turn the coil 15° at a time, and see what happens without a commutator.',
+        presets: ['run', 'half', 'rings'], key: ['N', 'S', 'coil', 'X', 'Y', 'cur', 'F', 'turn'],
+        notes: ['The pair of forces makes the coil rotate anticlockwise until the coil reaches a vertical position, (b) (notes p. 8-33).',
+          'In (b), current is cut off because neither X nor Y is in contact with P or Q, but the coil continues to rotate anticlockwise because of its inertia until current flows again through the coil, as shown in (c) (p. 8-33).',
+          'In (c), the half-ring Y touches P while the other half-ring X touches Q. X and Y have exchanged places, and the direction of the current is reversed in the coil (p. 8-33).',
+          'The coil continues to rotate in the same direction; the current reverses every half-revolution (p. 8-34).',
+          'Without the split-ring commutator (each end of the coil on its own complete ring, this page’s comparison) the current never reverses, and the coil only rocks to and fro.',
+          'The coil’s inertia and the friction on it are this page’s own values, chosen so the motor turns slowly enough to watch.'] },
+      4: { strip: 'Answer Predict first. Then switch on two motors together: motor B has one change from the notes’ list. Which turns faster?',
+        presets: ['dI', 'dN', 'dA', 'dB', 'own'], key: ['N', 'S', 'coil', 'F', 'turn'],
+        notes: ['The turning effect on the current coil can be increased by (1) increasing the magnitude of current, (2) increasing the number of turns in the coil, (3) increasing the area of the loop inside the magnetic field, (4) increasing the strength of the magnetic field (notes p. 8-29).',
+          'Each long side of the coil feels a force <i>F</i> = <i>BIL</i> for every turn of wire, so the biggest turning effect (coil horizontal) = number of turns × <i>BIL</i> × width.',
+          'Doubling the area here doubles the coil’s width; the length in the field stays 5.0 cm.',
+          'A bigger turning effect makes the motor turn faster against the same friction. This page keeps the coil’s inertia and friction the same in both motors.'] },
+      5: { strip: 'Answer every question, then read the summary.', key: [] }
+    };
+    const PREDICT = {
+      1: { q: 'In a simple DC motor, which part rotates with the coil?',
+        opts: ['the split-ring commutator', 'the carbon brushes', 'the magnets', 'the battery'], ans: 0,
+        why: 'The commutator rotates with the coil and rubs against two carbon brushes, P and Q, which stay still (notes p. 8-32). Step through “The parts of a DC motor” to see each part.' },
+      2: { q: 'The two long sides of a coil between two poles carry currents in opposite directions. The forces on them are …',
+        opts: ['one up and one down: a pair that turns the coil', 'both upwards', 'both towards the S-pole', 'zero, because the currents cancel'], ans: 0,
+        why: 'From Fleming’s left-hand rule, side AB is pushed down and side CD is pushed up. This pair of forces produces a turning effect which turns the coil (notes p. 8-28). Step through “A coil between two poles” to check.' },
+      3: { q: 'The motor’s coil turns until it is vertical, position (b). At that moment the current in the coil is …',
+        opts: ['cut off', 'at its biggest', 'flowing the same way as before', 'flowing through the magnets'], ans: 0,
+        why: 'In (b), current is cut off because neither X nor Y is in contact with P or Q; the coil continues to rotate because of its inertia (notes p. 8-33). Run “The motor runs” and go to the first key moment.' },
+      4: { q: 'Which change would NOT give the coil a bigger turning effect?',
+        opts: ['reversing the direction of the current', 'a bigger current', 'more turns in the coil', 'a stronger magnetic field'], ans: 0,
+        why: 'The turning effect can be increased by increasing the current, the number of turns, the area of the loop inside the field, or the strength of the field (notes p. 8-29). Reversing the current only reverses the forces, so the motor turns the other way. Try it in “Your own values”.' }
+    };
+    const FEATS = {
+      1: [['magnet', 'The magnets create the field'], ['coil', 'The coil turns on an axle'], ['comm', 'The commutator turns with the coil'], ['brush', 'The brushes stay still'], ['path', 'The current: P, X, coil, Y, Q']],
+      2: [['opp', 'Opposite currents, opposite forces'], ['right', 'Forces at right angles to the field'], ['max', 'Horizontal: biggest turning effect'], ['zero', 'Vertical: no turning effect'], ['back', 'Past the vertical it turns back']],
+      3: [['b', '(b) Vertical: current cut off'], ['c', '(c) X and Y swap: current reversed'], ['inertia', 'Inertia carries it past (b)'], ['same', 'Always the same way round'], ['rock', 'No commutator: it rocks and stops']],
+      4: [['I', 'More current'], ['N', 'More turns'], ['A', 'A bigger area'], ['Bf', 'A stronger field'], ['rev', 'Reversing does not help']]
+    };
+    const PROMPTS = {
+      1: ['Which parts turn, and which stay still?', 'Trace the current from the battery back to the battery.', 'Why are the brushes needed at all?'],
+      2: ['Why are the forces on AB and CD in opposite directions?', 'Why is the turning effect biggest when the coil is horizontal?', 'What would the coil do on its own after it passes the vertical?'],
+      3: ['Why does the coil not stop at the vertical position (b)?', 'What does the commutator do at (c)?', 'How often does the current in the coil reverse?'],
+      4: ['Name the four ways to increase the turning effect.', 'Why does a bigger turning effect make the motor faster?', 'Why does reversing the current not make it faster?'],
+      5: ['Which question did most of the class get wrong, and why?', 'Pick one wrong option: what mistake would lead a student to choose it?']
+    };
+
+    let predictPick = null;
+    function clearFeat() { feat = {}; hl = {}; syncFeatButtons(); $('featNote').textContent = ''; }
+    function clearFeatNoteOnly() { if (Object.keys(feat).length) clearFeat(); }
+    function syncFeatButtons() { document.querySelectorAll('#feats .feat').forEach(b => b.classList.toggle('on', !!feat[b.dataset.f])); }
+    const atKM = i => KM[i];
+    // a key feature shows itself: it always reloads its scenario, then sets what shows it
+    function tapFeat(id) {
+      const on = !feat[id];
+      const want = scen => { presetEl.value = scen; chooseScenario(scen); };
+      clearFeat();
+      if (on) {
+        ({
+          magnet: () => { want('parts'); S.step = 1; hl = { p: true }; },
+          coil: () => { want('parts'); S.step = 2; hl = { p: true }; },
+          comm: () => { want('parts'); S.step = 3; hl = { p: true }; },
+          brush: () => { want('parts'); S.step = 4; hl = { p: true }; },
+          path: () => { want('path'); S.step = 6; hl = { at: true }; },
+          opp: () => { want('coil'); S.step = 4; hl = { fab: true, fcd: true }; },
+          right: () => { want('turn'); psiLive = Math.PI + 30 * DEG; hl = { F: true }; },
+          max: () => { want('turn'); psiLive = Math.PI; hl = { T: true, d: true }; },
+          zero: () => { want('turn'); psiLive = Math.PI + 90 * DEG; hl = { T: true, d: true }; },
+          back: () => { want('turn'); psiLive = Math.PI + 135 * DEG; hl = { T: true }; },
+          b: () => { want('run'); setTime(atKM(0)); hl = { cur: true, ring: true }; },
+          c: () => { want('run'); setTime(atKM(1)); hl = { cur: true, ring: true }; },
+          inertia: () => { want('run'); setTime(atKM(0)); hl = { mot: true }; },
+          same: () => { want('run'); setTime(RUN_END); hl = { mot: true }; },
+          rock: () => { want('rings'); setTime(RUN_END); hl = { pos: true }; },
+          I: () => { want('dI'); setTime(RUN_END); hl = { tB: true, sB: true }; },
+          N: () => { want('dN'); setTime(RUN_END); hl = { tB: true, sB: true }; },
+          A: () => { want('dA'); setTime(RUN_END); hl = { tB: true, sB: true }; },
+          Bf: () => { want('dB'); setTime(RUN_END); hl = { tB: true, sB: true }; },
+          rev: () => { want('own'); P.change.dir = -1; resetRun(); buildRun(); setTime(RUN_END); hl = { tB: true, sB: true }; }
+        })[id]();
+      }
+      feat = on ? { [id]: true } : {};
+      syncFeatButtons(); syncInputs(); update();
+      $('featNote').innerHTML = on ? featNote(id) : '';
+    }
+    function featNote(id) {
+      const ratioNow = () => { const [, oA] = coilNow(TR), [, oB] = coilNow(TRB); return num(Math.abs(oB / oA)); };
+      switch (id) {
+        case 'magnet': return 'A permanent magnet creates the magnetic field (notes p. 8-34): from the N-pole to the S-pole, uniform between them.';
+        case 'coil': return 'The rectangular coil rotates on an axle, the dotted line, in the uniform magnetic field (p. 8-32).';
+        case 'comm': return 'The split-ring commutator XY is joined to the two ends of the coil and rotates with it (p. 8-32).';
+        case 'brush': return 'The carbon brushes P and Q stay still; the commutator rubs against them. They are the electrical contacts between the coil and the external circuit (p. 8-34).';
+        case 'path': return 'From the battery through P and X, through the coil, and back to the battery through Y and Q (p. 8-32).';
+        case 'opp': return 'The currents in AB and CD are in opposite directions, so the forces on them are opposite: AB down, CD up (p. 8-28).';
+        case 'right': return 'Turned 30°, the forces still point straight up and down: they are always at right angles to the field (Fleming’s left-hand rule).';
+        case 'max': return `Horizontal: d is half the coil’s width (2.0 cm), the largest it can be, so the turning effect is the biggest: ${num(Math.abs(turning(motorOf(), Math.PI).total))} N m.`;
+        case 'zero': return 'Vertical: both forces act along lines through the axle, so d = 0 and there is no turning effect.';
+        case 'back': return 'Turned 135°, past the vertical: AB is still pushed down and CD up, but now they turn the coil clockwise, back towards the vertical.';
+        case 'b': return '(b) The coil is vertical: neither X nor Y is in contact with P or Q, so the current is cut off (notes p. 8-33).';
+        case 'c': return '(c) Just past the vertical, half-ring Y touches P and X touches Q: X and Y have exchanged places and the current in the coil is reversed (p. 8-33).';
+        case 'inertia': return `At (b) there is no current and no turning effect, but the coil is still turning (${turnsPerSecond(Math.abs(coilNow()[1])).toFixed(2)} turns per second) because of its inertia.`;
+        case 'same': return 'After two revolutions the current has reversed four times, once every half-revolution, and the coil has turned anticlockwise the whole time.';
+        case 'rock': return 'With complete rings the current never reverses: the coil rocks to and fro about the vertical and comes to rest there.';
+        case 'I': case 'N': case 'A': case 'Bf': return `Doubling it doubles the biggest turning effect (${num(maxTurning(motorA()))} → ${num(maxTurning(motorB()))} N m), and motor B ends up turning ${ratioNow()} times as fast (notes p. 8-29).`;
+        case 'rev': return 'Motor B with its current reversed: the same turning effect and the same speed, but it turns clockwise. Reversing the current reverses the forces; it does not make them bigger.';
+      }
+      return '';
+    }
+
+    function renderPredict(tab) {
+      const Q = PREDICT[tab], box = $('predictBox');
+      predictPick = null;
+      if (!Q) { box.hidden = true; return; }
+      box.hidden = false; box.classList.remove('done');
+      $('predictQ').innerHTML = Q.q;
+      $('predictFb').innerHTML = '';
+      const opts = $('predictOpts');
+      opts.innerHTML = '';
+      Q.opts.forEach((o, i) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.innerHTML = o;
+        b.addEventListener('click', () => {
+          if (opts.dataset.done) return;
+          predictPick = i; opts.querySelectorAll('.opt').forEach((x, j) => x.classList.toggle('picked', j === i));
+        });
+        opts.appendChild(b);
+      });
+      delete opts.dataset.done;
+      $('predictCheck').textContent = 'Check my answer';
+    }
+    $('predictCheck').addEventListener('click', () => {
+      const Q = PREDICT[currentTab], opts = $('predictOpts'), fb = $('predictFb');
+      if (!Q) return;
+      if (opts.dataset.done) { renderPredict(currentTab); return; }
+      if (predictPick === null) { fb.innerHTML = '<span class="verdict no">Pick an answer first.</span>'; return; }
+      opts.dataset.done = '1';
+      const ok = predictPick === Q.ans;
+      opts.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === Q.ans) x.classList.add('right'); else if (j === predictPick) x.classList.add('wrong'); });
+      $('predictBox').classList.add('done');
+      fb.innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> Your prediction: ${Q.opts[predictPick]}.`
+        + (ok ? '' : ` The answer: <b>${Q.opts[Q.ans]}</b>.`) + ` <span class="why">${Q.why}</span>`;
+      $('predictCheck').textContent = 'Try again';
+    });
+
+    function renderFeats(tab) {
+      const list = FEATS[tab] || [], el = $('feats');
+      $('featBox').hidden = !list.length;
+      el.innerHTML = '';
+      list.forEach(([id, lab]) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'feat'; b.dataset.f = id;
+        b.innerHTML = lab;
+        b.addEventListener('click', () => tapFeat(id));
+        el.appendChild(b);
+      });
+      $('featNote').textContent = '';
+      syncFeatButtons();
+    }
+    function renderKey(tab) {
+      $('ckey').innerHTML = (TABS[tab].key || []).map(k => `<span><b class="${KEYS[k][2] || ''}" style="background:${KEYS[k][0]}"></b><span>${KEYS[k][1]}</span></span>`).join('');
+    }
+    function fillPresets(list) {
+      presetEl.innerHTML = '';
+      list.forEach(id => { const o = document.createElement('option'); o.value = id; o.textContent = PRESETS[id].name; presetEl.appendChild(o); });
+      presetEl.value = list[0];
+    }
+
+    function showTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('#tabs .tab').forEach(b => { const on = +b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+      $('stepLabel').textContent = `Step ${tab} of 5`;
+      document.querySelectorAll('#stepBar i').forEach((i, n) => i.classList.toggle('on', n < tab));
+      $('strip').innerHTML = TABS[tab].strip;
+      renderKey(tab);
+      $('pageSim').hidden = tab === 5;
+      $('page5').hidden = tab !== 5;
+      sim.running = false;
+      if (tab <= 4) {
+        const T = TABS[tab];
+        $('notes').innerHTML = '<ul>' + T.notes.map(n => `<li>${n}</li>`).join('') + '</ul>';
+        fillPresets(T.presets); chooseScenario(T.presets[0]);
+      }
+      if (tab === 5) renderQuiz();
+      renderPredict(tab);
+      renderFeats(tab);
+      $('tPrompts').innerHTML = PROMPTS[tab].map(p => `<li>${p}</li>`).join('');
+    }
+    document.querySelectorAll('#tabs .tab').forEach(b => b.addEventListener('click', () => showTab(+b.dataset.tab)));
+
+    /* ---------------- Tab 5: Challenge ---------------- */
+    // every answer matched to the notes (pp. 8-27 to 8-34), the lecturer copy's answers (Example 5, Try it!) or the
+    // colleague's worked solution to Tutorial 8, C3; parts that share one situation are one screen
+    const QUIZ = [
+      { src: 'Notes pp. 8-27 and 8-28', fig: 'coil', stem: 'A current-carrying coil is placed between the poles of two magnets. Current flows in the direction ABCD.', parts: [
+        { q: 'The currents in AB and CD are …', opts: ['in opposite directions', 'in the same direction', 'zero'], ans: 0, why: 'The current goes away from you along AB and comes back towards you along CD.' },
+        { q: 'Side AB is pushed down. Side CD is pushed …', opts: ['up', 'down', 'towards the S-pole', 'not at all'], ans: 0, why: 'From Fleming’s left-hand rule, side AB is pushed down and side CD is pushed up.' },
+        { q: 'This pair of forces …', opts: ['produces a turning effect which turns the coil', 'pushes the coil out of the field', 'stretches the coil but does not turn it'], ans: 0, why: 'This pair of forces produces a turning effect which turns the coil (p. 8-28).' }] },
+      { src: 'Notes p. 8-30, Example 5', fig: 'ex5', stem: 'A current-carrying coil is placed between two poles of two magnets, S on the left and N on the right, as shown.', parts: [
+        { q: 'The force on the side whose current is out of the page (•, top left) points …', opts: ['down', 'up', 'to the left', 'to the right'], ans: 0,
+          why: 'Field from N to S: to the left. First finger to the left, seCond finger out of the page: the thuMb points down (the lecturer copy draws it down).' },
+        { q: 'The force on the side whose current is into the page (×, bottom right) points …', opts: ['up', 'down', 'to the left', 'to the right'], ans: 0, why: 'The current is the other way, so the force is the other way: up.' }] },
+      { src: 'Notes p. 8-29', stem: 'The turning effect on a current-carrying coil in a magnetic field.', parts: [
+        { q: 'Which of these does NOT increase the turning effect?', opts: ['reversing the direction of the current', 'increasing the magnitude of the current', 'increasing the number of turns in the coil', 'increasing the strength of the magnetic field'], ans: 0,
+          why: 'The notes’ four ways: more current, more turns, a bigger area of the loop inside the field, a stronger field. Reversing the current only reverses the forces.' },
+        { q: 'Increasing the area of the loop inside the magnetic field makes the turning effect …', opts: ['bigger', 'smaller', 'stay the same'], ans: 0, why: 'It is the third way in the notes’ list (p. 8-29).' }] },
+      { src: 'Notes p. 8-34, Try it!', stem: 'In a simple DC motor, …', parts: [
+        { q: '… ____ creates the magnetic field.', opts: ['a permanent magnet', 'a split-ring commutator', 'two brushes', 'the battery'], ans: 0, why: 'A permanent magnet creates the magnetic field.' },
+        { q: '… ____ is used to allow the coil to rotate by reversing the current through the coil every half-revolution.', opts: ['a split-ring commutator', 'a permanent magnet', 'two brushes', 'the axle'], ans: 0, why: 'A split-ring commutator.' },
+        { q: '… ____ are used as electrical contacts between the coil and the external circuit.', opts: ['two brushes', 'two magnets', 'two half-rings', 'two axles'], ans: 0, why: 'Two brushes (P and Q).' }] },
+      { src: 'Notes p. 8-32', stem: 'A DC motor: a rectangular coil on an axle in a uniform magnetic field, a split-ring commutator XY, carbon brushes P and Q, a battery and a switch.', parts: [
+        { q: 'When the switch is closed, the current flows from the battery through …', opts: ['P and X, through the coil, and back through Y and Q', 'P and Q only, without passing through the coil', 'the magnets and back through the axle'], ans: 0,
+          why: 'The current flows from the battery through P and X through the coil and back to the battery through Y and Q.' },
+        { q: 'The commutator …', opts: ['rotates with the coil and rubs against the brushes', 'stays still while the brushes rotate', 'is joined to the magnets'], ans: 0, why: 'The commutator rotates with the coil and rubs against two carbon brushes, P and Q.' }] },
+      { src: 'Notes p. 8-33, position (b)', fig: 'qb', stem: 'The motor’s coil has turned until it is vertical, position (b).', parts: [
+        { q: 'The current in the coil is …', opts: ['cut off', 'at its biggest', 'reversed'], ans: 0, why: 'In (b), current is cut off …' },
+        { q: 'because …', opts: ['neither X nor Y is in contact with P or Q', 'the magnets stop working', 'the battery reverses'], ans: 0, why: '… because neither X nor Y is in contact with P or Q.' },
+        { q: 'The coil keeps turning through (b) because of …', opts: ['its inertia', 'the current in it', 'the brushes pushing it'], ans: 0, why: 'The coil continues to rotate because of its inertia until current flows again.' }] },
+      { src: 'Notes p. 8-33, position (c)', fig: 'qc', stem: 'The coil has just passed the vertical, position (c).', parts: [
+        { q: 'Half-ring Y now touches …', opts: ['brush P', 'brush Q', 'neither brush'], ans: 0, why: 'In (c), the half-ring Y touches P while the other half-ring X touches Q.' },
+        { q: 'So the current in the coil …', opts: ['is reversed', 'stops for good', 'keeps the same direction'], ans: 0, why: 'X and Y have exchanged places, and the direction of the current is reversed in the coil.' },
+        { q: 'The coil continues to rotate …', opts: ['in the same direction', 'in the opposite direction', 'to and fro'], ans: 0, why: 'The coil continues to rotate in the same direction.' }] },
+      { src: 'Notes p. 8-34; Tutorial 8, C3 (worked solution)', stem: 'A simple DC motor is running.', parts: [
+        { q: 'The current in its coil reverses …', opts: ['every half-revolution', 'every quarter-revolution', 'never'], ans: 0,
+          why: 'The commutator reverses the current through the coil every half-revolution (p. 8-34; the worked solution: “despite the current reversing every half rotation”).' }] },
+      { src: 'Tutorial 8, C3(a)', stem: 'Fleming’s left-hand rule finds the direction of the force on a current-carrying conductor in a magnetic field.', parts: [
+        { q: 'The thumb indicates the direction of …', opts: ['the motion, or force', 'the magnetic field', 'the current'], ans: 0, why: 'Thumb indicates direction of motion or force (force leads to motion).' }] },
+      { src: 'Notes p. 8-28, with moments (Chapter 4)', fig: 'turn', stem: 'The coil’s sides are pushed straight up and down, at right angles to the field, whatever angle the coil is at.', parts: [
+        { q: 'The pair of forces has the biggest turning effect when the coil is …', opts: ['horizontal', 'vertical', 'at 45°'], ans: 0,
+          why: 'Moment = force × perpendicular distance from the axle. The forces are vertical, so the distance is the biggest when the coil is horizontal.' },
+        { q: 'When the coil is vertical, the turning effect is …', opts: ['zero', 'the biggest', 'the same as when horizontal'], ans: 0, why: 'Both forces act along lines through the axle: the perpendicular distance is 0.' }] }
+    ];
+    // the options are written with the right one first; turn each part's list round by a fixed amount
+    { let pc = 0; QUIZ.forEach(Q => Q.parts.forEach(Pt => { const n = Pt.opts.length, r = (pc++ * 5 + 1) % n;
+      Pt.opts = Pt.opts.slice(r).concat(Pt.opts.slice(0, r)); Pt.ans = (Pt.ans - r + n) % n; })); }
+    const QUIZ_MARKS = QUIZ.reduce((n, Q) => n + Q.parts.length, 0);
+    const partLabel = (Q, k) => Q.parts[k].lab ? Q.parts[k].lab + ' ' : Q.parts.length > 1 ? `(${'abcdefgh'[k]}) ` : '';
+    // a quiz figure, drawn by the same code as the simulation, in the state the question describes (no answers on it)
+    const FIGS = { coil: { scen: 'coil' }, ex5: { scen: 'ex5' }, qb: { scen: 'half', theta: 90 }, qc: { scen: 'half', theta: 105 }, turn: { scen: 'turn', theta: 30 } };
+    function drawFig(cv, id) {
+      for (const k in __pim) __pim[k] = [];
+      const g = setup(cv); if (!g) return;
+      const f = FIGS[id], keep = { P, S: { ...S }, show, sim: { ...sim }, psiLive, TR, TRB, KM, RUN_END };
+      P = JSON.parse(JSON.stringify(PRESETS[f.scen])); P.id = f.scen; S.scen = f.scen; S.step = 0; sim.t = 0; sim.running = false;
+      show = { forces: false, d: false, comm: true };
+      psiLive = f.theta !== undefined ? Math.PI + f.theta * DEG : P.psi * DEG;
+      drawScene(g.ctx, { x: 0, y: 0, w: g.W, h: g.H }, { fig: true });
+      P = keep.P; Object.assign(S, keep.S); show = keep.show; Object.assign(sim, keep.sim); psiLive = keep.psiLive; TR = keep.TR; TRB = keep.TRB; KM = keep.KM; RUN_END = keep.RUN_END;
+    }
+    let quiz = { i: 0, score: 0, picks: [], done: false, missed: [] };
+    function resetQuiz() { quiz = { i: 0, score: 0, picks: [], done: false, missed: [] }; renderQuiz(); }
+    function renderQuiz() {
+      const el = $('quiz'), N = QUIZ.length;
+      if (quiz.i >= N) {
+        const list = quiz.missed.length
+          ? `<p>Go back over these:</p><ul>${quiz.missed.map(([n, k]) => { const Q = QUIZ[n];
+              return `<li>Question ${n + 1} ${partLabel(Q, k).trim()} (${Q.src}): ${(Q.stem ? Q.stem + ' ' : '') + Q.parts[k].q}</li>`; }).join('')}</ul>`
+          : '<p>Every answer right. Well done.</p>';
+        el.innerHTML = `<div class="quiz-top"><span>Summary</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div><div class="quiz-bar"><i style="width:100%"></i></div>
+          <div class="quiz-sum"><div class="quiz-q">You scored ${quiz.score} out of ${QUIZ_MARKS}.</div>${list}</div>
+          <div class="row-btns"><button type="button" id="qAgain">Try the quiz again</button></div>`;
+        $('qAgain').addEventListener('click', resetQuiz);
+        return;
+      }
+      const Q = QUIZ[quiz.i], many = Q.parts.length > 1;
+      quiz.picks = Q.parts.map(() => null);
+      el.innerHTML = `<div class="quiz-top"><span>Question ${quiz.i + 1} of ${N}</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div>
+        <div class="quiz-bar"><i style="width:${(quiz.i / N) * 100}%"></i></div>
+        ${Q.stem ? `<div class="quiz-q" id="qStem">${Q.stem}</div>` : ''}${Q.fig ? '<canvas class="qfig" id="qFig"></canvas>' : ''}<div class="quiz-src">${Q.src}${many ? ` · ${Q.parts.length} parts, answer them all` : ''}</div>
+        ${Q.parts.map((Pt, k) => `<div class="qpart" data-k="${k}">
+          <div class="${Q.stem ? 'qpart-q' : 'quiz-q'}">${partLabel(Q, k)}${Pt.q}</div>
+          <div class="opts">${Pt.opts.map((o, j) => `<button type="button" class="opt" data-j="${j}">${o}</button>`).join('')}</div>
+          <div class="feedback"></div></div>`).join('')}
+        <div class="row-btns"><button type="button" id="qSubmit">${many ? 'Submit answers' : 'Submit answer'}</button><button type="button" class="secondary" id="qReset">Reset quiz</button></div>
+        <div class="feedback" id="qFb"></div>`;
+      if (Q.fig) drawFig($('qFig'), Q.fig);
+      el.querySelectorAll('.qpart').forEach(part => {
+        const k = +part.dataset.k;
+        part.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+          if (quiz.done) return;
+          quiz.picks[k] = +b.dataset.j; part.querySelectorAll('.opt').forEach(x => x.classList.toggle('picked', x === b));
+        }));
+      });
+      $('qReset').addEventListener('click', resetQuiz);
+      $('qSubmit').addEventListener('click', () => {
+        const fb = $('qFb');
+        if (quiz.done) { quiz.i++; quiz.done = false; renderQuiz(); return; }
+        const left = quiz.picks.map((p, k) => p === null ? partLabel(Q, k).trim() || `part ${k + 1}` : null).filter(x => x !== null);
+        if (left.length) { fb.innerHTML = `<span class="verdict no">${many ? `Pick an answer for every part first (still to do: ${left.join(', ')}).` : 'Pick an answer first.'}</span>`; return; }
+        quiz.done = true; fb.innerHTML = '';
+        el.querySelectorAll('.qpart').forEach(part => {
+          const k = +part.dataset.k, Pt = Q.parts[k], ok = quiz.picks[k] === Pt.ans;
+          if (ok) quiz.score++; else quiz.missed.push([quiz.i, k]);
+          part.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === Pt.ans) x.classList.add('right'); else if (j === quiz.picks[k]) x.classList.add('wrong'); });
+          part.querySelector('.feedback').innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> <span class="why">${Pt.why}</span>`;
+        });
+        el.querySelector('.quiz-top span:last-child').textContent = `Score: ${quiz.score} of ${QUIZ_MARKS}`;
+        $('qSubmit').textContent = quiz.i + 1 < N ? 'Next question' : 'See the summary';
+      });
+    }
+
+    /* ---------------- Teacher mode ---------------- */
+    // Only the teacher link (this page's address + ?teacher) shows the button; students and the
+    // Brightspace embed use the plain address. Not a lock: the panel only changes this screen.
+    const teacher = $('teacher');
+    if (new URLSearchParams(location.search).has('teacher')) $('teacherBtn').hidden = false;
+    $('teacherBtn').addEventListener('click', () => { teacher.hidden = !teacher.hidden; });
+    $('tClose').addEventListener('click', () => { teacher.hidden = true; });
+    $('tExplain').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-explain');
+      e.target.textContent = on ? 'Show explanations' : 'Hide explanations'; e.target.classList.toggle('on', on);
+    });
+    $('tAnswers').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-answers');
+      e.target.textContent = on ? 'Show answer labels' : 'Hide answer labels'; e.target.classList.toggle('on', on);
+    });
+    // free exploration: no Predict first, every step shown at once, the forces shown
+    $('tFree').addEventListener('click', e => {
+      freeMode = !freeMode; document.body.classList.toggle('free-mode', freeMode);
+      e.target.textContent = freeMode ? 'Back to the guided steps' : 'Switch to free exploration'; e.target.classList.toggle('on', freeMode);
+      showTab(currentTab);
+    });
+    const fullBtn = $('tFull');
+    if (!document.fullscreenEnabled) fullBtn.hidden = true;
+    fullBtn.addEventListener('click', () => {
+      if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {});
+    });
+    document.addEventListener('fullscreenchange', () => { fullBtn.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
+    $('tReset').addEventListener('click', () => { resetQuiz(); showTab(1); });
+
+    // for the checks: the state behind the drawing
+    window.__pimState = () => {
+      const id = S.scen, M = motorOf(), [psi, om] = coilNow();
+      const MM = id === 'half' && !show.comm ? { ...M, comm: 'rings' } : M;
+      const st = { tab: currentTab, scen: id, step: S.step, nSteps: nSteps(), mode: mode(), view: view(), t: sim.t, end: isRun() ? runEnd() : null, running: sim.running,
+        keyMoments: moments(), show: { ...show }, P: JSON.parse(JSON.stringify(P)), psi: psi / DEG, omega: om, theta: thetaOf(psi) };
+      if (['ex5', 'turn', 'half', 'run', 'rings'].includes(id)) { const on = !isRun() || sim.t > 0; st.iAB = on ? currentAB(MM, psi) : 0; st.forceAB = on ? forceAB(MM, psi) : 0; st.turning = turning(MM, psi); st.ring = halfRingOnP(MM, psi); }
+      if (TR && (id === 'run' || id === 'rings')) st.reversals = reversals(TR, psi);
+      if (view() === 'race') { const [pA, oA] = coilNow(TR), [pB, oB] = coilNow(TRB); st.race = { maxA: maxTurning(motorA()), maxB: maxTurning(motorB()), omA: oA, omB: oB, psiA: pA / DEG, psiB: pB / DEG }; }
+      if (id === 'find') st.game = { ...game };
+      return st;
+    };
+    window.__pimSetTime = setTime;
+    window.addEventListener('resize', () => { if (currentTab <= 4) update(); else if (QUIZ[quiz.i] && QUIZ[quiz.i].fig && $('qFig')) drawFig($('qFig'), QUIZ[quiz.i].fig); });
+    showTab(1);
+  </script>
+  <script>
+    // Embedded (Brightspace): tell the page around the frame how tall this page is, so a resize script in the
+    // embed code can fit the frame to it (no blank space, no inner scrollbar). Measured from the content, not
+    // scrollHeight, which never drops below the frame's own height and so could never shrink it.
+    (function () {
+      if (window.parent === window) return;
+      let last = 0;
+      function height() {
+        const c = document.querySelector('.container'), cs = getComputedStyle(document.body);
+        return Math.ceil(c.getBoundingClientRect().bottom + window.scrollY + parseFloat(cs.paddingBottom) + parseFloat(cs.marginBottom) + 4);
+      }
+      function send(force) {
+        const h = height();
+        if (!force && Math.abs(h - last) < 2) return;
+        last = h;
+        window.parent.postMessage({ type: 'pim-height', page: location.pathname.split('/').pop(), height: h }, '*');
+      }
+      new ResizeObserver(() => send(false)).observe(document.querySelector('.container'));
+      window.addEventListener('load', () => send(true));
+      // the embed's script asks once it is listening, in case this page loaded first
+      window.addEventListener('message', e => { if (e.data && e.data.type === 'pim-height?') send(true); });
+      send(true);
+    })();
   </script>
   <script>
     // Phones: a swipe that starts on an empty part of a drawing scrolls the page (touch-action: pan-y),
     // and a touch the page grabbed for a drag (its own setPointerCapture call) keeps the page still.
-    // (hasPointerCapture can't tell: a touch is always captured implicitly.)
-    // The kinematics graphs are left out: a sideways drag scrubs them and an up-down one scrolls.
     document.querySelectorAll('canvas:not(.graph-canvas)').forEach(c => {
       let grabbed = false;
       const capture = c.setPointerCapture;
