@@ -18,34 +18,178 @@
   <!-- pim-meta:end -->
   <style>
     * { box-sizing: border-box; }
+    /* the hidden attribute must win over every display rule below */
+    [hidden] { display: none !important; }
     body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f7fb; color: #1f2937; }
     .container { max-width: 1200px; margin: 0 auto; padding: 8px; }
-    h1 { margin: 0 0 6px; font-size: 1.2rem; text-align: center; }
+    h1 { margin: 0; font-size: 1.1rem; }
     .panel { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 8px; margin-bottom: 8px; }
-    .controls { display: grid; grid-template-columns: 2fr 1fr auto auto; gap: 10px; align-items: end; }
-    .control-group { display: flex; flex-direction: column; gap: 4px; }
-    label { font-size: 0.8rem; font-weight: 600; }
-    input[type=range] { width: 100%; }
-    button { font-size: 0.88rem; padding: 7px 10px; border-radius: 7px; border: none; background: #475569; color: white; cursor: pointer; white-space: nowrap; }
-    button:hover { background: #334155; }
-    .toggle { display: flex; align-items: center; gap: 5px; font-size: 0.82rem; font-weight: 600; white-space: nowrap; padding-bottom: 6px; }
-    .readout { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; margin-top: 8px; }
-    .hidden { display: none !important; }
+
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 110px; }
+    .control-group.scen-group { flex: 2.2 1 260px; }
+    .control-group.button-group { flex: 2 1 280px; }
+    .control-group select { width: 100%; max-width: 100%; }
+    .controls input, .controls select, .controls button { height: 34px; }
+    label { font-size: 0.82rem; font-weight: 600; line-height: 1.2; }
+    label sub, label sup { line-height: 0; }
+    .step-no { font-weight: 400; color: #475569; }
+    input, select, button { font-size: 0.95rem; padding: 6px 8px; border-radius: 7px; border: 1px solid #cbd5e1; }
+    input[type=range] { width: 100%; padding: 0; height: 34px; }
+    .buttons { display: flex; gap: 6px; flex-wrap: nowrap; }
+    button { cursor: pointer; background: #2563eb; color: white; border: none; min-width: 0; flex: 1; }
+    button:hover { background: #1d4ed8; }
+    button:disabled { background: #94a3b8; cursor: default; }
+    button.secondary { background: #475569; }
+    button.secondary:hover { background: #334155; }
+    button.secondary:disabled { background: #cbd5e1; color: #475569; }
+    button.danger { background: #dc2626; }
+    button.danger:hover { background: #b91c1c; }
+    .moments { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+    .moments button { flex: none; padding: 6px 12px; }
+    .speed { font-size: 0.8rem; color: #475569; }
+    .speed:empty { display: none; }
+    .group-title { font-size: 0.78rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.03em; margin: 10px 0 4px; }
+    .inputs { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: flex-end; }
+    .inputs .control-group { flex: 1 1 260px; }
+    .label-row label { white-space: nowrap; }
+    .question { margin-top: 8px; font-size: 0.84rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 6px 10px; color: #7c2d12; }
+    .question:empty { display: none; }
+
+    .readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+    .readout:empty { display: none; }
+    .readout.n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .readout.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .readout-card { background: #eef4ff; border-radius: 8px; padding: 6px 8px; text-align: center; }
+    .readout-card.hl { box-shadow: inset 0 0 0 2px #dc2626; }
     .readout-card .title { font-size: 0.78rem; color: #475569; margin-bottom: 2px; }
     .readout-card .value { font-size: 1rem; font-weight: bold; }
-    .readout-card.match { background: #ecfdf5; }
-    canvas { display: block; width: 100%; border-radius: 10px; touch-action: pan-y; }
-    #sceneCanvas { height: 440px; border: 1px solid #dbeafe; background: #f8fbff; }
-    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 2px 0 4px; }
-    .note { margin-top: 4px; font-size: 0.8rem; color: #475569; }
+    .words { margin-top: 8px; font-size: 0.86rem; font-weight: 600; color: #1e3a8a; background: #eef4ff; border-radius: 8px; padding: 6px 10px; }
+    .words:empty { display: none; }
+
+    .scene-wrap { margin-top: 8px; }
+    .hint { font-size: 0.8rem; color: #1d4ed8; font-weight: 600; margin: 0 0 4px; }
+    .hint:empty { display: none; }
+    .note { margin-top: 6px; font-size: 0.8rem; color: #475569; }
     .note ul { margin: 2px 0 0; padding-left: 18px; }
     .note li { margin: 2px 0; }
+    canvas { display: block; width: 100%; border-radius: 10px; background: white; }
+    #scene { height: 320px; border: 1px solid #dbeafe; touch-action: pan-y; }
+    canvas.qfig { height: 200px; border: 1px solid #e5e7eb; margin: 4px 0 8px; touch-action: pan-y; }
+
+    /* the working, set like the notes: italic symbols */
+    .work { margin-top: 8px; }
+    .work:empty { display: none; }
+    .math { font-family: 'Times New Roman', Times, serif; font-size: 1.06rem; color: #1f2937; }
+    /* a block line, not flex: inside flex every <sub> would become its own item and lose its drop */
+    .math .eq { display: block; margin: 4px 0; line-height: 2.1; }
+    .math .eq.lit { background: #fef9c3; border-radius: 4px; padding: 0 4px; }
+    .math b { font-family: Arial, Helvetica, sans-serif; }
+
+    /* the game (tab 4) */
+    .game { margin-top: 8px; }
+    .game-top { display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 700; margin-bottom: 6px; }
+
+    /* ---- the step-by-step frame: header, numbered tabs, colour key, instruction strip ---- */
+    .app-head { background: #1e293b; color: #f8fafc; border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+    .head-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .head-row h1 { flex: 1 1 260px; }
+    .steps { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #cbd5e1; }
+    .step-bar { display: flex; gap: 3px; }
+    .step-bar i { display: block; width: 18px; height: 5px; border-radius: 3px; background: #475569; }
+    .step-bar i.on { background: #fbbf24; }
+    button.teacher-btn { flex: none; background: transparent; border: 1px solid #94a3b8; color: #f8fafc; font-size: 0.82rem; padding: 5px 10px; }
+    button.teacher-btn:hover { background: #334155; }
+    /* every tab always visible: equal columns, and a long name wraps onto a second line (never a sideways scroll) */
+    .tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; margin-top: 8px; }
+    button.tab { min-width: 0; background: #f1f5f9; color: #1e293b; font-size: 0.85rem; font-weight: 600; padding: 7px 8px; border-radius: 8px; line-height: 1.2; white-space: normal; text-align: center; }
+    button.tab:hover { background: #e2e8f0; }
+    button.tab.active, button.tab.active:hover { background: #2563eb; color: white; }
+    .tab .ts { display: none; }
+    .nw { white-space: nowrap; }
+    .ckey { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 7px; font-size: 0.76rem; color: #e2e8f0; }
+    .ckey > span { display: inline-flex; align-items: center; gap: 5px; }
+    .ckey b { display: inline-block; width: 14px; height: 4px; border-radius: 2px; }
+    .ckey b.dot { width: 10px; height: 10px; border-radius: 50%; }
+    .strip { background: #fef9c3; border-left: 4px solid #eab308; border-radius: 6px; padding: 7px 10px; font-size: 0.86rem; margin-bottom: 8px; }
+
+    /* Predict first (above the controls), key features */
+    .learn { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 8px; }
+    .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; }
+    .box-title { font-weight: 700; font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-q { font-size: 0.86rem; margin-bottom: 6px; }
+    .predict-box { margin-bottom: 8px; }
+    .opts { display: grid; gap: 5px; }
+    #predictOpts { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    .predict-box.done #predictOpts { display: none; }
+    .predict-box.done .predict-q { margin-bottom: 0; }
+    button.opt { flex: none; width: 100%; text-align: left; background: white; color: #1f2937; border: 1px solid #cbd5e1; font-size: 0.86rem; padding: 7px 10px; }
+    button.opt:hover { background: #f1f5f9; }
+    button.opt:disabled { background: white; color: #1f2937; cursor: default; }
+    button.opt.picked, button.opt.picked:hover { border-color: #2563eb; background: #eff6ff; box-shadow: inset 0 0 0 1px #2563eb; }
+    button.opt.right, button.opt.right:hover { border-color: #16a34a; background: #dcfce7; box-shadow: inset 0 0 0 1px #16a34a; }
+    button.opt.wrong, button.opt.wrong:hover { border-color: #dc2626; background: #fee2e2; box-shadow: inset 0 0 0 1px #dc2626; }
+    .row-btns { display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+    .row-btns button { flex: none; padding: 6px 12px; }
+    .feedback { font-size: 0.84rem; margin-top: 7px; }
+    .feedback:empty { display: none; }
+    .feedback .verdict { font-weight: 700; }
+    .feedback .verdict.ok { color: #15803d; }
+    .feedback .verdict.no { color: #b91c1c; }
+    .feats { display: flex; flex-wrap: wrap; gap: 6px; }
+    button.feat { flex: none; background: white; color: #1e293b; border: 1px solid #cbd5e1; font-size: 0.84rem; padding: 6px 11px; border-radius: 999px; }
+    button.feat:hover { background: #f1f5f9; }
+    button.feat.on, button.feat.on:hover { background: #1e293b; color: white; border-color: #1e293b; }
+    .feat-note { font-size: 0.82rem; color: #334155; margin-top: 6px; }
+    .feat-note:empty { display: none; }
+
+    /* Challenge */
+    .quiz { max-width: 760px; margin: 0 auto; }
+    .quiz-top { display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 700; margin-bottom: 4px; }
+    .quiz-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+    .quiz-bar i { display: block; height: 100%; background: #2563eb; width: 0; }
+    .quiz-q { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+    .quiz-src { font-size: 0.76rem; color: #475569; margin-bottom: 8px; }
+    .qpart { margin-top: 12px; }
+    .qpart + .qpart { border-top: 1px solid #e2e8f0; padding-top: 10px; }
+    .qpart-q { font-size: 0.92rem; font-weight: 600; margin-bottom: 6px; }
+    .quiz-sum ul { padding-left: 18px; font-size: 0.86rem; }
+    .quiz-sum li { margin: 4px 0; }
+
+    /* Teacher mode */
+    .teacher { position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 92vw); background: white; box-shadow: -4px 0 18px rgba(0,0,0,0.18); padding: 12px; overflow-y: auto; z-index: 20; }
+    .teacher h2 { font-size: 1rem; margin: 0 0 8px; }
+    .teacher .tbtns { display: grid; gap: 6px; }
+    .teacher .tbtns button { background: white; color: #1e293b; border: 1px solid #cbd5e1; flex: none; }
+    .teacher .tbtns button:hover { background: #f1f5f9; }
+    .teacher .tbtns button.on { background: #1e293b; color: white; }
+    .teacher h3 { font-size: 0.9rem; margin: 14px 0 4px; }
+    .teacher ul { padding-left: 18px; margin: 0; font-size: 0.84rem; }
+    .teacher li { margin: 4px 0; }
+    body.no-explain .strip, body.no-explain .words, body.no-explain .feedback .why, body.no-explain .feat-note { display: none; }
+    body.no-answers .readout-card .value, body.no-answers .work { filter: blur(6px); }
+    body.free-mode .predict-box { display: none; }
+
     @media (max-width: 900px) {
-      .controls { grid-template-columns: 1fr 1fr; }
-      .controls .control-group:first-child { grid-column: 1 / -1; }
-      .readout { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      #sceneCanvas { height: 400px; }
+      .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    /* five tabs: short names in rows that wrap on a phone */
+    @media (max-width: 600px) {
+      .tab .tl { display: none; }
+      .tab .ts { display: inline; }
+      .tabs { display: flex; flex-wrap: wrap; }
+      button.tab { flex: 1 1 auto; white-space: nowrap; }
+    }
+    /* the scenario menu gets its own row before it is squeezed beside the buttons */
+    @media (max-width: 720px) {
+      .control-group.scen-group { flex-basis: 100%; }
+    }
+    @media (max-width: 700px) {
+      h1 { font-size: 1rem; }
+      .readout, .readout.n3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 420px) {
+      .buttons button { padding: 6px 4px; }
     }
     /* Touch screens (phones, tablets; Samsung Internet reports hover: hover on a phone, so only pointer is tested):
        16 px form fields stop an iPhone zooming the page in when one is
@@ -54,6 +198,7 @@
       input:not([type=range]):not([type=checkbox]):not([type=radio]), select, textarea { font-size: 16px; }
       button { min-height: 36px; }
       input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
+      .controls input, .controls select, .controls button { height: 36px; }
     }
   </style>
   <!-- pim-nav-style:start (generated by scripts/pim-nav.ts) -->
@@ -82,356 +227,1324 @@
     <a class="pim-nav-btn pim-nav-next" href="refraction-and-tir.html" title="Next: Refraction, Snell's Law and Total Internal Reflection (Chapter 10)" aria-label="Next: Refraction, Snell's Law and Total Internal Reflection (Chapter 10)"><span class="pim-nav-text"><span class="pim-nav-kicker">Next<span class="pim-nav-ch"> &middot; Chapter 10</span></span><span class="pim-nav-name">Refraction, Snell's Law and Total Internal Reflection</span></span><span class="pim-nav-arrow" aria-hidden="true">&rsaquo;</span></a>
   </nav>
   <!-- pim-nav:end -->
-    <h1>The Law of Reflection</h1>
 
-    <div class="panel">
-      <div class="controls">
-        <div class="control-group">
-          <label for="incidentAngle">Angle of incidence, <i>i</i>: <span id="angleLabel">40</span>&deg; (or drag the torch)</label>
-          <input id="incidentAngle" type="range" min="0" max="85" value="40" step="1" />
-        </div>
-        <div class="control-group">
-          <label for="mirrorAngle">Mirror tilt: <span id="tiltLabel">0</span>&deg;</label>
-          <input id="mirrorAngle" type="range" min="-35" max="35" value="0" step="1" />
-        </div>
-        <label class="toggle"><input type="checkbox" id="showTarget" checked /> Target game</label>
-        <label class="toggle"><input type="checkbox" id="showOld" /> Compare with the level mirror</label>
-        <button id="newTarget">New target</button>
+    <header class="app-head">
+      <div class="head-row">
+        <h1>The Law of Reflection</h1>
+        <div class="steps"><span id="stepLabel">Step 1 of 5</span><span class="step-bar" id="stepBar"><i></i><i></i><i></i><i></i><i></i></span></div>
+        <button class="teacher-btn" id="teacherBtn" type="button" hidden>Teacher mode</button>
       </div>
+      <div class="tabs" role="tablist" id="tabs">
+        <button class="tab" role="tab" data-tab="1" type="button"><span class="tl">1. How we see objects</span><span class="ts">1. Seeing</span></button>
+        <button class="tab" role="tab" data-tab="2" type="button"><span class="tl">2. The law of reflection</span><span class="ts">2. The law</span></button>
+        <button class="tab" role="tab" data-tab="3" type="button"><span class="tl">3. Turning the mirror</span><span class="ts">3. Turn it</span></button>
+        <button class="tab" role="tab" data-tab="4" type="button"><span class="tl">4. Hit the star</span><span class="ts">4. Game</span></button>
+        <button class="tab" role="tab" data-tab="5" type="button"><span class="tl">5. Challenge</span><span class="ts">5. Challenge</span></button>
+      </div>
+      <div class="ckey" id="ckey"></div>
+    </header>
 
-      <div class="readout">
-        <div class="readout-card"><div class="title">Angle of incidence, <i>i</i></div><div class="value" id="iValue">&mdash;</div></div>
-        <div class="readout-card"><div class="title">Angle of reflection, <i>r</i></div><div class="value" id="rValue">&mdash;</div></div>
-        <div class="readout-card match"><div class="title">Law of reflection</div><div class="value" id="checkValue"><i>i</i> = <i>r</i></div></div>
-        <div class="readout-card" id="scoreCard"><div class="title">Targets hit</div><div class="value" id="scoreValue">0</div></div>
-        <div class="readout-card hidden" id="turnCard"><div class="title">Reflected ray turned through</div><div class="value" id="turnValue">&mdash;</div></div>
-      </div>
+    <div class="strip" id="strip"></div>
+
+    <!-- tabs 1 to 4: Predict first comes first, above the controls and the picture -->
+    <div class="box predict-box" id="predictBox">
+      <div class="box-title">Predict first</div>
+      <div class="predict-q" id="predictQ"></div>
+      <div class="opts" id="predictOpts"></div>
+      <div class="feedback" id="predictFb"></div>
+      <div class="row-btns" id="predictBtns"><button id="predictCheck" type="button">Check my answer</button></div>
     </div>
 
-    <div class="panel">
-      <div class="hint">Drag the torch to aim it, slide the yellow dot along the mirror to choose where the ray hits, or drag either end of the mirror to tilt it. Can you bounce the light onto the star?</div>
-      <canvas id="sceneCanvas"></canvas>
-      <div class="note"><ul>
-        <li>The <b>normal</b> is the dashed line drawn perpendicular to the mirror at the point where the ray hits it.</li>
-        <li>The angle of incidence <i>i</i> is measured between the incoming ray and the normal. The angle of reflection <i>r</i> is measured between the reflected ray and the normal, never from the mirror surface.</li>
-        <li>However you aim the torch or tilt the mirror, <i>i</i> = <i>r</i>. The incident ray, the reflected ray and the normal all lie in the same plane.</li>
-        <li>Tilt the mirror and watch the normal turn with it: the reflected ray moves, but the law still holds.</li>
-        <li>Tick <b>Compare with the level mirror</b>, then tilt the mirror: the dashed ray is where the light would go off a level mirror. With the incident ray unchanged, tilting the mirror through an angle turns the reflected ray through twice that angle.</li>
-        <li>Sound obeys the same law when it reflects.</li>
-      </ul></div>
-    </div>
+    <!-- Tabs 1 to 4 share one drawing -->
+    <section class="tab-page" id="pageSim">
+      <div class="panel">
+        <div id="simBlock">
+          <div class="controls">
+            <div class="control-group scen-group">
+              <label for="preset">Scenarios</label>
+              <select id="preset"></select>
+            </div>
+            <div class="control-group button-group" id="simGroup">
+              <label>Simulation controls</label>
+              <div class="buttons">
+                <button id="startBtn" type="button">Start</button>
+                <button id="pauseBtn" class="secondary" type="button">Pause</button>
+                <button id="resetBtn" class="danger" type="button">Reset</button>
+              </div>
+            </div>
+            <div class="control-group button-group" id="stepGroup">
+              <label>Steps <span class="step-no" id="stepNo"></span></label>
+              <div class="buttons">
+                <button id="prevStep" class="secondary" type="button" aria-label="Previous step">&lsaquo; Previous</button>
+                <button id="nextStep" type="button" aria-label="Next step">Next &rsaquo;</button>
+                <button id="stepReset" class="danger" type="button">Reset</button>
+              </div>
+            </div>
+          </div>
+          <div class="moments" id="moments">
+            <button id="prevMoment" class="secondary" type="button">&lsaquo; Previous key moment</button>
+            <button id="nextMoment" class="secondary" type="button">Next key moment &rsaquo;</button>
+            <span class="speed" id="speedNote"></span>
+          </div>
+          <div class="question" id="question"></div>
+          <div id="expBlock">
+            <div class="group-title">Experimental controls</div>
+            <div class="inputs" id="inputs"></div>
+          </div>
+        </div>
+
+        <!-- the readouts go under the drawing: nothing above the canvas may change height while a finger drags -->
+        <div class="scene-wrap">
+          <div class="hint" id="sceneHint"></div>
+          <canvas id="scene"></canvas>
+          <div class="readout" id="readout"></div>
+          <div class="words" id="words"></div>
+          <div class="box game" id="gameBox" hidden>
+            <div class="game-top"><span id="gameNo"></span><span id="gameScore"></span></div>
+            <div class="predict-q" id="gameQ"></div>
+            <div class="feedback" id="gameFb"></div>
+            <div class="row-btns"><button id="gameShow" class="secondary" type="button">Show me</button><button id="gameNext" type="button">Next round &rsaquo;</button><button id="gameAgain" class="danger" type="button">Play again</button></div>
+          </div>
+          <div class="work" id="work"></div>
+          <div class="note" id="notes"></div>
+        </div>
+      </div>
+
+      <div class="learn">
+        <div class="box" id="featBox">
+          <div class="box-title">Key features (tap one)</div>
+          <div class="feats" id="feats"></div>
+          <div class="feat-note" id="featNote"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 5: Challenge -->
+    <section class="tab-page" id="page5" hidden>
+      <div class="panel">
+        <div class="quiz" id="quiz"></div>
+      </div>
+    </section>
   </div>
 
+  <aside class="teacher" id="teacher" hidden aria-label="Teacher mode">
+    <h2>Teacher mode</h2>
+    <div class="tbtns">
+      <button id="tExplain" type="button">Hide explanations</button>
+      <button id="tFree" type="button">Switch to free exploration</button>
+      <button id="tAnswers" type="button">Hide answer labels</button>
+      <button id="tFull" type="button">Full screen</button>
+      <button id="tReset" type="button">Reset whole applet</button>
+      <button id="tClose" type="button">Close</button>
+    </div>
+    <h3>Suggested prompts</h3>
+    <ul id="tPrompts"></ul>
+  </aside>
+
   <script>
-    const el = id => document.getElementById(id);
-    const canvas = el('sceneCanvas');
-    const incEl = el('incidentAngle'), tiltEl = el('mirrorAngle');
+    const $ = id => document.getElementById(id);
+    const canvas = $('scene'), presetEl = $('preset');
+    let currentTab = 1, freeMode = false;
 
-    let W = 0, H = 0;
-    const st = { torch: null, hitS: 0, target: null, score: 0, hitFlash: 0, placed: false };
-    let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    /* ---------------- numbers ---------------- */
+    const clean = v => (Math.abs(v) < 1e-12 ? 0 : v);
+    const minus = s => String(s).replace('-', '−');
+    // 3 significant figures; exact whole numbers stay whole; a 1e-12 nudge so a binary half rounds up; a true minus sign
+    const f3 = v => {
+      const x = clean(v);
+      if (Math.abs(x - Math.round(x)) < 1e-9 * Math.max(1, Math.abs(x))) return minus(String(Math.round(x)));
+      const t = (x * (1 + 1e-12)).toPrecision(3);
+      if (Math.abs(+t - x) < 1e-12 * Math.max(1, Math.abs(x)) || Math.abs(x) >= 100) return minus(+t);
+      return minus(t);
+    };
+    const plain = v => minus(+(+v).toFixed(6));
+    const dg = v => `${f3(v)}°`;
+    const COL = { inc: '#f59e0b', incDark: '#b45309', ref: '#dc2626', refDark: '#b91c1c', normal: '#64748b', mirror: '#334155',
+      old: '#7c3aed', light: '#eab308', sound: '#0284c7', star: '#eab308', hit: '#16a34a', book: '#2563eb', turn: '#7c3aed' };
 
-    const deg = r => r * 180 / Math.PI, rad = d => d * Math.PI / 180;
-
-    function mirror() {
-      const a = rad(parseFloat(tiltEl.value));
-      const len = Math.min(W * 0.84, 620);
-      const c = { x: W / 2, y: H * 0.74 };
-      const u = { x: Math.cos(a), y: Math.sin(a) };   // along the mirror
-      const n = { x: Math.sin(a), y: -Math.cos(a) };  // normal, pointing to the reflecting (front) side
-      return { c, u, n, half: len / 2, a };
+    /* ---------------- the physics: one function per formula ---------------- */
+    const C_LIGHT = 3e8;            // light travels in a straight line at 3 × 10⁸ m/s (notes p. 10-2)
+    const V_SOUND = 340;            // m/s, the speed of sound in air the Chapter 9 examples use
+    const deg = r => (r * 180) / Math.PI, rad = d => (d * Math.PI) / 180;
+    const sub = (a, b) => ({ x: a.x - b.x, y: a.y - b.y });
+    const add = (a, b, k = 1) => ({ x: a.x + b.x * k, y: a.y + b.y * k });
+    const dot = (a, b) => a.x * b.x + a.y * b.y;
+    const unit = v => { const L = Math.hypot(v.x, v.y) || 1; return { x: v.x / L, y: v.y / L }; };
+    const len = v => Math.hypot(v.x, v.y);
+    // the law of reflection (notes p. 10-4): the reflected ray leaves the normal at the same angle as the incident ray
+    // arrives. The one formula every tab, the game, the Challenge figures and the readouts use.
+    function reflectDir(d, n) { const k = dot(d, n); return { x: d.x - 2 * k * n.x, y: d.y - 2 * k * n.y }; }
+    // the angle between a ray and the normal line (notes p. 10-4: both angles are measured from the normal)
+    // (atan2 of the cross and dot products: exact at 0°, where acos of a rounded 1 leaves a residue like 8.5 × 10⁻⁷°)
+    const angleBetween = (a, b) => deg(Math.atan2(Math.abs(a.x * b.y - a.y * b.x), dot(a, b)));
+    const fromNormal = (v, n) => { const a = angleBetween(v, n); return a > 90 ? 180 - a : a; };
+    // a mirror turned clockwise by tilt degrees (world y is up): u along the surface, n the normal on the reflecting side
+    function mirrorOf(tilt, c = { x: 0, y: 0 }, half = 3.6) {
+      const t = rad(tilt);
+      return { c, half, tilt, u: { x: Math.cos(t), y: -Math.sin(t) }, n: { x: Math.sin(t), y: Math.cos(t) } };
     }
-    const hitPoint = m => ({ x: m.c.x + m.u.x * st.hitS, y: m.c.y + m.u.y * st.hitS });
+    const RAY = 3.2;                // how long the rays are drawn (world units)
+    // a torch on the left of the level mirror's normal, aimed at the origin at angle i from that normal
+    const torchAt = (i, R = RAY) => ({ x: -R * Math.sin(rad(i)), y: R * Math.cos(rad(i)) });
 
-    function angles() {
-      const m = mirror(), P = hitPoint(m);
-      const dx = P.x - st.torch.x, dy = P.y - st.torch.y, L = Math.hypot(dx, dy) || 1;
-      const d = { x: dx / L, y: dy / L };                 // incident direction
-      const dn = d.x * m.n.x + d.y * m.n.y;               // negative: travelling toward the front face
-      const r = { x: d.x - 2 * dn * m.n.x, y: d.y - 2 * dn * m.n.y };
-      const i = Math.acos(Math.min(1, Math.abs(dn)));
-      const rr = Math.acos(Math.min(1, Math.abs(r.x * m.n.x + r.y * m.n.y)));
-      return { m, P, d, r, i, rr };
+    // tab 2: one ray on a level mirror
+    function lawGeo(Q = P) {
+      const m = mirrorOf(0), H = { x: 0, y: 0 }, T = torchAt(Q.i);
+      const d = unit(sub(H, T)), r = reflectDir(d, m.n);
+      return { m, H, T, d, r, i: fromNormal(d, m.n), rr: fromNormal(r, m.n), between: angleBetween(r, { x: -d.x, y: -d.y }) };
+    }
+    // tab 3: the same incident ray on the level mirror, then on the mirror turned through tilt
+    function turnGeo(Q = P, tilt = Q.tilt) {
+      const m0 = mirrorOf(0), m = mirrorOf(tilt), H = { x: 0, y: 0 }, T = torchAt(Q.i0);
+      const d = unit(sub(H, T)), r0 = reflectDir(d, m0.n), r = reflectDir(d, m.n);
+      const sgn = Math.sign(r0.x * r.y - r0.y * r.x);          // + : turned anti-clockwise, − : clockwise
+      const turned = angleBetween(r0, r);
+      return { m0, m, H, T, d, r0, r, i0: fromNormal(d, m0.n), r0a: fromNormal(r0, m0.n), i1: fromNormal(d, m.n), r1: fromNormal(r, m.n), turned, turnSign: sgn };
+    }
+    // tab 1: light from the bulb to three points on the book, then to the eye (1 world unit = 0.25 m)
+    const SEE = { u: 0.25, bulb: { x: -3.4, y: 3.0 }, pts: [{ x: -0.8, y: 0.6 }, { x: 0, y: 0.6 }, { x: 0.8, y: 0.6 }], hold: 1.5e-9 };
+    function seeTimes(Q = P) {
+      const legs = SEE.pts.map(p => {
+        const t1 = (len(sub(p, SEE.bulb)) * SEE.u) / C_LIGHT, t2 = t1 + (len(sub(Q.eye, p)) * SEE.u) / C_LIGHT;
+        return { p, t1, t2 };
+      });
+      return { legs, book: Math.max(...legs.map(l => l.t1)), eye: Math.max(...legs.map(l => l.t2)) };
     }
 
-    function setTorchFromAngle(iDeg) {
-      // put the torch on the left of the normal at the chosen incidence angle, keeping its distance
-      const m = mirror(), P = hitPoint(m);
-      const dist = st.torch ? Math.max(120, Math.hypot(st.torch.x - P.x, st.torch.y - P.y)) : Math.min(W, H) * 0.5;
-      const ang = rad(iDeg);
-      // rotate the normal toward -u by angle i
-      const dir = { x: m.n.x * Math.cos(ang) - m.u.x * Math.sin(ang), y: m.n.y * Math.cos(ang) - m.u.y * Math.sin(ang) };
-      st.torch = { x: P.x + dir.x * dist, y: P.y + dir.y * dist };
-      clampTorch();
+    /* ---------------- tab 4's rounds (world units; the mirror's middle is the origin) ---------------- */
+    const STAR_R = 0.2;
+    const ROUNDS = [
+      { kind: 'aim', T: { x: -3.4, y: 3.0 }, star: { x: 2.5, y: 2.6 }, start: 1.6, txt: 'The torch stays where it is. Drag the yellow dot along the mirror (or use the slider) to choose where the light hits.' },
+      { kind: 'aim', T: { x: -3.5, y: 1.6 }, star: { x: 3.3, y: 3.2 }, start: 1.2, txt: 'A new star. Drag the yellow dot along the mirror to choose where the light hits.' },
+      { kind: 'turn', T: { x: -3.0, y: 2.4 }, star: { x: 0.9, y: 3.2 }, start: 10, txt: 'The torch is fixed and aims at the middle of the mirror. Drag either end of the mirror (or use the slider) to turn it.' },
+      { kind: 'turn', T: { x: -1.9, y: 3.2 }, star: { x: 3.2, y: 1.2 }, start: -5, txt: 'A new star. Turn the mirror again.' },
+      { kind: 'angle', r: 55, start: 30, txt: 'The star is on a line at 55° to the normal. Set the angle of incidence <i>i</i> (drag the torch round, or use the slider).' }
+    ];
+    ROUNDS.forEach(R => { if (R.kind === 'angle') R.star = { x: RAY * 1.05 * Math.sin(rad(R.r)), y: RAY * 1.05 * Math.cos(rad(R.r)) }; });
+    // the answer each round wants, worked out by the law of reflection (used only by "Show me" and the checks)
+    function roundAnswer(R) {
+      if (R.kind === 'aim') return R.T.x + ((R.star.x - R.T.x) * R.T.y) / (R.T.y + R.star.y);   // the star's image below the mirror
+      if (R.kind === 'turn') { const i0 = deg(Math.atan2(-R.T.x, R.T.y)), a = deg(Math.atan2(R.star.x, R.star.y)); return (a - i0) / 2; }
+      return R.r;
     }
-    function clampTorch() {
-      const m = mirror();
-      st.torch.x = Math.max(16, Math.min(W - 16, st.torch.x));
-      st.torch.y = Math.max(16, Math.min(H - 16, st.torch.y));
-      // keep the torch in front of the mirror (at least 20 px from its plane)
-      const rel = (st.torch.x - m.c.x) * m.n.x + (st.torch.y - m.c.y) * m.n.y;
-      if (rel < 20) { st.torch.x += m.n.x * (20 - rel); st.torch.y += m.n.y * (20 - rel); }
+    function gameGeo(k = game.i, v = game.val) {
+      const R = ROUNDS[k];
+      let m, H, T;
+      if (R.kind === 'aim') { m = mirrorOf(0); H = { x: v, y: 0 }; T = R.T; }
+      else if (R.kind === 'turn') { m = mirrorOf(v); H = { x: 0, y: 0 }; T = R.T; }
+      else { m = mirrorOf(0); H = { x: 0, y: 0 }; T = torchAt(v); }
+      const d = unit(sub(H, T)), r = reflectDir(d, m.n);
+      const w = sub(R.star, H), along = dot(w, r), miss = along > 0 ? Math.abs(w.x * r.y - w.y * r.x) : Infinity;
+      return { R, m, H, T, d, r, i: fromNormal(d, m.n), rr: fromNormal(r, m.n), miss, hit: miss < STAR_R };
     }
 
-    function newTarget() {
-      const m = mirror();
-      for (let k = 0; k < 50; k++) {
-        const t = { x: W * (0.1 + 0.8 * rnd()), y: H * (0.08 + 0.45 * rnd()) };
-        const rel = (t.x - m.c.x) * m.n.x + (t.y - m.c.y) * m.n.y;
-        if (rel > 60 && Math.hypot(t.x - st.torch.x, t.y - st.torch.y) > 90) { st.target = t; return; }
+    /* ---------------- scenarios ---------------- */
+    const PRESETS = {
+      see: { tab: 1, mode: 'run', kind: 'see', lamp: true, eye: { x: 3.4, y: 2.2 }, name: 'Light on: you see the book',
+        q: 'Notes p. 10-3: How do we see objects around us? Press Start and follow the light. Drag the eye to look from somewhere else.' },
+      dark: { tab: 1, mode: 'run', kind: 'see', lamp: false, eye: { x: 3.4, y: 2.2 }, name: 'Light off: a dark room',
+        q: 'The same room with the light bulb switched off. Press Start.' },
+      law: { tab: 2, mode: 'steps', kind: 'law', i: 40, name: 'The law of reflection, step by step',
+        q: 'Notes p. 10-4: a light ray is incident on the surface of a mirror. Find the angle of reflection. (The notes’ diagram gives no angle: the page uses <i>i</i> = 40°.)' },
+      surf: { tab: 2, mode: 'steps', kind: 'law', i: 60, given: 30, name: 'A ray at 30° to the mirror',
+        q: 'A light ray strikes a plane mirror at 30° to the mirror’s surface. What is the angle of reflection? (A question made for this page.)' },
+      zero: { tab: 2, mode: 'live', kind: 'law', i: 0, name: 'Along the normal: i = 0°',
+        q: 'The light ray travels along the normal line: the angle of incidence is 0°. Where does the reflected ray go?' },
+      sound: { tab: 2, mode: 'live', kind: 'law', i: 50, sound: true, name: 'Sound off a brick wall',
+        q: 'Notes p. 9-33: sound waves can be reflected by hard surfaces such as a brick wall. Sound obeys the laws of reflection. Change the angle and compare <i>i</i> and <i>r</i>.' },
+      tilt5: { tab: 3, mode: 'steps', kind: 'turn', i0: 40, tilt: 5, name: 'Turn the mirror 5° clockwise',
+        q: 'A ray hits a level mirror at <i>i</i> = 40°. The mirror is turned 5° clockwise; the incident ray does not move. Through what angle does the reflected ray turn?' },
+      tilt10: { tab: 3, mode: 'steps', kind: 'turn', i0: 40, tilt: -10, name: 'Turn the mirror 10° anti-clockwise',
+        q: 'The same ray, <i>i</i> = 40° on the level mirror. This time the mirror is turned 10° anti-clockwise. Through what angle does the reflected ray turn?' },
+      game: { tab: 4, mode: 'game', kind: 'game', name: 'Hit the star: 5 rounds', q: '' }
+    };
+    const OWN = 'Your own values. Choose a scenario from the menu to go back to an example.';
+    const hasOwn = tab => [2, 3].includes(tab);
+
+    /* ---------------- the state ---------------- */
+    let P = {}, S = { scen: 'see', custom: false, step: 0 };
+    let feat = {}, hl = {};
+    let game = { i: 0, val: 0, hit: {}, shown: {} };
+    const sim = { t: 0, running: false, last: null };
+
+    function mode() {
+      if (S.custom) return 'live';
+      return (PRESETS[S.scen] || {}).mode || 'live';
+    }
+    const isRun = () => mode() === 'run', isSteps = () => mode() === 'steps';
+    const kind = () => P.kind;
+
+    /* ---------------- the clock (tab 1) ---------------- */
+    const runEnd = () => (kind() === 'see' ? seeTimes().eye + SEE.hold : 0);
+    // simulated seconds per real second: light is far too fast to see, so the run is slowed down and the page says so
+    const speedUp = () => runEnd() / 3;
+    function keyMoments() {
+      if (!isRun()) return [];
+      const T = runEnd(), st = seeTimes();
+      return P.lamp ? [0, st.book, st.eye, T] : [0, T];
+    }
+    function frame(ts) {
+      if (!sim.running) return;
+      if (sim.last === null) sim.last = ts;
+      // a first rAF timestamp can be earlier than the one stored: never step backwards
+      const dt = Math.max(0, Math.min(0.05, (ts - sim.last) / 1000)) * speedUp(); sim.last = ts;
+      const end = runEnd();
+      sim.t = Math.min(end, sim.t + dt);
+      if (sim.t >= end - 1e-18) { sim.t = end; sim.running = false; }
+      update();
+      if (sim.running) requestAnimationFrame(frame);
+    }
+    function start() {
+      const end = runEnd();
+      if (!(end > 0)) { update(); return; }
+      if (sim.t >= end * (1 - 1e-9)) sim.t = 0;
+      sim.running = true; sim.last = null; clearFeatNoteOnly(); update(); requestAnimationFrame(frame);
+    }
+    function setTime(t) { sim.running = false; sim.last = null; sim.t = Math.max(0, Math.min(runEnd(), t)); update(); }
+    function resetRun() { sim.running = false; sim.last = null; sim.t = 0; }
+    const ended = () => isRun() && sim.t >= runEnd() * (1 - 1e-9) && runEnd() > 0;
+    $('startBtn').addEventListener('click', start);
+    $('pauseBtn').addEventListener('click', () => {
+      if (sim.running) { sim.running = false; sim.last = null; update(); }
+      else if (sim.t > 0 && sim.t < runEnd()) start();
+    });
+    $('resetBtn').addEventListener('click', () => { resetRun(); update(); });
+    const near = (a, b) => Math.abs(a - b) <= 1e-9 * Math.max(Math.abs(a), Math.abs(b), 1e-12);
+    $('nextMoment').addEventListener('click', () => { const n = keyMoments().find(m => m > sim.t && !near(m, sim.t)); if (n !== undefined) setTime(n); });
+    $('prevMoment').addEventListener('click', () => { const p = keyMoments().filter(m => m < sim.t && !near(m, sim.t)).pop(); if (p !== undefined) setTime(p); });
+
+    /* ---------------- steps: every value computed from the scenario's data ---------------- */
+    function steps() {
+      const id = S.scen, Q = P;
+      if (id === 'law') { const G = lawGeo(Q); return [
+        { h: 'Draw the <b>normal line</b>: a line perpendicular to the surface, at the point where the light ray hits it.', rev: ['n'] },
+        { h: `The angle of incidence <i>i</i> is the angle between the incoming light ray and the normal line: <i>i</i> = <b>${dg(G.i)}</b>.`, rev: ['i'] },
+        { h: `The reflected light ray leaves on the other side of the normal. The angle of reflection <i>r</i> is the angle between it and the normal line: <i>r</i> = <b>${dg(G.rr)}</b>.`, rev: ['r'] },
+        { h: `<i>i</i> = <i>r</i> = ${dg(G.i)}: the angle of incidence is always equal to the angle of reflection.`, rev: ['law'] }]; }
+      if (id === 'surf') { const G = lawGeo(Q); return [
+        { h: `The 30° is measured from the mirror’s surface, not from the normal. Draw the normal line: it is at 90° to the surface.`, rev: ['n'] },
+        { h: `Angle of incidence <i>i</i> = 90° − ${Q.given}° = <b>${dg(G.i)}</b>`, rev: ['i'] },
+        { h: `Angle of reflection <i>r</i> = <i>i</i> = <b>${dg(G.rr)}</b>`, rev: ['r', 'law'] },
+        { h: `So the reflected ray also makes 90° − ${f3(G.rr)}° = ${dg(90 - G.rr)} with the mirror’s surface, on the other side of the normal.`, rev: ['s2'] }]; }
+      if (id === 'tilt5' || id === 'tilt10') { const G = turnGeo(Q), cw = Q.tilt > 0, a = Math.abs(Q.tilt), dir = cw ? 'clockwise' : 'anti-clockwise';
+        const now = Q.tilt + G.r1;    // the reflected ray's angle from the OLD normal, clockwise positive (= i0 + 2 × tilt)
+        return [
+        { h: `Level mirror: <i>i</i> = ${dg(G.i0)}, so <i>r</i> = ${dg(G.r0a)}. The reflected ray leaves at ${dg(G.r0a)} to the normal.`, rev: ['r0'] },
+        { h: `Turn the mirror ${a}° ${dir}. The normal is perpendicular to the mirror, so it turns ${a}° ${dir} with it.`, rev: ['tilt'] },
+        { h: `The incident ray has not moved, so the angle of incidence is now ${Q.i0}° ${cw ? '+' : '−'} ${a}° = <b>${dg(G.i1)}</b>.`, rev: ['i1'] },
+        { h: `<i>i</i> = <i>r</i>, so the angle of reflection is <b>${dg(G.r1)}</b> too, measured from the new normal.`, rev: ['r1'] },
+        { h: `Measured from the old normal, the reflected ray was at ${dg(G.r0a)}; now it is at ${cw ? '' : '−'}${a}° + ${f3(G.r1)}° = ${dg(now)}. It turned through <b>${dg(G.turned)}</b> = 2 × ${a}°, twice the angle the mirror turned.`, rev: ['turn'] }]; }
+      return [];
+    }
+    const nSteps = () => (isSteps() ? steps().length : 0);
+    function revealed() {
+      const r = {};
+      if (!isSteps()) return { n: true, i: true, r: true, law: true, s2: true, r0: true, tilt: true, i1: true, r1: true, turn: true };
+      steps().slice(0, S.step).forEach(l => (l.rev || []).forEach(k => { r[k] = true; }));
+      return r;
+    }
+    function setStep(n) { S.step = Math.max(0, Math.min(nSteps(), n)); update(); }
+    $('prevStep').addEventListener('click', () => setStep(S.step - 1));
+    $('nextStep').addEventListener('click', () => { clearFeatNoteOnly(); setStep(S.step + 1); });
+    $('stepReset').addEventListener('click', () => { clearFeatNoteOnly(); setStep(0); });
+
+    function loadScenario(id) {
+      const sc = PRESETS[id];
+      S.scen = id; S.custom = false; S.step = 0;
+      P = JSON.parse(JSON.stringify(sc)); P.id = id;
+      $('question').innerHTML = sc.q || '';
+      resetRun();
+      if (id === 'game') startRound(0, true);
+      if (freeMode) S.step = nSteps();
+    }
+
+    /* ---------------- drawing helpers ---------------- */
+    // what the canvas drew, for the checks: every label's box, every arrow, the panes, the lines
+    window.__pim = { labels: [], arrows: [], panes: [], segs: [], marks: {} };
+    function setup(cv, wantH) {
+      if (wantH && Math.abs(cv.getBoundingClientRect().height - wantH) > 1) cv.style.height = wantH + 'px';
+      const r = cv.getBoundingClientRect();
+      if (r.width < 20 || r.height < 20) return null; // hidden: never draw at no size
+      const dpr = window.devicePixelRatio || 1, cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
+      if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+      const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, r.width, r.height);
+      return { ctx, W: r.width, H: r.height };
+    }
+    // Canvas text with <i>, <sub> and <sup> runs, so symbols of physical quantities are italic, as in the notes.
+    function richText(ctx, s, x, y, measureOnly) {
+      const base = ctx.font, m = base.match(/([\d.]+)px/), size = m ? +m[1] : 12;
+      const runs = []; let it = false, sb = 0;
+      for (const tok of String(s).split(/(<\/?(?:i|sub|sup)>)/)) {
+        if (tok === '<i>') it = true; else if (tok === '</i>') it = false;
+        else if (tok === '<sub>') sb = 1; else if (tok === '<sup>') sb = -1;
+        else if (tok === '</sub>' || tok === '</sup>') sb = 0;
+        else if (tok) {
+          let f = sb ? base.replace(/[\d.]+px/, (size * 0.75).toFixed(1) + 'px') : base;
+          if (it) f = 'italic ' + f;
+          ctx.font = f; runs.push({ t: tok, f, sb, w: ctx.measureText(tok).width });
+        }
       }
-      st.target = { x: W * 0.8, y: H * 0.2 };
+      ctx.font = base;
+      const wd = runs.reduce((a, r) => a + r.w, 0);
+      if (measureOnly) return wd;
+      const align = ctx.textAlign;
+      let cx = align === 'center' ? x - wd / 2 : (align === 'right' || align === 'end') ? x - wd : x;
+      ctx.textAlign = 'left';
+      for (const r of runs) { ctx.font = r.f; ctx.fillText(r.t, cx, y + (r.sb === 1 ? size * 0.3 : r.sb === -1 ? -size * 0.4 : 0)); cx += r.w; }
+      ctx.textAlign = align; ctx.font = base;
+      return wd;
     }
-
-    // ---------- drawing ----------
-    function setup() {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      const cw = Math.round(rect.width * dpr), ch = Math.round(rect.height * dpr);
-      if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
-      const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      if (st.placed && (W !== rect.width || H !== rect.height)) {
-        st.torch.x *= rect.width / W; st.torch.y *= rect.height / H;
-        if (st.target) { st.target.x *= rect.width / W; st.target.y *= rect.height / H; }
-      }
-      W = rect.width; H = rect.height;
-      if (!st.placed) { st.placed = true; setTorchFromAngle(parseFloat(incEl.value)); newTarget(); }
-      return ctx;
+    let PANE = 'scene', CW = 1e9, CH = 1e9, CX0 = 0, CY0 = 0;
+    function pane(name, x, y, w, h) { PANE = name; CX0 = x; CY0 = y; CW = x + w; CH = y + h; __pim.panes.push({ name, x, y, w, h }); }
+    function seg(ctx, x1, y1, x2, y2, color = '#0f172a', lw = 2, record = true, dash) {
+      ctx.strokeStyle = color; ctx.lineWidth = lw; if (dash) ctx.setLineDash(dash);
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
+      if (record) __pim.segs.push([x1, y1, x2, y2, PANE]);
     }
-
-    function arrowHead(ctx, x, y, ang, color, size = 11) {
-      ctx.fillStyle = color;
-      ctx.beginPath(); ctx.moveTo(x, y);
+    function head(ctx, x, y, ang, color, size = 11) {
+      ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(x, y);
       ctx.lineTo(x - size * Math.cos(ang - 0.45), y - size * Math.sin(ang - 0.45));
       ctx.lineTo(x - size * Math.cos(ang + 0.45), y - size * Math.sin(ang + 0.45));
       ctx.closePath(); ctx.fill();
     }
-    function rayToEdge(p, d) {
-      let t = Infinity;
-      if (d.x > 0) t = Math.min(t, (W - p.x) / d.x); if (d.x < 0) t = Math.min(t, -p.x / d.x);
-      if (d.y > 0) t = Math.min(t, (H - p.y) / d.y); if (d.y < 0) t = Math.min(t, -p.y / d.y);
-      return { x: p.x + d.x * t, y: p.y + d.y * t, t };
+    function arrow(ctx, x1, y1, x2, y2, color, lw = 3, hd = 10, record = true) {
+      const L = Math.hypot(x2 - x1, y2 - y1); if (L < 1.5) return;
+      if (record) __pim.arrows.push({ pane: PANE, x1, y1, x2, y2 });
+      const a = Math.atan2(y2 - y1, x2 - x1), h = Math.min(hd, L * 0.6);
+      ctx.strokeStyle = color; ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - Math.cos(a) * h * 0.8, y2 - Math.sin(a) * h * 0.8); ctx.stroke();
+      head(ctx, x2, y2, a, color, h);
     }
-    // Canvas text with <i>, <sub> and <sup> runs, so symbols of physical quantities are italic, as in the notes.
-    // Honours ctx.textAlign; returns the width. measureOnly = true draws nothing.
-    function richText(ctx, s, x, y, measureOnly) {
-      const base = ctx.font, m = base.match(/([\d.]+)px/), size = m ? +m[1] : 12;
-      const runs = []; let it = false, sub = 0;
-      for (const tok of String(s).split(/(<\/?(?:i|sub|sup)>)/)) {
-        if (tok === '<i>') it = true; else if (tok === '</i>') it = false;
-        else if (tok === '<sub>') sub = 1; else if (tok === '<sup>') sub = -1;
-        else if (tok === '</sub>' || tok === '</sup>') sub = 0;
-        else if (tok) {
-          let f = sub ? base.replace(/[\d.]+px/, (size * 0.75).toFixed(1) + 'px') : base;
-          if (it) f = 'italic ' + f;
-          ctx.font = f; runs.push({ t: tok, f, sub, w: ctx.measureText(tok).width });
+    function labelBox(ctx, lines, x, y, align, size) {
+      ctx.font = `bold ${size}px Arial`;
+      const wd = Math.max(...lines.map(t => richText(ctx, t, 0, 0, true))), lh = size * 1.6 + 1, h = lines.length * lh - 1;
+      const x0 = Math.max(CX0 + 4, Math.min(CW - wd - 4, align === 'center' ? x - wd / 2 : align === 'right' ? x - wd : x));
+      const y0 = Math.max(CY0 + 2, Math.min(CH - h - 2, y - size * 0.8));
+      return { x: x0 - 3, y: y0, w: wd + 6, h, lh, tx: x0, size };
+    }
+    const hitBox = (a, b, pad = 1) => Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) > pad && Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) > pad;
+    function crossesArrow(box) {
+      return __pim.arrows.some(a => { if (a.pane !== PANE) return false; for (let k = 0; k <= 24; k++) { const px = a.x1 + (a.x2 - a.x1) * k / 24, py = a.y1 + (a.y2 - a.y1) * k / 24;
+        if (px > box.x + 0.5 && px < box.x + box.w - 0.5 && py > box.y + 0.5 && py < box.y + box.h - 0.5) return true; } return false; });
+    }
+    function crossesLine(box) {
+      return __pim.segs.some(([x1, y1, x2, y2, pn]) => {
+        if (pn !== PANE) return false;
+        const n = Math.max(16, Math.ceil(Math.hypot(x2 - x1, y2 - y1) / 4));
+        for (let k = 0; k <= n; k++) { const px = x1 + (x2 - x1) * k / n, py = y1 + (y2 - y1) * k / n;
+          if (px > box.x + 0.5 && px < box.x + box.w - 0.5 && py > box.y + 0.5 && py < box.y + box.h - 0.5) return true; }
+        return false;
+      });
+    }
+    function label(ctx, lines, x, y, color, align = 'center', size = 12) {
+      if (!Array.isArray(lines)) lines = [lines];
+      const b = labelBox(ctx, lines, x, y, align, size);
+      lines.forEach((t, i) => {
+        const card = { pane: PANE, text: t.replace(/<[^>]+>/g, ''), x: b.x, y: b.y + i * b.lh, w: b.w, h: size * 1.6 };
+        ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fillRect(card.x, card.y, card.w, card.h);
+        ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.font = `bold ${size}px Arial`; richText(ctx, t, b.tx, card.y + size * 0.8);
+        ctx.textBaseline = 'alphabetic';
+        __pim.labels.push(card);
+      });
+      return b;
+    }
+    const clear = b => !__pim.labels.some(l => l.pane === PANE && hitBox(l, b)) && !crossesArrow(b) && !crossesLine(b);
+    // a label at the first clear spot; if none is clear, at the first spot (or nowhere, when optional)
+    function labelAt(ctx, text, cands, color, size = 12, optional = false) {
+      for (const [x, y, al] of cands) { const b = labelBox(ctx, Array.isArray(text) ? text : [text], x, y, al, size); if (clear(b)) return label(ctx, text, x, y, color, al, size); }
+      if (optional) return null;
+      const [x, y, al] = cands[0]; return label(ctx, text, x, y, color, al, size);
+    }
+    const obstacle = (x, y, wd, h) => __pim.labels.push({ pane: PANE, obstacle: true, text: '', x, y, w: wd, h });
+    function dot2(ctx, x, y, r, col) { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); }
+
+    /* ---------------- world to canvas: y up, every drawn thing fitted ---------------- */
+    function bounds(pts, pad) {
+      const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+      return { x0: Math.min(...xs) - pad, x1: Math.max(...xs) + pad, y0: Math.min(...ys) - pad, y1: Math.max(...ys) + pad };
+    }
+    function fit(W, H, b, padPx = 10, x0 = 0, y0 = 0) {
+      const s = Math.min((W - 2 * padPx) / (b.x1 - b.x0), (H - 2 * padPx) / (b.y1 - b.y0));
+      const ox = x0 + (W - s * (b.x1 - b.x0)) / 2 - s * b.x0, oy = y0 + (H + s * (b.y1 - b.y0)) / 2 + s * b.y0;
+      return { s, X: x => ox + s * x, Y: y => oy - s * y, P: p => ({ x: ox + s * p.x, y: oy - s * p.y }), wx: px => (px - ox) / s, wy: py => (oy - py) / s };
+    }
+    // the canvas angle (y down) of a world direction
+    const cang = v => Math.atan2(-v.y, v.x);
+    function drawMirror(ctx, V, m, opts = {}) {
+      const e1 = add(m.c, m.u, -m.half), e2 = add(m.c, m.u, m.half), a = V.P(e1), b = V.P(e2);
+      const s = V.s, hatch = 0.32;
+      if (!opts.water) {
+        ctx.strokeStyle = opts.dim ? '#cbd5e1' : '#94a3b8'; ctx.lineWidth = 1.5;
+        for (let q = -m.half; q <= m.half + 1e-9; q += 0.34) {
+          const p = add(m.c, m.u, q), back = add(add(p, m.n, -hatch), m.u, -0.18);
+          ctx.beginPath(); ctx.moveTo(V.X(p.x), V.Y(p.y)); ctx.lineTo(V.X(back.x), V.Y(back.y)); ctx.stroke();
         }
       }
-      ctx.font = base;
-      const w = runs.reduce((a, r) => a + r.w, 0);
-      if (measureOnly) return w;
-      const align = ctx.textAlign;
-      let cx = align === 'center' ? x - w / 2 : (align === 'right' || align === 'end') ? x - w : x;
-      ctx.textAlign = 'left';
-      for (const r of runs) { ctx.font = r.f; ctx.fillText(r.t, cx, y + (r.sub === 1 ? size * 0.3 : r.sub === -1 ? -size * 0.4 : 0)); cx += r.w; }
-      ctx.textAlign = align; ctx.font = base;
-      return w;
+      ctx.strokeStyle = opts.dim ? '#94a3b8' : opts.color || COL.mirror; ctx.lineWidth = opts.dim ? 2 : 5; ctx.lineCap = 'round';
+      if (opts.dash) ctx.setLineDash(opts.dash);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.setLineDash([]); ctx.lineCap = 'butt';
+      __pim.segs.push([a.x, a.y, b.x, b.y, PANE]);
+      // the hatching behind the mirror is part of it: no label may sit on it
+      const back1 = V.P(add(e1, m.n, -hatch)), back2 = V.P(add(e2, m.n, -hatch));
+      __pim.segs.push([back1.x, back1.y, back2.x, back2.y, PANE]);
+      if (opts.handles) [a, b].forEach(p => { dot2(ctx, p.x, p.y, 7, '#475569'); });
+      return { a, b };
     }
-
-    function label(ctx, text, x, y, color, align = 'center') {
-      ctx.font = 'bold 13px Arial'; ctx.textAlign = align; ctx.textBaseline = 'middle';
-      const tw = richText(ctx, text, 0, 0, true);
-      let x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
-      // keep the whole label inside the canvas (a phone is narrow)
-      const shift = x0 - 5 < 0 ? 5 - x0 : x0 + tw + 5 > W ? W - 5 - (x0 + tw) : 0;
-      x += shift; x0 += shift;
-      ctx.fillStyle = 'rgba(248,251,255,0.9)'; ctx.fillRect(x0 - 3, y - 9, tw + 6, 18);
-      ctx.fillStyle = color; richText(ctx, text, x, y);
-      ctx.textBaseline = 'alphabetic';
+    function drawNormal(ctx, V, H, n, Lw, color = COL.normal) {
+      const a = V.P(add(H, n, -0.35)), b = V.P(add(H, n, Lw));
+      seg(ctx, a.x, a.y, b.x, b.y, color, 1.6, true, [6, 5]);
+      return b;
     }
-
-    function draw() {
-      const ctx = setup();
-      ctx.clearRect(0, 0, W, H);
-      const A = angles(), m = A.m, P = A.P;
-
-      // mirror with hatching on the back
-      const e1 = { x: m.c.x - m.u.x * m.half, y: m.c.y - m.u.y * m.half }, e2 = { x: m.c.x + m.u.x * m.half, y: m.c.y + m.u.y * m.half };
-      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5;
-      for (let s = -m.half; s <= m.half; s += 13) {
-        const p = { x: m.c.x + m.u.x * s, y: m.c.y + m.u.y * s };
-        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - m.n.x * 13 - m.u.x * 7, p.y - m.n.y * 13 - m.u.y * 7); ctx.stroke();
+    // a ray from A to B with an arrowhead part-way along it, so its direction shows
+    function drawRay(ctx, V, A, B, color, lw = 3.5, dash, frac = 0.55) {
+      const a = V.P(A), b = V.P(B);
+      seg(ctx, a.x, a.y, b.x, b.y, color, lw, true, dash);
+      const ang = Math.atan2(b.y - a.y, b.x - a.x), L = Math.hypot(b.x - a.x, b.y - a.y);
+      if (L > 30) head(ctx, a.x + (b.x - a.x) * frac + Math.cos(ang) * 6, a.y + (b.y - a.y) * frac + Math.sin(ang) * 6, ang, color, 11);
+      return { a, b };
+    }
+    // the arc between two directions from H, and a label on its bisector at the first clear radius
+    function angleArc(ctx, V, H, v1, v2, Rpx, color, text, optional = false, ks = [1.55, 1.95, 2.4, 2.9]) {
+      const p = V.P(H);
+      let a1 = cang(v1), a2 = cang(v2), d = a2 - a1;
+      while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+      if (Math.abs(d) < rad(0.5)) return null;
+      ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x, p.y, Rpx, a1, a1 + d, d < 0); ctx.stroke();
+      const mid = a1 + d / 2, cands = [], sg = Math.sign(d);
+      for (const k of ks) cands.push([p.x + Math.cos(mid) * Rpx * k, p.y + Math.sin(mid) * Rpx * k, 'center']);
+      // a narrow wedge has no room inside it: then just outside it, past the second line, then past the first
+      for (const [base, dir] of [[a1 + d, sg], [a1, -sg]]) for (const k of [1.5, 2.1, 2.8]) for (const off of [16, 30, 46]) {
+        const a = base + dir * rad(off); cands.push([p.x + Math.cos(a) * Rpx * k, p.y + Math.sin(a) * Rpx * k, 'center']);
       }
-      ctx.strokeStyle = '#334155'; ctx.lineWidth = 5; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(e1.x, e1.y); ctx.lineTo(e2.x, e2.y); ctx.stroke(); ctx.lineCap = 'butt';
-      [e1, e2].forEach(e => { ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.arc(e.x, e.y, 7, 0, Math.PI * 2); ctx.fill(); });
-      label(ctx, 'mirror', e2.x - m.u.x * 34 - m.n.x * 26, e2.y - m.u.y * 34 - m.n.y * 26, '#334155');
-
-      // normal
-      const nl = Math.min(H * 0.55, 230);
-      ctx.strokeStyle = '#64748b'; ctx.setLineDash([6, 5]); ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.moveTo(P.x - m.n.x * 30, P.y - m.n.y * 30); ctx.lineTo(P.x + m.n.x * nl, P.y + m.n.y * nl); ctx.stroke(); ctx.setLineDash([]);
-      label(ctx, 'normal', P.x + m.n.x * (nl + 12), P.y + m.n.y * (nl + 12), '#475569');
-
-      // incident ray
-      const T = st.torch;
-      ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 3.5;
-      ctx.beginPath(); ctx.moveTo(T.x, T.y); ctx.lineTo(P.x, P.y); ctx.stroke();
-      const midI = { x: (T.x + P.x) / 2, y: (T.y + P.y) / 2 };
-      arrowHead(ctx, midI.x + A.d.x * 8, midI.y + A.d.y * 8, Math.atan2(A.d.y, A.d.x), '#d97706');
-      // reflected ray, to the edge of the canvas
-      const E = rayToEdge(P, A.r);
-      ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 3.5;
-      ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(E.x, E.y); ctx.stroke();
-      const rl = Math.min(E.t * 0.5, 140);
-      arrowHead(ctx, P.x + A.r.x * rl, P.y + A.r.y * rl, Math.atan2(A.r.y, A.r.x), '#dc2626');
-
-      // compare: where the same incident ray would go off a level mirror (normal straight up)
-      if (el('showOld').checked) {
-        const oldR = { x: A.d.x, y: -Math.abs(A.d.y) }; // level mirror: the vertical part of the direction flips upwards
-        const OE = rayToEdge(P, oldR);
-        ctx.strokeStyle = 'rgba(100,116,139,0.55)'; ctx.lineWidth = 2; ctx.setLineDash([4, 4]);
-        ctx.beginPath(); ctx.moveTo(P.x - 90, P.y); ctx.lineTo(P.x + 90, P.y); ctx.stroke(); // the level mirror
-        ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 3; ctx.setLineDash([8, 6]);
-        ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(OE.x, OE.y); ctx.stroke(); ctx.setLineDash([]);
-        const turn = turnedThrough(A);
-        if (turn > 0.5) {
-          const a0 = Math.atan2(oldR.y, oldR.x), a1 = Math.atan2(A.r.y, A.r.x);
-          let dd = a1 - a0; while (dd > Math.PI) dd -= 2 * Math.PI; while (dd < -Math.PI) dd += 2 * Math.PI;
-          ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(P.x, P.y, 120, a0, a0 + dd, dd < 0); ctx.stroke();
-          const am = a0 + dd / 2;
-          label(ctx, `${turn.toFixed(0)}°`, P.x + Math.cos(am) * 140, P.y + Math.sin(am) * 140, '#6d28d9');
-        }
-        // beside the dashed ray, on the side away from the real reflected ray and past the angle label
-        let px = -oldR.y, py = oldR.x; if (px * A.r.x + py * A.r.y > 0) { px = -px; py = -py; }
-        const lt = Math.max(60, Math.min(OE.t - 40, 230));
-        ctx.font = 'bold 13px Arial'; const lw = richText(ctx, 'reflected ray off a level mirror', 0, 0, true);
-        label(ctx, 'reflected ray off a level mirror', P.x + oldR.x * lt + px * (lw / 2 + 10), P.y + oldR.y * lt + py * 16, '#6d28d9');
-      }
-
-      // angle arcs, both measured from the normal
-      const nAng = Math.atan2(m.n.y, m.n.x);
-      const inAng = Math.atan2(-A.d.y, -A.d.x), outAng = Math.atan2(A.r.y, A.r.x);
-      const arc = (from, to, R, col) => {
-        let d = to - from; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
-        ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(P.x, P.y, R, from, from + d, d < 0); ctx.stroke();
-        return from + d / 2;
-      };
-      if (A.i > rad(0.5)) {
-        const mi = arc(nAng, inAng, 46, '#d97706'), mr = arc(nAng, outAng, 58, '#dc2626');
-        label(ctx, `<i>i</i> = ${deg(A.i).toFixed(0)}°`, P.x + Math.cos(mi) * 78, P.y + Math.sin(mi) * 78, '#b45309');
-        label(ctx, `<i>r</i> = ${deg(A.rr).toFixed(0)}°`, P.x + Math.cos(mr) * 92, P.y + Math.sin(mr) * 92, '#b91c1c');
-      } else {
-        label(ctx, '<i>i</i> = <i>r</i> = 0°: the ray reflects straight back', P.x, P.y - nl * 0.5, '#b91c1c');
-      }
-
-      // target
-      if (el('showTarget').checked && st.target) {
-        const t = st.target;
-        const hit = distToRay(t, P, A.r) < 14;
-        if (hit && st.hitFlash <= 0) { st.score++; st.hitFlash = 1.2; }
-        drawStar(ctx, t.x, t.y, hit || st.hitFlash > 0 ? '#16a34a' : '#eab308');
-        if (st.hitFlash > 0) label(ctx, 'Hit!', t.x, t.y - 26, '#15803d');
-      }
-
-      // torch (a small ray box pointing along the incident ray)
-      const ta = Math.atan2(A.d.y, A.d.x);
-      ctx.save(); ctx.translate(T.x, T.y); ctx.rotate(ta);
-      ctx.fillStyle = '#1f2937'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-30, -11, 34, 22, 5) : ctx.rect(-30, -11, 34, 22); ctx.fill();
-      ctx.fillStyle = '#fde68a'; ctx.fillRect(2, -8, 5, 16);
+      return text ? labelAt(ctx, text, cands, color, 13, optional) : null;
+    }
+    function drawTorch(ctx, V, T, d) {
+      const p = V.P(T), a = cang(d);
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(a);
+      ctx.fillStyle = '#1f2937'; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(-30, -10, 34, 20, 5); else ctx.rect(-30, -10, 34, 20); ctx.fill();
+      ctx.fillStyle = '#fde68a'; ctx.fillRect(2, -7, 5, 14);
       ctx.restore();
-      label(ctx, 'torch', T.x - A.d.x * 44, T.y - A.d.y * 44 + (A.d.y < 0 ? 14 : -14), '#1f2937');
-
-      // hit-point handle
-      ctx.fillStyle = '#facc15'; ctx.strokeStyle = '#a16207'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(P.x, P.y, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      // the torch's body is an obstacle for labels
+      const c = { x: p.x - Math.cos(a) * 13, y: p.y - Math.sin(a) * 13 };
+      obstacle(c.x - 19, c.y - 19, 38, 38);
+      return p;
     }
-
-    // angle between the reflected ray now and the one a level mirror would give, for the same incident ray
-    function turnedThrough(A) {
-      const oldR = { x: A.d.x, y: -Math.abs(A.d.y) };
-      return deg(Math.acos(Math.max(-1, Math.min(1, oldR.x * A.r.x + oldR.y * A.r.y))));
-    }
-    function distToRay(p, o, d) {
-      const t = (p.x - o.x) * d.x + (p.y - o.y) * d.y;
-      if (t < 0) return Infinity;
-      return Math.hypot(p.x - (o.x + d.x * t), p.y - (o.y + d.y * t));
-    }
-    function drawStar(ctx, x, y, color) {
+    function drawStar(ctx, x, y, r, color) {
       ctx.fillStyle = color; ctx.beginPath();
-      for (let k = 0; k < 10; k++) { const r = k % 2 ? 7 : 16, a = -Math.PI / 2 + k * Math.PI / 5; ctx.lineTo(x + r * Math.cos(a), y + r * Math.sin(a)); }
+      for (let k = 0; k < 10; k++) { const rr = k % 2 ? r * 0.44 : r, a = -Math.PI / 2 + k * Math.PI / 5; ctx.lineTo(x + rr * Math.cos(a), y + rr * Math.sin(a)); }
       ctx.closePath(); ctx.fill();
+      obstacle(x - r, y - r, 2 * r, 2 * r);
+    }
+    // sound: three short arcs facing the way the pulse travels
+    function soundArcs(ctx, x, y, ang, col, r = 12) {
+      ctx.strokeStyle = col; ctx.lineWidth = 2.5;
+      for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.arc(x - Math.cos(ang) * k * 5, y - Math.sin(ang) * k * 5, r - k * 3, ang - 0.9, ang + 0.9); ctx.stroke(); }
     }
 
-    function updateReadout() {
-      const A = angles();
-      el('iValue').textContent = `${deg(A.i).toFixed(1)}°`;
-      el('rValue').textContent = `${deg(A.rr).toFixed(1)}°`;
-      el('angleLabel').textContent = deg(A.i).toFixed(0);
-      el('tiltLabel').textContent = tiltEl.value;
-      if (!dragging || dragging.kind !== 'slider') incEl.value = Math.round(deg(A.i));
-      el('scoreValue').textContent = st.score;
-      const cmp = el('showOld').checked;
-      el('turnCard').classList.toggle('hidden', !cmp);
-      if (cmp) { const t = Math.abs(+tiltEl.value); el('turnValue').textContent = `${turnedThrough(A).toFixed(1)}° = 2 × ${t}°`; }
+    /* ---------------- the scene ---------------- */
+    let geo = null;   // the last drawing's view and handles, for dragging
+    function draw() {
+      __pim.labels = []; __pim.arrows = []; __pim.panes = []; __pim.segs = []; __pim.marks = {};
+      const w = canvas.getBoundingClientRect().width, narrow = w < 560, k = kind();
+      const want = { see: narrow ? 300 : 340, law: narrow ? 320 : 380, turn: S.custom ? (narrow ? 560 : 380) : narrow ? 340 : 400, game: narrow ? 340 : 380 }[k] || 320;
+      const gg = setup(canvas, want); if (!gg) return;
+      const { ctx, W, H } = gg;
+      pane('scene', 0, 0, W, H);
+      ({ see: drawSee, law: drawLaw, turn: drawTurn, game: drawGame })[k](ctx, W, H, narrow);
     }
 
-    // ---------- interaction ----------
-    let dragging = null;
-    function pos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
-    function pick(p) {
-      const m = mirror(), P = hitPoint(m);
-      if (Math.hypot(p.x - st.torch.x, p.y - st.torch.y) < 30) return 'torch';
-      if (Math.hypot(p.x - P.x, p.y - P.y) < 16) return 'hit';
-      for (const sgn of [-1, 1]) { const e = { x: m.c.x + m.u.x * m.half * sgn, y: m.c.y + m.u.y * m.half * sgn }; if (Math.hypot(p.x - e.x, p.y - e.y) < 22) return 'end' + sgn; }
-      const s = (p.x - m.c.x) * m.u.x + (p.y - m.c.y) * m.u.y, off = (p.x - m.c.x) * m.n.x + (p.y - m.c.y) * m.n.y;
-      if (Math.abs(s) < m.half && Math.abs(off) < 14) return 'hit';
-      return null;
+    // tab 1: light bulb, book, eye
+    function drawSee(ctx, W, H) {
+      const st = seeTimes(), t = sim.t, lampOn = !!P.lamp;
+      const V = fit(W, H, { x0: -4.3, x1: 4.4, y0: -0.5, y1: 3.8 });
+      geo = { V };
+      // table and book
+      ctx.fillStyle = '#e2c79b'; ctx.fillRect(V.X(-2.6), V.Y(0), V.X(2.6) - V.X(-2.6), V.s * 0.22);
+      ctx.fillStyle = '#a16207'; ctx.fillRect(V.X(-2.3), V.Y(0) + V.s * 0.22, 6, V.s * 0.3); ctx.fillRect(V.X(2.3) - 6, V.Y(0) + V.s * 0.22, 6, V.s * 0.3);
+      ctx.fillStyle = COL.book; ctx.fillRect(V.X(-1.2), V.Y(0.6), V.X(1.2) - V.X(-1.2), V.s * 0.6);
+      ctx.fillStyle = 'white'; ctx.fillRect(V.X(-1.1), V.Y(0.6) + V.s * 0.42, V.X(1.1) - V.X(-1.1), V.s * 0.1);
+      __pim.segs.push([V.X(-2.6), V.Y(0), V.X(2.6), V.Y(0), PANE]);
+      obstacle(V.X(-1.2), V.Y(0.6), V.X(1.2) - V.X(-1.2), V.s * 0.6);
+      // the bulb
+      const B = V.P(SEE.bulb);
+      ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(B.x, 0); ctx.lineTo(B.x, B.y - 14); ctx.stroke();
+      if (lampOn) { const gr = ctx.createRadialGradient(B.x, B.y, 4, B.x, B.y, 40); gr.addColorStop(0, 'rgba(253,224,71,0.85)'); gr.addColorStop(1, 'rgba(253,224,71,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(B.x, B.y, 40, 0, Math.PI * 2); ctx.fill(); }
+      dot2(ctx, B.x, B.y, 12, lampOn ? '#fde047' : '#cbd5e1'); ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(B.x, B.y, 12, 0, Math.PI * 2); ctx.stroke();
+      obstacle(B.x - 14, B.y - 14, 28, 28);
+      // the eye
+      const E = V.P(P.eye);
+      ctx.fillStyle = 'white'; ctx.strokeStyle = '#334155'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(E.x, E.y, 18, 11, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      const look = unit(sub(SEE.pts[1], P.eye));
+      dot2(ctx, E.x + look.x * 7, E.y - look.y * 7, 6, '#1e3a8a'); dot2(ctx, E.x + look.x * 8, E.y - look.y * 8, 2.5, '#0f172a');
+      obstacle(E.x - 20, E.y - 13, 40, 26);
+      geo.eye = E;
+      // the light: each ray drawn as far as the light has got by time t
+      const fronts = [];
+      if (lampOn) st.legs.forEach(L => {
+        const p = L.p, d1 = len(sub(p, SEE.bulb)) * SEE.u, d2 = len(sub(P.eye, p)) * SEE.u;
+        const s1 = Math.min(1, (C_LIGHT * t) / d1), s2 = Math.max(0, Math.min(1, (C_LIGHT * (t - L.t1)) / d2));
+        if (s1 > 0) drawRay(ctx, V, SEE.bulb, add(SEE.bulb, sub(p, SEE.bulb), s1), COL.light, 2.5, null, 0.5);
+        if (s2 > 0) drawRay(ctx, V, p, add(p, sub(P.eye, p), s2), COL.inc, 2.5, null, 0.5);
+        fronts.push({ s1, s2 });
+      });
+      __pim.marks.see = { fronts, lamp: lampOn };
+      labelAt(ctx, 'light bulb', [[B.x, B.y + 28, 'center'], [B.x + 20, B.y, 'left'], [B.x, B.y - 28, 'center']], '#334155');
+      labelAt(ctx, 'book', [[V.X(1.2) + 8, V.Y(0.3), 'left'], [V.X(-1.2) - 8, V.Y(0.3), 'right'], [V.X(0), V.Y(0) + V.s * 0.22 + 14, 'center']], '#1e3a8a');
+      labelAt(ctx, 'your eye', [[E.x, E.y + 26, 'center'], [E.x, E.y - 26, 'center'], [E.x - 26, E.y, 'right']], '#334155');
+      const seen = lampOn && t >= st.eye * (1 - 1e-9);
+      if (seen) labelAt(ctx, 'You see the book', [[E.x, E.y - 30, 'center'], [E.x - 30, E.y - 30, 'right'], [E.x, E.y + 48, 'center']], COL.hit);
+      if (!lampOn && t > 0) labelAt(ctx, ['No light reaches the book,', 'so none is reflected to your eye'], [[W / 2, V.Y(3.5), 'center'], [W / 2, V.Y(2.2), 'center'], [V.X(0.6), V.Y(3.5), 'center'], [V.X(0.6), V.Y(1.8), 'center']], '#b91c1c');
+    }
+
+    // tab 2: the law of reflection on a level mirror
+    function drawLaw(ctx, W, H, narrow) {
+      const G = lawGeo(), rv = revealed(), V = fit(W, H, { x0: -4.0, x1: 4.0, y0: -0.6, y1: RAY + 0.55 });
+      geo = { V, G };
+      const H0 = V.P(G.H);
+      drawMirror(ctx, V, G.m, { color: P.sound ? '#9a3412' : COL.mirror });
+      if (P.sound) { ctx.fillStyle = 'rgba(154,52,18,0.18)'; ctx.fillRect(V.X(-G.m.half), H0.y + 2, V.X(G.m.half) - V.X(-G.m.half), V.s * 0.3); }
+      let nTop = null;
+      if (rv.n) nTop = drawNormal(ctx, V, G.H, G.m.n, RAY * 0.95);
+      const inc = drawRay(ctx, V, G.T, G.H, P.sound ? COL.sound : COL.inc);
+      let ref = null;
+      if (rv.r) ref = drawRay(ctx, V, G.H, add(G.H, G.r, RAY), P.sound ? COL.sound : COL.ref);
+      if (P.sound) {
+        const a = cang(G.d); soundArcs(ctx, inc.a.x + (inc.b.x - inc.a.x) * 0.3, inc.a.y + (inc.b.y - inc.a.y) * 0.3, a, COL.sound);
+        if (ref) soundArcs(ctx, H0.x + (ref.b.x - H0.x) * 0.7, H0.y + (ref.b.y - H0.y) * 0.7, cang(G.r), COL.sound);
+      } else drawTorch(ctx, V, G.T, G.d);
+      dot2(ctx, H0.x, H0.y, 5, '#0f172a');
+      // the labels that must show go first: the angles
+      const Rarc = Math.max(34, V.s * 0.62);
+      if (P.given != null) angleArc(ctx, V, G.H, { x: -G.m.u.x, y: -G.m.u.y }, { x: -G.d.x, y: -G.d.y }, Rarc * 1.25, '#0f766e', `${P.given}°`);
+      if (rv.n && rv.i && G.i > 0.5) angleArc(ctx, V, G.H, G.m.n, { x: -G.d.x, y: -G.d.y }, Rarc, COL.incDark, `<i>i</i> = ${dg(G.i)}`);
+      if (rv.n && rv.r && G.rr > 0.5) angleArc(ctx, V, G.H, G.m.n, G.r, Rarc + 10, COL.refDark, `<i>r</i> = ${dg(G.rr)}`);
+      if (P.given != null && rv.s2) angleArc(ctx, V, G.H, G.m.u, G.r, Rarc * 1.25, '#0f766e', dg(90 - G.rr));
+      if (rv.r && G.i <= 0.5) labelAt(ctx, '<i>i</i> = <i>r</i> = 0°: straight back', [[H0.x + 12, V.Y(RAY * 0.55), 'left'], [H0.x - 12, V.Y(RAY * 0.55), 'right'], [H0.x + 12, V.Y(RAY * 0.3), 'left'], [H0.x - 12, V.Y(RAY * 0.3), 'right'], [H0.x + 16, V.Y(RAY * 0.8), 'left']], COL.refDark);
+      // optional: at a small angle the torch sits where the label would go, and the colour key names the normal line
+      if (nTop) labelAt(ctx, 'normal', [[nTop.x, nTop.y - 2, 'center'], [nTop.x + 8, nTop.y + 10, 'left'], [nTop.x - 8, nTop.y + 10, 'right'], [nTop.x + 8, nTop.y - 4, 'left'], [nTop.x + 8, nTop.y + 34, 'left'], [nTop.x - 8, nTop.y + 34, 'right']], '#475569', 12, true);
+      // below the hatching, or above the mirror's ends
+      const ends = V.P(add(G.m.c, G.m.u, G.m.half)), below = ends.y + V.s * 0.32 + 12;
+      labelAt(ctx, P.sound ? 'brick wall' : 'mirror', [[ends.x - 30, below, 'center'], [V.X(-G.m.half) + 30, below, 'center'], [ends.x - 30, ends.y - 16, 'center'], [V.X(-G.m.half) + 30, ends.y - 16, 'center']], P.sound ? '#9a3412' : COL.mirror);
+      const mi = [(inc.a.x + inc.b.x) / 2, (inc.a.y + inc.b.y) / 2];
+      if (!narrow || G.i > 15) labelAt(ctx, P.sound ? 'incident sound' : 'incident ray', [[mi[0] - 12, mi[1] - 4, 'right'], [mi[0] + 12, mi[1] + 12, 'left'], [inc.a.x, inc.a.y - 24, 'center']], P.sound ? COL.sound : COL.incDark, 12, true);
+      if (ref) { const mr = [(ref.a.x + ref.b.x) / 2, (ref.a.y + ref.b.y) / 2]; labelAt(ctx, P.sound ? 'reflected sound (echo)' : 'reflected ray', [[mr[0] + 12, mr[1] - 4, 'left'], [mr[0] - 12, mr[1] + 12, 'right'], [ref.b.x, ref.b.y + 16, 'center']], P.sound ? COL.sound : COL.refDark, 12, true); }
+      __pim.marks.law = { i: G.i, r: G.rr, shown: { n: !!rv.n, i: !!rv.i, r: !!rv.r }, inc: [inc.a, inc.b], ref: ref ? [ref.a, ref.b] : null, H: H0, nTop };
+      geo.torch = V.P(G.T);
+    }
+
+    // tab 3: the incident ray stays; the mirror turns
+    function turnBox(Q) {
+      const pts = [], tilts = S.custom ? [-35, 0, 35] : [0, Q.tilt];
+      tilts.forEach(tl => { const G = turnGeo(Q, tl); pts.push(add(G.m.c, G.m.u, G.m.half), add(G.m.c, G.m.u, -G.m.half), add(G.H, G.r, RAY), add(G.H, G.r0, RAY)); });
+      if (S.custom) for (let a = -60; a <= 140; a += 10) pts.push({ x: RAY * Math.sin(rad(a)), y: RAY * Math.cos(rad(a)) });
+      pts.push(torchAt(Q.i0), { x: 0, y: -0.6 }, { x: 0, y: RAY + 0.5 });
+      return bounds(pts, 0.35);
+    }
+    function drawTurn(ctx, W, H, narrow) {
+      const rv = revealed(), tiltShown = rv.tilt ? P.tilt : 0, G = turnGeo(P, tiltShown);
+      const graph = S.custom, wide = W >= 640;
+      let sw = W, sh = H, gx = 0, gy = 0, gw = 0, gh = 0;
+      if (graph) { if (wide) { sw = W * 0.6; gx = sw; gw = W - sw; gh = H; } else { sh = H - 210; gy = sh; gw = W; gh = 210; } }
+      const box = geo && geo.frozen && geo.kind === 'turn' ? geo.box : turnBox(P);
+      pane('scene', 0, 0, sw, sh);
+      const V = fit(sw, sh, box);
+      geo = { V, G, kind: 'turn', box, frozen: geo && geo.frozen };
+      const H0 = V.P(G.H);
+      // the level mirror and its reflected ray, for comparison, once the mirror has turned
+      const turned = rv.tilt && Math.abs(tiltShown) > 1e-9;
+      if (turned) {
+        drawMirror(ctx, V, G.m0, { dim: true, dash: [6, 5] });
+        drawNormal(ctx, V, G.H, G.m0.n, RAY * 0.9, '#cbd5e1');
+        drawRay(ctx, V, G.H, add(G.H, G.r0, RAY), COL.old, 2.5, [8, 6]);
+      }
+      const mm = drawMirror(ctx, V, G.m, { handles: graph });
+      const nTop = drawNormal(ctx, V, G.H, G.m.n, RAY * 0.95);
+      const inc = drawRay(ctx, V, G.T, G.H, COL.inc);
+      drawTorch(ctx, V, G.T, G.d);
+      let ref = null;
+      if (rv.r0 && !turned) ref = drawRay(ctx, V, G.H, add(G.H, G.r, RAY), COL.ref);
+      if (turned && rv.r1) ref = drawRay(ctx, V, G.H, add(G.H, G.r, RAY), COL.ref);
+      dot2(ctx, H0.x, H0.y, 5, '#0f172a');
+      const Rarc = Math.max(32, V.s * 0.55);
+      // angles: i (and r) from the normal shown; then the turn between the old and the new reflected rays
+      const showI = !turned || rv.i1, showR = (!turned && rv.r0) || (turned && rv.r1);
+      if (showI && G.i1 > 0.5) angleArc(ctx, V, G.H, G.m.n, { x: -G.d.x, y: -G.d.y }, Rarc, COL.incDark, `<i>i</i> = ${dg(G.i1)}`);
+      if (showR && G.r1 > 0.5) angleArc(ctx, V, G.H, G.m.n, G.r, Rarc + 10, COL.refDark, `<i>r</i> = ${dg(G.r1)}`);
+      if (turned) {
+        // the level mirror's ray is named first: it has fewer good spots than the angle labels
+        const o = V.P(add(G.H, G.r0, RAY)), oc = [[o.x, o.y + 22, 'center'], [o.x - 10, o.y + 10, 'right'], [o.x + 10, o.y + 10, 'left'], [o.x + 10, o.y - 8, 'left'], [o.x, o.y - 34, 'center'], [o.x - 10, o.y - 8, 'right'], [o.x + 14, o.y + 30, 'left'], [o.x + 40, o.y + 44, 'left'], [o.x + 60, o.y + 8, 'left']];
+        labelAt(ctx, ['reflected ray off', 'the level mirror'], oc, COL.old, 11, true);
+        // the turn shown where step 2 puts it: between the old normal and the new one, near their tops
+        angleArc(ctx, V, G.H, G.m0.n, G.m.n, V.s * RAY * 0.8, COL.turn, `${f3(Math.abs(tiltShown))}°`, true, [1.1, 1.2]);
+        if (rv.turn) { const kEnd = (RAY * V.s + 20) / (Rarc * 2.1); angleArc(ctx, V, G.H, G.r0, G.r, Rarc * 2.1, COL.turn, `turned ${dg(G.turned)}`, false, [kEnd, kEnd + 0.25, 1.55, 1.95]); }
+      }
+      labelAt(ctx, 'normal', [[nTop.x, nTop.y - 2, 'center'], [nTop.x + 8, nTop.y + 10, 'left'], [nTop.x - 8, nTop.y + 10, 'right']], '#475569', 12, true);
+      const mb = k2 => V.P(add(add(G.m.c, G.m.u, G.m.half * k2), G.m.n, -0.62));   // below the hatching, along the mirror
+      labelAt(ctx, 'mirror', [[mb(0.8).x, mb(0.8).y, 'center'], [mb(-0.8).x, mb(-0.8).y, 'center'], [mb(0.5).x, mb(0.5).y, 'center'], [mb(-0.5).x, mb(-0.5).y, 'center']], COL.mirror, 12, true);
+      if (!narrow) { const mi = [(inc.a.x + inc.b.x) / 2, (inc.a.y + inc.b.y) / 2]; labelAt(ctx, 'incident ray', [[mi[0] - 12, mi[1] - 4, 'right'], [mi[0] + 12, mi[1] + 12, 'left']], COL.incDark, 12, true); }
+      geo.ends = [mm.a, mm.b];
+      __pim.marks.turn = { tilt: tiltShown, i1: G.i1, r1: G.r1, turned: G.turned, inc: [inc.a, inc.b], ref: ref ? [ref.a, ref.b] : null, H: H0, nTop, mirror: [mm.a, mm.b] };
+      if (graph) drawTurnGraph(ctx, gx, gy, gw, gh, G, P.tilt);
+    }
+    function drawTurnGraph(ctx, x, y, w, h, G, tilt) {
+      pane('graph', x, y, w, h);
+      const gx = x + 50, gy = y + 26, gw = w - 50 - 20, gh = h - 26 - 44;
+      const X = v => gx + ((v + 35) / 70) * gw, Y = v => gy + gh / 2 - (v / 70) * (gh / 2);
+      ctx.fillStyle = '#f8fafc'; ctx.fillRect(x + 4, y + 4, w - 8, h - 8);
+      seg(ctx, gx, gy, gx, gy + gh, '#334155', 1.4); seg(ctx, gx, Y(0), gx + gw, Y(0), '#334155', 1.4);
+      ctx.fillStyle = '#334155'; ctx.font = '11px Arial'; ctx.textAlign = 'right';
+      [-60, -30, 30, 60].forEach(v => { seg(ctx, gx - 4, Y(v), gx + 4, Y(v), '#334155', 1.2, false); ctx.fillText(minus(v), gx - 7, Y(v) + 4); });
+      ctx.fillText('0', gx - 7, Y(0) + 4);
+      ctx.textAlign = 'center';
+      [-30, -15, 15, 30].forEach(v => { seg(ctx, X(v), Y(0) - 4, X(v), Y(0) + 4, '#334155', 1.2, false); ctx.fillText(minus(v), X(v), Y(0) + 16); });
+      obstacle(x, gy - 6, 48, gh + 12); [-30, -15, 15, 30].forEach(v => obstacle(X(v) - 12, Y(0) + 5, 24, 14));
+      // clockwise turns are counted positive on both axes
+      ctx.strokeStyle = COL.turn; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(X(-35), Y(-70)); ctx.lineTo(X(35), Y(70)); ctx.stroke();
+      for (let k = 0; k < 7; k++) __pim.segs.push([X(-35 + k * 10), Y(-70 + k * 20), X(-25 + k * 10), Y(-50 + k * 20), PANE]);
+      const rayTurn = -G.turnSign * G.turned;
+      dot2(ctx, X(tilt), Y(rayTurn), 6, COL.ref);
+      label(ctx, 'Reflected ray turned through (°)', gx + 4, gy - 12, '#334155', 'left', 11);
+      label(ctx, 'Mirror turned through (°), clockwise +', gx + gw, y + h - 12, '#334155', 'right', 11);
+      __pim.marks.graph = { tilt, rayTurn };
+    }
+
+    // tab 4: the game
+    function drawGame(ctx, W, H) {
+      const k = game.i, R = ROUNDS[k], G = gameGeo();
+      const pts = [R.T || torchAt(0), R.star, { x: -3.8, y: 0 }, { x: 3.8, y: 0 }, { x: 0, y: RAY + 0.4 }, { x: 0, y: -0.6 }];
+      if (R.kind === 'turn') [-35, 35].forEach(tl => { const m = mirrorOf(tl); pts.push(add(m.c, m.u, m.half), add(m.c, m.u, -m.half)); });
+      if (R.kind === 'angle') pts.push(torchAt(85), torchAt(0));
+      const V = fit(W, H, bounds(pts, 0.4));
+      geo = { V, G };
+      const H0 = V.P(G.H);
+      const mm = drawMirror(ctx, V, G.m, { handles: R.kind === 'turn' });
+      const show = !!game.shown[k];
+      if (show) drawNormal(ctx, V, G.H, G.m.n, RAY * 0.9);
+      const S0 = V.P(R.star);
+      drawRay(ctx, V, G.T, G.H, COL.inc);
+      // the reflected ray to the edge of the drawing
+      const far = add(G.H, G.r, 12), E = clipToCanvas(H0, V.P(far), W, H);
+      seg(ctx, H0.x, H0.y, E.x, E.y, COL.ref, 3.5);
+      const ang = Math.atan2(E.y - H0.y, E.x - H0.x); head(ctx, H0.x + Math.cos(ang) * V.s * 1.6, H0.y + Math.sin(ang) * V.s * 1.6, ang, COL.ref, 11);
+      drawTorch(ctx, V, G.T, G.d);
+      if (R.kind === 'aim') { dot2(ctx, H0.x, H0.y, 8, '#facc15'); ctx.strokeStyle = '#a16207'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(H0.x, H0.y, 8, 0, Math.PI * 2); ctx.stroke(); }
+      else dot2(ctx, H0.x, H0.y, 5, '#0f172a');
+      drawStar(ctx, S0.x, S0.y, Math.max(12, STAR_R * V.s * 1.3), G.hit ? COL.hit : COL.star);
+      if (show) {
+        // the answer: where the controls must go (drawn before any label, so the labels keep off it)
+        const A = gameGeo(k, roundAnswer(R));
+        drawRay(ctx, V, A.H, add(A.H, A.r, len(sub(R.star, A.H))), COL.hit, 2, [6, 5]);
+        if (R.kind === 'turn') drawMirror(ctx, V, A.m, { dim: true, dash: [4, 4] });
+      }
+      if (R.kind === 'angle') {
+        drawNormal(ctx, V, G.H, G.m.n, RAY * 0.95);
+        angleArc(ctx, V, G.H, G.m.n, unit(R.star), V.s * 0.9, '#0f766e', `${R.r}°`);
+        angleArc(ctx, V, G.H, G.m.n, { x: -G.d.x, y: -G.d.y }, V.s * 0.62, COL.incDark, `<i>i</i> = ${dg(G.i)}`);
+      }
+      if (G.hit) labelAt(ctx, 'Hit!', [[S0.x, S0.y - 28, 'center'], [S0.x, S0.y + 30, 'center'], [S0.x - 24, S0.y, 'right']], '#15803d', 14);
+      if (show && !G.hit) labelAt(ctx, 'Move it to the dashed answer', [[W / 2, 18, 'center']], '#475569', 12, true);
+      geo.dot = H0; geo.ends = [mm.a, mm.b]; geo.torch = V.P(G.T);
+      __pim.marks.game = { round: k, hit: G.hit, miss: G.miss, ref: [H0, E], star: S0, torch: geo.torch, dot: H0, ends: [mm.a, mm.b] };
+    }
+    function clipToCanvas(a, b, W, H) {
+      const d = { x: b.x - a.x, y: b.y - a.y }; let t = 1;
+      if (d.x > 0) t = Math.min(t, (W - 2 - a.x) / d.x); if (d.x < 0) t = Math.min(t, (2 - a.x) / d.x);
+      if (d.y > 0) t = Math.min(t, (H - 2 - a.y) / d.y); if (d.y < 0) t = Math.min(t, (2 - a.y) / d.y);
+      return { x: a.x + d.x * t, y: a.y + d.y * t };
+    }
+
+    /* ---------------- experimental controls ---------------- */
+    function inputList() {
+      const k = kind();
+      if (k === 'law' && mode() === 'live') return [['i', `Angle of incidence <i>i</i> (<span id="iVal">${dg(P.i)}</span>)`, 0, 85, 1]];
+      if (k === 'turn' && S.custom) return [['i0', `Angle of incidence on the level mirror (<span id="i0Val">${dg(P.i0)}</span>)`, 0, 50, 1], ['tilt', `Turn of the mirror (<span id="tiltVal">${tiltTxt(P.tilt)}</span>)`, -35, 35, 0.5]];
+      if (k === 'game') {
+        const R = ROUNDS[game.i];
+        if (R.kind === 'aim') return [['val', 'Where the ray hits the mirror (left to right)', -3.3, 3.3, 0.02]];
+        if (R.kind === 'turn') return [['val', `Turn of the mirror (<span id="tiltVal">${tiltTxt(game.val)}</span>)`, -35, 35, 0.5]];
+        return [['val', `Angle of incidence <i>i</i> (<span id="iVal">${dg(game.val)}</span>)`, 0, 85, 1]];
+      }
+      return [];
+    }
+    const tiltTxt = t => (Math.abs(t) < 1e-9 ? '0°, level' : `${f3(Math.abs(t))}° ${t > 0 ? 'clockwise' : 'anti-clockwise'}`);
+    function inputVal(k) { return k === 'val' ? game.val : P[k]; }
+    function buildInputs() {
+      const list = inputList(), el = $('inputs');
+      $('expBlock').hidden = !list.length;
+      el.innerHTML = list.map(([k, lab, mn, mx, st]) => `<div class="control-group"><label for="in-${k}">${lab}</label><input type="range" id="in-${k}" data-k="${k}" min="${mn}" max="${mx}" step="${st}" value="${inputVal(k)}" /></div>`).join('');
+      el.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => readInput(inp)));
+    }
+    function syncInputs() {
+      document.querySelectorAll('#inputs input').forEach(inp => {
+        if (document.activeElement === inp) return;
+        const v = inputVal(inp.dataset.k); if (v != null && Math.abs(+inp.value - v) > 1e-9) inp.value = v;
+      });
+      const gv = kind() === 'game' ? game.val : null;
+      if ($('iVal')) $('iVal').textContent = dg(gv != null ? game.val : P.i);
+      if ($('i0Val')) $('i0Val').textContent = dg(P.i0);
+      if ($('tiltVal')) $('tiltVal').textContent = tiltTxt(gv != null ? game.val : P.tilt);
+    }
+    function readInput(inp) {
+      const k = inp.dataset.k, v = parseFloat(inp.value);
+      const [, , mn, mx] = inputList().find(x => x[0] === k) || [];
+      if (!isFinite(v) || v < mn - 1e-9 || v > mx + 1e-9) return;
+      clearFeat();
+      if (k === 'val') { game.val = v; update(); return; }
+      // the sound scenario explores its own angle; any other change makes the values your own
+      if (!(S.scen === 'sound' && !S.custom)) toCustom();
+      P[k] = v; update();
+    }
+    function toCustom() {
+      if (S.custom) return;
+      if (currentTab === 2) P = { kind: 'law', i: P.kind === 'law' ? lawGeo().i : 40 };
+      if (currentTab === 3) P = { kind: 'turn', i0: P.i0 != null ? P.i0 : 40, tilt: revealed().tilt && P.tilt != null ? P.tilt : 0 };
+      P.id = 'custom';
+      S.custom = true; S.scen = 'custom'; S.step = 0; presetEl.value = 'custom';
+      // nothing above the canvas may change height under a finger: during a drag the new question text and the
+      // slider wait until the finger lifts
+      if (drag) { pendingOwn = true; return; }
+      $('question').innerHTML = OWN;
+      if (geo) geo.frozen = false;
+      buildInputs();
+    }
+    let pendingOwn = false;
+
+    /* ---------------- readouts, words and working ---------------- */
+    function cards(list) {
+      const el = $('readout');
+      el.className = 'readout' + (list.length === 2 ? ' n2' : list.length === 3 ? ' n3' : '');
+      el.innerHTML = list.map(([t, v, k]) => `<div class="readout-card${hl[k] ? ' hl' : ''}"${k ? ` data-k="${k}"` : ''}><div class="title">${t}</div><div class="value">${v}</div></div>`).join('');
+    }
+    function eq(lines) { return '<div class="math">' + lines.map(l => `<span class="eq${l.lit ? ' lit' : ''}">${l.h || l}</span>`).join('') + '</div>'; }
+    function readouts() {
+      const k = kind(), rv = revealed(), q = (key, txt) => (rv[key] ? txt : '?');
+      let words = '', work = '';
+      if (k === 'see') {
+        const st = seeTimes(), t = sim.t, on = !!P.lamp;
+        const atBook = on && t >= st.legs[0].t1 * (1 - 1e-9) && t >= Math.min(...st.legs.map(l => l.t1)) * (1 - 1e-9), atEye = on && t >= st.eye * (1 - 1e-9);
+        cards([['Time <i>t</i>', `${(t * 1e9).toFixed(2)} ns`, 't'], ['Light reached the book', on ? (t >= st.book * (1 - 1e-9) ? `yes, at ${f3(st.book * 1e9)} ns` : atBook ? 'arriving' : 'not yet') : 'no light', 'book'],
+          ['Reflected light reached your eye', on ? (atEye ? `yes, at ${f3(st.eye * 1e9)} ns` : 'not yet') : 'no light', 'eye'], ['You see the book', atEye ? 'yes' : on ? 'not yet' : 'no', 'seen']]);
+        if (!t) words = on ? 'Press Start: the light bulb is switched on at <i>t</i> = 0.' : 'Press Start. The light bulb is off.';
+        else if (!on) words = ended() ? 'Nothing happened: with no light falling on the book, no light is reflected by it to your eye, so you cannot see it.' : 'The bulb is off: no light leaves it.';
+        else if (!atEye) words = t < st.book ? 'Light rays travel in straight lines from the light bulb to the surface of the book.' : 'The book reflects the light. Some of it travels on to your eye.';
+        else words = 'Light from the light bulb hit the surface of the book, and the book reflected it to your eye: that is how you see the book (notes p. 10-3).';
+      } else if (k === 'law') {
+        const G = lawGeo();
+        const L = [['Angle of incidence <i>i</i>', q('i', dg(G.i)), 'i'], ['Angle of reflection <i>r</i>', q('r', dg(G.rr)), 'r']];
+        if (P.given != null) L.unshift(['Angle to the mirror’s surface (given)', `${P.given}°`, 'given']);
+        if (isSteps()) L.push(['Law of reflection', q('law', '<i>i</i> = <i>r</i>'), 'law']);
+        else L.push(['Angle between the incident and reflected rays', dg(G.between), 'between']);
+        if (P.sound) L.push(['Speed of the sound, before and after', `${V_SOUND} m/s and ${V_SOUND} m/s`, 'v']);
+        cards(L);
+        if (isSteps()) { stepWork(); return; }
+        words = G.i <= 0.5 ? 'The light ray travels along the normal: <i>i</i> = 0°, so <i>r</i> = 0° and it reflects straight back.'
+          : P.sound ? `Sound obeys the laws of reflection: <i>i</i> = <i>r</i> = ${dg(G.i)}. There is no change in its speed, wavelength or frequency (notes p. 9-33).`
+          : `<i>i</i> = <i>r</i> = ${dg(G.i)}. The two rays are ${dg(G.between)} apart, twice the angle of incidence.`;
+      } else if (k === 'turn') {
+        const tiltShown = rv.tilt ? P.tilt : 0, G = turnGeo(P, tiltShown), live = !isSteps();
+        cards([['Turn of the mirror', isSteps() ? (rv.tilt ? tiltTxt(P.tilt) : 'not yet (level)') : tiltTxt(P.tilt), 'tilt'],
+          ['Angle of incidence <i>i</i>', live ? dg(G.i1) : rv.tilt ? q('i1', dg(G.i1)) : dg(G.i0), 'i1'],
+          ['Angle of reflection <i>r</i>', live ? dg(G.r1) : rv.tilt ? q('r1', dg(G.r1)) : q('r0', dg(G.r0a)), 'r1'],
+          ['Reflected ray turned through', live ? `${dg(G.turned)}` : q('turn', dg(G.turned)), 'turn']]);
+        if (isSteps()) { stepWork(); return; }
+        words = Math.abs(P.tilt) < 1e-9 ? 'The mirror is level. Turn it with the slider or by dragging an end, and watch the reflected ray.'
+          : `The mirror turned through ${f3(Math.abs(P.tilt))}°; the reflected ray turned through ${dg(G.turned)} = 2 × ${f3(Math.abs(P.tilt))}°. The dot sits on the line of gradient 2 in the graph.`;
+      } else if (k === 'game') {
+        const G = gameGeo();
+        if (G.hit && !game.hit[game.i]) game.hit[game.i] = true;   // a round counts once its star has been hit (before the score card reads it)
+        cards([['Angle of incidence <i>i</i>', dg(G.i), 'i'], ['Angle of reflection <i>r</i>', dg(G.rr), 'r'], ['Stars hit', `${gameScore()} of ${ROUNDS.length}`, 'score']]);
+        renderGame(G);
+      }
+      $('work').innerHTML = work; $('words').innerHTML = words;
+    }
+    function stepWork() {
+      const st = steps(), n = S.step;
+      $('work').innerHTML = n ? eq(st.slice(0, n).map((l, i) => ({ h: l.h, lit: i === n - 1 }))) : '';
+      $('words').innerHTML = n === 0 ? 'Work it out yourself first, then press Next to check it one step at a time.' : n >= st.length ? 'Done. Press Reset to start again.' : `Step ${n} of ${st.length}.`;
+    }
+
+    function update() {
+      draw(); readouts(); syncInputs();
+      const run = isRun(), st = isSteps(), k = kind();
+      $('simGroup').hidden = !run; $('moments').hidden = !run;
+      $('stepGroup').hidden = !st;
+      if (run) {
+        const end = runEnd(), mid = sim.t > 0 && sim.t < end * (1 - 1e-9);
+        $('pauseBtn').textContent = !sim.running && mid ? 'Play' : 'Pause';
+        $('pauseBtn').disabled = !sim.running && !mid;
+        $('startBtn').disabled = sim.running || !(end > 0);
+        const km = keyMoments();
+        $('prevMoment').disabled = !km.some(m => m < sim.t && !near(m, sim.t)); $('nextMoment').disabled = !km.some(m => m > sim.t && !near(m, sim.t));
+        $('speedNote').textContent = `Shown about ${f3(1 / speedUp() / 1e6)} million times slower than real time: light covers the room in a few billionths of a second.`;
+      }
+      if (st) { const n = nSteps(); $('stepNo').textContent = `(${S.step} of ${n})`; $('prevStep').disabled = S.step <= 0; $('nextStep').disabled = S.step >= n; $('stepReset').disabled = S.step === 0; }
+      $('gameBox').hidden = k !== 'game';
+    }
+    function chooseScenario(id) {
+      if (id === 'custom') {
+        if (!S.custom) toCustom();
+      } else loadScenario(id);
+      resetRun(); clearFeat(); buildInputs(); update();
+    }
+    presetEl.addEventListener('change', () => chooseScenario(presetEl.value));
+
+    /* ---------------- tab 4: the game ---------------- */
+    function startRound(k, keepScore) {
+      game.i = k; game.val = ROUNDS[k].start;
+      if (!keepScore) { game.hit = {}; game.shown = {}; }
+      if (geo) geo.frozen = false;
+    }
+    const gameScore = () => ROUNDS.reduce((n, R, k) => n + (game.hit[k] && !game.shown[k] ? 1 : 0), 0);
+    function renderGame(G) {
+      const k = game.i, R = ROUNDS[k];
+      $('gameNo').textContent = `Round ${k + 1} of ${ROUNDS.length}`;
+      $('gameScore').textContent = `Stars hit: ${gameScore()} of ${ROUNDS.length}`;
+      $('gameQ').innerHTML = R.txt;
+      const last = k >= ROUNDS.length - 1;
+      $('gameFb').innerHTML = game.shown[k] ? '<span class="verdict no">Answer shown:</span> <span class="why">the dashed green ray is where the light must go. This round does not count.</span>'
+        : game.hit[k] ? `<span class="verdict ok">Hit!</span> <span class="why">${R.kind === 'angle' ? `<i>i</i> = ${dg(G.i)}, so <i>r</i> = ${dg(G.rr)}: the reflected ray leaves the normal at the same angle as the light came in.` : `<i>i</i> = <i>r</i> = ${dg(G.i)}.`}${last ? ' That was the last round.' : ''}</span>` : '';
+      $('gameShow').disabled = !!game.shown[k] || !!game.hit[k];
+      $('gameNext').disabled = last;
+      $('gameAgain').hidden = !last;
+      $('words').innerHTML = ''; $('work').innerHTML = '';
+    }
+    $('gameShow').addEventListener('click', () => { game.shown[game.i] = true; update(); });
+    $('gameNext').addEventListener('click', () => { if (game.i < ROUNDS.length - 1) { startRound(game.i + 1, true); buildInputs(); update(); } });
+    $('gameAgain').addEventListener('click', () => { startRound(0, false); buildInputs(); update(); });
+
+    /* ---------------- dragging on the canvas ---------------- */
+    function cpos(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    let drag = null;
+    function pickAt(q) {
+      if (!geo) return null;
+      const k = kind(), m = isSteps() ? 'steps' : mode();
+      if (k === 'see' && geo.eye && Math.hypot(q.x - geo.eye.x, q.y - geo.eye.y) < 30) return 'eye';
+      if (k === 'law' && geo.torch && Math.hypot(q.x - geo.torch.x, q.y - geo.torch.y) < 34) return 'torch';
+      // the mirror's ends have handles (and can be dragged) only in Your own values, where the graph is drawn
+      if (k === 'turn' && S.custom && geo.ends && geo.ends.some(p => Math.hypot(q.x - p.x, q.y - p.y) < 26)) return 'end';
+      if (k === 'game') {
+        const R = ROUNDS[game.i];
+        if (R.kind === 'aim' && Math.abs(q.y - geo.dot.y) < 22) return 'dot';
+        if (R.kind === 'turn' && geo.ends.some(p => Math.hypot(q.x - p.x, q.y - p.y) < 26)) return 'end';
+        if (R.kind === 'angle' && Math.hypot(q.x - geo.torch.x, q.y - geo.torch.y) < 34) return 'torch';
+      }
+      void m; return null;
     }
     canvas.addEventListener('pointerdown', e => {
-      const p = pos(e), k = pick(p); if (!k) return;
-      dragging = { kind: k }; canvas.setPointerCapture(e.pointerId); e.preventDefault();
-      moveTo(p);
+      const q = cpos(e), what = pickAt(q); if (!what) return;
+      drag = what; canvas.setPointerCapture(e.pointerId); e.preventDefault();
+      document.activeElement && document.activeElement.blur && document.activeElement.blur();
+      clearFeat();
+      if (geo) geo.frozen = true;   // the scale holds still under a finger
+      if (kind() === 'turn' || kind() === 'law') { if (!(S.scen === 'sound' && !S.custom)) toCustom(); if (geo) geo.frozen = true; }
+      moveTo(q);
     });
+    function moveTo(q) {
+      const V = geo.V, wx = V.wx(q.x), wy = V.wy(q.y), k = kind();
+      if (drag === 'eye') { P.eye = { x: Math.max(1.6, Math.min(4.1, wx)), y: Math.max(1.2, Math.min(3.4, wy)) }; resetRun(); }
+      else if (drag === 'torch' && k === 'law') { P.i = Math.round(Math.max(0, Math.min(85, deg(Math.atan2(-wx, Math.max(0.05, wy)))))); }
+      else if (drag === 'end' && k === 'turn') { const sgn = wx >= 0 ? 1 : -1; P.tilt = Math.max(-35, Math.min(35, Math.round(2 * deg(Math.atan2(-wy * sgn, wx * sgn))) / 2)); }
+      else if (k === 'game') {
+        const R = ROUNDS[game.i];
+        if (drag === 'dot') game.val = Math.max(-3.3, Math.min(3.3, Math.round(wx / 0.02) * 0.02));
+        if (drag === 'end') { const sgn = wx >= 0 ? 1 : -1; game.val = Math.max(-35, Math.min(35, Math.round(2 * deg(Math.atan2(-wy * sgn, wx * sgn))) / 2)); }
+        if (drag === 'torch') game.val = Math.round(Math.max(0, Math.min(85, deg(Math.atan2(-wx, Math.max(0.05, wy))))));
+        void R;
+      }
+      update();
+    }
     canvas.addEventListener('pointermove', e => {
-      const p = pos(e);
-      if (!dragging) { const k = pick(p); canvas.style.cursor = k === 'torch' ? 'grab' : k === 'hit' ? 'ew-resize' : k ? 'alias' : 'default'; return; }
-      moveTo(p);
+      const q = cpos(e);
+      if (drag) { moveTo(q); return; }
+      const w = pickAt(q);
+      canvas.style.cursor = w === 'dot' ? 'ew-resize' : w ? 'grab' : 'default';
     });
-    function moveTo(p) {
-      const m = mirror();
-      if (dragging.kind === 'torch') { st.torch = { x: p.x, y: p.y }; clampTorch(); }
-      else if (dragging.kind === 'hit') { st.hitS = Math.max(-m.half + 12, Math.min(m.half - 12, (p.x - m.c.x) * m.u.x + (p.y - m.c.y) * m.u.y)); }
-      else {
-        const sgn = dragging.kind === 'end1' ? 1 : -1;
-        let a = Math.atan2((p.y - m.c.y) * sgn, (p.x - m.c.x) * sgn);
-        tiltEl.value = Math.max(-35, Math.min(35, Math.round(deg(a))));
-        clampTorch();
+    const endDrag = () => {
+      if (drag && geo) geo.frozen = false;
+      drag = null;
+      if (pendingOwn) { pendingOwn = false; $('question').innerHTML = OWN; buildInputs(); update(); }
+    };
+    canvas.addEventListener('pointerup', endDrag); canvas.addEventListener('pointercancel', endDrag);
+
+    /* ---------------- the tabs ---------------- */
+    const KEYS = { light: [COL.light, 'Light from the bulb'], inc: [COL.inc, 'Incident ray'], ref: [COL.ref, 'Reflected ray'], normal: [COL.normal, 'Normal line'],
+      old: [COL.old, 'Off the level mirror'], sound: [COL.sound, 'Sound'], star: [COL.star, 'Star to hit', 'dot'] };
+    const TABS = {
+      1: { strip: 'Answer Predict first. Then press Start and follow the light from the bulb. Drag the eye, then switch the light off.',
+        presets: ['see', 'dark'], key: ['light', 'inc'],
+        hint: 'Drag the eye to look at the book from somewhere else.',
+        notes: ['We are able to see an object around us because light rays from light sources (e.g. light bulb) hit the surface of the object, and the light ray is reflected by the object to our eyes (notes p. 10-3).',
+          'Light travels in a straight line at 3 × 10<sup>8</sup> m/s (p. 10-2), so in a room it arrives in a few billionths of a second. The page slows it right down.',
+          'Only three of the rays are drawn. Light from the bulb falls on every part of the book.'] },
+      2: { strip: 'Answer Predict first. Work through each example with Next, then drag the torch or use the slider and compare <i>i</i> with <i>r</i>.',
+        presets: ['law', 'surf', 'zero', 'sound'], key: ['inc', 'ref', 'normal'],
+        hint: 'In Your own values, drag the torch round to change the angle of incidence.',
+        notes: ['When a light ray is incident on the surface of an object, it may be reflected (notes p. 10-4).',
+          'The normal line is a line perpendicular to the surface, drawn where the ray hits it (p. 10-4).',
+          '<i>i</i>, the angle of incidence, is the angle between the incoming light ray and the normal line. <i>r</i>, the angle of reflection, is the angle between the reflected light ray and the normal line (p. 10-4).',
+          'The angle of incidence is always equal to the angle of reflection: <i>i</i> = <i>r</i> (p. 10-4).',
+          'An angle given from the surface is not <i>i</i>: subtract it from 90° first.',
+          'Sound obeys the laws of reflection too. When sound is reflected, there is no change in its speed, wavelength or frequency (p. 9-33).'] },
+      3: { strip: 'Answer Predict first. Step through the two examples, then turn the mirror yourself and watch the graph.',
+        presets: ['tilt5', 'tilt10'], key: ['inc', 'ref', 'normal', 'old'],
+        hint: 'In Your own values, drag either end of the mirror to turn it.',
+        notes: ['The normal line is perpendicular to the mirror, so when the mirror turns, the normal turns through the same angle.',
+          'The incident ray has not moved, so the angle of incidence changes by the angle the mirror turned.',
+          '<i>i</i> = <i>r</i> still holds at every turn (notes p. 10-4).',
+          'So the reflected ray turns through twice the angle the mirror turned. This rule is not stated in the notes; it follows from <i>i</i> = <i>r</i>.'] },
+      4: { strip: 'Answer Predict first. In each round, move the light so that the reflected ray hits the star. Use <i>i</i> = <i>r</i>; Show me draws the answer.',
+        presets: ['game'], key: ['inc', 'ref', 'star'],
+        hint: '',
+        notes: ['Draw the normal in your head where the light hits: the reflected ray leaves it at the same angle as the light comes in.',
+          'Move the point where the ray hits, or turn the mirror, and the normal moves with it.',
+          'A round counts if you hit the star without Show me.'] },
+      5: { strip: 'Answer every question, then read the summary.', key: [] }
+    };
+    const PREDICT = {
+      1: { q: 'You are in a room with no light at all. Can you see a white sheet of paper on the table?', opts: ['No: no light falls on it, so none is reflected to your eyes', 'Yes: white paper gives out its own light', 'Yes: your eyes send out light to it', 'Yes, but only faintly'], ans: 0,
+        why: 'We see an object because light from a light source hits its surface and is reflected to our eyes (notes p. 10-3). With no light falling on the paper, nothing is reflected. Choose “Light off” and press Start.' },
+      2: { q: 'A light ray strikes a mirror at 30° to the mirror’s surface. The angle of reflection is …', opts: ['60°', '30°', '90°', '120°'], ans: 0,
+        why: 'The angles are measured from the normal line, not from the surface (notes p. 10-4): <i>i</i> = 90° − 30° = 60°, so <i>r</i> = 60°. Choose “A ray at 30° to the mirror” and press Next.' },
+      3: { q: 'The incident ray stays where it is and the mirror is turned through 5°. The reflected ray turns through …', opts: ['10°', '5°', '0°', '20°'], ans: 0,
+        why: 'The normal turns 5° with the mirror, so <i>i</i> changes by 5° and so does <i>r</i>: the reflected ray turns 5° + 5° = 10°. Step through “Turn the mirror 5° clockwise”.' },
+      4: { q: 'The star sits on a line at 55° to the normal, where the light hits the mirror. To hit the star, the angle of incidence must be …', opts: ['55°', '35°', '110°', '27.5°'], ans: 0,
+        why: '<i>r</i> = <i>i</i>: for the reflected ray to leave at 55° to the normal, the light must come in at 55°. Try it in round 5. (35° is measured from the surface.)' }
+    };
+    const FEATS = {
+      1: [['path', 'Light’s path: bulb, book, eye'], ['dark', 'No light: nothing seen'], ['move', 'Look from somewhere else']],
+      2: [['equal', '<i>i</i> = <i>r</i> at any angle'], ['zero', '<i>i</i> = 0°: straight back'], ['surface', 'Given from the surface? 90° − it'], ['sound', 'Sound obeys the same law']],
+      3: [['normal', 'The normal turns with the mirror'], ['twice', 'The ray turns twice as far'], ['back', 'Turned back level: the old ray']]
+    };
+    const PROMPTS = {
+      1: ['Why can you see the book but not anything in a completely dark room?', 'Why does the light reach your eye a little after it reaches the book?', 'Why does moving your eye not stop you seeing the book?'],
+      2: ['Why are both angles measured from the normal, not from the mirror?', 'What happens to the reflected ray when the angle of incidence is 0°?', 'How is an echo like a reflected light ray?'],
+      3: ['Why does the normal turn when the mirror turns?', 'Why does the reflected ray turn twice as far as the mirror?', 'Which way does the reflected ray turn when the mirror turns clockwise?'],
+      4: ['Which round was hardest, and why?', 'How did you decide where the light had to hit?', 'In round 5, why is the answer the same as the angle drawn?'],
+      5: ['Which question did most of the class get wrong, and why?', 'Pick one wrong option: what mistake would lead a student to choose it?']
+    };
+
+    let predictPick = null;
+    function clearFeat() { feat = {}; hl = {}; syncFeatButtons(); $('featNote').textContent = ''; }
+    function clearFeatNoteOnly() { if (Object.keys(feat).length) clearFeat(); }
+    function syncFeatButtons() { document.querySelectorAll('#feats .feat').forEach(b => b.classList.toggle('on', !!feat[b.dataset.f])); }
+    // a key feature shows itself: it always reloads its scenario, then sets the values that show it
+    function tapFeat(id) {
+      const on = !feat[id];
+      const want = scen => { presetEl.value = scen; chooseScenario(scen); };
+      const own = vals => { toCustom(); Object.assign(P, vals); buildInputs(); };
+      clearFeat();
+      if (on) {
+        ({
+          path: () => { want('see'); sim.t = runEnd(); hl = { eye: true, seen: true }; },
+          dark: () => { want('dark'); sim.t = runEnd(); hl = { seen: true }; },
+          move: () => { want('see'); P.eye = { x: 2.0, y: 3.2 }; sim.t = runEnd(); hl = { seen: true }; },
+          equal: () => { want('law'); own({ i: 65 }); hl = { i: true, r: true }; },
+          zero: () => { want('zero'); hl = { i: true, r: true }; },
+          surface: () => { want('surf'); S.step = nSteps(); hl = { i: true, r: true }; },
+          sound: () => { want('sound'); hl = { i: true, r: true, v: true }; },
+          normal: () => { want('tilt5'); S.step = 2; hl = { tilt: true }; },
+          twice: () => { want('tilt5'); S.step = nSteps(); hl = { turn: true }; },
+          back: () => { want('tilt5'); own({ i0: 40, tilt: 0 }); hl = { r1: true }; }
+        })[id]();
+      }
+      feat = on ? { [id]: true } : {};
+      syncFeatButtons(); syncInputs(); update();
+      $('featNote').innerHTML = on ? featNote(id) : '';
+    }
+    function featNote(id) {
+      const st = seeTimes(PRESETS.see);
+      switch (id) {
+        case 'path': return `The light reaches the book after ${f3(st.book * 1e9)} ns and your eye after ${f3(st.eye * 1e9)} ns. Only light that reaches your eye lets you see the book.`;
+        case 'dark': return 'With the light bulb off, no light hits the book and none is reflected to your eye: you cannot see it (notes p. 10-3).';
+        case 'move': return 'From a new place your eye still receives light reflected by the book, so you still see it. Light from the bulb falls on the whole book.';
+        case 'equal': { const G = lawGeo({ i: 65 }); return `At <i>i</i> = ${dg(G.i)}, <i>r</i> = ${dg(G.rr)}. Whatever the angle, the angle of incidence is equal to the angle of reflection (notes p. 10-4).`; }
+        case 'zero': return 'Along the normal, <i>i</i> = 0°, so <i>r</i> = 0°: the ray goes straight back the way it came.';
+        case 'surface': return 'The ray is 30° from the surface, so it is 90° − 30° = 60° from the normal: <i>i</i> = <i>r</i> = 60°, not 30°.';
+        case 'sound': return 'Sound obeys the laws of reflection: the angle of incidence is equal to the angle of reflection. The reflected sound, the echo, keeps its speed, wavelength and frequency (notes p. 9-33).';
+        case 'normal': return 'The mirror turned 5° clockwise and the normal turned 5° with it. The incident ray did not move.';
+        case 'twice': { const G = turnGeo(PRESETS.tilt5); return `<i>i</i> went from 40° to ${dg(G.i1)} and <i>r</i> with it, so the reflected ray turned ${dg(G.turned)}: twice the 5° the mirror turned.`; }
+        case 'back': return 'With the mirror level again the reflected ray is back where it started, at 40° to the normal.';
+      }
+      return '';
+    }
+
+    function renderPredict(tab) {
+      const Q = PREDICT[tab], box = $('predictBox');
+      predictPick = null;
+      if (!Q) { box.hidden = true; return; }
+      box.hidden = false; box.classList.remove('done');
+      $('predictQ').innerHTML = Q.q;
+      $('predictFb').innerHTML = '';
+      const opts = $('predictOpts');
+      opts.innerHTML = '';
+      Q.opts.forEach((o, i) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.innerHTML = o;
+        b.addEventListener('click', () => {
+          if (opts.dataset.done) return;
+          predictPick = i; opts.querySelectorAll('.opt').forEach((x, j) => x.classList.toggle('picked', j === i));
+        });
+        opts.appendChild(b);
+      });
+      delete opts.dataset.done;
+      $('predictCheck').textContent = 'Check my answer';
+    }
+    $('predictCheck').addEventListener('click', () => {
+      const Q = PREDICT[currentTab], opts = $('predictOpts'), fb = $('predictFb');
+      if (!Q) return;
+      if (opts.dataset.done) { renderPredict(currentTab); return; }
+      if (predictPick === null) { fb.innerHTML = '<span class="verdict no">Pick an answer first.</span>'; return; }
+      opts.dataset.done = '1';
+      const ok = predictPick === Q.ans;
+      opts.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === Q.ans) x.classList.add('right'); else if (j === predictPick) x.classList.add('wrong'); });
+      $('predictBox').classList.add('done');
+      fb.innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> Your prediction: ${Q.opts[predictPick]}.`
+        + (ok ? '' : ` The answer: <b>${Q.opts[Q.ans]}</b>.`) + ` <span class="why">${Q.why}</span>`;
+      $('predictCheck').textContent = 'Try again';
+    });
+
+    function renderFeats(tab) {
+      const list = FEATS[tab] || [], el = $('feats');
+      $('featBox').hidden = !list.length;
+      el.innerHTML = '';
+      list.forEach(([id, lab]) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'feat'; b.dataset.f = id;
+        b.innerHTML = lab;
+        b.addEventListener('click', () => tapFeat(id));
+        el.appendChild(b);
+      });
+      $('featNote').textContent = '';
+      syncFeatButtons();
+    }
+    function renderKey(tab) {
+      $('ckey').innerHTML = (TABS[tab].key || []).map(k => `<span><b class="${KEYS[k][2] || ''}" style="background:${KEYS[k][0]}"></b><span>${KEYS[k][1]}</span></span>`).join('');
+    }
+    function fillPresets(list) {
+      presetEl.innerHTML = '';
+      [...list, ...(hasOwn(currentTab) ? ['custom'] : [])].forEach(id => { const o = document.createElement('option'); o.value = id; o.textContent = id === 'custom' ? 'Your own values' : PRESETS[id].name; presetEl.appendChild(o); });
+      presetEl.value = list[0];
+    }
+
+    function showTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('#tabs .tab').forEach(b => { const on = +b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+      $('stepLabel').textContent = `Step ${tab} of 5`;
+      document.querySelectorAll('#stepBar i').forEach((i, n) => i.classList.toggle('on', n < tab));
+      $('strip').innerHTML = TABS[tab].strip;
+      renderKey(tab);
+      $('pageSim').hidden = tab === 5;
+      $('page5').hidden = tab !== 5;
+      if (tab <= 4) {
+        const T = TABS[tab];
+        $('sceneHint').textContent = T.hint || '';
+        $('notes').innerHTML = '<ul>' + T.notes.map(n => `<li>${n}</li>`).join('') + '</ul>';
+        if (tab === 4) startRound(0, false);
+        geo = null;
+        fillPresets(T.presets); chooseScenario(T.presets[0]);
+      }
+      if (tab === 5) renderQuiz();
+      renderPredict(tab);
+      renderFeats(tab);
+      $('tPrompts').innerHTML = PROMPTS[tab].map(p => `<li>${p}</li>`).join('');
+    }
+    document.querySelectorAll('#tabs .tab').forEach(b => b.addEventListener('click', () => showTab(+b.dataset.tab)));
+
+    /* ---------------- Tab 5: Challenge ---------------- */
+    // every answer worked from the notes (pp. 10-3, 10-4, 10-15, 9-33); a question whose parts share one situation is one
+    // screen: the situation (and its figure) once, then its parts
+    const QUIZ = [
+      { src: 'Notes p. 10-4', stem: 'A light ray hits the surface of a mirror.', parts: [
+        { lab: '(a)', q: 'The normal line is …', opts: ['a line perpendicular to the surface, where the ray hits it', 'the line of the mirror’s surface', 'the incoming light ray', 'any line at 45° to the surface'], ans: 0,
+          why: 'Normal line: a line perpendicular to the surface.' },
+        { lab: '(b)', q: 'The angle of incidence is the angle between the incoming light ray and …', opts: ['the normal line', 'the mirror’s surface', 'the reflected light ray', 'the horizontal'], ans: 0,
+          why: '<i>i</i>: angle of incidence, the angle between the incoming light ray and the normal line.' },
+        { lab: '(c)', q: 'The angle of reflection is the angle between …', opts: ['the reflected light ray and the normal line', 'the reflected light ray and the mirror', 'the incident and the reflected rays', 'the incident ray and the mirror'], ans: 0,
+          why: '<i>r</i>: angle of reflection, the angle between the reflected light ray and the normal line.' }] },
+      { src: 'Notes p. 10-4', stem: 'A light ray hits a plane mirror with an angle of incidence of 35°.', parts: [
+        { lab: '(a)', q: 'The angle of reflection is …', opts: ['35°', '55°', '70°', '145°'], ans: 0, why: '<i>i</i> = <i>r</i>, so <i>r</i> = 35°. (55° is measured from the mirror.)' },
+        { lab: '(b)', q: 'The angle between the incident ray and the reflected ray is …', opts: ['70°', '35°', '110°', '90°'], ans: 0, why: 'Both rays are 35° from the normal, on opposite sides: 35° + 35° = 70°.' }] },
+      { src: 'Notes p. 10-4', fig: 'q25', stem: 'A light ray strikes a plane mirror at 25° to the mirror’s surface, as in the figure.', parts: [
+        { lab: '(a)', q: 'The angle of incidence is …', opts: ['65°', '25°', '50°', '115°'], ans: 0, why: 'The angle of incidence is measured from the normal: 90° − 25° = 65°.' },
+        { lab: '(b)', q: 'The angle of reflection is …', opts: ['65°', '25°', '130°', '50°'], ans: 0, why: '<i>r</i> = <i>i</i> = 65°.' },
+        { lab: '(c)', q: 'The angle between the reflected ray and the mirror’s surface is …', opts: ['25°', '65°', '50°', '90°'], ans: 0, why: '90° − 65° = 25°, on the other side of the normal.' }] },
+      { src: 'Notes p. 10-4', stem: 'A light ray travels along the normal line and hits a mirror.', parts: [
+        { q: 'The reflected ray …', opts: ['goes straight back along the normal line', 'travels along the mirror’s surface', 'leaves at 45° to the mirror', 'goes through the mirror'], ans: 0,
+          why: 'Along the normal, <i>i</i> = 0°, so <i>r</i> = 0°: the ray reflects straight back.' }] },
+      { src: 'Notes p. 10-3', stem: 'A book lies on a table in a room lit by a light bulb.', parts: [
+        { lab: '(a)', q: 'We are able to see the book because …', opts: ['light from the bulb hits the book and is reflected to our eyes', 'the book gives out its own light', 'our eyes send out light that hits the book', 'the book absorbs the light from the bulb'], ans: 0,
+          why: 'Light rays from light sources (e.g. a light bulb) hit the surface of the object, and the light is reflected by the object to our eyes.' },
+        { lab: '(b)', q: 'The bulb is switched off and the room is completely dark. You cannot see the book because …', opts: ['no light hits the book, so none is reflected to your eyes', 'the book stops reflecting in the dark', 'your eyes stop sending out light', 'the book becomes transparent'], ans: 0,
+          why: 'Seeing the book needs light reflected by it to your eyes. With no light falling on it, there is none to reflect.' }] },
+      { src: 'Notes p. 10-15', fig: 'tir', stem: 'A light ray in water hits the water’s surface at an angle of incidence of 60°, larger than the critical angle (48.8°). It is totally internally reflected, as in the figure.', parts: [
+        { q: 'The angle of reflection is …', opts: ['60°', '30°', '48.8°', '90°'], ans: 0,
+          why: 'In total internal reflection, the angle of incidence of the light ray is the same as its angle of reflection (<i>i</i> = <i>r</i>): 60°.' }] },
+      { src: 'Notes p. 9-33', stem: 'A sound wave is reflected by a brick wall.', parts: [
+        { lab: '(a)', q: 'Compared with the incident sound, the reflected sound has …', opts: ['the same speed, wavelength and frequency', 'a lower speed', 'a shorter wavelength', 'a higher frequency'], ans: 0,
+          why: 'When sound is reflected, there is no change in its speed, wavelength or frequency.' },
+        { lab: '(b)', q: 'It hits the wall with an angle of incidence of 40°. The angle of reflection is …', opts: ['40°', '50°', '80°', '20°'], ans: 0,
+          why: 'Sound obeys the laws of reflection: the angle of incidence is equal to the angle of reflection.' }] },
+      { src: 'Step 3 of this page (follows from i = r)', stem: 'A light ray hits a level mirror at <i>i</i> = 30°. The mirror is turned through 8°; the incident ray does not move.', parts: [
+        { lab: '(a)', q: 'The normal line turns through …', opts: ['8°', '16°', '0°', '4°'], ans: 0, why: 'The normal is perpendicular to the mirror, so it turns through the same 8°.' },
+        { lab: '(b)', q: 'The reflected ray turns through …', opts: ['16°', '8°', '0°', '24°'], ans: 0, why: '<i>i</i> changes by 8° and <i>r</i> = <i>i</i>, so the reflected ray turns 8° + 8° = 16°: twice the turn of the mirror.' }] },
+      { src: 'Notes p. 10-4', stem: 'The incident ray and the reflected ray are 100° apart.', parts: [
+        { q: 'The angle of incidence is …', opts: ['50°', '100°', '40°', '80°'], ans: 0, why: '<i>i</i> = <i>r</i> and <i>i</i> + <i>r</i> = 100°, so <i>i</i> = 50°. (40° is measured from the mirror.)' }] },
+      { src: 'Notes p. 10-4', stem: 'The angle of incidence on a mirror is increased from 20° to 50°.', parts: [
+        { q: 'The angle of reflection increases by …', opts: ['30°', '60°', '0°', '15°'], ans: 0, why: '<i>r</i> = <i>i</i> all the time: <i>r</i> goes from 20° to 50°, up by 30°.' }] }
+    ];
+    // the options are written with the right one first; turn each part's list round by a fixed amount
+    { let pc = 0; QUIZ.forEach(Q => Q.parts.forEach(Pt => { const n = Pt.opts.length, r = (pc++ * 3 + 1) % n;
+      Pt.opts = Pt.opts.slice(r).concat(Pt.opts.slice(0, r)); Pt.ans = (Pt.ans - r + n) % n; })); }
+    const QUIZ_MARKS = QUIZ.reduce((n, Q) => n + Q.parts.length, 0);
+    const partLabel = (Q, k) => Q.parts[k].lab ? Q.parts[k].lab + ' ' : Q.parts.length > 1 ? `(${'abcdefgh'[k]}) ` : '';
+    // the Challenge's figures, drawn by the same mirror, ray and arc code as the tabs
+    function drawFig(cv, id) {
+      __pim.labels = []; __pim.arrows = []; __pim.panes = []; __pim.segs = []; __pim.marks = {};
+      const gq = setup(cv); if (!gq) return;
+      const { ctx, W, H } = gq;
+      pane('fig', 0, 0, W, H);
+      const V = fit(W, H, { x0: -4.2, x1: 4.2, y0: id === 'tir' ? -3.4 : -0.6, y1: id === 'tir' ? 0.8 : 3.0 });
+      if (id === 'q25') {
+        const m = mirrorOf(0), O = { x: 0, y: 0 }, T = torchAt(65, 3.0), d = unit(sub(O, T));
+        drawMirror(ctx, V, m); drawRay(ctx, V, T, O, COL.inc);
+        angleArc(ctx, V, O, { x: -1, y: 0 }, { x: -d.x, y: -d.y }, 46, '#0f766e', '25°');
+        label(ctx, 'mirror', V.X(2.6), V.Y(0) + 22, COL.mirror);
+      } else {
+        // water below, air above; the ray comes up through the water and is reflected back down (y up: water is y < 0)
+        ctx.fillStyle = 'rgba(14,165,233,0.15)'; ctx.fillRect(0, V.Y(0), W, H - V.Y(0));
+        seg(ctx, 0, V.Y(0), W, V.Y(0), '#0284c7', 2);
+        const O = { x: 0, y: 0 }, n = { x: 0, y: -1 }, T = { x: -3.0 * Math.sin(rad(60)), y: -3.0 * Math.cos(rad(60)) }, d = unit(sub(O, T));
+        const r = reflectDir(d, n);
+        drawNormal(ctx, V, O, n, 2.8); drawRay(ctx, V, T, O, COL.inc); drawRay(ctx, V, O, add(O, r, 3.0), COL.ref);
+        angleArc(ctx, V, O, n, { x: -d.x, y: -d.y }, 44, COL.incDark, '60°');
+        label(ctx, 'air', V.X(-3.2), V.Y(0.45), '#0369a1'); label(ctx, 'water', V.X(-3.2), V.Y(-0.45), '#0369a1');
       }
     }
-    const end = () => { dragging = null; };
-    canvas.addEventListener('pointerup', end);
-    canvas.addEventListener('pointercancel', end);
-
-    incEl.addEventListener('input', () => { dragging = { kind: 'slider' }; setTorchFromAngle(parseFloat(incEl.value)); dragging = null; });
-    tiltEl.addEventListener('input', clampTorch);
-    el('newTarget').addEventListener('click', () => { st.hitFlash = 0; newTarget(); });
-
-    let last = null;
-    function frame(ts) {
-      if (last === null) last = ts;
-      const dt = Math.max(0, Math.min(0.05, (ts - last) / 1000)); last = ts;
-      if (st.hitFlash > 0) { st.hitFlash -= dt; if (st.hitFlash <= 0 && el('showTarget').checked) newTarget(); }
-      draw(); updateReadout();
-      requestAnimationFrame(frame);
+    let quiz = { i: 0, score: 0, picks: [], done: false, missed: [] };
+    function resetQuiz() { quiz = { i: 0, score: 0, picks: [], done: false, missed: [] }; renderQuiz(); }
+    function renderQuiz() {
+      const el = $('quiz'), N = QUIZ.length;
+      if (quiz.i >= N) {
+        const list = quiz.missed.length
+          ? `<p>Go back over these:</p><ul>${quiz.missed.map(([n, k]) => { const Q = QUIZ[n];
+              return `<li>Question ${n + 1}${partLabel(Q, k).trim()} (${Q.src}): ${(Q.stem ? Q.stem + ' ' : '') + Q.parts[k].q}</li>`; }).join('')}</ul>`
+          : '<p>Every answer right. Well done.</p>';
+        el.innerHTML = `<div class="quiz-top"><span>Summary</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div><div class="quiz-bar"><i style="width:100%"></i></div>
+          <div class="quiz-sum"><div class="quiz-q">You scored ${quiz.score} out of ${QUIZ_MARKS}.</div>${list}</div>
+          <div class="row-btns"><button type="button" id="qAgain">Try the quiz again</button></div>`;
+        $('qAgain').addEventListener('click', resetQuiz);
+        return;
+      }
+      const Q = QUIZ[quiz.i], many = Q.parts.length > 1;
+      quiz.picks = Q.parts.map(() => null);
+      el.innerHTML = `<div class="quiz-top"><span>Question ${quiz.i + 1} of ${N}</span><span>Score: ${quiz.score} of ${QUIZ_MARKS}</span></div>
+        <div class="quiz-bar"><i style="width:${(quiz.i / N) * 100}%"></i></div>
+        ${Q.stem ? `<div class="quiz-q" id="qStem">${Q.stem}</div>` : ''}${Q.fig ? '<canvas class="qfig" id="qFig"></canvas>' : ''}<div class="quiz-src">${Q.src}${many ? ` · ${Q.parts.length} parts, answer them all` : ''}</div>
+        ${Q.parts.map((Pt, k) => `<div class="qpart" data-k="${k}">
+          <div class="${Q.stem ? 'qpart-q' : 'quiz-q'}">${partLabel(Q, k)}${Pt.q}</div>
+          <div class="opts">${Pt.opts.map((o, j) => `<button type="button" class="opt" data-j="${j}">${o}</button>`).join('')}</div>
+          <div class="feedback"></div></div>`).join('')}
+        <div class="row-btns"><button type="button" id="qSubmit">${many ? 'Submit answers' : 'Submit answer'}</button><button type="button" class="secondary" id="qReset">Reset quiz</button></div>
+        <div class="feedback" id="qFb"></div>`;
+      if (Q.fig) drawFig($('qFig'), Q.fig);
+      el.querySelectorAll('.qpart').forEach(part => {
+        const k = +part.dataset.k;
+        part.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+          if (quiz.done) return;
+          quiz.picks[k] = +b.dataset.j; part.querySelectorAll('.opt').forEach(x => x.classList.toggle('picked', x === b));
+        }));
+      });
+      $('qReset').addEventListener('click', resetQuiz);
+      $('qSubmit').addEventListener('click', () => {
+        const fb = $('qFb');
+        if (quiz.done) { quiz.i++; quiz.done = false; renderQuiz(); return; }
+        const left = quiz.picks.map((p, k) => p === null ? partLabel(Q, k).trim() || `part ${k + 1}` : null).filter(x => x !== null);
+        if (left.length) { fb.innerHTML = `<span class="verdict no">${many ? `Pick an answer for every part first (still to do: ${left.join(', ')}).` : 'Pick an answer first.'}</span>`; return; }
+        quiz.done = true; fb.innerHTML = '';
+        el.querySelectorAll('.qpart').forEach(part => {
+          const k = +part.dataset.k, Pt = Q.parts[k], ok = quiz.picks[k] === Pt.ans;
+          if (ok) quiz.score++; else quiz.missed.push([quiz.i, k]);
+          part.querySelectorAll('.opt').forEach((x, j) => { x.classList.remove('picked'); if (j === Pt.ans) x.classList.add('right'); else if (j === quiz.picks[k]) x.classList.add('wrong'); });
+          part.querySelector('.feedback').innerHTML = `<span class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Correct.' : 'Not quite.'}</span> <span class="why">${Pt.why}</span>`;
+        });
+        el.querySelector('.quiz-top span:last-child').textContent = `Score: ${quiz.score} of ${QUIZ_MARKS}`;
+        $('qSubmit').textContent = quiz.i + 1 < N ? 'Next question' : 'See the summary';
+      });
     }
-    requestAnimationFrame(frame);
+
+    /* ---------------- Teacher mode ---------------- */
+    // Only the teacher link (this page's address + ?teacher) shows the button; students and the
+    // Brightspace embed use the plain address. Not a lock: the panel only changes this screen.
+    const teacher = $('teacher');
+    if (new URLSearchParams(location.search).has('teacher')) $('teacherBtn').hidden = false;
+    $('teacherBtn').addEventListener('click', () => { teacher.hidden = !teacher.hidden; });
+    $('tClose').addEventListener('click', () => { teacher.hidden = true; });
+    $('tExplain').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-explain');
+      e.target.textContent = on ? 'Show explanations' : 'Hide explanations'; e.target.classList.toggle('on', on);
+    });
+    $('tAnswers').addEventListener('click', e => {
+      const on = document.body.classList.toggle('no-answers');
+      e.target.textContent = on ? 'Show answer labels' : 'Hide answer labels'; e.target.classList.toggle('on', on);
+    });
+    // free exploration: no Predict first, and every step shown at once
+    $('tFree').addEventListener('click', e => {
+      freeMode = !freeMode; document.body.classList.toggle('free-mode', freeMode);
+      e.target.textContent = freeMode ? 'Back to the guided steps' : 'Switch to free exploration'; e.target.classList.toggle('on', freeMode);
+      showTab(currentTab);
+    });
+    const fullBtn = $('tFull');
+    if (!document.fullscreenEnabled) fullBtn.hidden = true;
+    fullBtn.addEventListener('click', () => {
+      if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {});
+    });
+    document.addEventListener('fullscreenchange', () => { fullBtn.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
+    $('tReset').addEventListener('click', () => { resetQuiz(); showTab(1); });
+
+    // for the checks: the state behind the drawing
+    window.__pimState = () => {
+      const st = { tab: currentTab, scen: S.scen, custom: S.custom, step: S.step, nSteps: nSteps(), mode: mode(), kind: kind(), t: sim.t, end: isRun() ? runEnd() : null,
+        running: sim.running, speed: isRun() ? speedUp() : null, keyMoments: keyMoments(), P: JSON.parse(JSON.stringify(P)), rev: revealed(),
+        game: JSON.parse(JSON.stringify(game)), score: gameScore() };
+      const k = kind();
+      if (k === 'see') st.see = seeTimes();
+      if (k === 'law') { const G = lawGeo(); st.law = { i: G.i, r: G.rr, between: G.between, r_dir: G.r, d: G.d }; }
+      if (k === 'turn') { const G = turnGeo(P, revealed().tilt ? P.tilt : 0); st.turn = { i0: G.i0, i1: G.i1, r1: G.r1, turned: G.turned, sign: G.turnSign }; }
+      if (k === 'game') { const G = gameGeo(); st.gameGeo = { i: G.i, r: G.rr, miss: G.miss, hit: G.hit, answer: roundAnswer(G.R), kind: G.R.kind }; }
+      return st;
+    };
+    window.__pimSetTime = setTime;
+    window.__pimGame = (v) => { game.val = v; update(); };
+    window.addEventListener('resize', () => { if (currentTab <= 4) update(); else if (QUIZ[quiz.i] && QUIZ[quiz.i].fig && $('qFig')) drawFig($('qFig'), QUIZ[quiz.i].fig); });
+    showTab(1);
+  </script>
+  <script>
+    // Embedded (Brightspace): tell the page around the frame how tall this page is, so a resize script in the
+    // embed code can fit the frame to it (no blank space, no inner scrollbar). Measured from the content, not
+    // scrollHeight, which never drops below the frame's own height and so could never shrink it.
+    (function () {
+      if (window.parent === window) return;
+      let last = 0;
+      function height() {
+        const c = document.querySelector('.container'), cs = getComputedStyle(document.body);
+        return Math.ceil(c.getBoundingClientRect().bottom + window.scrollY + parseFloat(cs.paddingBottom) + parseFloat(cs.marginBottom) + 4);
+      }
+      function send(force) {
+        const h = height();
+        if (!force && Math.abs(h - last) < 2) return;
+        last = h;
+        window.parent.postMessage({ type: 'pim-height', page: location.pathname.split('/').pop(), height: h }, '*');
+      }
+      new ResizeObserver(() => send(false)).observe(document.querySelector('.container'));
+      window.addEventListener('load', () => send(true));
+      // the embed's script asks once it is listening, in case this page loaded first
+      window.addEventListener('message', e => { if (e.data && e.data.type === 'pim-height?') send(true); });
+      send(true);
+    })();
   </script>
   <script>
     // Phones: a swipe that starts on an empty part of a drawing scrolls the page (touch-action: pan-y),
     // and a touch the page grabbed for a drag (its own setPointerCapture call) keeps the page still.
-    // (hasPointerCapture can't tell: a touch is always captured implicitly.)
-    // The kinematics graphs are left out: a sideways drag scrubs them and an up-down one scrolls.
     document.querySelectorAll('canvas:not(.graph-canvas)').forEach(c => {
       let grabbed = false;
       const capture = c.setPointerCapture;
